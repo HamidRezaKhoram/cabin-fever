@@ -15,6 +15,8 @@ const timerbar = document.getElementById('timerbar');
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
 let roomCode = null;
+/** Games with French content (others use English question banks). */
+const FRENCH_GAMES = ['quiplash', 'mostlikely', 'majority', 'telephone', 'twotruths', 'minigames'];
 document.body.classList.toggle('cb', store('rumpus.cb') === true); // colour-blind palette (this TV)
 // Test tools (bot players) show with /host?debug=1 or /host?bots=1.
 const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.search) || localStorage.getItem('rumpus.debug') === '1'; } catch (e) { return false; } })();
@@ -208,6 +210,7 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-timer') socket.emit('host:settings', { timerScale: +t.value });
   else if (t.id === 'set-spicy') socket.emit('host:settings', { spicy: t.checked });
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
+  else if (t.id === 'set-lang') socket.emit('host:settings', { lang: t.value });
   else if (t.id === 'set-narrator') window.Rumpus.host.setEnabled(t.checked);
   else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
 });
@@ -324,6 +327,7 @@ function gamePicker(label) {
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
           <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
+          <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
           <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator voice</label>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
@@ -341,6 +345,7 @@ function gamePicker(label) {
           <span class="game-name">${esc(gm.name)}</span>
           <span class="game-blurb">${esc(gm.blurb)}</span>
           <span class="game-min">${disabled ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}</span>
+          ${st.lang === 'fr' && !FRENCH_GAMES.includes(gm.id) ? '<span class="game-lang" title="Questions in English">EN</span>' : ''}
         </span>
       </button>`;
     }).join('') + `</div>
@@ -458,6 +463,7 @@ clock.add(() => {
 });
 
 function render() {
+  window.Rumpus.i18n.setLang(state && state.settings && state.settings.lang);
   if (!state) return;
   const g = state.gameState || {};
   const phase = state.phase;

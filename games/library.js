@@ -173,10 +173,17 @@ function pickFrom(name, candidates, exclude) {
 /**
  * Draw `n` distinct, not-recently-used items from pool `name`.
  * opts.spicy: include 18+ items (~30% of picks). opts.filter: extra predicate.
+ * opts.lang: 'fr' draws the French pack when the pool has enough French items.
+ * @param {string} name @param {number} [n]
+ * @param {{ spicy?: boolean, filter?: (x: PoolItem) => boolean, lang?: string }} [opts]
  */
 function draw(name, n = 1, opts = {}) {
   const pool = load(name);
-  const filt = opts.filter || (() => true);
+  // Language: French rooms draw the French pack where a pool has one (≥ n items), else English.
+  const lang = opts.lang || 'en';
+  const userFilt = opts.filter || (() => true);
+  const hasLang = lang !== 'en' && pool.all.filter((/** @type {PoolItem} */ x) => x.lang === lang && userFilt(x)).length >= n;
+  const filt = (/** @type {PoolItem} */ x) => userFilt(x) && ((x.lang || 'en') === (hasLang ? lang : 'en'));
   const ok = (/** @type {PoolItem} */ x) => filt(x) && !retired(name, x.id) && !house.isDisabled(name, x.id) && !house.isBanned(x);
   let fam = pool.family.filter(ok);
   let adult = opts.spicy ? pool.adult.filter(ok) : [];

@@ -12,7 +12,7 @@ test('host gets a 4-letter room code without I or O, plus a resume token', async
   assert.match(h.code, /^[A-HJ-NP-Z]{4}$/);
   assert.match(h.hostToken, /^[0-9a-f]{32}$/);
   await until(() => h.state && h.state.phase === 'lobby', 'lobby state');
-  assert.deepStrictEqual(h.state.settings, { rounds: null, timerScale: 1, spicy: true, teams: false });
+  assert.deepStrictEqual(h.state.settings, { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en' });
   assert.strictEqual(h.state.availableGames.length, 11);
 });
 
@@ -130,12 +130,12 @@ test('settings are validated', async () => {
   const h = await makeHost(srv);
   h.emit('host:settings', { rounds: 5, timerScale: 1.5, spicy: false, teams: false });
   await until(() => h.state.settings.rounds === 5, 'rounds 5');
-  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 1.5, spicy: false, teams: false });
+  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 1.5, spicy: false, teams: false, lang: 'en' });
   h.emit('host:settings', { rounds: 0, timerScale: 3, spicy: 'yes' });
   h.emit('host:settings', { rounds: 21 });
   h.emit('host:settings', { timerScale: 2 }); // valid marker, processed after the invalid ones
   await until(() => h.state.settings.timerScale === 2, 'marker applied');
-  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 2, spicy: false, teams: false });
+  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 2, spicy: false, teams: false, lang: 'en' });
   h.emit('host:settings', { rounds: null, timerScale: 0.6, spicy: true });
   await until(() => h.state.settings.rounds === null && h.state.settings.timerScale === 0.6 && h.state.settings.spicy, 'reset');
 });

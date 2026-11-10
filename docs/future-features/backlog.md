@@ -15,7 +15,7 @@
 
 **Content**
 - ✅ Content editor — shipped at /admin (search, disable, add your own).
-- French (Canadian) translations of UI + a French content pack.
+- ✅ Français — room language setting; UI translated on TV + phones (public/i18n.js); original French pack for Punchline, Most Likely, Majority, Doodle Telephone; French narrator voice. Trivia/Fib/Closest/Card Chaos stay English (marked EN).
 - More 18+ trivia written and fact-checked (Trivia/Closest pools are ~8% / 3% adult; draw mix
   is ~30% via weighting, but bigger adult pools would reduce repeats).
 

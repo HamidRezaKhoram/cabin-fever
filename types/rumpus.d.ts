@@ -11,6 +11,8 @@ interface RoomSettings {
   spicy: boolean;
   /** Red vs Blue team mode. */
   teams: boolean;
+  /** UI + content language (French pack for prompt games). */
+  lang?: 'en' | 'fr';
 }
 
 interface Player {
@@ -102,6 +104,8 @@ interface PoolItem {
   a: boolean;
   text?: string;
   q?: string;
+  /** Content language ('en' when absent). */
+  lang?: string;
   [k: string]: any;
 }
 

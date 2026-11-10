@@ -289,6 +289,7 @@ function send(payload) {
 }
 
 function render() {
+  window.Rumpus.i18n.setLang(state && state.settings && state.settings.lang);
   if (!state || !me) return;
   const g = state.gameState || {};
   const you = state.you || {};

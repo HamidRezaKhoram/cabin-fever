@@ -187,18 +187,20 @@ const ttsCache = new Map();
 app.get('/api/tts', (/** @type {any} */ req, /** @type {any} */ res) => {
   const text = String(req.query.text || '').replace(/[^\p{L}\p{N}\p{P}\p{Zs}]/gu, '').trim().slice(0, 240);
   if (!text) { res.status(400).end(); return; }
-  if (ttsCache.has(text)) { res.type('audio/wav').send(ttsCache.get(text)); return; }
+  const cacheKey = (req.query.lang === 'fr' ? 'fr:' : 'en:') + text;
+  if (ttsCache.has(cacheKey)) { res.type('audio/wav').send(ttsCache.get(cacheKey)); return; }
   /** @type {Buffer[]} */
   const chunks = [];
   // A cheery game-show voice: US English, male variant 3, a bit fast and high.
-  const p = require('child_process').spawn('espeak-ng', ['-v', 'en-us+m3', '-s', '165', '-p', '60', '--stdout', text]);
+  const voice = req.query.lang === 'fr' ? 'fr+m3' : 'en-us+m3';
+  const p = require('child_process').spawn('espeak-ng', ['-v', voice, '-s', '165', '-p', '60', '--stdout', text]);
   p.on('error', () => { if (!res.headersSent) res.status(501).json({ error: 'no narrator voice installed' }); });
   p.stdout.on('data', (/** @type {Buffer} */ d) => chunks.push(d));
   p.on('close', (/** @type {number} */ code) => {
     if (res.headersSent) return;
     if (code !== 0 || !chunks.length) { res.status(501).json({ error: 'narrator failed' }); return; }
     const wav = Buffer.concat(chunks);
-    ttsCache.set(text, wav);
+    ttsCache.set(cacheKey, wav);
     if (ttsCache.size > 120) ttsCache.delete(ttsCache.keys().next().value);
     res.type('audio/wav').send(wav);
   });
@@ -544,7 +546,7 @@ io.on('connection', (socket) => {
       players: new Map(),
       game: null,
       closed: false,
-      settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false', teams: false },
+      settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false', teams: false, lang: process.env.RUMPUS_LANG === 'fr' ? 'fr' : 'en' },
       pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set() },
     };
     rooms.set(code, room);
@@ -574,6 +576,7 @@ io.on('connection', (socket) => {
     const scale = Number(msg.timerScale);
     if ([0.6, 1, 1.5, 2].includes(scale)) room.settings.timerScale = scale;
     if (typeof msg.spicy === 'boolean') room.settings.spicy = msg.spicy;
+    if (msg.lang === 'en' || msg.lang === 'fr') room.settings.lang = msg.lang;
     if (typeof msg.teams === 'boolean' && msg.teams !== room.settings.teams) {
       const ph = roomPhase(room);
       if (ph === 'lobby' || ph === 'gameover') {

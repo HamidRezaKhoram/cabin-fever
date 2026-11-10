@@ -72,6 +72,13 @@ async function check(name, fn) {
     await shot(tv, '02a-lobby-empty');
   });
 
+  await check('Français: the TV language setting translates the TV (and back)', async () => {
+    await tv.selectOption('#set-lang', 'fr');
+    await tv.waitForFunction(() => document.documentElement.lang === 'fr' && /Choisis un jeu/.test(document.getElementById('phase-view').textContent));
+    await tv.selectOption('#set-lang', 'en');
+    await tv.waitForFunction(() => document.documentElement.lang === 'en' && /Choose a game/.test(document.getElementById('phase-view').textContent));
+  });
+
   await check('menu music never stops: loops, moves on, and the watchdog revives it', async () => {
     // test-all mounts a 1-second track in music/title + music/menu, so loops and track changes happen fast.
     await tv.waitForFunction(() => Rumpus.music.status().plays >= 5, null, { timeout: 15000 }).catch(async () => {

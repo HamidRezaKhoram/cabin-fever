@@ -55,7 +55,7 @@ class QuiplashGame extends BaseGame {
       while (red.length || blue.length) { if (red.length) ids.push(red.shift()); if (blue.length) ids.push(blue.shift()); }
     }
     const n = ids.length;
-    const drawn = library.draw('punchline', n, { spicy: this.spicy() });
+    const drawn = library.draw('punchline', n, { spicy: this.spicy(), lang: this.room.settings.lang });
     // Prompt k is answered by players k and k+1 (mod n): everyone gets 2 prompts.
     this.matchups = ids.map((id, k) => ({
       prompt: drawn[k] ? drawn[k].text : PROMPTS[(this.round * n + k) % PROMPTS.length],
