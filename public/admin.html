@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14121f">
+  <title>House Rules &amp; Content</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="play admin-page">
+  <main id="screen">
+    <h1>⚙ House rules</h1>
+    <section class="hl-card">
+      <h2>Timers per game</h2>
+      <p class="hint">Multiplies the TV's timer setting for that game (1× = normal).</p>
+      <div id="timers" class="admin-grid"></div>
+    </section>
+    <section class="hl-card">
+      <h2>🌶 18+ share</h2>
+      <p class="hint">When 18+ is on, how often a prompt comes from the spicy side.</p>
+      <input type="range" id="spicy" min="0" max="60" step="5"> <b id="spicy-val"></b>
+    </section>
+    <section class="hl-card">
+      <h2>🚫 Banned words</h2>
+      <p class="hint">Comma-separated. Masked in answers (d★★k) and never drawn in prompts.</p>
+      <textarea id="banned" rows="3"></textarea>
+    </section>
+    <button id="save-rules" class="wide">Save house rules</button>
+    <p id="rules-msg" class="hint" aria-live="polite"></p>
+
+    <h1>✏️ Content</h1>
+    <section class="hl-card">
+      <label>Pool <select id="pool"></select></label>
+      <input id="search" placeholder="Search…" autocomplete="off">
+      <p id="count" class="hint"></p>
+      <ul id="items" class="admin-items"></ul>
+      <button id="more" class="ghost-btn" hidden>Show more</button>
+    </section>
+    <section class="hl-card">
+      <h2>Add your own</h2>
+      <form id="add-form"></form>
+      <p id="add-msg" aria-live="polite"></p>
+    </section>
+  </main>
+  <script src="/common.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>

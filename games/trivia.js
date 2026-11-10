@@ -7,6 +7,8 @@
  */
 'use strict';
 
+const house = require('./house');
+
 const crypto = require('crypto');
 const { QUESTIONS } = require('./data/trivia-questions');
 const library = require('./library');
@@ -68,7 +70,7 @@ class TriviaGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
-    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('trivia');
     ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
     this.timerFn = fn;

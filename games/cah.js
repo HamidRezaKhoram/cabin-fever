@@ -8,6 +8,8 @@
  */
 'use strict';
 
+const house = require('./house');
+
 const stats = require('./stats');
 
 const crypto = require('crypto');
@@ -82,7 +84,7 @@ class CAHGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
-    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('cah');
     ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
     this.timerFn = fn;

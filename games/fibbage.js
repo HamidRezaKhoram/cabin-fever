@@ -15,6 +15,8 @@
  */
 'use strict';
 
+const house = require('./house');
+
 const stats = require('./stats');
 
 const crypto = require('crypto');
@@ -76,7 +78,7 @@ class FibbageGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
-    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('fibbage');
     ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
     this.timerFn = fn;
@@ -145,7 +147,7 @@ class FibbageGame {
     if (this.destroyed) return;
     if (!this.room.players.has(playerId)) return;
     if (this.phase === 'fib-bluff') {
-      const text = typeof payload.text === 'string' ? payload.text.trim().slice(0, 120) : '';
+      const text = typeof payload.text === 'string' ? house.mask(payload.text.trim().slice(0, 120)) : '';
       if (!text) return;
       if (this.bluffs.has(playerId)) return; // one lie each
       if (normalize(text) === normalize(this.answer)) {

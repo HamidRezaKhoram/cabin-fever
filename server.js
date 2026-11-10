@@ -23,6 +23,7 @@ const { cleanLook, LOOK_PARTS } = require('./games/avatar-schema');
 const botBrain = require('./games/bot-brain');
 const { NightGame, placePoints } = require('./games/night');
 const stats = require('./games/stats');
+const house = require('./games/house');
 const NIGHT_GAP_MS = parseInt(process.env.RUMPUS_NIGHT_GAP_MS || '12000', 10);
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -115,6 +116,72 @@ app.get('/api/music-info', (req, res) => {
   res.json(out);
 });
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
+// --- /admin: house rules + content editor (local network, no auth by design) --------
+app.use('/api/admin', express.json({ limit: '64kb' }));
+const POOL_NAMES = fs.readdirSync(path.join(__dirname, 'games', 'data', 'pools')).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();
+/** One-line summary of a pool item for the editor. @param {Record<string, any>} x */
+const summarize = (x) => x.text || x.q || (x.category ? `${x.category}: ${(x.words || []).join(', ')}` : JSON.stringify(x));
+/** Build a valid pool item from editor fields (or explain what's wrong). @param {string} pool @param {Record<string, any>} b
+ * @returns {{ item?: Record<string, any>, error?: string }} */
+function itemFromForm(pool, b) {
+  const t = (/** @type {unknown} */ v, n = 200) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, n) : '');
+  const a = !!b.a;
+  if (['punchline', 'majority', 'mostlikely', 'telephone', 'cah-white'].includes(pool)) {
+    const text = t(b.text);
+    return text ? { item: { text, a } } : { error: 'Write the prompt text.' };
+  }
+  if (pool === 'cah-black') {
+    const text = t(b.text);
+    return text.includes('____') || text.endsWith('?') ? { item: { text, pick: 1, a } } : { error: 'Prompt cards need a blank (____) or a question mark.' };
+  }
+  if (pool === 'trivia') {
+    const q = t(b.q), correct = t(b.answer, 60), wrong = (Array.isArray(b.wrong) ? b.wrong : []).map((/** @type {unknown} */ w) => t(w, 60)).filter(Boolean);
+    if (!q || !correct || wrong.length !== 3) return { error: 'Trivia needs a question, the right answer and 3 wrong answers.' };
+    const choices = [...wrong, correct].sort(() => crypto.randomInt(3) - 1);
+    return { item: { q, choices, correct: choices.indexOf(correct), cat: t(b.cat, 30) || 'House questions', a } };
+  }
+  if (pool === 'fibbage') {
+    const q = t(b.q), answer = t(b.answer, 60);
+    return q.includes('____') && answer ? { item: { q, answer, a } } : { error: 'Fib Finder needs a fact with a blank (____) and its real answer.' };
+  }
+  if (pool === 'closest') {
+    const q = t(b.q), answer = Number(String(b.answer).replace(/,/g, ''));
+    return q && Number.isFinite(answer) ? { item: { q, answer, unit: t(b.unit, 20), a } } : { error: 'Closest Guess needs a question and a number.' };
+  }
+  if (pool === 'imposter') {
+    const words = [...new Set(String(b.words || '').split(',').map((w) => t(w, 30)).filter(Boolean))];
+    return t(b.category) && words.length >= 4 ? { item: { category: t(b.category, 40), word: words[0], words, a } } : { error: 'Odd One Out needs a category and at least 4 comma-separated words.' };
+  }
+  return { error: 'Unknown pool.' };
+}
+app.get('/api/admin/rules', (/** @type {any} */ req, /** @type {any} */ res) => res.json({ rules: house.get(), games: GAME_LIST.map((m) => ({ id: m.id, name: m.name })), pools: POOL_NAMES }));
+app.post('/api/admin/rules', (/** @type {any} */ req, /** @type {any} */ res) => res.json({ rules: house.update(req.body || {}) }));
+app.get('/api/admin/content/:pool', (/** @type {any} */ req, /** @type {any} */ res) => {
+  const pool = String(req.params.pool);
+  if (!POOL_NAMES.includes(pool)) { res.status(404).json({ error: 'Unknown pool' }); return; }
+  const q = String(req.query.q || '').toLowerCase();
+  const all = library.load(pool).all.filter((/** @type {Record<string, any>} */ x) => !q || summarize(x).toLowerCase().includes(q));
+  const page = Math.max(0, Number(req.query.page) || 0);
+  res.json({
+    total: all.length,
+    items: all.slice(page * 50, page * 50 + 50).map((/** @type {Record<string, any>} */ x) => ({ id: x.id, text: summarize(x), a: !!x.a, custom: !!x.custom, disabled: house.isDisabled(pool, x.id), src: x.src || '' })),
+  });
+});
+app.post('/api/admin/content/:pool', (/** @type {any} */ req, /** @type {any} */ res) => {
+  const pool = String(req.params.pool);
+  if (!POOL_NAMES.includes(pool)) { res.status(404).json({ error: 'Unknown pool' }); return; }
+  const r = itemFromForm(pool, req.body || {});
+  if (!r.item) { res.status(400).json({ error: r.error }); return; }
+  res.json({ item: house.addCustom(pool, r.item) });
+});
+app.post('/api/admin/content/:pool/:id/disabled', (/** @type {any} */ req, /** @type {any} */ res) => {
+  house.setDisabled(String(req.params.pool), String(req.params.id), !!(req.body && req.body.disabled));
+  res.json({ ok: true });
+});
+app.delete('/api/admin/content/:pool/:id', (/** @type {any} */ req, /** @type {any} */ res) => {
+  res.json({ ok: house.removeCustom(String(req.params.pool), String(req.params.id)) });
+});
+
 // Highlights + hall of fame (tonight's room if ?room=CODE).
 app.get('/api/highlights', (/** @type {any} */ req, /** @type {any} */ res) => { // express is untyped here
   const room = rooms.get(String(req.query.room || '').toUpperCase()) || null;
