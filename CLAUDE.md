@@ -123,6 +123,12 @@ scripts/test-all.sh    Runs everything
 Useful flags: `UI_ONLY=1` (just the browser tests), `SKIP_UI=1` (skip them).
 When a test is flaky, fix the race (wait for the right state) — don't add sleeps or retries.
 
+## Future work
+
+`docs/future-features/` holds researched designs that are too big for one change (teams +
+minigames, the Cottage Crush dating game, playtest fix list, backlog). Check it before starting
+new features and update it when something ships.
+
 ## Common tasks
 
 - Run locally: `docker compose up -d --build` → TV `http://<lan-ip>:8012/host`.
