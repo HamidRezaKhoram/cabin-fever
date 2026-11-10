@@ -42,7 +42,7 @@ avatarPick.innerHTML = avatarGrid(myAvatar);
 
 // --- make your character (default) or pick an animal ----------------------
 const maker = window.Rumpus.avatarMaker;
-let myLook = store('rumpus.look') || maker.random();
+let myLook = store('rumpus.look') ? maker.norm(store('rumpus.look')) : maker.random(); // migrates older saved looks
 let avatarMode = store('rumpus.avatarMode') === 'pick' ? 'pick' : 'make';
 const avatarMake = document.getElementById('avatar-make');
 maker.editor(avatarMake, myLook, (l) => { myLook = l; store('rumpus.look', l); });

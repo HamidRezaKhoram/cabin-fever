@@ -603,3 +603,8 @@ body.host.in-game.sidebar-peek #sidebar { display: flex; position: fixed; top: 5
 #join-form .maker button { width: auto; margin-top: 0; }
 #join-form .maker .swatch-opt { width: 48px; height: 48px; }
 #join-form .maker .maker-actions button, #join-form .maker .maker-tab { width: 100%; }
+
+.preset-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.preset-opt { background: var(--panel); padding: 4px; }
+.preset-opt img { width: 100%; height: auto; image-rendering: pixelated; display: block; }
+#join-form .maker .preset-opt { width: 100%; }

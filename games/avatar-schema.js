@@ -7,10 +7,10 @@
 
 /** @type {Record<string, number>} part → number of choices */
 const LOOK_PARTS = {
-  skin: 6, eyes: 6, eyeColor: 5, brows: 5, nose: 4, mouth: 6, cheeks: 3,
-  hair: 9, hairColor: 9, facial: 4,
-  hat: 7, glasses: 4, earrings: 3, accessory: 5,
-  shirtStyle: 5, shirt: 9, bg: 8,
+  faceShape: 5, skin: 6, eyes: 4, mouth: 4, makeup: 4,
+  hair: 13, hairColor: 9, facial: 4,
+  glasses: 4, hat: 7, earrings: 3,
+  top: 9, bg: 8,
 };
 
 /**
