@@ -640,8 +640,53 @@ UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU`,
     return `<img class="${cls}" src="${avatarUrl(i)}" alt="">`;
   }
 
+  // Rocco, the TV's host: an original pixel raccoon. Frames: idle (mouth shut), talk, cheer (arms up).
+  const ROCCO_PAL = { k: '#1a1423', g: '#8d8d9a', d: '#4a4a58', w: '#f4f1e8', m: '#e83f5b', b: '#ffb02e' };
+  const ROCCO_HEAD = `
+..kk........kk..
+.kgdk......kdgk.
+.kggkkkkkkkkggk.
+..kggggggggggk..
+.kggwwwggwwwggk.
+.kgkkwkggkwkkgk.
+.kgkkkkggkkkkgk.
+.kggwwwwwwwwggk.
+..kgwwwkkwwwgk..`;
+  const ROCCO = {
+    idle: ROCCO_HEAD + `
+..kgwwwwwwwwgk..
+...kgwwwwwwgk...
+....kkbbbbkk....
+...kgbbbbbbgk...
+..kgdgbbbbgdgk..
+..kgg.kkkk.ggk..
+..kkk......kkk..`,
+    talk: ROCCO_HEAD + `
+..kgwwwmmwwwgk..
+...kgwwmmwwgk...
+....kkbbbbkk....
+...kgbbbbbbgk...
+..kgdgbbbbgdgk..
+..kgg.kkkk.ggk..
+..kkk......kkk..`,
+    cheer: ROCCO_HEAD + `
+k.kgwwmmmmwwgk.k
+gk.kgwwmmwwgk.kg
+.gkkkkbbbbkkkkg.
+..kgbbbbbbbbgk..
+...kgbbbbbbgk...
+...kg.kkkk.gk...
+...kk......kk...`,
+  };
+  /** @param {'idle' | 'talk' | 'cheer'} frame */
+  function roccoUrl(frame) {
+    const key = 'r' + frame;
+    if (!cache.has(key)) cache.set(key, render(ROCCO[frame], { ...BASE, ...ROCCO_PAL }));
+    return cache.get(key);
+  }
+
   window.Rumpus.sprites = {
-    AVATARS, ICONS, avatarUrl, iconUrl, avatarImg, count: AVATARS.length,
+    AVATARS, ICONS, avatarUrl, iconUrl, avatarImg, count: AVATARS.length, roccoUrl,
     iconSize: (id) => { const r = ICONS[id] ? ICONS[id].trim().split('\n') : []; return r.length ? [r[0].length, r.length] : [0, 0]; },
     avatarName: (i) => AVATARS[((i | 0) % AVATARS.length + AVATARS.length) % AVATARS.length].name,
   };

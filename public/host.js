@@ -56,6 +56,7 @@ music.onTrack(({ name }) => {
 });
 
 // How-to-play cards shown when a game starts.
+/** How-to-play lines per game (intro card + narrator). @type {Record<string, string[]>} */
 const RULES = {
   quiplash: ['You get 2 prompts — a rival gets each one too', 'Everyone else votes: who\'s funnier?', 'Win every vote = SHUTOUT bonus'],
   fibbage: ['Write a believable fake answer', 'Find the TRUE answer among the lies', 'Points for every friend you fool'],
@@ -69,6 +70,24 @@ const RULES = {
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
   minigames: ['Quick real-time challenges on your phone', 'Tap, react, count, roast — rules shown each time', 'Turn on Teams for Red vs Blue!'],
 };
+// --- narrator (Rocco reads prompts aloud and in a speech bubble) -------------
+let lastSpoken = '';
+/** @param {string} gameId */
+function narrateIntro(gameId) {
+  const meta = (state.availableGames || []).find((/** @type {{id: string}} */ x) => x.id === gameId);
+  const rule = (RULES[gameId] || [])[0];
+  if (meta) window.Rumpus.host.say(`${meta.name}! ${rule || ''}`);
+}
+/** The main prompt of a screen (question, prompt card), read once when it appears. @param {any} g */
+function narratePrompt(g) {
+  if (!g || isRevealPhase(state.phase)) return;
+  const text = g.prompt || g.question || g.blackCard || '';
+  if (!text || text === lastSpoken) return;
+  lastSpoken = text;
+  // Let the intro card finish first on a game's first prompt.
+  setTimeout(() => window.Rumpus.host.say(text), 900);
+}
+
 function showIntro(gameId) {
   const meta = (state.availableGames || []).find((g) => g.id === gameId);
   if (!meta) return;
@@ -189,6 +208,7 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-timer') socket.emit('host:settings', { timerScale: +t.value });
   else if (t.id === 'set-spicy') socket.emit('host:settings', { spicy: t.checked });
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
+  else if (t.id === 'set-narrator') window.Rumpus.host.setEnabled(t.checked);
   else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
 });
 fsBtn.addEventListener('click', () => {
@@ -304,6 +324,7 @@ function gamePicker(label) {
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
           <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
+          <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator voice</label>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
         </div>
@@ -509,14 +530,19 @@ function render() {
       leaderId = null;
       showIntro(g.gameId);
       music.play('intro', { then: cueFor(state) });
+      narrateIntro(g.gameId);
     } else if (phase === 'gameover') {
       sfx.win(); fx.confetti(240);
+      const champ = (g.standings || [])[0];
+      if (champ && champ.score > 0) { window.Rumpus.host.cheer(); window.Rumpus.host.say(`${champ.nickname} wins with ${champ.score} points!`); }
       music.play('victory', { then: 'scoreboard' });
       lastAwards.forEach((a, i) => setTimeout(() => sfx.award(), 1000 + i * 500));
     } else {
       music.setIntensity(g.multiplier === 2 ? 2 : 1);
       music.play(cueFor(state));
+      narratePrompt(g);
       if (isRevealPhase(phase)) {
+        window.Rumpus.host.cheer();
         if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();
         else sfx.reveal();
         shake();

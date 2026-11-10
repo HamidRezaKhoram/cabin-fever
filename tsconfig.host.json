@@ -19,6 +19,7 @@
     "public/avatar-maker.js",
     "public/fx.js",
     "public/games.js",
+    "public/host-character.js",
     "public/host.js"
   ]
 }

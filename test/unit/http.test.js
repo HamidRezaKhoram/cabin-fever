@@ -121,3 +121,13 @@ test('server shuts down promptly on SIGTERM (docker stop)', async () => {
   await s2.stop();
   assert.ok(Date.now() - t0 < 3000);
 });
+
+test('/api/tts: WAV from the offline voice, or a clean 501 when espeak-ng is not installed', async () => {
+  const r = await fetch(srv.url + '/api/tts?text=' + encodeURIComponent('Hello cottage'));
+  assert.ok([200, 501].includes(r.status), `status ${r.status}`);
+  if (r.status === 200) {
+    assert.strictEqual(r.headers.get('content-type'), 'audio/wav');
+    assert.strictEqual(Buffer.from(await r.arrayBuffer()).subarray(0, 4).toString(), 'RIFF');
+  } else assert.match((await r.json()).error, /narrator/);
+  assert.strictEqual((await fetch(srv.url + '/api/tts?text=')).status, 400);
+});

@@ -657,3 +657,10 @@ body.host.in-game.sidebar-peek #sidebar { display: flex; position: fixed; top: 5
 /* ---------- colour-blind friendly palette (Okabe–Ito): right = blue, wrong/danger = vermillion ---------- */
 body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: #e69f00; }
 /* Team red/blue stay as they are: red vs blue reads clearly for red-green colour blindness. */
+/* ---------- Rocco, the TV host ---------- */
+#rocco { position: fixed; right: 2vw; bottom: 1.5vh; z-index: 40; display: flex; align-items: flex-end; gap: 10px; pointer-events: none; }
+#rocco[hidden] { display: none; }
+.rocco-img { width: max(64px, 11vh); height: max(64px, 11vh); image-rendering: pixelated; }
+.rocco-bubble { max-width: min(46vw, 640px); background: var(--ink); color: var(--edge); font-size: max(22px, 3vh); padding: 10px 14px;
+  box-shadow: 0 0 0 4px var(--edge); margin-bottom: 4vh; animation: pop-in 0.3s steps(9) both; }
+.rocco-bubble[hidden] { display: none; }
