@@ -61,6 +61,9 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
   category, vote, reveal, final, victory, scoreboard. Round 2 plays the game theme faster and
   busier (`setIntensity`); the final ×3 question switches to the high-energy `final` cue.
 - User tracks: `music/<scenario>/` (see music/README.md) override the chiptunes per scenario.
+- After adding/changing a bundled track run `python3 tools/music-manifest.py` (needs ffmpeg):
+  it records bitrate + EBU R128 loudness so the TV sets each song's level before it plays.
+  Tests enforce a quality floor (≥128 kbps stereo / ≥96 kbps mono) and an up-to-date manifest.
 
 ## Game-flow rules (games/flow.js)
 
@@ -70,8 +73,11 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
 - **Pace votes from phones** (majority of connected players): `skipq` replaces the current
   question (only games listing `skippablePhases`; never player-written games), `hurry` cuts the
   remaining time to 10 s, `ready` ends a reveal early. Votes reset whenever the phase/question changes.
-- Profile pictures: players draw their own by default (`player:drawAvatar`, served at
-  `/avatar/:code/:id`), or pick one of the 17 pixel animals.
+- Profile pictures: the character maker (`public/avatar-maker.js`, counts in
+  `games/avatar-schema.js`) or one of the 17 pixel animals. New options are **appended** (saved
+  looks keep their indexes); `ORDER` controls display order. Keep it diverse (textured hair,
+  braids/locs, headwear like hijab/turban/headwrap, 10+ skin tones) — a test checks every option
+  renders distinctly.
 
 ## Debug mode
 

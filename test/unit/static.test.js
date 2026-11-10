@@ -159,6 +159,29 @@ test('character maker options match the server schema', () => {
   assert.deepStrictEqual(window.Rumpus.avatarMaker.counts, LOOK_PARTS);
 });
 
+test('character maker: every option shows up once and draws something different (diverse hair, skin, headwear)', () => {
+  const m = window.Rumpus.avatarMaker;
+  for (const [p, order] of Object.entries(m.ORDER)) {
+    assert.deepStrictEqual([...order].sort((a, b) => a - b), m.NAMES[p].map((_, i) => i), `${p}: display order must list every option once`);
+  }
+  const base = { faceShape: 1, skin: 3, eyes: 0, mouth: 0, makeup: 0, hair: 0, hairColor: 0, facial: 0, glasses: 0, hat: 0, earrings: 0, top: 0, bg: 0 };
+  for (const p of ['hair', 'hat', 'facial', 'eyes', 'skin', 'hairColor']) {
+    const seen = new Map();
+    m.NAMES[p].forEach((name, i) => {
+      const key = JSON.stringify(m.build({ ...base, hair: p === 'hairColor' || p === 'facial' ? 13 : base.hair, [p]: i, ...(p === 'facial' ? { hairColor: 3 } : {}) }));
+      assert.ok(!seen.has(key), `${p}: "${name}" looks identical to "${seen.get(key)}"`);
+      seen.set(key, name);
+    });
+  }
+  const want = ['Afro', 'Afro puffs', 'Box braids', 'Cornrows', 'Locs', 'Coils', 'Twists', 'Long curls', 'Bantu knots', 'Waves', 'Long plait'];
+  for (const n of want) assert.ok(m.NAMES.hair.includes(n), `hair option ${n}`);
+  for (const n of ['Hijab', 'Turban', 'Headwrap', 'Kufi', 'Durag']) assert.ok(m.NAMES.hat.includes(n), `headwear ${n}`);
+  assert.ok(m.NAMES.skin.length >= 10, 'at least 10 skin tones');
+  // A hijab covers the hair completely: any hair style looks the same under it.
+  const hj = m.NAMES.hat.indexOf('Hijab');
+  assert.strictEqual(JSON.stringify(m.build({ ...base, hat: hj, hair: 13 })), JSON.stringify(m.build({ ...base, hat: hj, hair: 22 })));
+});
+
 test('character maker: older saved looks migrate to the current parts', () => {
   const m = window.Rumpus.avatarMaker;
   const old = { skin: 2, hair: 8, hairColor: 3, eyes: 5, mouth: 5, facial: 1, glasses: 2, hat: 6, shirt: 4, brows: 3 };
