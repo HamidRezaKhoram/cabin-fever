@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Run every HomeJack test. Must pass before and after each change (see CLAUDE.md).
+# Node isn't needed on the host: tests run in containers (podman or docker).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+ROOT="$PWD"
+CT=$(command -v podman || command -v docker)
+NODE_IMG=docker.io/library/node:20-alpine
+PW_IMG=mcr.microsoft.com/playwright:v1.49.1-noble
+PORT=${UI_PORT:-18012}
+SKIP_UI=${SKIP_UI:-0}
+
+step() { printf '\n\033[1;33m== %s ==\033[0m\n' "$*"; }
+
+if [ "${UI_ONLY:-0}" != 1 ]; then
+step "1/4 content pools are up to date"
+python3 tools/build-content.py >/dev/null
+python3 tools/make-icons.py >/dev/null
+git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated files changed — commit them:"; git status --short games/data/pools public/sprites.js; }
+
+step "2/4 unit + integration tests (node --test)"
+"$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
+  cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
+  node --test --test-concurrency=4 test/unit/ && node test/e2e-new.js'
+
+fi
+if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
+
+step "3/4 build image + start server"
+"$CT" build -q -t homejack:test . >/dev/null
+"$CT" rm -f homejack-test >/dev/null 2>&1 || true
+"$CT" run -d --name homejack-test --network host -e PORT=$PORT \
+  -e RUMPUS_DEBUG=1 -e RUMPUS_ANSWER_MS=20000 -e RUMPUS_VOTE_MS=8000 -e RUMPUS_RESULTS_MS=2000 -e RUMPUS_REVEAL_MS=2000 \
+  homejack:test >/dev/null
+trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
+for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
+
+step "4/4 browser tests (TV + 3 phones)"
+mkdir -p "$ROOT/test/ui/.shots"
+"$CT" run --rm --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots \
+  -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v homejack-pw:/pw "$PW_IMG" sh -c '
+  cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/run.js /pw/run.js && node /pw/run.js'
+
+printf '\n\033[1;32mALL TESTS PASSED\033[0m\n'

@@ -237,6 +237,9 @@
   add('victory', { hand: true, name: 'Champion\'s Fanfare', bpm: 150, arp: 'up', bass: 'octave', drums: 'pop', once: true,
     chords: ['C', 'F', 'G', 'C'], lead: ['C5 E5 G5 C6 . G5 C6 .', 'A5 C6 F6 . A5 C6 F6 .', 'B5 D6 G6 . D6 B5 G5 .', 'C6 . . . . . . -'] });
   [801, 802, 803].forEach((seed, i) => add('victory', { seed, mode: 'major', bpm: 150 + i * 6, bars: 4, lead: 'bouncy', drums: 'four', arp: 'up', bass: 'octave', root: 60 + i * 2, once: true }));
+  // Category-pick jingles (2)
+  add('category', { seed: 951, mode: 'lydian', bpm: 132, lead: 'bouncy', drums: 'march', arp: 'updown', bass: 'walk', root: 64, bars: 8 });
+  add('category', { seed: 952, mode: 'mixo', bpm: 128, lead: 'staccato', drums: 'four', arp: 'up', bass: 'octave', root: 62, bars: 8 });
   // Game-start stingers, play once (5)
   [901, 902, 903, 904, 905].forEach((seed, i) => add('intro', { seed, mode: i % 2 ? 'mixo' : 'major', bpm: 140, bars: 2, lead: 'bouncy', drums: 'march', arp: 'up', bass: 'octave', root: 62 + i, once: true }));
 

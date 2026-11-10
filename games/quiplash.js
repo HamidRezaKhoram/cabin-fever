@@ -1,319 +1,193 @@
 /*
- * Rumpus quip game module (Quiplash-style prompt/vote loop).
- * Licensed under AGPLv3 — see LICENSE.
+ * "Punchline" — head-to-head comedy. Every round each player answers two
+ * prompts; every prompt is answered by exactly two players. Then the
+ * matchups are shown one at a time and everyone else votes for the funnier
+ * answer. 100 per vote, +250 SHUTOUT when one answer takes every vote
+ * (2+ voters). Final round is worth double. AGPLv3 — see LICENSE.
  */
 'use strict';
 
 const crypto = require('crypto');
 const library = require('./library');
+const { BaseGame, shuffle, cleanText } = require('./base');
 
 const PROMPTS = [
-  'Worst thing to say on a first date',
-  'The real reason the dinosaurs went extinct',
-  'A rejected flavor of sports drink',
-  'The worst possible name for a cruise ship',
-  'Something you should never say to your barber',
-  'A terrible slogan for a funeral home',
-  'The next big fitness craze',
-  'What robots dream about',
-  'The worst superpower to have',
-  'A bad name for a law firm',
-  'Something you would find in a haunted refrigerator',
-  'The most useless smartphone app imaginable',
-  'A terrible opening line for a wedding toast',
-  'What cats would say if they could talk',
+  'The worst thing to say on a first date', 'The real reason the dinosaurs went extinct',
+  'A rejected flavour of sports drink', 'The worst possible name for a cruise ship',
+  'Something you should never say to your barber', 'A terrible slogan for a funeral home',
 ];
 
-const ANSWER_MS = parseInt(process.env.RUMPUS_ANSWER_MS || '60000', 10);
-const VOTE_MS = parseInt(process.env.RUMPUS_VOTE_MS || '30000', 10);
-const RESULTS_MS = parseInt(process.env.RUMPUS_RESULTS_MS || '8000', 10);
-const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_ROUNDS || '3', 10);
+const ANSWER_MS = parseInt(process.env.RUMPUS_ANSWER_MS || '75000', 10);
+const VOTE_MS = parseInt(process.env.RUMPUS_VOTE_MS || '20000', 10);
+const RESULTS_MS = parseInt(process.env.RUMPUS_RESULTS_MS || '7000', 10);
+const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_ROUNDS || '2', 10);
 const POINTS_PER_VOTE = 100;
+const SHUTOUT_BONUS = 250;
 
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-class QuiplashGame {
-  // room: the server's room object (players Map with .score on each player)
-  // push: callback that broadcasts a room:stateUpdate to host + all players
+class QuiplashGame extends BaseGame {
   constructor(room, push) {
-    this.room = room;
-    this.push = push;
-    this.phase = 'answering';
-    this.round = 0;
-    this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
-    this.deck = shuffle(PROMPTS.slice());
-    this.prompt = null;
-    this.answers = []; // { playerId, text }
-    this.votes = new Map(); // playerId -> answer index
-    this.results = null;
-    this.timer = null;
-    this.endsAt = null;
-    this.destroyed = false;
+    super(room, push);
+    this.totalRounds = this.rounds(TOTAL_ROUNDS);
   }
 
-  start() {
-    this.nextRound();
-  }
+  start() { this.nextRound(); }
 
-  destroy() {
-    this.destroyed = true;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-  }
+  get skippablePhases() { return ['answering']; }
 
-  setTimer(ms, fn) {
-    if (this.timer) clearTimeout(this.timer);
-    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
-    ms = Math.round(ms * scale);
-    this.endsAt = Date.now() + ms;
-    this.timerFn = fn;
-    this.timer = setTimeout(() => {
-      this.timerFn = null;
-      if (!this.destroyed) fn();
-    }, ms);
-  }
-
-  isFinal() {
-    return this.totalRounds > 1 && this.round === this.totalRounds;
-  }
-
+  // Round 1 ×1, later rounds ×2, and the very last matchup of the game ×3.
   mult() {
-    return this.isFinal() ? 2 : 1;
-  }
-
-  spicy() {
-    return !(this.room.settings && this.room.settings.spicy === false);
-  }
-
-  // Host pressed "skip": run the pending phase transition now.
-  skip() {
-    if (!this.timerFn || this.destroyed) return;
-    const fn = this.timerFn;
-    clearTimeout(this.timer);
-    this.timer = null;
-    this.timerFn = null;
-    fn();
+    if (this.round < 2 && this.totalRounds > 1) return 1;
+    if (this.totalRounds < 2) return 1;
+    const last = this.round === this.totalRounds && this.matchups && this.matchIndex === this.matchups.length - 1;
+    return last ? 3 : 2;
   }
 
   nextRound() {
-    if (this.round >= this.totalRounds) {
-      this.gameOver();
-      return;
-    }
+    if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
-    const item = library.drawOne('punchline', { spicy: this.spicy() });
-    this.prompt = item ? item.text : PROMPTS[this.round % PROMPTS.length];
-    this.answers = [];
-    this.votes = new Map();
-    this.results = null;
+    const ids = shuffle(this.playerIds());
+    const n = ids.length;
+    const drawn = library.draw('punchline', n, { spicy: this.spicy() });
+    // Prompt k is answered by players k and k+1 (mod n): everyone gets 2 prompts.
+    this.matchups = ids.map((id, k) => ({
+      prompt: drawn[k] ? drawn[k].text : PROMPTS[(this.round * n + k) % PROMPTS.length],
+      authors: [ids[k], ids[(k + 1) % n]],
+      answers: [null, null],
+    }));
+    this.todo = new Map(ids.map((id) => [id, []]));
+    this.matchups.forEach((m, mi) => m.authors.forEach((a, side) => this.todo.get(a).push({ mi, side })));
+    for (const list of this.todo.values()) shuffle(list);
+    this.matchIndex = -1;
     this.phase = 'answering';
-    this.setTimer(ANSWER_MS, () => this.finishAnswering());
+    this.setTimer(ANSWER_MS, () => this.startVoting());
     this.push();
   }
 
-  handleSubmit(playerId, payload) {
-    if (this.destroyed) return;
+  remaining(id) {
+    return (this.todo.get(id) || []).filter(({ mi, side }) => this.matchups[mi].answers[side] == null);
+  }
+
+  handleSubmit(id, payload) {
     if (this.phase === 'answering') {
-      const text = typeof payload.text === 'string' ? payload.text.trim().slice(0, 120) : '';
-      if (!text) return;
-      if (this.answers.some((a) => a.playerId === playerId)) return; // one answer each
-      if (!this.room.players.has(playerId)) return;
-      this.answers.push({ playerId, text });
-      if (this.answers.length >= this.room.players.size) {
-        this.finishAnswering();
-      } else {
-        this.push();
-      }
+      const text = cleanText(payload.text, 100);
+      const next = this.remaining(id)[0];
+      if (!text || !next) return;
+      this.matchups[next.mi].answers[next.side] = text;
+      if (this.playerIds().every((p) => this.remaining(p).length === 0)) this.startVoting();
+      else this.push();
     } else if (this.phase === 'voting') {
-      const choice = payload.choice;
-      if (!Number.isInteger(choice) || choice < 0 || choice >= this.answers.length) return;
-      if (this.answers[choice].playerId === playerId) return; // no voting for yourself
-      if (this.votes.has(playerId)) return; // one vote each
-      if (!this.room.players.has(playerId)) return;
-      this.votes.set(playerId, choice);
-      if (this.votes.size >= this.room.players.size) {
-        this.finishVoting();
-      } else {
-        this.push();
-      }
+      const m = this.matchups[this.matchIndex];
+      const c = payload.choice;
+      if (m.authors.includes(id) || this.votes.has(id) || (c !== 0 && c !== 1)) return;
+      this.votes.set(id, c);
+      if (this.voters().every((v) => this.votes.has(v))) this.finishMatchup();
+      else this.push();
     }
   }
 
-  finishAnswering() {
+  voters() {
+    const m = this.matchups[this.matchIndex];
+    return this.playerIds().filter((p) => !m.authors.includes(p));
+  }
+
+  startVoting() {
     if (this.phase !== 'answering') return;
-    if (this.answers.length < 2) {
-      // Not enough answers to vote on — go straight to results.
-      this.finishVoting();
-      return;
-    }
-    shuffle(this.answers); // hide join order
-    this.phase = 'voting';
+    this.nextMatchup();
+  }
+
+  nextMatchup() {
+    this.matchIndex += 1;
+    if (this.matchIndex >= this.matchups.length) return this.nextRound();
+    const m = this.matchups[this.matchIndex];
     this.votes = new Map();
-    this.setTimer(VOTE_MS, () => this.finishVoting());
+    // Forfeits: if one or both players didn't answer, skip straight to results.
+    if (m.answers[0] == null || m.answers[1] == null || this.voters().length === 0) return this.finishMatchup();
+    this.phase = 'voting';
+    this.setTimer(VOTE_MS, () => this.finishMatchup());
     this.push();
   }
 
-  finishVoting() {
-    if (this.phase !== 'answering' && this.phase !== 'voting') return;
-    const tally = this.answers.map(() => 0);
-    for (const idx of this.votes.values()) tally[idx] += 1;
-
-    // SWEEP: every vote cast went to one answer (needs 2+ voters).
-    const sweepIdx = this.votes.size >= 2 ? tally.findIndex((n) => n === this.votes.size) : -1;
-    const results = this.answers.map((a, i) => {
-      const p = this.room.players.get(a.playerId);
-      const pts = (tally[i] * POINTS_PER_VOTE + (i === sweepIdx ? 250 : 0)) * this.mult();
-      if (p) p.score += pts;
+  finishMatchup() {
+    const m = this.matchups[this.matchIndex];
+    const tally = [0, 0];
+    for (const c of this.votes.values()) tally[c] += 1;
+    const voterCount = this.voters().length;
+    // A missing answer forfeits: the other side takes every vote.
+    if (m.answers[0] == null && m.answers[1] != null) { tally[1] = voterCount; tally[0] = 0; }
+    if (m.answers[1] == null && m.answers[0] != null) { tally[0] = voterCount; tally[1] = 0; }
+    const totalVotes = tally[0] + tally[1];
+    const side = (i) => {
+      const id = m.authors[i];
+      const shutout = totalVotes >= 2 && tally[i] === totalVotes;
+      const gained = this.award(id, tally[i] * POINTS_PER_VOTE + (shutout ? SHUTOUT_BONUS : 0));
       return {
-        index: i,
-        text: a.text,
-        nickname: p ? p.nickname : '(left the game)',
-        votes: tally[i],
-        gained: pts,
-        sweep: i === sweepIdx,
-        voters: [...this.votes].filter(([, c]) => c === i).map(([v]) => {
-          const vp = this.room.players.get(v);
-          return vp ? vp.nickname : '?';
-        }),
+        text: m.answers[i] == null ? '(no answer — forfeit!)' : m.answers[i],
+        nickname: this.nick(id), votes: tally[i], gained, shutout,
+        pct: totalVotes ? Math.round((tally[i] / totalVotes) * 100) : 0,
+        voters: [...this.votes].filter(([, c]) => c === i).map(([v]) => this.nick(v)),
       };
-    });
-    results.sort((x, y) => y.votes - x.votes);
-    const maxVotes = results.length ? results[0].votes : 0;
-    this.results = {
-      list: results,
-      winners: maxVotes > 0 ? results.filter((r) => r.votes === maxVotes) : [],
+    };
+    const sides = [side(0), side(1)];
+    this.result = {
+      prompt: m.prompt,
+      sides,
+      winner: tally[0] === tally[1] ? -1 : tally[0] > tally[1] ? 0 : 1,
     };
     this.phase = 'results';
-    this.setTimer(RESULTS_MS, () => this.nextRound());
+    this.setTimer(RESULTS_MS, () => this.nextMatchup(), false);
     this.push();
   }
 
-  gameOver() {
-    this.phase = 'gameover';
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.endsAt = null;
-    this.push();
-  }
-
-  onPlayerLeft(playerId) {
-    if (this.destroyed) return;
-    this.votes.delete(playerId);
-    if (this.room.players.size === 0) return;
-    // A departure may mean everyone remaining has already acted.
-    if (this.phase === 'answering') {
-      const remaining = [...this.room.players.keys()];
-      if (remaining.every((id) => this.answers.some((a) => a.playerId === id))) {
-        this.finishAnswering();
-      }
-    } else if (this.phase === 'voting') {
-      if (this.votes.size >= this.room.players.size) this.finishVoting();
+  onPlayerLeft() {
+    if (this.phase === 'answering' && this.room.players.size && this.playerIds().every((p) => this.remaining(p).length === 0)) {
+      this.startVoting();
+    } else if (this.phase === 'voting' && this.voters().every((v) => this.votes.has(v))) {
+      this.finishMatchup();
     }
-  }
-
-  standings() {
-    return [...this.room.players.values()]
-      .map((p) => ({ nickname: p.nickname, score: p.score }))
-      .sort((a, b) => b.score - a.score);
   }
 
   // --- views ---------------------------------------------------------------
 
-  hostGameState() {
-    const base = {
-      gameId: 'quiplash',
-      round: this.round,
-      totalRounds: this.totalRounds,
-      endsAt: this.endsAt,
-      doublePoints: this.isFinal(),
-    };
-    switch (this.phase) {
-      case 'answering':
-        return {
-          ...base,
-          prompt: this.prompt,
-          submittedCount: this.answers.length,
-          totalPlayers: this.room.players.size,
-        };
-      case 'voting':
-        return {
-          ...base,
-          prompt: this.prompt,
-          answers: this.answers.map((a, i) => ({ index: i, text: a.text })),
-          votedCount: this.votes.size,
-          totalPlayers: this.room.players.size,
-        };
-      case 'results':
-        return {
-          ...base,
-          prompt: this.prompt,
-          results: this.results.list,
-          winners: this.results.winners,
-        };
-      case 'gameover':
-        return { ...base, standings: this.standings() };
-      default:
-        return base;
+  hostView() {
+    if (this.phase === 'answering') {
+      const need = this.matchups.length * 2;
+      const done = this.matchups.reduce((n, m) => n + m.answers.filter((a) => a != null).length, 0);
+      return { submittedCount: done, totalAnswers: need, totalPlayers: this.room.players.size, matchCount: this.matchups.length };
     }
+    const m = this.matchups[this.matchIndex];
+    const common = { prompt: m.prompt, matchIndex: this.matchIndex, matchCount: this.matchups.length };
+    if (this.phase === 'voting') {
+      return { ...common, answers: m.answers.map((text) => ({ text })), votedCount: this.votes.size, voterCount: this.voters().length };
+    }
+    return { ...common, result: this.result };
   }
 
-  playerView(playerId) {
-    const base = {
-      gameId: 'quiplash',
-      round: this.round,
-      totalRounds: this.totalRounds,
-      endsAt: this.endsAt,
-      doublePoints: this.isFinal(),
-    };
-    switch (this.phase) {
-      case 'answering':
-        return {
-          gameState: { ...base, prompt: this.prompt },
-          you: { submitted: this.answers.some((a) => a.playerId === playerId) },
-        };
-      case 'voting':
-        return {
-          gameState: {
-            ...base,
-            prompt: this.prompt,
-            // Each player only sees answers they are allowed to vote for —
-            // their own is filtered out server-side.
-            answers: this.answers
-              .map((a, i) => ({ index: i, text: a.text, mine: a.playerId === playerId }))
-              .filter((a) => !a.mine)
-              .map(({ index, text }) => ({ index, text })),
-          },
-          you: { voted: this.votes.has(playerId) },
-        };
-      case 'results':
-        return {
-          gameState: {
-            ...base,
-            prompt: this.prompt,
-            results: this.results.list,
-            winners: this.results.winners,
-          },
-          you: {},
-        };
-      case 'gameover':
-        return { gameState: { ...base, standings: this.standings() }, you: {} };
-      default:
-        return { gameState: base, you: {} };
+  playerOnly(id) {
+    if (this.phase === 'answering') {
+      const left = this.remaining(id);
+      const next = left[0];
+      return {
+        gameState: { prompt: next ? this.matchups[next.mi].prompt : null, promptNumber: 3 - left.length, promptTotal: 2 },
+        you: { submitted: !next },
+      };
     }
+    const m = this.matchups[this.matchIndex];
+    if (this.phase === 'voting') {
+      return {
+        gameState: { prompt: m.prompt, answers: m.answers.map((text) => ({ text })) },
+        you: { isAuthor: m.authors.includes(id), voted: this.votes.has(id) },
+      };
+    }
+    const mine = m.authors.indexOf(id);
+    return { gameState: { prompt: m.prompt, result: this.result }, you: { side: mine } };
   }
 }
 
 QuiplashGame.meta = {
   id: 'quiplash',
   name: 'Punchline',
-  blurb: 'Answer a silly prompt, then vote for the best answer.',
-  minPlayers: 2,
+  blurb: 'Head-to-head comedy: two players, one prompt, everyone else votes.',
+  minPlayers: 3,
 };
 
 module.exports = QuiplashGame;

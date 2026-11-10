@@ -78,7 +78,15 @@
     redraw();
     return {
       isEmpty: () => strokes.length === 0,
-      toDataURL: () => { end(); return canvas.toDataURL('image/jpeg', 0.72); },
+      toDataURL: (size) => {
+        end();
+        if (!size) return canvas.toDataURL('image/jpeg', 0.72);
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        c.getContext('2d').drawImage(canvas, 0, 0, size, size);
+        return c.toDataURL('image/jpeg', 0.8);
+      },
+      clear: () => { strokes.length = 0; redraw(); },
     };
   }
 

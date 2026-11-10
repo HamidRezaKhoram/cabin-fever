@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const flow = require('./flow');
 
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
 
@@ -104,13 +105,23 @@ class BaseGame {
     return p ? p.nickname : '(left)';
   }
 
-  // Final round of a multi-round game is worth double.
-  isFinal() {
-    return this.doubleFinal !== false && this.totalRounds > 1 && this.round === this.totalRounds;
+  // Escalating stakes: first half ×1, second half ×2, final question ×3.
+  // Games without rounds of their own (doubleFinal = false) always score ×1.
+  mult() {
+    return this.doubleFinal === false ? 1 : flow.stage(this.round, this.totalRounds);
   }
 
-  mult() {
-    return this.isFinal() ? 2 : 1;
+  isFinal() {
+    return this.mult() > 1;
+  }
+
+  // Majority voted to skip: replay this round with fresh content.
+  skipQuestion() {
+    if (!(this.skippablePhases || []).includes(this.phase)) return;
+    this.skipSeq = (this.skipSeq || 0) + 1;
+    this.clearTimer();
+    this.round -= 1;
+    this.nextRound();
   }
 
   // Returns the points actually awarded (after the final-round multiplier).
@@ -154,7 +165,10 @@ class BaseGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
-      doublePoints: this.isFinal(),
+      doublePoints: this.mult() > 1,
+      multiplier: this.mult(),
+      stage: this.doubleFinal === false ? 0 : flow.stage(this.round, this.totalRounds),
+      skipSeq: this.skipSeq || 0,
     };
   }
 

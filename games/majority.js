@@ -61,6 +61,8 @@ class MajorityGame extends BaseGame {
 
   start() { this.nextRound(); }
 
+  get skippablePhases() { return ['mr-answer']; }
+
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;

@@ -6,10 +6,23 @@
 (function () {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  const clock = () => window.Rumpus.clock;
+
   // ---- Pixel wipe: blocks fill the screen in random order, then clear.
+  // 9 frames in + 9 frames out at 30 fps (~0.6 s total).
+  const WIPE_FRAMES = 9;
   let wipeCanvas = null;
+  let wipeState = null;
   function wipe(midpoint, colors = ['#ffb02e', '#5ee0a0', '#ff5d73', '#7c5cff', '#14121f']) {
     if (reduced) { midpoint(); return; }
+    if (wipeState) {
+      // Already wiping. Before the middle: swap in the newest screen there.
+      // Past the middle: the screen was already swapped, so apply this one now
+      // (otherwise the callback would never run and the TV would freeze).
+      if (wipeState.f < WIPE_FRAMES) wipeState.midpoint = midpoint;
+      else midpoint();
+      return;
+    }
     if (!wipeCanvas) {
       wipeCanvas = document.createElement('canvas');
       wipeCanvas.className = 'wipe';
@@ -20,33 +33,34 @@
     const g = wipeCanvas.getContext('2d');
     const cells = [];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) cells.push([x, y, (x + y * 0.6) / (cols + rows * 0.6) + Math.random() * 0.25]);
-    cells.sort((a, b) => a[2] - b[2]);
-    const dur = 280;
-    let t0 = null, swapped = false;
-    wipeCanvas.style.display = 'block';
+    cells.sort((p, q) => p[2] - q[2]);
     const col = colors[(Math.random() * colors.length) | 0];
-    function frame(now) {
-      if (t0 === null) t0 = now;
-      const e = now - t0;
+    wipeState = { midpoint, f: 0 };
+    wipeCanvas.style.display = 'block';
+    const off = clock().add(() => {
+      const st = wipeState;
+      st.f++;
       g.clearRect(0, 0, cols, rows);
-      if (e < dur) {
-        const n = Math.floor((e / dur) * cells.length);
-        g.fillStyle = col;
+      g.fillStyle = col;
+      if (st.f <= WIPE_FRAMES) {
+        const n = Math.round((st.f / WIPE_FRAMES) * cells.length);
         for (let i = 0; i < n; i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
+        if (st.f === WIPE_FRAMES) st.midpoint();
       } else {
-        if (!swapped) { swapped = true; midpoint(); }
-        const n = Math.floor(((e - dur) / dur) * cells.length);
-        g.fillStyle = col;
+        const n = Math.round(((st.f - WIPE_FRAMES) / WIPE_FRAMES) * cells.length);
         for (let i = n; i < cells.length; i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
+        if (st.f >= WIPE_FRAMES * 2) {
+          off();
+          wipeCanvas.style.display = 'none';
+          wipeState = null;
+        }
       }
-      if (e < dur * 2) requestAnimationFrame(frame);
-      else wipeCanvas.style.display = 'none';
-    }
-    requestAnimationFrame(frame);
+    });
   }
+  const isWiping = () => !!wipeState;
 
-  // ---- Confetti: chunky pixel squares with gravity.
-  let confCanvas = null, parts = [], confRaf = null;
+  // ---- Confetti: chunky pixel squares with gravity, stepped at 30 fps.
+  let confCanvas = null, parts = [], confOff = null;
   function confetti(n = 160) {
     if (reduced) return;
     if (!confCanvas) {
@@ -58,23 +72,22 @@
     confCanvas.width = W; confCanvas.height = H;
     const cols = ['#ffb02e', '#5ee0a0', '#ff5d73', '#7c5cff', '#4fc3f7', '#ffd23f', '#ffffff'];
     for (let i = 0; i < n; i++) {
-      parts.push({ x: W / 2 + (Math.random() - 0.5) * 120, y: H + 4, vx: (Math.random() - 0.5) * 4, vy: -3 - Math.random() * 4.5,
-        c: cols[(Math.random() * cols.length) | 0], s: Math.random() < 0.3 ? 2 : 1, life: 140 + Math.random() * 60 });
+      parts.push({ x: W / 2 + (Math.random() - 0.5) * 120, y: H + 4, vx: (Math.random() - 0.5) * 8, vy: -6 - Math.random() * 9,
+        c: cols[(Math.random() * cols.length) | 0], s: Math.random() < 0.3 ? 2 : 1, life: 70 + Math.random() * 30 });
     }
-    if (confRaf) return;
+    if (confOff) return;
     const g = confCanvas.getContext('2d');
     confCanvas.style.display = 'block';
-    (function frame() {
+    confOff = clock().add(() => {
       g.clearRect(0, 0, W, H);
       parts = parts.filter((p) => p.life-- > 0 && p.y < H + 10);
       for (const p of parts) {
-        p.vy += 0.09; p.vx *= 0.99; p.x += p.vx; p.y += p.vy;
+        p.vy += 0.36; p.vx *= 0.98; p.x += p.vx; p.y += p.vy;
         g.fillStyle = p.c;
-        g.fillRect(p.x | 0, p.y | 0, p.s, p.s);
+        g.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
       }
-      if (parts.length) confRaf = requestAnimationFrame(frame);
-      else { confRaf = null; confCanvas.style.display = 'none'; }
-    })();
+      if (!parts.length) { confOff(); confOff = null; confCanvas.style.display = 'none'; }
+    });
   }
 
   // ---- Floating emoji reaction with the sender's avatar.
@@ -110,5 +123,5 @@
     setTimeout(() => el.remove(), 2300);
   }
 
-  window.Rumpus.fx = { wipe, confetti, reaction, scorePop, banner };
+  window.Rumpus.fx = { wipe, isWiping, confetti, reaction, scorePop, banner };
 })();

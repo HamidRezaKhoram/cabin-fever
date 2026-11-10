@@ -6,8 +6,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test:e2e": "node test/music.js && node test/library.js && node test/e2e.js && node test/e2e-new.js",
-    "build:content": "python3 tools/build-content.py"
+    "test": "node --test test/unit/ && node test/e2e-new.js",
+    "test:all": "./scripts/test-all.sh",
+    "build:content": "python3 tools/build-content.py",
+    "build:icons": "python3 tools/make-icons.py"
   },
   "dependencies": {
     "express": "^4.19.2",

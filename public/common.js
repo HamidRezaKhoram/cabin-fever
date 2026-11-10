@@ -1,7 +1,7 @@
 /* Rumpus shared client helpers. AGPLv3, see LICENSE. */
 'use strict';
 
-window.Rumpus = (function () {
+window.Rumpus = Object.assign(window.Rumpus || {}, (function () {
   function esc(s) {
     const d = document.createElement('div');
     d.textContent = String(s == null ? '' : s);
@@ -77,11 +77,19 @@ window.Rumpus = (function () {
   // Avatar <img> for a nickname, looked up in the latest room state.
   let lastState = null;
   function setState(s) { lastState = s; }
+  // A player's picture: their own drawing if they made one, else their pixel animal.
+  function playerUrl(p) {
+    if (p && p.drawn && lastState) return `/avatar/${lastState.code}/${encodeURIComponent(p.id)}?v=${p.drawn}`;
+    return window.Rumpus.sprites ? window.Rumpus.sprites.avatarUrl(p ? p.avatar : 0) : '';
+  }
+  function playerImg(p, cls = 'avatar') {
+    if (!p) return '';
+    return `<img class="${cls}${p.drawn ? ' drawn' : ''}" src="${playerUrl(p)}" alt="">`;
+  }
   function av(nickname, cls = 'avatar tiny') {
-    const sp = window.Rumpus.sprites;
-    if (!sp || !lastState) return '';
+    if (!lastState) return '';
     const p = (lastState.players || []).find((x) => x.nickname === nickname);
-    return p ? sp.avatarImg(p.avatar, cls) : '';
+    return p ? playerImg(p, cls) : '';
   }
 
   function scoredList(list) {
@@ -90,9 +98,40 @@ window.Rumpus = (function () {
       list.map((s) => `<li class="correct">${av(s.nickname)} ${esc(s.nickname)} +${s.gained}</li>`).join('') + '</ul>';
   }
 
+  // Update `target`'s children to match `html` in place: unchanged nodes are
+  // kept, so running CSS animations don't restart (no stutter/flicker) and
+  // focused inputs keep what the user typed.
+  function morph(target, html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    morphChildren(target, tpl.content);
+  }
+  function morphChildren(a, b) {
+    const an = [...a.childNodes], bn = [...b.childNodes];
+    const n = Math.max(an.length, bn.length);
+    for (let i = 0; i < n; i++) {
+      const x = an[i], y = bn[i];
+      if (!x) a.appendChild(y);
+      else if (!y) x.remove();
+      else morphNode(x, y);
+    }
+  }
+  function morphNode(x, y) {
+    if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName) { x.replaceWith(y); return; }
+    if (x.nodeType === 3 || x.nodeType === 8) {
+      if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue;
+      return;
+    }
+    if (x.nodeType !== 1) return;
+    for (const at of [...x.attributes]) if (!y.hasAttribute(at.name)) x.removeAttribute(at.name);
+    for (const at of [...y.attributes]) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    if (x.nodeName === 'CANVAS' || x.nodeName === 'TEXTAREA') return;
+    morphChildren(x, y);
+  }
+
   // Per-game renderers: { host(state) -> html, player(state) -> html, bind(root, api) }
   const games = {};
   function register(id, impl) { games[id] = impl; }
 
-  return { esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState };
-})();
+  return { esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl };
+})());

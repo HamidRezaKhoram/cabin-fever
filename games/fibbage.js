@@ -18,6 +18,7 @@
 const crypto = require('crypto');
 const { QUESTIONS } = require('./data/fibbage-questions');
 const library = require('./library');
+const flow = require('./flow');
 
 const BLUFF_MS = parseInt(process.env.RUMPUS_FIB_BLUFF_MS || '45000', 10);
 const CHOOSE_MS = parseInt(process.env.RUMPUS_FIB_CHOOSE_MS || '30000', 10);
@@ -82,16 +83,26 @@ class FibbageGame {
     }, ms);
   }
 
-  isFinal() {
-    return this.totalRounds > 1 && this.round === this.totalRounds;
+  // Escalating stakes: first half ×1, second half ×2, final question ×3.
+  mult() {
+    return flow.stage(this.round, this.totalRounds);
   }
 
-  mult() {
-    return this.isFinal() ? 2 : 1;
+  isFinal() {
+    return this.mult() > 1;
   }
 
   spicy() {
     return !(this.room.settings && this.room.settings.spicy === false);
+  }
+
+  get skippablePhases() { return ['fib-bluff']; }
+
+  skipQuestion() {
+    if (this.phase !== 'fib-bluff') return;
+    this.skipSeq = (this.skipSeq || 0) + 1;
+    this.round -= 1;
+    this.nextRound();
   }
 
   // Host pressed "skip": run the pending phase transition now.
@@ -255,7 +266,10 @@ class FibbageGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
-      doublePoints: this.isFinal(),
+      doublePoints: this.mult() > 1,
+      multiplier: this.mult(),
+      stage: flow.stage(this.round, this.totalRounds),
+      skipSeq: this.skipSeq || 0,
     };
     switch (this.phase) {
       case 'fib-bluff':
@@ -288,7 +302,10 @@ class FibbageGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
-      doublePoints: this.isFinal(),
+      doublePoints: this.mult() > 1,
+      multiplier: this.mult(),
+      stage: flow.stage(this.round, this.totalRounds),
+      skipSeq: this.skipSeq || 0,
     };
     switch (this.phase) {
       case 'fib-bluff':

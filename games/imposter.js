@@ -39,6 +39,8 @@ class ImposterGame extends BaseGame {
 
   start() { this.nextRound(); }
 
+  get skippablePhases() { return ['imp-clue']; }
+
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
