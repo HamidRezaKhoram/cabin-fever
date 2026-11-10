@@ -274,6 +274,18 @@ async function check(name, fn) {
     await phones[0].waitForSelector('.describe-img');
     const src = await phones[0].getAttribute('.describe-img', 'src');
     assert.match(src, /^data:image\/jpeg;base64,/);
+    // The reveal shows each chain's evolution: phrase → drawing → guess, every step visible.
+    for (const p of phones) { await p.waitForSelector('.text-form input'); await p.fill('.text-form input', 'a deer'); await p.click('.text-form button'); }
+    await tv.waitForSelector('.chain .chain-entry img[alt="drawing"]');
+    await tv.waitForFunction(() => {
+      const es = [...document.querySelectorAll('.chain .chain-entry')];
+      return es.length === 3 && es.every((e) => getComputedStyle(e).opacity === '1');
+    }, null, { timeout: 15000 }).catch(async () => {
+      throw new Error('chain entries not visible: ' + JSON.stringify(await tv.$$eval('.chain-entry', (es) => es.map((e) => getComputedStyle(e).opacity))));
+    });
+    const drawn = await tv.$eval('.chain-entry img[alt="drawing"]', (i) => ({ w: i.naturalWidth, h: i.getBoundingClientRect().height }));
+    assert.ok(drawn.w === 480 && drawn.h > 100, `the drawing is shown on the TV: ${JSON.stringify(drawn)}`);
+    await shot(tv, '06-telephone-reveal');
   });
 
   await check('in a game the TV switches to that game\'s look and hides the join clutter and the player strip', async () => {

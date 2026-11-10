@@ -225,3 +225,18 @@ test('removed features stay removed', () => {
   const files = ['server.js', 'public/play.js', 'public/play.html', 'public/host.js', 'public/host.html', 'public/common.js', 'public/avatar-maker.js', 'public/style.css'];
   for (const [re, what] of REMOVED) for (const f of files) assert.ok(!re.test(read(f)), `${f} still contains ${what}`);
 });
+
+test('CSS: an element hidden with opacity:0 must not use a keyframe animation that never sets opacity (it would stay invisible)', () => {
+  const css = read('public/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const frames = {};
+  for (const m of css.matchAll(/@keyframes\s+([\w-]+)\s*\{((?:[^{}]*\{[^{}]*\})*)\s*\}/g)) {
+    const steps = [...m[2].matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((s) => ({ at: s[1].trim(), body: s[2] }));
+    frames[m[1]] = steps.some((s) => /(^|,)\s*(to|100%)\s*(,|$)/.test(s.at) && /opacity/.test(s.body));
+  }
+  for (const m of css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+    const body = m[2];
+    if (!/(^|;)\s*opacity:\s*0\s*(;|$)/.test(body)) continue;
+    const anim = body.match(/animation:\s*([\w-]+)/);
+    if (anim && anim[1] in frames) assert.ok(frames[anim[1]], `${m[1].trim()}: opacity:0 + animation ${anim[1]} (no 'to' opacity) → never becomes visible`);
+  }
+});
