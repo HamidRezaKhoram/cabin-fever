@@ -1,4 +1,4 @@
-# Keeping the content fun — HomeJack content rules
+# Keeping the content fun — Cabin Fever content rules
 
 Lessons from building and pruning ~15,000 prompts (Nov 2026). Content is half the game:
 a great mechanic with bland prompts is a bland game.
@@ -10,7 +10,7 @@ a great mechanic with bland prompts is a bland game.
    of a cottage cooler" is alive. Prompts should invite a *particular* picture, a person in the
    room, or a story. Generic/everyday stems are filtered (`DRY_RE`, boring filters).
 3. **Make it about the people in the room** wherever the game allows (Most Likely, Two
-   Truths, Crush notes, Punchline) — player-generated content is the funniest content.
+   Truths, Crush notes, Campfire Quips) — player-generated content is the funniest content.
 4. **International by default.** The group is from different countries. No US-only (or any
    one country's) sports leagues, TV networks, states, chart positions or celebrities
    (`LOCAL_RE` in `tools/build-content.py` + a content test). Prefer globally known films,
@@ -28,7 +28,7 @@ a great mechanic with bland prompts is a bland game.
 8. **No repeats.** The library remembers what was played (`data/history.json`) across games
    and restarts until a pool is exhausted; then least-recently-used first.
 9. **Sources and licences.** Only original text or open licences (CC0, CC BY, CC BY-SA, and
-   CC BY-NC(-SA) because HomeJack is non-commercial). Record the source in `CREDITS.md` and
+   CC BY-NC(-SA) because Cabin Fever is non-commercial). Record the source in `CREDITS.md` and
    on the item (`src`), show it on screen. Never copy prompt lists from other games or blogs.
 10. **Fact-check what you write.** Only stable facts (no "current" records or rankings that
     change yearly); distractors must be clearly wrong (e.g. don't offer Herculaneum next to

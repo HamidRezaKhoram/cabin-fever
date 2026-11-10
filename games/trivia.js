@@ -1,5 +1,5 @@
 /*
- * Rumpus trivia ("Trivia Blast") — multiple-choice, speed-scored, with
+ * Rumpus trivia ("Lakeside Quiz") — multiple-choice, speed-scored, with
  * category segments: every 3–5 questions the player in LAST place picks the
  * next category from three random ones (a comeback mechanic). Streaks add
  * bonus points; the final question is worth double.
@@ -378,7 +378,7 @@ class TriviaGame {
 
 TriviaGame.meta = {
   id: 'trivia',
-  name: 'Trivia Blast',
+  name: 'Lakeside Quiz',
   blurb: 'Fast trivia in category rounds — last place picks the next category.',
   minPlayers: 2,
 };

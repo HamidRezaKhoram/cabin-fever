@@ -28,7 +28,7 @@
     ? `<p class="waiting-on">Still ${verb}: ${names.map((n) => `<span>${av(n)} ${esc(n)}</span>`).join('')}</p>` : '');
   const watchTv = (extra = '') => `<h1>Eyes on the TV 📺</h1>${extra}`;
 
-  // ---------------------------------------------------------------- Punchline (head-to-head)
+  // ---------------------------------------------------------------- Campfire Quips (head-to-head)
   register('quiplash', {
     host(s) {
       const g = s.gameState;
@@ -90,7 +90,7 @@
     },
   });
 
-  // ---------------------------------------------------------------- Minigame Mayhem
+  // ---------------------------------------------------------------- Cottage Olympics
   const teamName = (t) => (t === 'red' ? '🔴 RED' : t === 'blue' ? '🔵 BLUE' : '');
   register('minigames', {
     host(s) {
@@ -182,7 +182,7 @@
     },
   });
 
-  // ---------------------------------------------------------------- Most Likely To
+  // ---------------------------------------------------------------- Cabin Superlatives
   register('mostlikely', {
     host(s) {
       const g = s.gameState;
@@ -215,7 +215,7 @@
     },
   });
 
-  // ---------------------------------------------------------------- Majority Rules
+  // ---------------------------------------------------------------- Campfire Consensus
   register('majority', {
     host(s) {
       const g = s.gameState;
@@ -250,7 +250,7 @@
     },
   });
 
-  // ---------------------------------------------------------------- Closest Guess
+  // ---------------------------------------------------------------- Closest Cast
   const fmt = (n) => (Math.abs(n) >= 10000 ? Number(n).toLocaleString() : String(n));
   register('closest', {
     host(s) {
@@ -286,12 +286,12 @@
     },
   });
 
-  // ---------------------------------------------------------------- Two Truths & a Lie
+  // ---------------------------------------------------------------- Porch Confessions
   register('twotruths', {
     host(s) {
       const g = s.gameState;
       if (s.phase === 'tt-write') {
-        return `<h1>Two Truths &amp; a Lie</h1>
+        return `<h1>Porch Confessions &amp; a Lie</h1>
           <p class="big-sub">On your phone: write two true things about yourself and one convincing lie. ${T}</p>
           ${count(g.submittedCount, g.totalPlayers, 'ready')}
           ${waitingRow(g.waitingOn, 'writing')}`;
@@ -338,7 +338,7 @@
     },
   });
 
-  // ---------------------------------------------------------------- Odd One Out
+  // ---------------------------------------------------------------- Odd Duck Out
   const outcomeText = (r) => ({
     escaped: `${esc(r.imposter)} got away with it! +300`,
     stole: `${esc(r.imposter)} was caught but guessed the word! +200`,
@@ -1191,7 +1191,7 @@
     },
   });
 
-  // ---------------------------------------------------------------- Doodle Telephone
+  // ---------------------------------------------------------------- Message in a Bottle
   /** @param {{ type: string, content: string | null, by: string, favs?: number }} e @param {number} i @param {number} ms */
   const entryHtml = (e, i, ms) => `
     <div class="chain-entry" style="animation-delay:${(i * ms) / 1000}s">

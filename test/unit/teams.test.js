@@ -60,7 +60,7 @@ test('team score is the sum of its players', async () => {
   assert.ok(sum('red') + sum('blue') > 0);
 });
 
-test('Punchline matchups are red vs blue in team mode', async () => {
+test('Campfire Quips matchups are red vs blue in team mode', async () => {
   const { h, ps } = await room(4);
   h.emit('host:settings', { teams: true });
   await until(() => h.state.players.every((p) => p.team), 'teams');

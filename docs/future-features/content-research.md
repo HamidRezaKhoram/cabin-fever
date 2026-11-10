@@ -1,6 +1,6 @@
 # Content enrichment from real sources — status: in progress
 
-**Done:** Wikidata (CC0) facts for Closest Guess & Fib Finder with on-screen sources;
+**Done:** Wikidata (CC0) facts for Closest Cast & Fish Tales with on-screen sources;
 item telemetry that retires skipped items and items with no discrimination (IRT);
 benign-violation filter; brutal quality cut (no OpenTDB "hard" items, no negatively
 worded / all-of-the-above / long stems, OpenTriviaQA numbers dropped as too obscure).
@@ -23,13 +23,13 @@ copyrighted prompt lists from blogs or other games.
 ## Sources per game
 | Game | Source (license) | How |
 |---|---|---|
-| Closest Guess | **Wikidata** (CC0) via SPARQL | numeric facts with real units: mountain heights, river lengths, city populations, founding years, record speeds, animal lifespans/weights. Template the question, keep the Wikidata item ID as provenance. |
-| Fib Finder | Wikipedia **"Did you know…?"** hooks (CC BY-SA) + Wikidata | pick hooks with a short, blank-able surprising term; cite article URL per item. |
-| Trivia Blast | Open Trivia DB (CC BY-SA, already used) + Wikidata-generated MC with plausible distractors (same class/type siblings) | |
-| Majority Rules | **Small World of Words** free-association norms (CC BY-NC-SA) / Wikidata category members | "Name a ___" categories where the norms show a clear majority answer → ideal majority prompts. |
-| Odd One Out | Wikidata class members (CC0) | categories with familiar members (sitelink count as a popularity proxy). |
-| Most Likely To / Punchline / Card Chaos | CAH (CC BY-NC-SA, already) + public-domain sources (e.g. old proverbs/idioms on Wikiquote CC BY-SA) | |
-| Doodle Telephone | Wikidata/WordNet (WordNet license) concrete nouns × verbs | pick imageable concepts using **concreteness norms** (Brysbaert et al. 2014). |
+| Closest Cast | **Wikidata** (CC0) via SPARQL | numeric facts with real units: mountain heights, river lengths, city populations, founding years, record speeds, animal lifespans/weights. Template the question, keep the Wikidata item ID as provenance. |
+| Fish Tales | Wikipedia **"Did you know…?"** hooks (CC BY-SA) + Wikidata | pick hooks with a short, blank-able surprising term; cite article URL per item. |
+| Lakeside Quiz | Open Trivia DB (CC BY-SA, already used) + Wikidata-generated MC with plausible distractors (same class/type siblings) | |
+| Campfire Consensus | **Small World of Words** free-association norms (CC BY-NC-SA) / Wikidata category members | "Name a ___" categories where the norms show a clear majority answer → ideal majority prompts. |
+| Odd Duck Out | Wikidata class members (CC0) | categories with familiar members (sitelink count as a popularity proxy). |
+| Cabin Superlatives / Campfire Quips / Rainy Day Cards | CAH (CC BY-NC-SA, already) + public-domain sources (e.g. old proverbs/idioms on Wikiquote CC BY-SA) | |
+| Message in a Bottle | Wikidata/WordNet (WordNet license) concrete nouns × verbs | pick imageable concepts using **concreteness norms** (Brysbaert et al. 2014). |
 
 ## Research to apply (selection & filtering, not text)
 - **Item difficulty / discrimination** (Item Response Theory): keep trivia that splits the room —
@@ -39,7 +39,7 @@ copyrighted prompt lists from blogs or other games.
 - **Concreteness & imageability norms** (Brysbaert, Warriner & Kuperman 2014) for drawing prompts.
 - **Humour research** (incongruity–resolution, benign-violation theory — McGraw & Warren 2010)
   for choosing/grading open prompts: prompts that invite a *benign violation* score higher.
-- **Free-association norms** (Small World of Words, De Deyne et al. 2019) for Majority Rules.
+- **Free-association norms** (Small World of Words, De Deyne et al. 2019) for Campfire Consensus.
 - Measure, don't guess: log per-item skip votes, answer spread and reactions (we already have
   skip votes) → auto-retire bad items over time.
 

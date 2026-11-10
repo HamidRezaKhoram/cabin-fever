@@ -1,5 +1,5 @@
 /*
- * "Majority Rules" — type the answer you think most people will type.
+ * "Campfire Consensus" — type the answer you think most people will type.
  * Points for every other player who matched you. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -191,7 +191,7 @@ class MajorityGame extends BaseGame {
 
 MajorityGame.meta = {
   id: 'majority',
-  name: 'Majority Rules',
+  name: 'Campfire Consensus',
   blurb: 'Answer what you think everyone else will. Matching the herd pays.',
   minPlayers: 3,
 };

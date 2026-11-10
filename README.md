@@ -31,7 +31,7 @@ docker run -d --name rumpus --restart unless-stopped -p 8012:3000 rumpus:local
 ## Games
 
 - **Quiplash** — everyone answers a prompt, then votes for their favorite (self-votes blocked). 2+ players.
-- **Trivia Blast** — multiple-choice, speed-scored. 2+ players.
+- **Lakeside Quiz** — multiple-choice, speed-scored. 2+ players.
 - **Cards Against Humanity** — fill-in-the-blank, pick-1 prompts only. Needs a Card Czar plus at least 2 others (3+ players). Ships with a small original sample deck — see below to use a real CAH deck.
 - **Fibbage** — you get a fact with a blank; write a fake answer, then hunt for the real one hidden among everyone's lies. Score for finding the truth, and for every player your lie fools. 2+ players.
 
@@ -72,10 +72,10 @@ AGPLv3 — see `LICENSE`.
 
 ## v2: what's new
 
-**Games (10):** Punchline (prompt + vote), Fib Finder (bluffing trivia), Trivia Blast,
-Closest Guess (numeric estimation), Majority Rules (match the herd), Most Likely To,
-Odd One Out (find the imposter), Two Truths & a Lie, Doodle Telephone (draw/describe chains),
-Card Chaos (fill-in-the-blank cards).
+**Games (10):** Campfire Quips (prompt + vote), Fish Tales (bluffing trivia), Lakeside Quiz,
+Closest Cast (numeric estimation), Campfire Consensus (match the herd), Cabin Superlatives,
+Odd Duck Out (find the imposter), Porch Confessions, Message in a Bottle (draw/describe chains),
+Rainy Day Cards (fill-in-the-blank cards).
 
 **Platform:**
 - Phones and the TV **reconnect automatically** after a refresh, screen lock or Wi-Fi blip (seat kept for 2 min; TV room kept for 5 min).
@@ -118,7 +118,7 @@ Open `http://<this-machine>:8012/host` on the TV; phones scan the QR code.
   Music + SFX volume sliders on the TV. Drop mp3s into `music/` to use your own instead.
 - **Pixel-art look**: pixel fonts, 17 animal avatars, game icons, animated lakeside night scene,
   pixel screen wipes, confetti, screen shake, floating emoji reactions from phones.
-- **Game feel**: how-to-play title cards, final round worth double, Punchline sweeps, trivia
-  answer streaks, Closest Guess bullseyes, "new leader" alerts, podium + end-of-game awards.
+- **Game feel**: how-to-play title cards, final round worth double, Campfire Quips sweeps, trivia
+  answer streaks, Closest Cast bullseyes, "new leader" alerts, podium + end-of-game awards.
 
 Content sources and licenses: see CREDITS.md.

@@ -1,5 +1,5 @@
 /*
- * "Two Truths & a Lie" — everyone writes two true facts and one lie about
+ * "Porch Confessions" — everyone writes two true facts and one lie about
  * themselves, then the group tries to spot each person's lie.
  * AGPLv3 — see LICENSE.
  */
@@ -98,7 +98,7 @@ class TwoTruthsGame extends BaseGame {
     }
     const subjectGained = this.award(this.subject, fooled.length * 75);
     stats.feat(this.room, this.subject, 'fooled', fooled.length);
-    if (fooled.length >= 2) stats.highlight(this.room, { game: 'Two Truths', text: set.statements[set.lieIndex], by: this.nick(this.subject), note: `lie that fooled ${fooled.length}` });
+    if (fooled.length >= 2) stats.highlight(this.room, { game: 'Porch Confessions', text: set.statements[set.lieIndex], by: this.nick(this.subject), note: `lie that fooled ${fooled.length}` });
     this.result = {
       lieIndex: set.lieIndex,
       right: right.map((id) => this.nick(id)),
@@ -157,7 +157,7 @@ class TwoTruthsGame extends BaseGame {
 
 TwoTruthsGame.meta = {
   id: 'twotruths',
-  name: 'Two Truths & a Lie',
+  name: 'Porch Confessions',
   blurb: 'Write two facts and one fib about yourself. Can your friends spot it?',
   minPlayers: 3,
 };

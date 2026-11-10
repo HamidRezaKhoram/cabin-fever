@@ -1,5 +1,5 @@
 /*
- * "Doodle Telephone" — write a phrase, pass it on; the next person draws it,
+ * "Message in a Bottle" — write a phrase, pass it on; the next person draws it,
  * the next describes the drawing, and so on. Watch the chains mutate on the
  * TV, then vote for the best doodle. AGPLv3 — see LICENSE.
  */
@@ -242,7 +242,7 @@ class TelephoneGame extends BaseGame {
       const [ci = 0, ei = 0] = d.key.split(':').map(Number);
       const prev = ei > 0 && this.chains[ci] ? this.chains[ci].entries[ei - 1] : null;
       const prompt = prev ? prev.content : '';
-      stats.highlight(this.room, { game: 'Doodle Telephone', prompt: prompt || '', image: d.image, by: this.nick(d.by), note: `best doodle · ${top[1]} vote${top[1] === 1 ? '' : 's'}` });
+      stats.highlight(this.room, { game: 'Message in a Bottle', prompt: prompt || '', image: d.image, by: this.nick(d.by), note: `best doodle · ${top[1]} vote${top[1] === 1 ? '' : 's'}` });
     }
     this.gameOver();
   }
@@ -328,7 +328,7 @@ class TelephoneGame extends BaseGame {
 
 TelephoneGame.meta = {
   id: 'telephone',
-  name: 'Doodle Telephone',
+  name: 'Message in a Bottle',
   blurb: 'Write, draw, describe, repeat. Watch your phrase get hilariously mangled.',
   minPlayers: 3,
 };

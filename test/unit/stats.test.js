@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { startServer, until, makeHost, makePlayer, contentDir, get, tmpDir } = require('../helpers');
 
-test('a finished Fib Finder round records the best lie, people fooled and the game for each player', async () => {
+test('a finished Fish Tales round records the best lie, people fooled and the game for each player', async () => {
   const dataDir = tmpDir();
   const srv = await startServer({
     RUMPUS_DATA_DIR: dataDir, RUMPUS_CONTENT_MODE: 'replace',
@@ -26,7 +26,7 @@ test('a finished Fib Finder round records the best lie, people fooled and the ga
     ps[0].submit({ choice: opt(ps[0], 'Truthy') });
     await until(() => h.state.phase === 'gameover', 'game over', 15000);
     const d = JSON.parse((await get(srv.url, '/api/highlights?room=' + h.code)).body);
-    const hl = d.tonight.find((x) => x.game === 'Fib Finder');
+    const hl = d.tonight.find((x) => x.game === 'Fish Tales');
     assert.ok(hl && hl.text === 'Moose Town' && hl.by === 'Ann' && /fooled 2/.test(hl.note), JSON.stringify(d.tonight));
     const ann = d.players.find((p) => p.name === 'Ann');
     assert.strictEqual(ann.games, 1);

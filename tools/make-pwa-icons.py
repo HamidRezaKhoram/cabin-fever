@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw the HomeJack app icon (pixel art, original) and write the PWA PNGs:
+"""Draw the Cabin Fever app icon (pixel art, original) and write the PWA PNGs:
 public/icons/icon-192.png and icon-512.png.  python3 tools/make-pwa-icons.py"""
 import struct
 import zlib

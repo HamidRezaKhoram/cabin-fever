@@ -162,15 +162,15 @@ function itemFromForm(pool, b) {
   }
   if (pool === 'fibbage') {
     const q = t(b.q), answer = t(b.answer, 60);
-    return q.includes('____') && answer ? { item: { q, answer, a } } : { error: 'Fib Finder needs a fact with a blank (____) and its real answer.' };
+    return q.includes('____') && answer ? { item: { q, answer, a } } : { error: 'Fish Tales needs a fact with a blank (____) and its real answer.' };
   }
   if (pool === 'closest') {
     const q = t(b.q), answer = Number(String(b.answer).replace(/,/g, ''));
-    return q && Number.isFinite(answer) ? { item: { q, answer, unit: t(b.unit, 20), a } } : { error: 'Closest Guess needs a question and a number.' };
+    return q && Number.isFinite(answer) ? { item: { q, answer, unit: t(b.unit, 20), a } } : { error: 'Closest Cast needs a question and a number.' };
   }
   if (pool === 'imposter') {
     const words = [...new Set(String(b.words || '').split(',').map((w) => t(w, 30)).filter(Boolean))];
-    return t(b.category) && words.length >= 4 ? { item: { category: t(b.category, 40), word: words[0], words, a } } : { error: 'Odd One Out needs a category and at least 4 comma-separated words.' };
+    return t(b.category) && words.length >= 4 ? { item: { category: t(b.category, 40), word: words[0], words, a } } : { error: 'Odd Duck Out needs a category and at least 4 comma-separated words.' };
   }
   return { error: 'Unknown pool.' };
 }

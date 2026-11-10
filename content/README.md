@@ -7,10 +7,10 @@ By default your entries are **added** to the built-in ones. Set
 
 | File               | Game              | Format                                                      |
 |--------------------|-------------------|-------------------------------------------------------------|
-| `mostlikely.json`  | Most Likely To    | `["Who is most likely to …?", …]`                           |
-| `majority.json`    | Majority Rules    | `["Name a …", …]`                                           |
-| `closest.json`     | Closest Guess     | `[{"q": "How many …?", "answer": 42, "unit": "km"}, …]`     |
-| `imposter.json`    | Odd One Out       | `[{"category": "Snacks", "words": ["Chips", "Popcorn", …]}]` (4+ words) |
-| `telephone.json`   | Doodle Telephone  | `["A moose in a canoe", …]` (starter suggestions)          |
+| `mostlikely.json`  | Cabin Superlatives    | `["Who is most likely to …?", …]`                           |
+| `majority.json`    | Campfire Consensus    | `["Name a …", …]`                                           |
+| `closest.json`     | Closest Cast     | `[{"q": "How many …?", "answer": 42, "unit": "km"}, …]`     |
+| `imposter.json`    | Odd Duck Out       | `[{"category": "Snacks", "words": ["Chips", "Popcorn", …]}]` (4+ words) |
+| `telephone.json`   | Message in a Bottle  | `["A moose in a canoe", …]` (starter suggestions)          |
 
 See `example-mostlikely.json` (rename it to `mostlikely.json` to use it).

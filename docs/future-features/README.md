@@ -5,7 +5,7 @@ an implementation plan that fits this codebase, the tests it needs, and a rough 
 
 | Doc | What | Size |
 |---|---|---|
-| [teams-and-minigames.md](teams-and-minigames.md) | Team mode + **Minigame Mayhem** — ✅ shipped | L |
+| [teams-and-minigames.md](teams-and-minigames.md) | Team mode + **Cottage Olympics** — ✅ shipped | L |
 | [dating-game.md](dating-game.md) | **Cottage Crush** speed-dating game — ✅ shipped (a few agendas still open) | L |
 | [playtest-findings.md](playtest-findings.md) | Bot playtests: dead air per game and the fix list — ✅ fix list done | M |
 | [content-research.md](content-research.md) | Real-source content + question-quality research — mostly done | L |

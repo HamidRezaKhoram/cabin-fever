@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Fetch real facts from Wikidata (CC0 — public domain) for Closest Guess and
-Fib Finder. Popularity is enforced with sitelink counts (how many Wikipedias
+Fetch real facts from Wikidata (CC0 — public domain) for Closest Cast and
+Fish Tales. Popularity is enforced with sitelink counts (how many Wikipedias
 have an article), so questions are about things people have heard of.
 
 Writes content-src/vendor/wikidata.json (cached; rerun to refresh).
@@ -18,10 +18,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'content-src' / 'vendor' / 'wikidata.json'
 ENDPOINT = 'https://query.wikidata.org/sparql'
-UA = 'HomeJack/1.0 (offline party game, personal use; content builder)'
+UA = 'Cabin Fever/1.0 (offline party game, personal use; content builder)'
 
 QUERIES: dict[str, str] = {
-    # Closest Guess -------------------------------------------------------
+    # Closest Cast -------------------------------------------------------
     'mountain_height': """
 SELECT ?item ?itemLabel ?v WHERE { ?item wdt:P31 wd:Q8502; wdt:P2044 ?v; wikibase:sitelinks ?sl. FILTER(?sl >= 35)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } ORDER BY DESC(?sl) LIMIT 220""",
@@ -47,7 +47,7 @@ SELECT ?item ?itemLabel ?v WHERE { ?item wikibase:sitelinks ?sl. FILTER(?sl >= 1
     'city_population': """
 SELECT ?item ?itemLabel (MAX(?p) AS ?v) WHERE { ?item wdt:P31/wdt:P279* wd:Q515; wdt:P1082 ?p; wikibase:sitelinks ?sl. FILTER(?sl >= 150)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } GROUP BY ?item ?itemLabel ORDER BY DESC(MAX(?sl)) LIMIT 200""",
-    # Fib Finder ------------------------------------------------------------
+    # Fish Tales ------------------------------------------------------------
     'birth_name': """
 SELECT ?item ?itemLabel ?v WHERE { ?item wdt:P31 wd:Q5; wdt:P1477 ?v; wikibase:sitelinks ?sl. FILTER(?sl >= 60) FILTER(LANG(?v) = "en" || LANG(?v) = "")
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } ORDER BY DESC(?sl) LIMIT 900""",

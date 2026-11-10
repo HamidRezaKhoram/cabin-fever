@@ -14,7 +14,7 @@ phones, plus /admin and /highlights driven through the real links). Flags: `UI_O
 - Removed `test/e2e-new.js` (duplicated the unit tests; its two unique checks moved into
   `games.test.js`).
 
-- Minigame Mayhem's "53–78 s idle" was fake: the 10× playtest didn't scale Quick Draw's wait.
+- Cottage Olympics's "53–78 s idle" was fake: the 10× playtest didn't scale Quick Draw's wait.
   A static test now requires every `RUMPUS_*_MS/MIN/MAX/WINDOW` timer to be scaled in
   `test/playtest.js`, and the report names where the worst idle happens (`worstIdleAt`).
 

@@ -1,6 +1,6 @@
-# What makes a good party game — HomeJack design rules
+# What makes a good party game — Cabin Fever design rules
 
-Distilled from the research and playtests done while building HomeJack (Nov 2026). Use this
+Distilled from the research and playtests done while building Cabin Fever (Nov 2026). Use this
 as the checklist for every new game and every change to an existing one. The numbers come
 from our bot playtests (`test/playtest.js`) — re-measure after a change, don't guess.
 
@@ -13,7 +13,7 @@ from our bot playtests (`test/playtest.js`) — re-measure after a change, don't
   time, a short build-up (drumroll, wipe, suspense order), then the payoff.
 - **Players are the content.** The funniest material is what the people in the room write,
   draw or reveal about each other. Built-in prompts exist to *provoke* player content, not to
-  replace it (Punchline, Fib Finder, Two Truths, Telephone, Cottage Crush).
+  replace it (Campfire Quips, Fish Tales, Porch Confessions, Telephone, Cottage Crush).
 
 ## 2. Pacing (measured, enforced by the playtest)
 | Metric | Target | Why |
@@ -24,9 +24,9 @@ from our bot playtests (`test/playtest.js`) — re-measure after a change, don't
 | One game | **3–8 minutes** | Long enough for an arc, short enough to rotate games. |
 
 How we hit them (patterns that worked in the playtests):
-- **Give waiting players something to do**: likes on lies (Fib Finder), side bets for the
-  authors (Punchline), match bets (Majority Rules), favourite-step votes (Telephone), the czar
-  picks the next prompt (Card Chaos), a suspicion meter to watch (Odd One Out).
+- **Give waiting players something to do**: likes on lies (Fish Tales), side bets for the
+  authors (Campfire Quips), match bets (Campfire Consensus), favourite-step votes (Telephone), the czar
+  picks the next prompt (Rainy Day Cards), a suspicion meter to watch (Odd Duck Out).
 - **Shorten timers to the playtested median**, not the worst case; let the room speed up the
   stragglers with **pace votes** (hurry / ready / skip) instead of long fixed timers.
 - **End phases early** the moment everyone has acted; add a short grace window for optional
@@ -41,7 +41,7 @@ How we hit them (patterns that worked in the playtests):
 - **Comeback mechanics**: last place picks the category (Trivia), the leader's secret agenda
   is exposed (Cottage Crush), wagers/Double Down let trailing players swing.
 - **Wagers feel great when they are optional, once-per-game and visible** (Double Down in
-  Trivia/Closest, bets in Majority/Punchline). Losses never take a score below zero — a party
+  Trivia/Closest, bets in Majority/Campfire Quips). Losses never take a score below zero — a party
   game should never make someone feel *worse* than when they arrived.
 - **Ties share the better placing**; awards at the end (funniest, best liar, …) reward more
   than just the winner.
@@ -83,17 +83,17 @@ How we hit them (patterns that worked in the playtests):
 
 | Game | Min | Actions/min | Worst idle | Verdict |
 |---|---|---|---|---|
-| Punchline | 3.4 | 3.3 | 39 s | ✅ good (writing game; side bets keep authors busy) |
-| Fib Finder | 3.5 | 3.3 | 41 s | ✅ good (likes fill the wait) |
-| Trivia Blast | 2.5 | 4.3 | 19 s | ✅ meets every target |
-| Closest Guess | 1.3 | 4.5 | 16 s | ✅ meets every target |
-| Majority Rules | 3.8 | 2.9 | 49 s | ◐ ok — write-time variance; bets add a decision |
-| Most Likely To | 1.3 | 4.7 | 17 s | ✅ meets every target |
-| Odd One Out | 2.5 | 2.6 | 39 s | ◐ ok — suspicion meter makes the wait watchable |
-| Two Truths | 1.2 | 3.3 | 30 s | ✅ good (was 58 s) |
-| Doodle Telephone | 3.9 | 2.3 | 61 s | ◐ drawing takes time by nature; favourites + who's-left row help |
-| Card Chaos | 3.0 | 3.1 | 32 s | ✅ good (czar picks the next prompt) |
-| Minigame Mayhem | 1.5 | 36 | 17 s | ✅ meets every target (the old 53–78 s was a playtest bug: Quick Draw's wait wasn't scaled); results 4.5 s, firefly guesses lock in early |
+| Campfire Quips | 3.4 | 3.3 | 39 s | ✅ good (writing game; side bets keep authors busy) |
+| Fish Tales | 3.5 | 3.3 | 41 s | ✅ good (likes fill the wait) |
+| Lakeside Quiz | 2.5 | 4.3 | 19 s | ✅ meets every target |
+| Closest Cast | 1.3 | 4.5 | 16 s | ✅ meets every target |
+| Campfire Consensus | 3.8 | 2.9 | 49 s | ◐ ok — write-time variance; bets add a decision |
+| Cabin Superlatives | 1.3 | 4.7 | 17 s | ✅ meets every target |
+| Odd Duck Out | 2.5 | 2.6 | 39 s | ◐ ok — suspicion meter makes the wait watchable |
+| Porch Confessions | 1.2 | 3.3 | 30 s | ✅ good (was 58 s) |
+| Message in a Bottle | 3.9 | 2.3 | 61 s | ◐ drawing takes time by nature; favourites + who's-left row help |
+| Rainy Day Cards | 3.0 | 3.1 | 32 s | ✅ good (czar picks the next prompt) |
+| Cottage Olympics | 1.5 | 36 | 17 s | ✅ meets every target (the old 53–78 s was a playtest bug: Quick Draw's wait wasn't scaled); results 4.5 s, firefly guesses lock in early |
 | Campfire Wizards (spell duel) | 2.4–3.6 bots (≈5–7 real) | 3–4 | 21 s (4p) · 24 s (6p) · 32 s (8p) | ✅ everyone casts every round; reveal capped at ~8 steps |
 | Storm Watch (strategy) | 2–3 with bots (≈10–12 with real talk) | 4 | 31–35 s | ✅ the 'idle' is the 60 s talk phase — people argue there; everyone votes every crew |
 | Lantern Lake (tilt) | 2.5 | continuous | 10 s | ✅ always steering; short on purpose (arms tire) |

@@ -1,5 +1,5 @@
 /*
- * "Closest Guess" — numeric estimation. Nearest guess wins the most points.
+ * "Closest Cast" — numeric estimation. Nearest guess wins the most points.
  * AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -149,7 +149,7 @@ class ClosestGame extends BaseGame {
 
 ClosestGame.meta = {
   id: 'closest',
-  name: 'Closest Guess',
+  name: 'Closest Cast',
   blurb: 'Guess the number. Nearest wins — exact hits earn a bonus.',
   minPlayers: 2,
 };

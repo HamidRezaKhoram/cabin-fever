@@ -296,7 +296,7 @@ test('character maker: seasonal hats show up first in their season', () => {
 });
 
 // Regression: Quick Draw's wait wasn't sped up in the 10× playtest, so the report showed
-// 50–78 s of fake idle in Minigame Mayhem. Every game timer must be scaled there.
+// 50–78 s of fake idle in Cottage Olympics. Every game timer must be scaled there.
 test('the pacing playtest scales every game timer (no fake idle in the report)', () => {
   const root = path.join(__dirname, '..', '..');
   const play = fs.readFileSync(path.join(root, 'test', 'playtest.js'), 'utf8');

@@ -1,4 +1,4 @@
-/* Service worker: phones can install HomeJack and reopen it instantly.
+/* Service worker: phones can install Cabin Fever and reopen it instantly.
  * Network-first for everything (the server is on the LAN, so fresh code always
  * wins), falling back to the cached copy if the Wi-Fi blips. Live data
  * (socket.io, /api) is never cached. AGPLv3 — see LICENSE. */

@@ -261,7 +261,7 @@ class FibbageGame {
     if (bestLie >= 0) {
       const o = options[bestLie];
       const by = [...o.authorIds].map((id) => (this.room.players.get(id) || { nickname: '?' }).nickname).join(' & ');
-      stats.highlight(this.room, { game: 'Fib Finder', prompt: this.prompt, text: o.text, by, note: `fooled ${pickedBy[bestLie].length}` });
+      stats.highlight(this.room, { game: 'Fish Tales', prompt: this.prompt, text: o.text, by, note: `fooled ${pickedBy[bestLie].length}` });
     }
     for (const [i, who] of this.likes) {
       if (this.options[i].isTruth) continue;
@@ -416,7 +416,7 @@ class FibbageGame {
 
 FibbageGame.meta = {
   id: 'fibbage',
-  name: 'Fib Finder',
+  name: 'Fish Tales',
   blurb: 'Bluffing trivia — invent a fake answer, then spot the real one hidden among everyone\'s lies.',
   minPlayers: 2,
 };

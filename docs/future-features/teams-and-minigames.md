@@ -1,4 +1,4 @@
-# Teams + Minigame Mayhem (design doc) — requested, next up
+# Teams + Cottage Olympics (design doc) — requested, next up
 
 ## Research summary
 Board-game-style party video games mix a main "board" with **short, simple minigames**
@@ -13,12 +13,12 @@ re-shuffling of who's allied with whom, and comeback opportunities that still ne
 - Scores stay per player; **team score = sum** (shown as two big bars on the TV + sidebar badges).
 - Game-specific team twists (cheap, high value):
   - **Trivia/Closest:** team answer = majority/average of the team (huddle on phones).
-  - **Punchline:** matchups are always Red vs Blue; voters can't vote for their own team.
-  - **Odd One Out:** the imposter's team wins if they escape.
+  - **Campfire Quips:** matchups are always Red vs Blue; voters can't vote for their own team.
+  - **Odd Duck Out:** the imposter's team wins if they escape.
 - Server: `room.settings.teams`, `player.team`, `teamScores()` in broadcast; flow unchanged.
-- Tests: balancing, swaps, team totals, no-own-team voting in Punchline.
+- Tests: balancing, swaps, team totals, no-own-team voting in Campfire Quips.
 
-## Part 2 — new game: *Minigame Mayhem* (original)
+## Part 2 — new game: *Cottage Olympics* (original)
 A best-of-N series of 15–25 s real-time minigames; teams re-shuffle every 3 games
 (2v2, 1v3 "underdog" with ×2 points, free-for-all). Ideas (all original, phone-only input):
 

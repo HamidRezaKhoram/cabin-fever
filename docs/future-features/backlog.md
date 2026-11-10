@@ -4,7 +4,7 @@
 - ✅ **Game-night playlist** — shipped: 3/5/7-game nights, phone votes, night points, grand champion.
 - ✅ **Persistent stats & achievements** — shipped: data/stats.json, 9 achievements, /highlights (tonight, all time, hall of fame).
 - ✅ **House rules editor** — shipped at /admin (per-game timers, 18+ share, banned words).
-- ✅ **Wagers** — Double Down in Trivia and Closest Guess (once per game), match bets in Majority Rules.
+- ✅ **Wagers** — Double Down in Trivia and Closest Cast (once per game), match bets in Campfire Consensus.
 
 **Presentation**
 - ✅ **Offline narrator voice** — shipped with espeak-ng in the container (/api/tts); browser voice fallback; lobby toggle.
@@ -15,7 +15,7 @@
 
 **Content**
 - ✅ Content editor — shipped at /admin (search, disable, add your own).
-- ✅ Français — room language setting; UI translated on TV + phones (public/i18n.js); original French pack for Punchline, Most Likely, Majority, Doodle Telephone; French narrator voice. Trivia/Fib/Closest/Card Chaos stay English (marked EN).
+- ✅ Français — room language setting; UI translated on TV + phones (public/i18n.js); original French pack for Campfire Quips, Most Likely, Majority, Message in a Bottle; French narrator voice. Trivia/Fib/Closest/Rainy Day Cards stay English (marked EN).
 - ✅ More 18+ trivia — +44 fact-checked questions (spirits, biology, history, dating slang, party games).
 
 **Tech**

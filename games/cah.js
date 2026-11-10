@@ -227,7 +227,7 @@ class CAHGame {
     const p = this.room.players.get(pick.playerId);
     if (p) p.score += POINTS_PER_WIN * this.mult();
     this.winner = { playerId: pick.playerId, nickname: p ? p.nickname : '(left the game)', text: pick.text };
-    if (p) stats.highlight(this.room, { game: 'Card Chaos', prompt: this.blackCard || '', text: pick.text, by: p.nickname, note: 'won the round' });
+    if (p) stats.highlight(this.room, { game: 'Rainy Day Cards', prompt: this.blackCard || '', text: pick.text, by: p.nickname, note: 'won the round' });
     // Replenish everyone who played a card back up to HAND_SIZE.
     for (const playerId of this.submissions.keys()) {
       const hand = this.hands.get(playerId);
@@ -357,7 +357,7 @@ class CAHGame {
 
 CAHGame.meta = {
   id: 'cah',
-  name: 'Card Chaos',
+  name: 'Rainy Day Cards',
   blurb: 'Fill in the blank. Whoever the Card Czar picks wins the round.',
   minPlayers: 3,
 };
