@@ -1,0 +1,112 @@
+/*
+ * Playtest report: 4 bot players play every game end-to-end with human-ish
+ * reaction times, and we measure what the design research says matters:
+ * session length, how often each player gets to act, the longest stretch a
+ * player sits idle ("dead air"), and the number of reveal moments.
+ *
+ * Runs at 10× speed (server timers and bot delays are divided by SPEED) and
+ * reports real-time equivalents.   node test/playtest.js
+ * AGPLv3 — see LICENSE.
+ */
+'use strict';
+
+const SPEED = 10;
+const T = (ms) => String(Math.round(ms / SPEED));
+const { startServer, until, sleep, makeHost, makePlayer, PNG } = require('./helpers');
+
+const GAMES = ['quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely', 'imposter', 'twotruths', 'telephone', 'cah'];
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+(async () => {
+  const srv = await startServer({
+    RUMPUS_ANSWER_MS: T(75000), RUMPUS_VOTE_MS: T(20000), RUMPUS_RESULTS_MS: T(7000), RUMPUS_ROUNDS: '2',
+    RUMPUS_TRIVIA_QUESTION_MS: T(20000), RUMPUS_TRIVIA_REVEAL_MS: T(8000), RUMPUS_TRIVIA_CATEGORY_MS: T(12000), RUMPUS_TRIVIA_ROUNDS: '10',
+    RUMPUS_FIB_BLUFF_MS: T(45000), RUMPUS_FIB_CHOOSE_MS: T(30000), RUMPUS_FIB_REVEAL_MS: T(10000), RUMPUS_FIB_ROUNDS: '5',
+    RUMPUS_CAH_REVEAL_MS: T(10000), RUMPUS_CAH_ROUNDS: '8', RUMPUS_REVEAL_MS: T(7000),
+    RUMPUS_CG_GUESS_MS: T(30000), RUMPUS_MR_ANSWER_MS: T(30000), RUMPUS_ML_VOTE_MS: T(25000),
+    RUMPUS_IMP_CLUE_MS: T(40000), RUMPUS_IMP_VOTE_MS: T(40000), RUMPUS_IMP_GUESS_MS: T(20000),
+    RUMPUS_TT_WRITE_MS: T(120000), RUMPUS_TT_GUESS_MS: T(25000),
+    RUMPUS_TEL_WRITE_MS: T(45000), RUMPUS_TEL_DRAW_MS: T(80000), RUMPUS_TEL_DESCRIBE_MS: T(40000), RUMPUS_TEL_ENTRY_MS: T(3500), RUMPUS_TEL_VOTE_MS: T(30000),
+  });
+  const rows = [];
+  try {
+    for (const gameId of GAMES) {
+      const h = await makeHost(srv);
+      const bots = [];
+      for (const n of ['Ann', 'Ben', 'Cat', 'Dan']) bots.push(await makePlayer(srv, h.code, n));
+      await until(() => h.state.players.length === 4, 'joined');
+      const stats = new Map(bots.map((b) => [b.nickname, { actions: 0, lastActive: 0, maxIdle: 0 }]));
+      let reveals = 0, phases = 0, lastPhase = null;
+      const t0 = Date.now();
+      h.emit('host:startGame', { gameId });
+      // Each bot: whenever its phone shows something to do, think a bit, then act.
+      const busy = new Set();
+      const act = async (b) => {
+        const s = b.state;
+        if (!s || busy.has(b.nickname)) return;
+        const html = JSON.stringify(s.gameState) + JSON.stringify(s.you);
+        const g = s.gameState || {}, you = s.you || {};
+        let payload = null;
+        switch (s.phase) {
+          case 'answering': if (!you.submitted) payload = { text: 'lol ' + Math.random().toString(36).slice(2, 6) }; break;
+          case 'voting': if (!you.isAuthor && !you.voted) payload = { choice: Math.random() < 0.5 ? 0 : 1 }; break;
+          case 'fib-bluff': if (!you.submitted) payload = { text: 'fake ' + Math.random().toString(36).slice(2, 6) }; break;
+          case 'fib-choose': if (!you.picked && g.options) payload = { choice: g.options[0].index }; break;
+          case 'trivia-category': if (you.isChooser) payload = { choice: 0 }; break;
+          case 'trivia-question': if (!you.answered) payload = { choice: Math.floor(Math.random() * g.choices.length) }; break;
+          case 'cg-guess': if (!you.submitted) payload = { number: Math.round(rnd(1, 2000)) }; break;
+          case 'mr-answer': if (!you.submitted) payload = { text: ['beer', 'beer', 'wine', 'chips'][Math.floor(Math.random() * 4)] }; break;
+          case 'ml-vote': if (!you.voted && g.targets) payload = { target: g.targets[Math.floor(Math.random() * g.targets.length)].id }; break;
+          case 'imp-clue': if (!you.submitted) payload = { text: 'clue' }; break;
+          case 'imp-vote': if (!you.voted && g.clues && g.clues.length) payload = { target: g.clues[0].id }; break;
+          case 'imp-guess': if (you.isImposter && g.options && g.options.length) payload = { choice: 0 }; break;
+          case 'tt-write': if (!you.submitted) payload = { truths: ['t1', 't2'], lie: 'lie' }; break;
+          case 'tt-guess': if (!you.isSubject && !you.guessed) payload = { choice: Math.floor(Math.random() * 3) }; break;
+          case 'tel-write': case 'tel-describe': if (!you.submitted) payload = { text: 'a thing' }; break;
+          case 'tel-draw': if (!you.submitted) payload = { image: PNG }; break;
+          case 'tel-vote': if (!you.voted && g.drawings && g.drawings.length) payload = { key: g.drawings[0].key }; break;
+          case 'cah-submit': if (!you.isCzar && !you.submitted && you.hand) payload = { cardIndex: 0 }; break;
+          case 'cah-czar': if (you.isCzar && g.submissions) payload = { choice: 0 }; break;
+          default: break;
+        }
+        if (!payload) return;
+        busy.add(b.nickname);
+        // Human-ish think time: writing takes longer than tapping.
+        const writing = 'text' in payload || 'truths' in payload || 'image' in payload;
+        await sleep((writing ? rnd(8000, 25000) : rnd(2000, 7000)) / SPEED);
+        busy.delete(b.nickname);
+        if (JSON.stringify(b.state.gameState) + JSON.stringify(b.state.you) !== html) return; // screen moved on
+        b.submit(payload);
+        const st = stats.get(b.nickname);
+        const now = Date.now();
+        st.maxIdle = Math.max(st.maxIdle, now - (st.lastActive || t0));
+        st.lastActive = now;
+        st.actions++;
+      };
+      while (h.state.phase !== 'gameover') {
+        if (h.state.phase !== lastPhase) { phases++; if (/reveal|results/.test(h.state.phase)) reveals++; lastPhase = h.state.phase; }
+        bots.forEach(act);
+        await sleep(15);
+        if (Date.now() - t0 > 25 * 60000 / SPEED) break;
+      }
+      const dur = (Date.now() - t0) * SPEED;
+      const end = Date.now();
+      const st = [...stats.values()].map((x) => ({ ...x, maxIdle: Math.max(x.maxIdle, end - (x.lastActive || t0)) }));
+      rows.push({
+        game: gameId,
+        minutes: +(dur / 60000).toFixed(1),
+        actionsPerPlayer: +(st.reduce((n, x) => n + x.actions, 0) / st.length).toFixed(1),
+        actionsPerMin: +((st.reduce((n, x) => n + x.actions, 0) / st.length) / (dur / 60000)).toFixed(1),
+        worstIdleSec: Math.round(Math.max(...st.map((x) => x.maxIdle)) * SPEED / 1000),
+        reveals,
+        screens: phases,
+      });
+      bots.forEach((b) => b.sock.disconnect());
+      h.sock.disconnect();
+    }
+  } finally {
+    await srv.stop();
+  }
+  console.table(rows);
+  console.log(JSON.stringify(rows));
+})().catch((e) => { console.error(e); process.exit(1); });

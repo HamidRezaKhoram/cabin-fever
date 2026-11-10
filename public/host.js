@@ -178,7 +178,6 @@ fsBtn.addEventListener('click', () => {
 
 // --- music moods ----------------------------------------------------------------
 
-const isVotePhase = (p) => /vote|voting|choose|czar|tt-guess|imp-guess/.test(p);
 const isRevealPhase = (p) => /reveal|results/.test(p);
 function cueFor(st) {
   if (!st) return 'title';
@@ -187,9 +186,11 @@ function cueFor(st) {
   if (p === 'lobby') return st.players.length ? 'menu' : 'title';
   if (p === 'gameover') return 'scoreboard';
   if (p === 'trivia-category') return 'category';
-  if (isRevealPhase(p)) return 'reveal';
-  if (isVotePhase(p)) return 'vote';
+  // Within a game the music stays on the game's theme (stingers mark votes and
+  // reveals) — switching tracks every 10–20 s between vote/reveal was jarring.
   if (g.stage === 3 || g.multiplier === 3) return 'final';
+  if (p === 'imp-vote' || p === 'ml-vote') return 'vote';     // accusation moments get tension music
+  if (p === 'tel-reveal') return 'reveal';                    // the long chain showcase
   return 'game:' + g.gameId;
 }
 

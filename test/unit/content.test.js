@@ -57,3 +57,18 @@ test('trivia has enough categories for category rounds (each 10+ questions)', ()
   const big = Object.values(counts).filter((n) => n >= 10).length;
   assert.ok(big >= 8, `only ${big} categories with 10+ questions`);
 });
+
+test('every bundled music file is credited and sits in a known scenario folder', () => {
+  const MUSIC = path.join(__dirname, '../../music');
+  const credits = fs.readFileSync(path.join(MUSIC, 'CREDITS.md'), 'utf8');
+  const known = ['title', 'menu', 'intro', 'game', 'category', 'vote', 'reveal', 'round2', 'final', 'victory', 'scoreboard'];
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+  const audio = walk(MUSIC).filter((f) => /\.(mp3|ogg|m4a|wav|opus)$/i.test(f));
+  assert.ok(audio.length >= 40, `only ${audio.length} music files`);
+  for (const f of audio) {
+    const rel = path.relative(MUSIC, f);
+    assert.ok(credits.includes('`' + rel + '`'), `${rel} is not in music/CREDITS.md`);
+    assert.ok(known.includes(rel.split(path.sep)[0]), `${rel} is not in a known scenario folder`);
+  }
+  assert.ok(/CC0/.test(credits));
+});
