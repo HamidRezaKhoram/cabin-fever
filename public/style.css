@@ -309,6 +309,8 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .role.imposter { background: #3a1222; color: var(--danger); font-family: var(--pixel); font-size: 14px; line-height: 1.6; }
 .role small { color: var(--dim); font-family: var(--body); font-size: 20px; }
 .lie-label { color: var(--danger); }
+.waiting-on { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4em 1em; color: var(--muted, #b9b3c9); }
+.waiting-on span { display: inline-flex; align-items: center; gap: 0.3em; color: var(--ink, #fff); }
 .chain { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
 .chain-entry { background: var(--panel); padding: 12px; width: 260px; display: flex; flex-direction: column; gap: 6px; animation: pop-in 0.5s steps(15) both; }
 .chain-entry img { width: 100%; background: #fff; }
@@ -442,6 +444,7 @@ body.host .bar { height: 4vh; }
 body.host .cat-card div { font-size: max(14px, 2.4vh); padding: 6vh 2vw; }
 body.host .chain-entry { width: min(30vw, 34vh); }
 body.host .chain-text { font-size: max(22px, 3.6vh); }
+body.host .waiting-on { font-size: max(28px, 3.2vh); }
 body.host .big-answer { font-size: max(22px, 7vh); }
 body.host .double-badge { font-size: max(11px, 1.6vh); }
 body.host .timer { font-size: 0.9em; }
