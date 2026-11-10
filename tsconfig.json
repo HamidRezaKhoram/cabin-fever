@@ -11,6 +11,7 @@
   },
   "include": [
     "server.js",
+    "core/**/*.js",
     "games/**/*.js",
     "types/rumpus.d.ts",
     "tools/**/*.js"

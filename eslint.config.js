@@ -31,7 +31,7 @@ module.exports = [
   js.configs.recommended,
   // Type-aware: server + games (+ the bot CLI) through tsconfig.json.
   {
-    files: ['server.js', 'games/**/*.js', 'tools/**/*.js'],
+    files: ['server.js', 'core/**/*.js', 'games/**/*.js', 'tools/**/*.js'],
     languageOptions: {
       sourceType: 'commonjs', globals: globals.node,
       parser: tseslint.parser,

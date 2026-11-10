@@ -8,6 +8,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev && npm cache clean --force
 
 COPY server.js ./
+COPY core ./core
 COPY games ./games
 COPY public ./public
 COPY content ./content

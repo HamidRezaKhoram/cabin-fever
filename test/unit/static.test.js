@@ -11,8 +11,9 @@ global.window = { Rumpus: {} };
 global.document = { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:' }) };
 require('../../public/sprites.js');
 const sprites = window.Rumpus.sprites;
-const server = read('server.js');
-const GAME_IDS = server.match(/for \(const mod of \[([^\]]+)\]/)[1].match(/'([a-z]+)'/g).map((s) => s.slice(1, -1));
+// The room server core (core/rooms.js) holds the game list, avatar count and socket events.
+const server = read('core/rooms.js') + read('server.js');
+const GAME_IDS = [...read('core/rooms.js').matchAll(/require\('\.\.\/games\/([a-z]+)'\), ?/g)].map((m) => m[1]);
 
 test('server game list matches the game modules on disk', () => {
   const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js'].includes(f)).map((f) => f.slice(0, -3));
@@ -202,7 +203,7 @@ test('volume changes are smooth and the output is limited (no harsh clipping)', 
 });
 
 test('the old "draw your own picture" feature is gone everywhere', () => {
-  for (const f of ['server.js', 'public/play.js', 'public/play.html', 'public/common.js', 'public/host.js']) {
+  for (const f of ['server.js', 'core/rooms.js', 'public/play.js', 'public/play.html', 'public/common.js', 'public/host.js']) {
     const src = read(f);
     assert.ok(!/drawAvatar|avatarVer|validDrawing|Draw yourself|Draw my own|\/avatar\//.test(src), `${f} still has drawn-avatar code`);
   }
@@ -245,7 +246,7 @@ test('removed features stay removed', () => {
     [/data-step=/, 'old arrow-based character editor'],
     [/opentriviaqa-numeric\.json'\)?\s*\n\s*if otqa\.exists\(\):(?!.*False)/, 'OpenTriviaQA numeric questions'],
   ];
-  const files = ['server.js', 'public/play.js', 'public/play.html', 'public/host.js', 'public/host.html', 'public/common.js', 'public/avatar-maker.js', 'public/style.css'];
+  const files = ['server.js', 'core/rooms.js', 'public/play.js', 'public/play.html', 'public/host.js', 'public/host.html', 'public/common.js', 'public/avatar-maker.js', 'public/style.css'];
   for (const [re, what] of REMOVED) for (const f of files) assert.ok(!re.test(read(f)), `${f} still contains ${what}`);
 });
 
