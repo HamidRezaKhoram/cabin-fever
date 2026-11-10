@@ -73,6 +73,7 @@ const RULES = {
   twotruths: ['Write 2 truths and 1 lie about you', 'Spot everyone else\'s lie', 'Points for each person you fool'],
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
+  storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win. Three ruined: Raccoons win'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
   lantern: ['Tilt your phone to glide (or drag on the circle)', 'Catch fireflies, hog the moonbeam', 'Then steer one raft together'],
   looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
@@ -291,7 +292,7 @@ const T = '<span class="timer"></span>';
 // Each game's art is drawn at 4× its own pixel size, on its own colour theme.
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
-  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e',
 };
 const art = (id) => {
   const u = sprites.iconUrl(id);
@@ -490,6 +491,8 @@ function render() {
   // (it pops back for 10 s whenever someone new joins).
   const wasInGame = document.body.classList.contains('in-game');
   document.body.classList.toggle('in-game', inGame);
+  // Storm Watch takes over the whole screen with its own frame.
+  document.body.classList.toggle('mode-storm', inGame && g.gameId === 'storm');
   document.body.classList.toggle('lobby', phase === 'lobby'); // the lobby shows the players itself
   if (!inGame || !wasInGame) { clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
   // Someone joined, left or (re)connected → flash the player strip for 5 s.
@@ -541,7 +544,8 @@ function render() {
     if (inGame && !wasInGame) {
       gameStats = { gameId: g.gameId, start: snapshotScores(), snaps: [] };
       leaderId = null;
-      showIntro(g.gameId);
+      // Storm Watch is its own mode: a storm rolls in before the title card.
+      if (g.gameId === 'storm') { window.Rumpus.stormTransition(); setTimeout(() => showIntro(g.gameId), 3400); } else showIntro(g.gameId);
       music.play('intro', { then: cueFor(state) });
       narrateIntro(g.gameId);
     } else if (phase === 'gameover') {

@@ -35,6 +35,7 @@
     twotruths:  { sky: ['#050816', '#081026', '#0c1836', '#102046', '#152a58', '#1b356a', '#22417c'], hills: '#0b1430', pines: '#03060f', lake: ['#08102a', '#0a1432', '#0c183a', '#0e1c42'], orb: '#f0f4ff', orbShade: '#c0ccf0', stars: true, fly: '#b0c8ff', glow: '220,230,255', window: '#ffd27a' },
     telephone:  { sky: ['#3a1a05', '#5a2a08', '#7e3d0c', '#a35411', '#c76d18', '#e68a24', '#ffaa3a'], hills: '#4a2a12', pines: '#2a1406', lake: ['#5a2e0e', '#6a3812', '#7a4216', '#8a4c1a'], orb: '#fff0b0', orbShade: '#ffd870', stars: false, fly: '#fff3a0', glow: '255,230,160', window: '#fff0a0' },
     cah:        { sky: ['#0a0303', '#160505', '#220808', '#2e0a0a', '#3c0d0d', '#4b1010', '#5a1414'], hills: '#1a0606', pines: '#050101', lake: ['#160404', '#1c0606', '#220808', '#280a0a'], orb: '#ffd0c0', orbShade: '#e09080', stars: true, fly: '#ff6040', glow: '255,160,140', window: '#ff8050' },
+    storm:      { sky: ['#06080f', '#0a0e18', '#0e1422', '#121a2c', '#161f35', '#1a243d', '#1e2944'], hills: '#0a0f1a', pines: '#05080e', lake: ['#0c1424', '#0e1729', '#101a2e', '#121d33'], orb: '#3a4560', orbShade: '#2a3348', stars: false, fly: '#9fb7ff', glow: '160,180,255', window: '#ffcf80' },
     lantern:    { sky: ['#1b1030', '#2a1640', '#3d1f4f', '#57285a', '#7a345e', '#a1455e', '#c9605a'], hills: '#1a1028', pines: '#0d0816', lake: ['#162a4c', '#193055', '#1c365e', '#1f3c67'], orb: '#ffd9a0', orbShade: '#ffb870', stars: true, fly: '#ffd23f', glow: '255,200,120', window: '#ffcf80' },
     looncall:   { sky: ['#0b1630', '#10203f', '#162b4f', '#1d3760', '#264570', '#30537f', '#3d628c'], hills: '#0f1e33', pines: '#08121f', lake: ['#12304d', '#153657', '#183c61', '#1b426b'], orb: '#f4f1e8', orbShade: '#cfd2dc', stars: true, fly: '#7fe3d0', glow: '200,255,240', window: '#ffe9a8' },
     crush:      { sky: ['#1a0820', '#2a0d33', '#3d1248', '#53185c', '#6b1f6c', '#86287a', '#a33486'], hills: '#2a0b2e', pines: '#140516', lake: ['#2a0c33', '#33103d', '#3c1447', '#451851'], orb: '#ffd6e8', orbShade: '#ffa8cc', stars: true, fly: '#ff8fb3', glow: '255,170,210', window: '#ffb0d0' },
@@ -113,6 +114,11 @@
       for (const x of [164, 186]) { R(g, x, 106, 10, 3, '#e83f5b'); R(g, x, 109, 10, 2, '#b8283f'); R(g, x + 1, 111, 2, 9, '#8a1e30'); R(g, x + 7, 111, 2, 9, '#8a1e30'); }
       for (const [dx, dy] of [[0, 0], [6, 0], [-3, 3], [9, 3], [-3, 6], [9, 6], [0, 9], [6, 9], [3, 12]]) R(g, 178 + dx, 60 + dy, 5, 5, '#ff8fb3');
     },
+    storm(g) { // the cottage hunkered down, one lit window, storm clouds overhead
+      R(g, 140, 92, 40, 22, '#2a1d14'); for (let i = 0; i < 12; i++) R(g, 136 + i * 2, 92 - i, 48 - i * 4, 1, '#3a1c1c');
+      R(g, 166, 100, 6, 6, '#ffcf80'); R(g, 150, 102, 6, 12, '#120c08');
+      for (const [x, w] of [[40, 90], [150, 120], [250, 80]]) { R(g, x, 18, w, 8, '#1c2236'); R(g, x + 10, 12, w - 20, 8, '#232a42'); }
+    },
     lantern(g) { // paper lantern-boats drifting on the dusk lake
       for (const [x, y, c] of /** @type {[number, number, string][]} */ ([[70, 140, '#ff8a3d'], [150, 152, '#4fc3f7'], [250, 136, '#ffd23f']])) {
         R(g, x - 6, y, 12, 2, c); R(g, x - 5, y + 2, 10, 1, '#1a1423'); R(g, x, y - 7, 1, 7, '#8a5a3b'); R(g, x + 1, y - 7, 4, 6, '#f4f1e8'); D(g, x - 3, y - 3, 2, '#ffd23f');
@@ -173,6 +179,10 @@
         const y = 110 - ((t * 0.6 + i * 23) % 80), x = 170 + i * 6 + Math.round(Math.sin(t / 9 + i) * 4);
         R(g, x, y, 2, 2, '#ff8fb3'); R(g, x + 3, y, 2, 2, '#ff8fb3'); R(g, x + 1, y + 2, 3, 2, '#ff8fb3');
       }
+    },
+    storm(g, t) { // slanted rain and the odd far-off flash
+      for (let i = 0; i < 60; i++) { const x = (i * 53 + t * 4) % (W + 20) - 10, y = (i * 29 + t * 9) % 112; R(g, x, y, 1, 3, 'rgba(160,185,230,0.35)'); }
+      if (t % 210 < 3) { g.fillStyle = 'rgba(200,215,255,0.12)'; g.fillRect(0, 0, W, 112); }
     },
     lantern(g, t) { // lantern glows breathing + fireflies over the water
       for (const [x, y, p] of [[67, 137, 0], [147, 149, 2], [247, 133, 4]]) { const a = 0.12 + 0.08 * Math.sin(t / 10 + p); g.fillStyle = `rgba(255,200,90,${a.toFixed(2)})`; g.fillRect(x - 6, y - 6, 12, 12); }

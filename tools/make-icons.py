@@ -250,10 +250,21 @@ def lantern() -> Canvas:               # a paper boat with a glowing lantern on 
     c.disc(8, 8, 3.2, 'Y'); c.rect(7, 4, 3, 1, 'B'); c.set(8, 8, 'O')  # lantern
     c.outline(); return c
 
+def storm() -> Canvas:                 # a cottage under a storm cloud, a raccoon peeking out
+    c = Canvas(30, 26)
+    c.ellipse(15, 4, 12, 3.5, 'S'); c.ellipse(9, 5, 6, 3, 'Q'); c.ellipse(21, 5, 6, 3, 'Q')   # storm cloud
+    c.line(18, 8, 15, 12, 'Y'); c.line(15, 12, 18, 12, 'Y'); c.line(18, 12, 14, 17, 'Y')      # lightning
+    for x in (6, 10, 23, 26): c.set(x, 10, 'A'); c.set(x - 1, 13, 'A')                       # rain
+    c.rect(4, 17, 14, 8, 'B'); c.tri([(2, 17), (20, 17), (11, 11)], 'R')                       # cottage + roof
+    c.rect(9, 20, 3, 5, 'C'); c.rect(14, 19, 2, 2, 'H')                                       # door, lit window
+    c.disc(23, 21, 3, 'G'); c.rect(21, 20, 5, 1, 'C'); c.set(22, 20, 'W'); c.set(24, 20, 'W')   # raccoon: mask + eyes
+    c.rect(20, 23, 7, 2, 'G'); c.rect(26, 22, 2, 1, 'C')                                      # body, ringed tail
+    c.outline(); return c
+
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
-    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'lantern': lantern, 'crush': crush,
+    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'lantern': lantern, 'storm': storm, 'crush': crush,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

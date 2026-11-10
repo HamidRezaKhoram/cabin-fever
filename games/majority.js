@@ -49,19 +49,31 @@ const BET_ZERO_PTS = 50; // calling "nobody" is easy to force with a weird answe
 const BET_WINDOW_MS = parseInt(process.env.RUMPUS_MR_BET_WINDOW_MS || '8000', 10);
 
 // "The Bananas!" -> "banana"
+/** @param {string} s */
 function normalize(s) {
   let t = s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
   t = t.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
   t = t.replace(/^(a|an|the) /, '');
-  t = t.split(' ').map((w) => (w.length > 3 && w.endsWith('es') && /(ch|sh|x|s|z|o)es$/.test(w)
+  t = t.split(' ').map((/** @type {string} */ w) => (w.length > 3 && w.endsWith('es') && /(ch|sh|x|s|z|o)es$/.test(w)
     ? w.slice(0, -2) : w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w)).join(' ');
   return t.replace(/ /g, '');
 }
 
 class MajorityGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(6);
+    this.prompt = '';
+    /** @type {Map<string, string>} id → answer */
+    this.answers = new Map();
+    /** @type {Map<string, number>} id → how many others they expect to match them */
+    this.bets = new Map();
+    /** @type {{ bets: { nickname: string, bet: number, actual: number, gained: number }[], groups: { label: string, count: number, names: string[], top: boolean }[], gained: { nickname: string, gained: number }[] } | null} */
+    this.result = null;
+    this.poolName = 'majority';
+    /** @type {PoolItem | null} */
+    this.item = null;
   }
 
   start() { this.nextRound(); }
@@ -74,15 +86,16 @@ class MajorityGame extends BaseGame {
     const item = library.drawOne('majority', { spicy: this.spicy(), lang: this.room.settings.lang });
     this.poolName = 'majority';
     this.item = item;
-    this.prompt = item ? item.text : BUILTIN[this.round % BUILTIN.length];
-    this.answers = new Map(); // id -> text
-    this.bets = new Map();    // id -> how many others they expect to match them
+    this.prompt = (item && item.text) || BUILTIN[this.round % BUILTIN.length];
+    this.answers = new Map();
+    this.bets = new Map();
     this.result = null;
     this.phase = 'mr-answer';
     this.setTimer(ANSWER_MS, () => this.reveal());
     this.push();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase !== 'mr-answer') return;
     if (this.answers.has(id)) {
@@ -101,14 +114,17 @@ class MajorityGame extends BaseGame {
 
   reveal() {
     if (this.phase !== 'mr-answer') return;
-    const groups = new Map(); // key -> { label, ids }
+    /** @type {Map<string, { label: string, ids: string[] }>} */
+    const groups = new Map();
     for (const [id, text] of this.answers) {
       const k = normalize(text);
-      if (!groups.has(k)) groups.set(k, { label: text, ids: [] });
-      groups.get(k).ids.push(id);
+      const g = groups.get(k) || { label: text, ids: [] };
+      g.ids.push(id);
+      groups.set(k, g);
     }
     const list = [...groups.values()].sort((a, b) => b.ids.length - a.ids.length);
     const biggest = list.length ? list[0].ids.length : 0;
+    /** @type {{ nickname: string, gained: number }[]} */
     const gained = [];
     for (const g of list) {
       if (g.ids.length < 2) continue;
@@ -118,6 +134,7 @@ class MajorityGame extends BaseGame {
         gained.push({ nickname: this.nick(id), gained: this.award(id, pts) });
       }
     }
+    /** @type {{ nickname: string, bet: number, actual: number, gained: number }[]} */
     const bets = [];
     for (const [id, n] of this.bets) {
       const g = list.find((x) => x.ids.includes(id));
@@ -155,6 +172,7 @@ class MajorityGame extends BaseGame {
     return { prompt: this.prompt, result: this.result };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'mr-answer') {
       return {
@@ -163,7 +181,7 @@ class MajorityGame extends BaseGame {
       };
     }
     const mine = this.answers.get(id);
-    const g = mine && this.result.groups.find((x) => x.names.includes(this.nick(id)));
+    const g = mine && this.result ? this.result.groups.find((x) => x.names.includes(this.nick(id))) : null;
     return {
       gameState: { prompt: this.prompt, result: this.result },
       you: { answer: mine || null, matched: g ? g.count - 1 : 0, bet: this.bets.has(id) ? this.bets.get(id) : null },

@@ -23,6 +23,7 @@ const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_CAH_ROUNDS || '8', 10);
 const HAND_SIZE = 7;
 const POINTS_PER_WIN = 500;
 
+/** @template T @param {T[]} arr @returns {T[]} */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = crypto.randomInt(i + 1);
@@ -32,6 +33,7 @@ function shuffle(arr) {
 }
 
 class CAHGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     this.room = room;
     this.push = push;
@@ -43,9 +45,12 @@ class CAHGame {
     this.hands = new Map(); // playerId -> [cardText]
     this.blackCard = null;
     this.czarCursor = 0;
+    /** @type {string | null} */
     this.czarId = null;
     this.submissions = new Map(); // playerId -> cardText
-    this.revealList = null; // shuffled [{ playerId, text }] built at czar phase
+    /** @type {{ playerId: string, text: string }[]} shuffled at the czar phase */
+    this.revealList = [];
+    /** @type {{ playerId: string, nickname: string, text: string } | null} */
     this.winner = null;
     this.timer = null;
     this.endsAt = null;
@@ -56,11 +61,13 @@ class CAHGame {
     }
   }
 
+  /** @param {number} n @returns {string[]} */
   drawWhite(n) {
-    const got = library.draw('cah-white', n, { spicy: this.spicy() }).map((c) => c.text);
+    const got = library.draw('cah-white', n, { spicy: this.spicy() }).map((c) => c.text || '').filter(Boolean);
     while (got.length < n) {
       if (this.whiteDeck.length === 0) this.whiteDeck = shuffle(WHITE.slice());
-      got.push(this.whiteDeck.pop());
+      const card = this.whiteDeck.pop();
+      if (card) got.push(card);
     }
     return got;
   }
@@ -82,6 +89,7 @@ class CAHGame {
     this.timer = null;
   }
 
+  /** @param {number} ms @param {() => void} fn */
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
     const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('cah');
@@ -126,7 +134,7 @@ class CAHGame {
   skip() {
     if (!this.timerFn || this.destroyed) return;
     const fn = this.timerFn;
-    clearTimeout(this.timer);
+    if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     this.timerFn = null;
     fn();
@@ -157,7 +165,7 @@ class CAHGame {
     this.nextOptions = this.round < this.totalRounds ? [this.drawBlack(), this.drawBlack(), this.drawBlack()] : null;
     this.nextPick = null;
     this.submissions = new Map();
-    this.revealList = null;
+    this.revealList = [];
     this.winner = null;
     this.phase = 'cah-submit';
     this.timer = null;
@@ -169,6 +177,7 @@ class CAHGame {
     return Math.max(0, this.room.players.size - 1); // everyone except the czar
   }
 
+  /** @param {string} playerId @param {Record<string, any>} payload */
   handleSubmit(playerId, payload) {
     if (this.destroyed) return;
     if (this.phase === 'cah-submit' && playerId === this.czarId) {
@@ -210,13 +219,15 @@ class CAHGame {
     this.push();
   }
 
+  /** @param {number} choiceIndex */
   pickWinner(choiceIndex) {
     if (this.phase !== 'cah-czar') return;
     const pick = this.revealList[choiceIndex];
+    if (!pick) return;
     const p = this.room.players.get(pick.playerId);
     if (p) p.score += POINTS_PER_WIN * this.mult();
     this.winner = { playerId: pick.playerId, nickname: p ? p.nickname : '(left the game)', text: pick.text };
-    if (p) stats.highlight(this.room, { game: 'Card Chaos', prompt: this.blackCard, text: pick.text, by: p.nickname, note: 'won the round' });
+    if (p) stats.highlight(this.room, { game: 'Card Chaos', prompt: this.blackCard || '', text: pick.text, by: p.nickname, note: 'won the round' });
     // Replenish everyone who played a card back up to HAND_SIZE.
     for (const playerId of this.submissions.keys()) {
       const hand = this.hands.get(playerId);
@@ -235,6 +246,7 @@ class CAHGame {
     this.push();
   }
 
+  /** @param {string} playerId */
   onPlayerLeft(playerId) {
     if (this.destroyed) return;
     this.hands.delete(playerId);
@@ -257,7 +269,7 @@ class CAHGame {
   }
 
   czarNickname() {
-    const p = this.room.players.get(this.czarId);
+    const p = this.czarId ? this.room.players.get(this.czarId) : undefined;
     return p ? p.nickname : '???';
   }
 
@@ -286,7 +298,7 @@ class CAHGame {
       case 'cah-czar':
         return {
           ...base,
-          submissions: this.revealList.map((s, i) => ({ index: i, text: s.text })),
+          submissions: this.revealList.map((/** @type {{ text: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text })),
         };
       case 'cah-reveal':
         return { ...base, winner: this.winner };
@@ -297,6 +309,7 @@ class CAHGame {
     }
   }
 
+  /** @param {string} playerId */
   playerView(playerId) {
     const base = {
       gameId: 'cah',
@@ -327,7 +340,7 @@ class CAHGame {
           gameState: {
             ...base,
             submissions: playerId === this.czarId
-              ? this.revealList.map((s, i) => ({ index: i, text: s.text }))
+              ? this.revealList.map((/** @type {{ text: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text }))
               : [],
           },
           you: { isCzar: playerId === this.czarId },

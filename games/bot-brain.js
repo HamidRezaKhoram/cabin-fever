@@ -38,8 +38,8 @@ function shuffleCopy(list, rnd) {
  */
 function decide(view, rnd = Math.random) {
   const g = view.gameState || {}, you = view.you || {};
-  const tap = (payload) => ({ payload, kind: /** @type {'tap'} */ ('tap') });
-  const write = (payload) => ({ payload, kind: /** @type {'write'} */ ('write') });
+  const tap = (/** @type {Record<string, any>} */ payload) => ({ payload, kind: /** @type {'tap'} */ ('tap') });
+  const write = (/** @type {Record<string, any>} */ payload) => ({ payload, kind: /** @type {'write'} */ ('write') });
   switch (view.phase) {
     // Punchline
     case 'answering': return !you.submitted && g.prompt ? write({ text: pick(LINES, rnd) }) : null;
@@ -75,7 +75,7 @@ function decide(view, rnd = Math.random) {
     case 'tel-draw': return !you.submitted ? { payload: { image: PNG }, kind: 'draw' } : null;
     case 'tel-reveal': {
       if (!g.favOpen || you.fav != null || !you.canFav) return null;
-      const ok = (g.entries || []).map((e, i) => (e.ok ? i : -1)).filter((i) => i >= 0);
+      const ok = (g.entries || []).map((/** @type {{ ok: boolean }} */ e, /** @type {number} */ i) => (e.ok ? i : -1)).filter((/** @type {number} */ i) => i >= 0);
       return ok.length ? tap({ fav: pick(ok, rnd) }) : null;
     }
     case 'tel-vote': return !you.voted && g.drawings && g.drawings.length ? tap({ key: pick(g.drawings, rnd).key }) : null;
@@ -108,6 +108,18 @@ function decide(view, rnd = Math.random) {
       const fav = t.find((/** @type {{ nickname: string }} */ x) => fans.includes(x.nickname)); // date someone who wrote to you, usually
       return t.length ? tap({ pick: rnd() < 0.1 ? null : (fav && rnd() < 0.7 ? fav : pick(t, rnd)).id }) : null;
     }
+    // Storm Watch: ready, lead (yourself + random others), vote, help/sabotage, accuse.
+    case 'st-roles': return you.ready ? null : tap({ ready: true });
+    case 'st-talk': {
+      if (!you.isLeader || !(you.candidates || []).length) return null;
+      const me = you.candidates.find((/** @type {{ id: string }} */ c) => c.id === you.playerId);
+      const rest = shuffleCopy(you.candidates.filter((/** @type {{ id: string }} */ c) => c !== me), rnd);
+      const crew = [...(me ? [me] : []), ...rest].slice(0, g.crewSize).map((/** @type {{ id: string }} */ c) => c.id);
+      return { payload: { crew }, kind: 'tap' };
+    }
+    case 'st-vote': return you.voted ? null : tap({ vote: rnd() < 0.7 });
+    case 'st-crew': return you.onCrew && !you.played ? tap({ card: you.canSabotage && rnd() < 0.7 ? 'sabotage' : 'help', fix: !!you.canFix && rnd() < 0.5 }) : null;
+    case 'st-accuse': return !you.accused && (you.accuseTargets || []).length ? tap({ accuse: pick(you.accuseTargets, rnd).id }) : null;
     // Lantern Lake: steer toward your target (a firefly, the moonbeam, the raft's next lantern).
     case 'll-intro': case 'll-play': {
       if (!you.pos || !you.target) return view.phase === 'll-play' ? { payload: { tilt: [rnd() * 2 - 1, rnd() * 2 - 1] }, kind: 'steer' } : null;
@@ -145,7 +157,7 @@ function decide(view, rnd = Math.random) {
   }
 }
 
-/** Human-ish think time in ms for a decision kind (divide by `speed` for fast bots). */
+/** Human-ish think time in ms for a decision kind (divide by `speed` for fast bots). @param {string} kind @param {() => number} [rnd] */
 function thinkMs(kind, rnd = Math.random) {
   if (kind === 'mash') return 250;
   if (kind === 'react') return 220 + rnd() * 300; // human reaction time

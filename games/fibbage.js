@@ -32,6 +32,7 @@ const TRUTH_POINTS = 1000; // for finding the real answer
 const FOOL_POINTS = 500;   // per player your lie fools
 const LIKE_POINTS = 50;    // per 👍 on your lie (players like funny lies while waiting for the rest)
 
+/** @template T @param {T[]} arr @returns {T[]} */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = crypto.randomInt(i + 1);
@@ -42,11 +43,15 @@ function shuffle(arr) {
 
 // Loose match so a lie that's really the truth (or two identical lies) collapse
 // together regardless of casing / surrounding whitespace / trailing period.
+/** @param {unknown} s */
 function normalize(s) {
   return String(s).trim().toLowerCase().replace(/[.!?]+$/, '');
 }
 
+/** @typedef {{ text: string, authorIds: Set<string>, isTruth: boolean, index: number }} Option */
+
 class FibbageGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     this.room = room;
     this.push = push;
@@ -54,16 +59,33 @@ class FibbageGame {
     this.round = 0;
     this.totalRounds = Math.min((room.settings && room.settings.rounds) || TOTAL_ROUNDS, QUESTIONS.length);
     this.deck = shuffle(QUESTIONS.map((q, i) => i));
-    this.prompt = null;
-    this.answer = null;
-    this.bluffs = new Map();   // playerId -> lie text
-    this.collided = new Set(); // players whose last try accidentally was the truth
-    this.picks = new Map();    // playerId -> option index
-    this.options = null;       // [{ index, text, isTruth, authorIds:Set }]
+    this.prompt = '';
+    this.answer = '';
+    /** @type {Map<string, string>} playerId → lie text */
+    this.bluffs = new Map();
+    /** @type {Set<string>} players whose last try accidentally was the truth */
+    this.collided = new Set();
+    /** @type {Map<string, number>} playerId → option index */
+    this.picks = new Map();
+    /** @type {Map<number, Set<string>>} option index → who liked it */
+    this.likes = new Map();
+    /** @type {Option[]} */
+    this.options = [];
+    /** @type {any} the reveal (shape documented by the renderer) */
     this.roundResult = null;
+    /** @type {NodeJS.Timeout | null} */
     this.timer = null;
+    /** @type {(() => void) | null} */
+    this.timerFn = null;
+    /** @type {number | null} */
     this.endsAt = null;
     this.destroyed = false;
+    this.skipSeq = 0;
+    this.poolName = 'fibbage';
+    /** @type {PoolItem | null} */
+    this.item = null;
+    /** @type {string | null} */
+    this.source = null;
   }
 
   start() {
@@ -76,6 +98,7 @@ class FibbageGame {
     this.timer = null;
   }
 
+  /** @param {number} ms @param {() => void} fn */
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
     const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('fibbage');
@@ -114,7 +137,7 @@ class FibbageGame {
   skip() {
     if (!this.timerFn || this.destroyed) return;
     const fn = this.timerFn;
-    clearTimeout(this.timer);
+    if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     this.timerFn = null;
     fn();
@@ -127,22 +150,23 @@ class FibbageGame {
     }
     this.round += 1;
     const q = library.drawOne('fibbage', { spicy: this.spicy() }) || QUESTIONS[this.round % QUESTIONS.length];
-    this.prompt = q.q;
+    this.prompt = q.q || '';
     this.poolName = 'fibbage';
-    this.item = q;
-    this.source = q.src || null;
+    this.item = /** @type {PoolItem} */ (/** @type {unknown} */ (q));
+    this.source = /** @type {{ src?: string }} */ (q).src || null;
     this.answer = q.answer;
     this.bluffs = new Map();
     this.collided = new Set();
     this.picks = new Map();
-    this.likes = new Map(); // option index -> Set(playerId)
-    this.options = null;
+    this.likes = new Map();
+    this.options = [];
     this.roundResult = null;
     this.phase = 'fib-bluff';
     this.setTimer(BLUFF_MS, () => this.finishBluffing());
     this.push();
   }
 
+  /** @param {string} playerId @param {Record<string, any>} payload */
   handleSubmit(playerId, payload) {
     if (this.destroyed) return;
     if (!this.room.players.has(playerId)) return;
@@ -168,9 +192,10 @@ class FibbageGame {
       const i = payload.like;
       if (!this.picks.has(playerId) || !Number.isInteger(i) || i < 0 || i >= this.options.length) return;
       if (this.options[i].authorIds.has(playerId)) return;
-      if (!this.likes.has(i)) this.likes.set(i, new Set());
-      if (this.likes.get(i).has(playerId)) return;
-      this.likes.get(i).add(playerId);
+      const set = this.likes.get(i) || new Set();
+      if (set.has(playerId)) return;
+      set.add(playerId);
+      this.likes.set(i, set);
       this.push();
     } else if (this.phase === 'fib-choose') {
       const choice = payload.choice;
@@ -189,11 +214,13 @@ class FibbageGame {
   finishBluffing() {
     if (this.phase !== 'fib-bluff') return;
     // Collapse identical lies into one option credited to every author.
-    const byText = new Map(); // normalized -> { text, authorIds:Set }
+    /** @type {Map<string, { text: string, authorIds: Set<string> }>} normalized → lie */
+    const byText = new Map();
     for (const [playerId, text] of this.bluffs.entries()) {
       const key = normalize(text);
-      if (!byText.has(key)) byText.set(key, { text, authorIds: new Set() });
-      byText.get(key).authorIds.add(playerId);
+      const o = byText.get(key) || { text, authorIds: new Set() };
+      o.authorIds.add(playerId);
+      byText.set(key, o);
     }
     const opts = [...byText.values()].map((o) => ({ ...o, isTruth: false }));
     opts.push({ text: this.answer, authorIds: new Set(), isTruth: true });
@@ -207,9 +234,11 @@ class FibbageGame {
 
   finishChoosing() {
     if (this.phase !== 'fib-choose') return;
-    const gained = new Map(); // playerId -> points this round
-    const add = (id, n) => gained.set(id, (gained.get(id) || 0) + n);
-    const pickedBy = this.options.map(() => []); // option index -> [playerId]
+    /** @type {Map<string, number>} playerId → points this round */
+    const gained = new Map();
+    const add = (/** @type {string} */ id, /** @type {number} */ n) => gained.set(id, (gained.get(id) || 0) + n);
+    /** @type {string[][]} option index → who picked it */
+    const pickedBy = this.options.map(() => []);
 
     for (const [playerId, choice] of this.picks.entries()) {
       pickedBy[choice].push(playerId);
@@ -223,7 +252,7 @@ class FibbageGame {
 
     // Stats: every fooled player counts for the lie's authors; the best lie of the round is a highlight.
     let bestLie = -1;
-    const options = /** @type {{ text: string, isTruth: boolean, authorIds: Set<string> }[]} */ (this.options || []);
+    const options = this.options;
     options.forEach((o, i) => {
       if (o.isTruth || !pickedBy[i].length) return;
       for (const a of o.authorIds) stats.feat(this.room, a, 'fooled', pickedBy[i].length);
@@ -245,7 +274,7 @@ class FibbageGame {
       gained.set(playerId, n * this.mult());
     }
 
-    const nick = (id) => {
+    const nick = (/** @type {string} */ id) => {
       const p = this.room.players.get(id);
       return p ? p.nickname : '(left the game)';
     };
@@ -255,7 +284,7 @@ class FibbageGame {
         isTruth: o.isTruth,
         authors: [...o.authorIds].map(nick),
         pickedBy: pickedBy[i].map(nick),
-        likes: this.likes.has(i) ? this.likes.get(i).size : 0,
+        likes: (this.likes.get(i) || new Set()).size,
       })),
       scored: [...gained.entries()]
         .map(([id, n]) => ({ nickname: nick(id), gained: n }))
@@ -274,6 +303,7 @@ class FibbageGame {
     this.push();
   }
 
+  /** @param {string} playerId */
   onPlayerLeft(playerId) {
     if (this.destroyed) return;
     this.bluffs.delete(playerId);
@@ -334,6 +364,7 @@ class FibbageGame {
     }
   }
 
+  /** @param {string} playerId */
   playerView(playerId) {
     const base = {
       gameId: 'fibbage',
@@ -369,7 +400,7 @@ class FibbageGame {
         };
       case 'fib-reveal': {
         const myPick = this.picks.get(playerId);
-        const foundTruth = Number.isInteger(myPick) && this.options[myPick].isTruth;
+        const foundTruth = myPick !== undefined && !!this.options[myPick] && this.options[myPick].isTruth;
         return {
           gameState: { ...base, prompt: this.prompt, answer: this.answer, result: this.roundResult },
           you: { foundTruth },

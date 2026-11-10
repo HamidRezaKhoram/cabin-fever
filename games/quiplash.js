@@ -30,10 +30,25 @@ const SIDE_BETS = {
   landslide: { label: 'Landslide (75%+)', win: 250, lose: 100 },
 };
 
+/** @typedef {{ prompt: string, authors: string[], answers: (string | null)[] }} Matchup */
+/** @typedef {{ text: string, nickname: string, votes: number, gained: number, shutout: boolean, pct: number, voters: string[], bet: { kind: string, label: string, won: boolean, pts: number } | null }} Side */
+
 class QuiplashGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(TOTAL_ROUNDS);
+    /** @type {Matchup[]} */
+    this.matchups = [];
+    /** @type {Map<string, { mi: number, side: number }[]>} each author's two prompts */
+    this.todo = new Map();
+    this.matchIndex = -1;
+    /** @type {Map<string, number>} voter → side */
+    this.votes = new Map();
+    /** @type {Map<string, string>} author → side bet */
+    this.bets = new Map();
+    /** @type {{ prompt: string, sides: Side[], winner: number } | null} */
+    this.result = null;
   }
 
   start() { this.nextRound(); }
@@ -57,18 +72,18 @@ class QuiplashGame extends BaseGame {
       const team = (/** @type {string} */ id) => (this.room.players.get(id) || {}).team;
       const red = ids.filter((id) => team(id) === 'red'), blue = ids.filter((id) => team(id) !== 'red');
       ids = [];
-      while (red.length || blue.length) { if (red.length) ids.push(red.shift()); if (blue.length) ids.push(blue.shift()); }
+      while (red.length || blue.length) { const r = red.shift(), b = blue.shift(); if (r) ids.push(r); if (b) ids.push(b); }
     }
     const n = ids.length;
     const drawn = library.draw('punchline', n, { spicy: this.spicy(), lang: this.room.settings.lang });
     // Prompt k is answered by players k and k+1 (mod n): everyone gets 2 prompts.
     this.matchups = ids.map((id, k) => ({
-      prompt: drawn[k] ? drawn[k].text : PROMPTS[(this.round * n + k) % PROMPTS.length],
+      prompt: (drawn[k] && drawn[k].text) || PROMPTS[(this.round * n + k) % PROMPTS.length],
       authors: [ids[k], ids[(k + 1) % n]],
-      answers: [null, null],
+      answers: /** @type {(string | null)[]} */ ([null, null]),
     }));
     this.todo = new Map(ids.map((id) => [id, []]));
-    this.matchups.forEach((m, mi) => m.authors.forEach((a, side) => this.todo.get(a).push({ mi, side })));
+    this.matchups.forEach((m, mi) => m.authors.forEach((a, side) => { const list = this.todo.get(a); if (list) list.push({ mi, side }); }));
     for (const list of this.todo.values()) shuffle(list);
     this.matchIndex = -1;
     this.phase = 'answering';
@@ -76,10 +91,12 @@ class QuiplashGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id */
   remaining(id) {
     return (this.todo.get(id) || []).filter(({ mi, side }) => this.matchups[mi].answers[side] == null);
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase === 'answering') {
       const text = cleanText(payload.text, 100);
@@ -120,7 +137,6 @@ class QuiplashGame extends BaseGame {
     if (this.matchIndex >= this.matchups.length) return this.nextRound();
     const m = this.matchups[this.matchIndex];
     this.votes = new Map();
-    /** @type {Map<string, string>} author → side bet */
     this.bets = new Map();
     // Forfeits: if one or both players didn't answer, skip straight to results.
     if (m.answers[0] == null || m.answers[1] == null || this.voters().length === 0) return this.finishMatchup();
@@ -138,16 +154,17 @@ class QuiplashGame extends BaseGame {
     if (m.answers[0] == null && m.answers[1] != null) { tally[1] = voterCount; tally[0] = 0; }
     if (m.answers[1] == null && m.answers[0] != null) { tally[0] = voterCount; tally[1] = 0; }
     const totalVotes = tally[0] + tally[1];
+    /** @param {number} i @returns {Side} */
     const side = (i) => {
       const id = m.authors[i];
       const shutout = totalVotes >= 2 && tally[i] === totalVotes;
       const gained = this.award(id, tally[i] * POINTS_PER_VOTE + (shutout ? SHUTOUT_BONUS : 0));
       return {
-        text: m.answers[i] == null ? '(no answer — forfeit!)' : m.answers[i],
+        text: m.answers[i] ?? '(no answer — forfeit!)',
         nickname: this.nick(id), votes: tally[i], gained, shutout,
         pct: totalVotes ? Math.round((tally[i] / totalVotes) * 100) : 0,
         voters: [...this.votes].filter(([, c]) => c === i).map(([v]) => this.nick(v)),
-        bet: /** @type {{ kind: string, label: string, won: boolean, pts: number } | null} */ (null),
+        bet: null,
       };
     };
     const sides = [side(0), side(1)];
@@ -206,6 +223,7 @@ class QuiplashGame extends BaseGame {
     return { ...common, result: this.result };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'answering') {
       const left = this.remaining(id);

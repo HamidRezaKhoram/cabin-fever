@@ -23,6 +23,7 @@ const SPEED_BONUS = 500;
 const DOUBLE_RISK = 300; // lost on a wrong Double Down answer
 const MIN_PER_CATEGORY = 6;
 
+/** @template T @param {T[]} arr @returns {T[]} */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = crypto.randomInt(i + 1);
@@ -32,30 +33,53 @@ function shuffle(arr) {
 }
 
 // "Entertainment: Video Games" -> "Video Games"
+/** @param {unknown} cat */
 function prettyCategory(cat) {
   return String(cat || '').replace(/^(Entertainment|Science): /, '').replace(/&amp;/g, '&');
 }
 
+/** @typedef {{ q: string, choices: string[], correct: number, cat?: string, src?: string, id?: string }} TriviaQ */
+
 class TriviaGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     this.room = room;
     this.push = push;
     this.phase = 'trivia-question';
     this.round = 0;
     this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
+    /** @type {TriviaQ | null} */
     this.question = null;
-    this.answers = new Map(); // playerId -> { choice, answeredAt }
-    this.doubled = new Set(); // players who've used their one Double Down this game
+    /** @type {Map<string, { choice: number, answeredAt: number, double: boolean }>} */
+    this.answers = new Map();
+    /** @type {Set<string>} players who've used their one Double Down this game */
+    this.doubled = new Set();
+    /** @type {Map<string, number>} */
     this.streaks = new Map();
-    this.roundStartedAt = null;
+    this.roundStartedAt = 0;
+    /** @type {NodeJS.Timeout | null} */
     this.timer = null;
+    /** @type {(() => void) | null} */
+    this.timerFn = null;
+    /** @type {number | null} */
     this.endsAt = null;
     this.destroyed = false;
-    this.category = null;       // raw category of the current segment
+    /** @type {string | null} raw category of the current segment */
+    this.category = null;
     this.segmentLeft = 0;       // questions left in this category segment
+    /** @type {string[]} */
     this.categoryOptions = [];
+    /** @type {string | null} */
     this.chooserId = null;
+    /** @type {Set<string>} */
     this.usedCategories = new Set();
+    this.categoryAuto = false;
+    this.skipSeq = 0;
+    this.poolName = 'trivia';
+    /** @type {TriviaQ | null} */
+    this.item = null;
+    /** @type {{ correct: number, scored: { nickname: string, correct: boolean, gained: number, streak: number, double: boolean }[] } | null} */
+    this.roundResult = null;
   }
 
   start() {
@@ -68,6 +92,7 @@ class TriviaGame {
     this.timer = null;
   }
 
+  /** @param {number} ms @param {() => void} fn */
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
     const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('trivia');
@@ -108,7 +133,7 @@ class TriviaGame {
   skip() {
     if (!this.timerFn || this.destroyed) return;
     const fn = this.timerFn;
-    clearTimeout(this.timer);
+    if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     this.timerFn = null;
     fn();
@@ -116,6 +141,7 @@ class TriviaGame {
 
   // Categories with enough questions for the current 18+ setting.
   availableCategories() {
+    /** @type {Map<string, number>} */
     const counts = new Map();
     const spicy = this.spicy();
     for (const q of library.load('trivia').all) {
@@ -143,7 +169,7 @@ class TriviaGame {
     this.categoryOptions = shuffle(cats).slice(0, 3);
     // Comeback mechanic: the player in last place chooses (ties: random).
     const players = shuffle([...this.room.players.values()]);
-    players.sort((a, b) => a.score - b.score);
+    players.sort((/** @type {Player} */ a, /** @type {Player} */ b) => a.score - b.score);
     this.chooserId = players.length ? players[0].id : null;
     this.phase = 'trivia-category';
     this.setTimer(CATEGORY_MS, () => this.pickCategory(crypto.randomInt(this.categoryOptions.length), true));
@@ -151,10 +177,11 @@ class TriviaGame {
     return true;
   }
 
+  /** @param {number} index @param {boolean} [auto] */
   pickCategory(index, auto = false) {
     if (this.phase !== 'trivia-category') return;
-    this.category = this.categoryOptions[index];
-    this.usedCategories.add(this.category);
+    this.category = this.categoryOptions[index] || null;
+    if (this.category) this.usedCategories.add(this.category);
     this.categoryAuto = auto;
     this.segmentLeft = 3 + crypto.randomInt(3); // 3–5 questions per category
     this.askQuestion();
@@ -164,9 +191,9 @@ class TriviaGame {
     this.round += 1;
     const spicy = this.spicy();
     const cat = this.category;
-    this.question = (cat && library.drawOne('trivia', { spicy, filter: (q) => q.cat === cat }))
+    this.question = /** @type {TriviaQ} */ (/** @type {unknown} */ ((cat && library.drawOne('trivia', { spicy, filter: (/** @type {PoolItem} */ q) => q.cat === cat }))
       || library.drawOne('trivia', { spicy })
-      || QUESTIONS[this.round % QUESTIONS.length];
+      || QUESTIONS[this.round % QUESTIONS.length]));
     this.segmentLeft -= 1;
     this.poolName = 'trivia';
     this.item = this.question;
@@ -177,6 +204,7 @@ class TriviaGame {
     this.push();
   }
 
+  /** @param {string} playerId @param {Record<string, any>} payload */
   handleSubmit(playerId, payload) {
     if (this.destroyed || !this.room.players.has(playerId)) return;
     if (this.phase === 'trivia-category') {
@@ -187,7 +215,8 @@ class TriviaGame {
     }
     if (this.phase !== 'trivia-question') return;
     const choice = payload.choice;
-    if (!Number.isInteger(choice) || choice < 0 || choice >= this.question.choices.length) return;
+    const q = this.question;
+    if (!q || !Number.isInteger(choice) || choice < 0 || choice >= q.choices.length) return;
     if (this.answers.has(playerId)) return; // one answer each
     // Double Down (once per game): ×2 if right, −DOUBLE_RISK if wrong.
     const double = payload.double === true && !this.doubled.has(playerId);
@@ -198,8 +227,10 @@ class TriviaGame {
   }
 
   reveal() {
-    if (this.phase !== 'trivia-question') return;
-    const correct = this.question.correct;
+    if (this.phase !== 'trivia-question' || !this.question) return;
+    const question = this.question;
+    const correct = question.correct;
+    /** @type {{ nickname: string, correct: boolean, gained: number, streak: number, double: boolean }[]} */
     const scored = [];
     for (const [playerId, a] of this.answers.entries()) {
       const p = this.room.players.get(playerId);
@@ -223,7 +254,7 @@ class TriviaGame {
     // Players who didn't answer lose their streak too.
     for (const id of this.room.players.keys()) if (!this.answers.has(id)) this.streaks.set(id, 0);
     scored.sort((a, b) => b.gained - a.gained);
-    if (this.question.id) library.recordAnswers('trivia', this.question.id, scored.filter((x) => x.correct).length, scored.length);
+    if (question.id) library.recordAnswers('trivia', question.id, scored.filter((x) => x.correct).length, scored.length);
     this.roundResult = { correct, scored };
     this.phase = 'trivia-reveal';
     this.setTimer(REVEAL_MS, () => this.nextRound());
@@ -238,6 +269,7 @@ class TriviaGame {
     this.push();
   }
 
+  /** @param {string} playerId */
   onPlayerLeft(playerId) {
     if (this.destroyed) return;
     this.answers.delete(playerId);
@@ -258,7 +290,7 @@ class TriviaGame {
   // --- views ---------------------------------------------------------------
 
   base() {
-    const chooser = this.room.players.get(this.chooserId);
+    const chooser = this.chooserId ? this.room.players.get(this.chooserId) : undefined;
     return {
       gameId: 'trivia',
       round: this.round,
@@ -277,14 +309,15 @@ class TriviaGame {
 
   hostGameState() {
     const base = this.base();
+    const q = /** @type {TriviaQ} */ (this.question), rr = this.roundResult || { correct: -1, scored: [] };
     switch (this.phase) {
       case 'trivia-category':
         return { ...base, categoryOptions: this.categoryOptions.map(prettyCategory) };
       case 'trivia-question':
         return {
           ...base,
-          question: this.question.q,
-          choices: this.question.choices,
+          question: q.q,
+          choices: q.choices,
           answeredCount: this.answers.size,
           totalPlayers: this.room.players.size,
           categoryAuto: !!this.categoryAuto,
@@ -292,10 +325,10 @@ class TriviaGame {
       case 'trivia-reveal':
         return {
           ...base,
-          question: this.question.q,
-          choices: this.question.choices,
-          correct: this.roundResult.correct,
-          scored: this.roundResult.scored,
+          question: q.q,
+          choices: q.choices,
+          correct: rr.correct,
+          scored: rr.scored,
         };
       case 'gameover':
         return { ...base, standings: this.standings() };
@@ -304,8 +337,10 @@ class TriviaGame {
     }
   }
 
+  /** @param {string} playerId */
   playerView(playerId) {
     const base = this.base();
+    const q = /** @type {TriviaQ} */ (this.question), rr = this.roundResult || { correct: -1, scored: [] };
     switch (this.phase) {
       case 'trivia-category':
         return {
@@ -314,7 +349,7 @@ class TriviaGame {
         };
       case 'trivia-question':
         return {
-          gameState: { ...base, question: this.question.q, choices: this.question.choices },
+          gameState: { ...base, question: q.q, choices: q.choices },
           you: { answered: this.answers.has(playerId), canDouble: !this.doubled.has(playerId) },
         };
       case 'trivia-reveal': {
@@ -322,13 +357,13 @@ class TriviaGame {
         return {
           gameState: {
             ...base,
-            question: this.question.q,
-            choices: this.question.choices,
-            correct: this.roundResult.correct,
+            question: q.q,
+            choices: q.choices,
+            correct: rr.correct,
           },
           you: {
             answered: !!mine,
-            wasCorrect: !!mine && mine.choice === this.roundResult.correct,
+            wasCorrect: !!mine && mine.choice === rr.correct,
             streak: this.streaks.get(playerId) || 0,
           },
         };

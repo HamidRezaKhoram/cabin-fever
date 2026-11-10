@@ -30,11 +30,17 @@ const FAV_PTS = 50;
 const SPLIT_AT = 6;
 const MAX_IMAGE = 400 * 1024;
 
+/** @param {unknown} s @returns {s is string} */
 function validImage(s) {
   return typeof s === 'string' && s.length < MAX_IMAGE && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s);
 }
 
+/** @typedef {{ type: 'text' | 'drawing', by: string, content: string | null, auto?: boolean }} Entry */
+/** @typedef {{ owner: string, entries: Entry[] }} Chain */
+/** @typedef {{ key: string, by: string, image: string }} Drawing */
+
 class TelephoneGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
     this.order = shuffle(this.playerIds());
@@ -44,22 +50,35 @@ class TelephoneGame extends BaseGame {
     this.split = this.n >= SPLIT_AT ? Math.floor(this.n / 2) : 0;
     this.steps = this.split ? Math.min(this.split, this.n - this.split) : this.n;
     this.totalRounds = this.steps; // one "round" per step
-    this.chains = this.order.map((owner) => ({ owner, entries: [] }));
+    /** @type {Chain[]} */
+    this.chains = this.order.map((owner) => ({ owner, entries: /** @type {Entry[]} */ ([]) }));
     this.doubleFinal = false;
     const ideas = library.draw('telephone', this.order.length, { spicy: this.spicy(), lang: this.room.settings.lang });
-    this.suggestions = new Map(this.order.map((id, i) => [id, ideas[i] ? ideas[i].text : FALLBACK[i % FALLBACK.length]]));
+    /** @type {Map<string, string>} */
+    this.suggestions = new Map(this.order.map((id, i) => [id, (ideas[i] && ideas[i].text) || FALLBACK[i % FALLBACK.length]]));
     this.step = -1;
+    /** @type {Map<string, boolean>} */
     this.done = new Map();
+    this.revealIndex = 0;
+    /** @type {Map<string, number>[]} per chain: voter → favourite entry index */
+    this.favs = [];
+    this.favOpen = false;
+    /** @type {Drawing[]} */
+    this.drawingList = [];
+    /** @type {Map<string, string>} voter → drawing key */
+    this.votes = new Map();
   }
 
   start() { this.nextStep(); }
 
+  /** @param {number} k */
   stepType(k) {
     if (k === 0) return 'write';
     return k % 2 === 1 ? 'draw' : 'describe';
   }
 
   // Which chain does seat j work on at step k?
+  /** @param {string} id @param {number} [k] @returns {number | null} */
   chainFor(id, k = this.step) {
     const j = this.order.indexOf(id);
     if (j < 0) return null;
@@ -86,18 +105,20 @@ class TelephoneGame extends BaseGame {
     const type = this.stepType(this.step);
     // Fill gaps for anyone who didn't submit (or left).
     for (const id of this.order) {
-      const c = this.chains[this.chainFor(id)];
-      if (c.entries.length > this.step) continue;
+      const ci = this.chainFor(id);
+      const c = ci == null ? null : this.chains[ci];
+      if (!c || c.entries.length > this.step) continue;
       c.entries.push({
         type: type === 'draw' ? 'drawing' : 'text',
         by: id,
-        content: type === 'draw' ? null : (type === 'write' ? this.suggestions.get(id) : '(no guess)'),
+        content: type === 'draw' ? null : (type === 'write' ? this.suggestions.get(id) || '' : '(no guess)'),
         auto: true,
       });
     }
     this.nextStep();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase === 'tel-vote') return this.handleVote(id, payload);
     if (this.phase === 'tel-reveal') return this.handleFav(id, payload);
@@ -107,6 +128,7 @@ class TelephoneGame extends BaseGame {
     if (ci == null) return;
     const chain = this.chains[ci];
     if (chain.entries.length !== this.step) return;
+    /** @type {Entry} */
     let entry;
     if (this.phase === 'tel-draw') {
       if (!validImage(payload.image)) return;
@@ -125,7 +147,6 @@ class TelephoneGame extends BaseGame {
   beginReveal() {
     this.phase = 'tel-reveal';
     this.revealIndex = 0;
-    /** @type {Map<string, number>[]} per chain: voter → favourite entry index */
     this.favs = this.chains.map(() => new Map());
     this.scheduleReveal();
     this.push();
@@ -157,6 +178,7 @@ class TelephoneGame extends BaseGame {
     return this.playerIds().filter((id) => Array.from({ length: n }, (_, i) => i).some((i) => this.favable(id, i)));
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleFav(id, payload) {
     if (!this.favOpen) return;
     const votes = this.favs[this.revealIndex];
@@ -177,6 +199,7 @@ class TelephoneGame extends BaseGame {
   }
 
   drawings() {
+    /** @type {Drawing[]} */
     const list = [];
     this.chains.forEach((c, ci) => c.entries.forEach((e, ei) => {
       if (e.type === 'drawing' && e.content) list.push({ key: `${ci}:${ei}`, by: e.by, image: e.content });
@@ -193,6 +216,7 @@ class TelephoneGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleVote(id, payload) {
     if (this.votes.has(id)) return;
     const d = this.drawingList.find((x) => x.key === payload.key);
@@ -231,6 +255,7 @@ class TelephoneGame extends BaseGame {
 
   // --- views ---------------------------------------------------------------
 
+  /** @param {Chain} c @param {number} [ci] */
   chainView(c, ci = -1) {
     const votes = ci >= 0 && this.favs ? [...this.favs[ci].values()] : [];
     return {
@@ -267,6 +292,7 @@ class TelephoneGame extends BaseGame {
     };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'tel-reveal') {
       if (!this.favOpen) return { gameState: { favOpen: false }, you: {} };
