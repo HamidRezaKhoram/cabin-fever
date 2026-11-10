@@ -1,5 +1,9 @@
 # Cottage Crush — a speed-dating party game (design doc)
 
+> ✅ **Shipped** (games/crush.js): 4 evenings, notes/replies/picks, 4 agendas (Heartbreaker,
+> Hopeless Romantic, Wallflower, Player), leader exposed from evening 3. Not built yet: Matchmaker
+> and Gossip agendas, a 3-player Mystery Guest bot, walking-pair animation on the dock.
+
 ## Research
 
 The best-known example of the genre is *Monster Seeking Monster* (Jackbox Party Pack 4), a

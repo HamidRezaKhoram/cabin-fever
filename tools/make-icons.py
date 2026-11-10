@@ -219,10 +219,19 @@ def minigames() -> Canvas:              # red vs blue tug-of-war over the lake
         c.set(cx - 1, 3, 'W'); c.set(cx + 1, 3, 'W')
     c.outline(); return c
 
+def crush() -> Canvas:                 # two lovebirds on a dock under a heart moon
+    c = Canvas(32, 22)
+    c.rect(0, 17, 32, 5, 'U')                                   # lake
+    c.rect(4, 14, 24, 2, 'B'); c.rect(6, 16, 2, 4, 'B'); c.rect(24, 16, 2, 4, 'B')  # dock
+    for cx, col in ((11, 'D'), (20, 'V')):                       # two sweethearts
+        c.disc(cx, 9, 2.5, col); c.rect(cx - 2, 11, 5, 3, col); c.set(cx, 8, 'W')
+    c.disc(13.5, 2.5, 2, 'P'); c.disc(17.5, 2.5, 2, 'P'); c.tri([(11.5, 3), (19.5, 3), (15.5, 7.5)], 'P')  # heart moon
+    c.outline(); return c
+
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
-    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames,
+    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'crush': crush,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

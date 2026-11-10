@@ -129,10 +129,10 @@ async function check(name, fn) {
     assert.ok(st.samples > 60);
   });
 
-  await check('game picker shows unique art for all 11 games', async () => {
+  await check('game picker shows unique art for all 12 games', async () => {
     const arts = await tv.$$eval('.game-pick .game-art img', (els) => els.map((e) => [e.src, e.width, e.height]));
-    assert.strictEqual(arts.length, 11);
-    assert.strictEqual(new Set(arts.map((a) => a[0])).size, 11);
+    assert.strictEqual(arts.length, 12);
+    assert.strictEqual(new Set(arts.map((a) => a[0])).size, 12);
     assert.ok(new Set(arts.map((a) => `${a[1]}x${a[2]}`)).size >= 4, 'art comes in different sizes');
     await shot(tv, '02-lobby');
   });
@@ -372,6 +372,25 @@ async function check(name, fn) {
     await tv.reload();
     await tv.click('#start-overlay');
     await tv.waitForFunction((c) => document.getElementById('room-code').textContent === c, code);
+  });
+
+  await check('Cottage Crush on real phones: a note sent from one phone lands only on the chosen phone', async () => {
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+    await tv.click('[data-act="bots"][data-n="1"]'); // 3 phones + 1 bot = 4 players
+    await tv.waitForFunction(() => !document.querySelector('[data-game-id="crush"]').disabled);
+    await tv.click('[data-game-id="crush"]');
+    for (const p of phones) await p.waitForSelector('.crush-to');
+    await phones[0].selectOption('.crush-to', { label: 'Ben' }); // phones are Ann, Ben, Cat
+    const text = await phones[0].textContent('.crush-card');
+    await phones[0].click('.crush-card');
+    await phones[1].waitForFunction((t) => [...document.querySelectorAll('.crush-note')].some((n) => n.textContent.includes(t.trim())), text);
+    assert.ok(!(await phones[2].evaluate((t) => document.body.textContent.includes(t.trim()), text)), 'not visible to a third phone');
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+    await tv.click('[data-act="nobots"]');
   });
 
   await check('no page errors anywhere', async () => {
