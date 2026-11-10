@@ -347,7 +347,9 @@ function render() {
     gameView.innerHTML = html;
     gameView.classList.remove('enter'); void gameView.offsetWidth; gameView.classList.add('enter');
     const needsInput = gameView.querySelector('form, [data-send], #pad');
-    if (needsInput && lastHtml !== null && navigator.vibrate) navigator.vibrate(60);
+    // Buzz when it's your turn — only after the player has touched the page (browsers block it otherwise).
+    const active = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+    if (needsInput && lastHtml !== null && navigator.vibrate && active) navigator.vibrate(60);
     lastHtml = html;
     bind(g);
     const first = gameView.querySelector('form input');

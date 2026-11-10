@@ -448,4 +448,9 @@ for who, doing, where in sorted(combos):
     tel.append({'text': f'{who} {doing} {where}', 'a': False})
 write('telephone', dedupe(tel + french('telephone.txt'), lambda x: x['text']))
 
+# ----------------------------------------------------------------- Cottage Crush (notes + replies, original)
+for pool_name, src in (('crush-openers', 'crush-openers.txt'), ('crush-replies', 'crush-replies.txt')):
+    f_lines, a_lines = read_txt(src)
+    write(pool_name, [{'text': t, 'a': False} for t in f_lines] + [{'text': t, 'a': True} for t in a_lines], 20)
+
 print('\nPools written to', OUT.relative_to(ROOT))

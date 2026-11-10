@@ -15,7 +15,7 @@ const T = (ms) => String(Math.round(ms / SPEED));
 const { startServer, until, sleep, makeHost, makePlayer } = require('./helpers');
 const { decide, thinkMs } = require('../games/bot-brain');
 
-const GAMES = (process.env.GAMES || 'quiplash,fibbage,trivia,closest,majority,mostlikely,imposter,twotruths,telephone,cah,minigames').split(',');
+const GAMES = (process.env.GAMES || 'quiplash,fibbage,trivia,closest,majority,mostlikely,imposter,twotruths,telephone,cah,minigames,crush').split(',');
 const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, +(process.env.PLAYERS || 4));
 
 (async () => {

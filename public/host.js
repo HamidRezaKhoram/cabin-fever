@@ -70,6 +70,7 @@ const RULES = {
   twotruths: ['Write 2 truths and 1 lie about you', 'Spot everyone else\'s lie', 'Points for each person you fool'],
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
+  crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
   minigames: ['Quick real-time challenges on your phone', 'Tap, react, count, roast — rules shown each time', 'Turn on Teams for Red vs Blue!'],
 };
 // --- narrator (Rocco reads prompts aloud and in a speech bubble) -------------

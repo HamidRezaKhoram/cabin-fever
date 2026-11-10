@@ -75,6 +75,22 @@ function decide(view, rnd = Math.random) {
       if (you.isCzar) return you.nextOptions && you.nextPick == null ? tap({ nextBlack: Math.floor(rnd() * you.nextOptions.length) }) : null;
       return !you.submitted && you.hand && you.hand.length ? tap({ cardIndex: Math.floor(rnd() * you.hand.length) }) : null;
     case 'cah-czar': return you.isCzar && g.submissions && g.submissions.length ? tap({ choice: Math.floor(rnd() * g.submissions.length) }) : null;
+    // Cottage Crush: notes, replies, then a date
+    case 'cr-mingle': {
+      const t = g.targets || [];
+      return you.notesLeft > 0 && t.length ? write({ to: pick(t, rnd).id, text: pick(you.cards && you.cards.length ? you.cards : LINES, rnd) }) : null;
+    }
+    case 'cr-reply': {
+      const open = (you.inbox || []).filter((/** @type {{ reply: string | null }} */ n) => !n.reply);
+      return open.length ? tap({ reply: open[0].id, text: pick(you.replyCards || ['😍'], rnd) }) : null;
+    }
+    case 'cr-pick': {
+      if (you.picked) return null;
+      const fans = (you.inbox || []).map((/** @type {{ from: string }} */ n) => n.from);
+      const t = g.targets || [];
+      const fav = t.find((/** @type {{ nickname: string }} */ x) => fans.includes(x.nickname)); // date someone who wrote to you, usually
+      return t.length ? tap({ pick: rnd() < 0.1 ? null : (fav && rnd() < 0.7 ? fav : pick(t, rnd)).id }) : null;
+    }
     // Game night: vote on what's next
     case 'night-vote': return !you.voted && g.options && g.options.length ? tap({ choice: Math.floor(rnd() * g.options.length) }) : null;
     // Minigame Mayhem

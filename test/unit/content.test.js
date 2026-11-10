@@ -122,3 +122,10 @@ test('trivia is international: no US-only sports/TV/states, an international ban
   const cats = new Set(trivia.map((q) => q.cat));
   for (const c of ['Geography', 'History', 'Science', 'Music', 'Film & TV', 'Food & Drink', 'Sport & Leisure']) assert.ok(cats.has(c), `category ${c}`);
 });
+
+test('Cottage Crush content: original opener and reply cards, family + 18+', () => {
+  const op = load('crush-openers'), rep = load('crush-replies');
+  assert.ok(op.length >= 50 && rep.length >= 20, `${op.length} openers, ${rep.length} replies`);
+  for (const pool of [op, rep]) assert.ok(pool.some((x) => x.a) && pool.some((x) => !x.a));
+  assert.ok(op.every((x) => x.text.length <= 80), 'openers fit a note (80 chars)');
+});

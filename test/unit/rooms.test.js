@@ -13,7 +13,7 @@ test('host gets a 4-letter room code without I or O, plus a resume token', async
   assert.match(h.hostToken, /^[0-9a-f]{32}$/);
   await until(() => h.state && h.state.phase === 'lobby', 'lobby state');
   assert.deepStrictEqual(h.state.settings, { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en' });
-  assert.strictEqual(h.state.availableGames.length, 11);
+  assert.strictEqual(h.state.availableGames.length, 12);
 });
 
 test('join errors: unknown room, blank name, duplicate name, full room', async () => {

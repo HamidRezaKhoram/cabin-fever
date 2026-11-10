@@ -533,6 +533,7 @@ body[data-theme="majority"]   { --accent: #ffcf3f; --accent2: #5ee0a0; --panel: 
 body[data-theme="mostlikely"] { --accent: #ff9bb5; --accent2: #ffe0a0; --panel: #4a1236; --panel2: #701a42; }
 body[data-theme="imposter"]   { --accent: #ff5050; --accent2: #b8f0a0; --panel: #152319; --panel2: #223828; }
 body[data-theme="twotruths"]  { --accent: #b0c8ff; --accent2: #ffd27a; --panel: #0c1836; --panel2: #152a58; }
+body[data-theme="crush"]      { --accent: #ff8fb3; --accent2: #ffe6f0; --panel: #3d1248; --panel2: #53185c; }
 body[data-theme="telephone"]  { --accent: #ffe066; --accent2: #ffffff; --panel: #5a2a08; --panel2: #7e3d0c; }
 body[data-theme="cah"]        { --accent: #ffffff; --accent2: #ff6040; --panel: #220808; --panel2: #3c0d0d; }
 body[data-theme="minigames"]  { --accent: #ffe14d; --accent2: #ffffff; --panel: #0d4f7f; --panel2: #1468a5; }
@@ -665,3 +666,10 @@ body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: 
   box-shadow: 0 0 0 4px var(--edge); margin-bottom: 4vh; animation: pop-in 0.3s steps(9) both; }
 .rocco-bubble[hidden] { display: none; }
 .game-lang { font-family: var(--pixel); font-size: 10px; color: var(--dim); margin-left: 6px; }
+/* ---------- Cottage Crush ---------- */
+.crush-admirers { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4em 1.4em; justify-content: center; }
+.crush-list { list-style: none; padding: 0; }
+.crush-note { background: var(--panel); padding: 8px 10px; margin: 6px 0; box-shadow: 0 0 0 3px var(--edge); }
+.crush-pairs li { animation: pop-in 0.4s steps(12) both; }
+.crush-exposed { color: var(--accent); }
+.crush-to { width: 100%; }

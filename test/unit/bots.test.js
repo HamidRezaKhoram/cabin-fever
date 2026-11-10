@@ -10,7 +10,7 @@ const { decide } = require('../../games/bot-brain');
 const QUICK = {
   RUMPUS_MG_INTRO_MS: '200', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_TUG_MS: '1500', RUMPUS_MG_ROAST_MS: '3000',
   RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
-  RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000',
+  RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000', RUMPUS_CR_REVEAL_STEP_MS: '150',
 };
 let srv;
 test.before(async () => {
@@ -28,7 +28,7 @@ test('host can add and remove bots; bots are flagged and get looks', async () =>
   await until(() => h.state.players.length === 0, 'bots removed');
 });
 
-const GAMES = ['quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely', 'imposter', 'twotruths', 'telephone', 'cah', 'minigames'];
+const GAMES = ['quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely', 'imposter', 'twotruths', 'telephone', 'cah', 'minigames', 'crush'];
 test('bots play every game to the end (fast bots, 4 players)', { timeout: 240000 }, async () => {
   const h = await makeHost(srv);
   h.emit('host:addBots', { count: 4, speed: 20 });

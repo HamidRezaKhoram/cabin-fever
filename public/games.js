@@ -392,6 +392,69 @@
     },
   });
 
+  // ---------------------------------------------------------------- Cottage Crush
+  /** @param {{ nickname: string, agenda: string }[]} list */
+  const exposedHtml = (list) => (list && list.length
+    ? `<p class="crush-exposed">🕵️ Exposed: ${list.map((x) => `${av(x.nickname)} ${esc(x.nickname)} is the <b>${esc(x.agenda)}</b>`).join(' · ')}</p>` : '');
+  register('crush', {
+    host(s) {
+      const g = s.gameState;
+      const tag = `<p class="round-tag">Evening ${g.evening} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+      if (s.phase === 'cr-mingle') {
+        return `${tag}<h1>💌 Mingle!</h1><p class="big-sub">Slip notes to your crushes on your phones. ${T}</p>
+          <ul class="crush-admirers">${g.admirers.map((/** @type {{ nickname: string, count: number }} */ x) => `<li>${av(x.nickname)} ${esc(x.nickname)} has ${x.count} admirer${x.count === 1 ? '' : 's'} 👀</li>`).join('')}</ul>
+          <p class="count">${g.notesSent} notes sent</p>${exposedHtml(g.exposed)}`;
+      }
+      if (s.phase === 'cr-reply') return `${tag}<h1>✍️ Replies</h1><p class="big-sub">Answer your admirers… ${T}</p><p class="count">${g.repliesSent} / ${g.notesSent} replied</p>${exposedHtml(g.exposed)}`;
+      if (s.phase === 'cr-pick') return `${tag}<h1>🌙 Who will you ask out?</h1><p class="big-sub">Pick a date on your phone — or stay in. ${T}</p>${count(g.pickedCount, g.totalPlayers, 'picked')}`;
+      return `${tag}<h1>The dock reveal</h1><ol class="answers crush-pairs">${g.pairs.map((/** @type {any} */ p, /** @type {number} */ i) => `<li style="animation-delay:${(i * g.stepMs) / 1000}s" class="${p.mutual ? 'winner' : ''}">
+          ${p.b === null ? `${av(p.a)} ${esc(p.a)} stayed in 🛋` : p.mutual ? `${av(p.a)} ${esc(p.a)} ❤️ ${av(p.b)} ${esc(p.b)} — it's a date!` : `${av(p.a)} ${esc(p.a)} asked ${av(p.b)} ${esc(p.b)}… 💔`}</li>`).join('')}</ol>${exposedHtml(g.exposed)}`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      const role = you.agenda ? `<div class="role">Your secret agenda: <strong>${esc(you.agenda.name)}</strong><br><small>${esc(you.agenda.desc)}</small></div>` : '';
+      /** @param {any[]} list @param {boolean} mine */
+      const notes = (list, mine) => list.map((n) => `<li class="crush-note"><b>${mine ? '→ ' + esc(n.to) : esc(n.from)}:</b> ${esc(n.text)}${n.reply ? `<br><span class="byline">↩ ${esc(n.reply)}</span>` : ''}</li>`).join('');
+      if (s.phase === 'cr-mingle') {
+        const inbox = you.inbox.length ? `<h3>💌 Your notes</h3><ul class="crush-list">${notes(you.inbox, false)}</ul>` : '';
+        if (you.notesLeft <= 0) return role + waiting('Notes sent', 'Watch the TV for gossip…') + inbox;
+        return `${role}<h2>💌 ${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left</h2>
+          <label>To <select class="crush-to">${g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => `<option value="${esc(t.id)}">${esc(t.nickname)}</option>`).join('')}</select></label>
+          <div class="vote-list">${you.cards.map((/** @type {string} */ c) => `<button type="button" class="vote-btn crush-card" data-text="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+          <form class="crush-form"><input name="text" maxlength="80" autocomplete="off" placeholder="…or write your own"><button type="submit">Send</button></form>${inbox}`;
+      }
+      if (s.phase === 'cr-reply') {
+        const open = you.inbox.filter((/** @type {any} */ n) => !n.reply);
+        if (!open.length) return role + waiting(you.inbox.length ? 'All replied' : 'No notes tonight 😢', 'Waiting for the others…') + (you.outbox.length ? `<h3>Your sent notes</h3><ul class="crush-list">${notes(you.outbox, true)}</ul>` : '');
+        const n = open[0];
+        return `<h2>${esc(n.from)} wrote:</h2><p class="prompt">“${esc(n.text)}”</p><p>Reply:</p>
+          <div class="vote-list crush-replies">${you.replyCards.map((/** @type {string} */ r) => sendBtn({ reply: n.id, text: r }, esc(r))).join('')}</div>`;
+      }
+      if (s.phase === 'cr-pick') {
+        if (you.picked) return waiting('Date picked 🌙');
+        return `${role}<h2>Who will you ask out tonight?</h2><div class="vote-list">` +
+          g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('') +
+          sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>';
+      }
+      const d = you.date;
+      return `<h1>${!d ? 'Watch the dock 📺' : d.mutual ? `❤️ A date with ${esc(d.with)}!` : d.with === null ? '🛋 A quiet night in' : d.askedBy ? `💘 ${esc(d.with)} asked you out!` : `💔 ${esc(d.with)} had other plans`}</h1>
+        ${d ? `<p>${d.gained >= 0 ? '+' : ''}${d.gained} points</p>` : ''}`;
+    },
+    bind(root, api) {
+      const to = /** @type {HTMLSelectElement | null} */ (root.querySelector('.crush-to'));
+      if (!to) return;
+      root.querySelectorAll('.crush-card').forEach((b) => b.addEventListener('click', () => {
+        api.send({ to: to.value, text: /** @type {HTMLElement} */ (b).dataset.text });
+      }));
+      const f = /** @type {HTMLFormElement | null} */ (root.querySelector('.crush-form'));
+      if (f) f.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = /** @type {HTMLInputElement} */ (f.querySelector('input'));
+        if (input.value.trim()) api.send({ to: to.value, text: input.value });
+      });
+    },
+  });
+
   // ---------------------------------------------------------------- Game night
   /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number }[] }} NightView */
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */

@@ -162,4 +162,6 @@ new features and update it when something ships.
 - Rebuild content pools after editing `content-src/`: `python3 tools/build-content.py`.
 - Add a game: module in `games/` (extend `BaseGame`, `meta = {id,name,blurb,minPlayers}`),
   register in `server.js` list, renderer in `public/games.js`, icon in `sprites.js`, rules in
-  `host.js` `RULES`, music style in `music.js` `GAME_STYLE` — the static tests check all of these.
+  `host.js` `RULES`, music style in `music.js` `GAME_STYLE`, scene in `bg.js` (THEMES + STATIC + ANIM),
+  colour scheme in style.css, French rule/blurb lines in `i18n.js`, and teach `games/bot-brain.js` its
+  screens — the static tests and the bots test check all of these.
