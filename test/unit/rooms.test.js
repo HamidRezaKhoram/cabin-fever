@@ -191,12 +191,17 @@ test('avatars: requested one is honoured, duplicates get a free one, changing wo
   const av = (n) => h.state.players.find((p) => p.nickname === n).avatar;
   assert.strictEqual(av('Ann'), 3);
   assert.notStrictEqual(av('Ben'), 3);
-  a.sock.emit('player:avatar', { avatar: 7 });
-  await until(() => av('Ann') === 7, 'changed');
-  b.sock.emit('player:avatar', { avatar: 7 }); // taken
+  // Pick targets that are actually free (Ben's fallback animal is random).
+  const free = () => [...Array(17).keys()].filter((i) => !h.state.players.some((p) => p.avatar === i));
+  const target = free()[0];
+  a.sock.emit('player:avatar', { avatar: target });
+  await until(() => av('Ann') === target, 'changed');
+  b.sock.emit('player:avatar', { avatar: target }); // taken by Ann
   b.sock.emit('player:avatar', { avatar: 999 }); // invalid
-  b.sock.emit('player:avatar', { avatar: 12 }); // valid — arrives after the bad ones (ordered socket)
-  await until(() => av('Ben') === 12, 'Ben switched to 12', 8000);
+  const benNext = free()[0];
+  b.sock.emit('player:avatar', { avatar: benNext }); // valid — arrives after the bad ones (ordered socket)
+  await until(() => av('Ben') === benNext, 'Ben switched', 8000);
+  assert.strictEqual(av('Ann'), target);
 });
 
 test('reactions reach the TV with the sender avatar; junk and spam are dropped', async () => {

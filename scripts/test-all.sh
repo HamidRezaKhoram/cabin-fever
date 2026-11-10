@@ -13,20 +13,25 @@ SKIP_UI=${SKIP_UI:-0}
 step() { printf '\n\033[1;33m== %s ==\033[0m\n' "$*"; }
 
 if [ "${UI_ONLY:-0}" != 1 ]; then
-step "1/4 content pools are up to date"
+step "1/5 content pools are up to date"
 python3 tools/build-content.py >/dev/null
 python3 tools/make-icons.py >/dev/null
-git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated files changed — commit them:"; git status --short games/data/pools public/sprites.js; }
+git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated files changed — review and commit them:"; git status --short games/data/pools public/sprites.js; }
 
-step "2/4 unit + integration tests (node --test)"
+step "2/5 type checks (tsc --checkJs on JS, mypy --strict on Python)"
+"$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
+  pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/build-content.py tools/make-icons.py'
+
+step "3/5 unit + integration tests (node --test)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
+  npm run -s typecheck && echo "tsc: 0 errors" &&
   node --test --test-concurrency=4 test/unit/ && node test/e2e-new.js'
 
 fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
 
-step "3/4 build image + start server"
+step "4/5 build image + start server"
 "$CT" build -q -t homejack:test . >/dev/null
 "$CT" rm -f homejack-test >/dev/null 2>&1 || true
 "$CT" run -d --name homejack-test --network host -e PORT=$PORT \
@@ -35,7 +40,7 @@ step "3/4 build image + start server"
 trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
 for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
 
-step "4/4 browser tests (TV + 3 phones)"
+step "5/5 browser tests (TV + 3 phones)"
 mkdir -p "$ROOT/test/ui/.shots"
 "$CT" run --rm --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots \
   -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v homejack-pw:/pw "$PW_IMG" sh -c '

@@ -80,13 +80,25 @@ app.get('/qr.svg', async (req, res) => {
 });
 
 // Optional: your own background music (mp3/ogg/m4a) in ./music replaces the chiptunes.
-app.get('/api/music', (req, res) => {
-  let files = [];
-  try {
-    files = fs.readdirSync(MUSIC_DIR).filter((f) => /\.(mp3|ogg|m4a|wav|opus)$/i.test(f)).sort();
-  } catch (e) { /* no music dir */ }
-  res.json(files.map((f) => '/music/' + encodeURIComponent(f)));
-});
+// music/<scenario>/*.mp3 (e.g. music/final, music/game/quiplash); files in music/ itself = "any".
+const AUDIO_RE = /\.(mp3|ogg|m4a|wav|opus)$/i;
+function musicCategories() {
+  const out = {};
+  const walk = (dir, rel, depth) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (e.isDirectory() && depth < 2) walk(path.join(dir, e.name), rel ? `${rel}/${e.name}` : e.name, depth + 1);
+      else if (e.isFile() && AUDIO_RE.test(e.name)) {
+        const cat = rel || 'any';
+        (out[cat] = out[cat] || []).push('/music/' + (rel ? rel.split('/').map(encodeURIComponent).join('/') + '/' : '') + encodeURIComponent(e.name));
+      }
+    }
+  };
+  walk(MUSIC_DIR, '', 0);
+  return out;
+}
+app.get('/api/music', (req, res) => res.json(musicCategories()));
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
 // Players' hand-drawn profile pictures.
 app.get('/avatar/:code/:id', (req, res) => {
@@ -523,9 +535,10 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Rumpus listening on port ${server.address().port}`);
+  const port = /** @type {import('net').AddressInfo} */ (server.address()).port;
+  console.log(`Rumpus listening on port ${port}`);
   console.log('TV screen:  /host   Phones:  /play');
-  for (const ip of lanAddresses()) console.log(`  LAN: http://${ip}:${server.address().port}/host`);
+  for (const ip of lanAddresses()) console.log(`  LAN: http://${ip}:${port}/host`);
 });
 
 // Exit promptly on `docker stop` (node as PID 1 ignores SIGTERM by default).

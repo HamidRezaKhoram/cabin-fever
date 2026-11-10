@@ -15,6 +15,9 @@ Output
 Run:  python3 tools/build-content.py
 """
 import hashlib, html, json, random, re, sys
+from typing import Any, Callable
+
+Item = dict[str, Any]
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,12 +36,13 @@ ADULT_RE = re.compile(
     r"sperm|testic\w*|balls|scrotum|anal|anus|dildo|vibrator|bukkake|69|rape\w*|incest|nazi\w*|hitler)\b",
     re.I)
 
-def sid(*parts):
+def sid(*parts: object) -> str:
     return hashlib.sha1('\x1f'.join(str(p) for p in parts).encode()).hexdigest()[:10]
 
-def read_txt(name):
+def read_txt(name: str) -> tuple[list[str], list[str]]:
     """Return (family_lines, adult_lines) from a content-src text file."""
-    fam, adult, cur = [], [], None
+    fam: list[str] = []
+    adult: list[str] = []
     cur = fam
     for raw in (SRC / name).read_text(encoding='utf-8').splitlines():
         line = raw.strip()
@@ -52,7 +56,7 @@ def read_txt(name):
         cur.append(line)
     return fam, adult
 
-def dedupe(items, key):
+def dedupe(items: list[Item], key: Callable[[Item], str]) -> list[Item]:
     seen, out = set(), []
     for it in items:
         k = re.sub(r'[^a-z0-9]', '', key(it).lower())
@@ -62,7 +66,7 @@ def dedupe(items, key):
         out.append(it)
     return out
 
-def write(name, items, min_count=1000):
+def write(name: str, items: list[Item], min_count: int = 1000) -> None:
     for it in items:
         it.setdefault('id', sid(name, json.dumps({k: v for k, v in it.items() if k != 'a'}, sort_keys=True)))
     adult = sum(1 for i in items if i['a'])
@@ -70,11 +74,11 @@ def write(name, items, min_count=1000):
     flag = '' if len(items) >= min_count else '   <-- below target'
     print(f'{name:12s} {len(items):6d} items   {adult:5d} adult ({adult * 100 // max(1, len(items))}%){flag}')
 
-def fill(tpl, f):
+def fill(tpl: str, f: str) -> str:
     out = tpl.replace('{}', f)
     return re.sub(r"\ba ([aeiAEI]|[oO](?!ne|nce)|[uU](?!ni|se|su|ku|ro|ti|fo|FO))", r"an \1", out)
 
-def clean(s):
+def clean(s: str) -> str:
     return html.unescape(s).strip()
 
 # ----------------------------------------------------------------- "boring" filters
@@ -91,7 +95,7 @@ TWIST_RE = re.compile(r"worst|never|weird|embarrass|secret|lie|regret|scar|gross
                       r"steal|hide|cheat|cry|fake|ruin|mom|dad|grandma|stranger|weirdest|creep|cursed|"
                       r"apocalypse|villain|explode|panic|disaster|horrible|smell|sexy|date|bed|toilet", re.I)
 
-def boring_trivia(q):
+def boring_trivia(q: Item) -> bool:
     cat = clean(q.get('category', ''))
     text = clean(q['question'])
     if q['type'] == 'boolean' or cat in DRY_CATS or DRY_RE.search(text):
@@ -138,10 +142,12 @@ punch += [{'text': b['text'], 'a': b['a'] or bool(ADULT_RE.search(b['text']))} f
 write('punchline', dedupe(punch, lambda x: x['text']))
 
 # ----------------------------------------------------------------- Trivia + Fib Finder (OpenTDB split) + adult
-def short_answer(a):
+def short_answer(a: str) -> bool:
     return len(a) <= 26 and len(a.split()) <= 4 and not re.fullmatch(r'[-\d.,%]+', a)
 
-trivia, fib, closest = [], [], []
+trivia: list[Item] = []
+fib: list[Item] = []
+closest: list[Item] = []
 for q in opentdb:
     if boring_trivia(q):
         continue
@@ -238,7 +244,8 @@ write('closest', dedupe(closest, lambda x: x['q']))
 
 # ----------------------------------------------------------------- Majority Rules
 fam, adult = read_txt('majority.txt')
-plain = lambda t: len(t.split()) <= 6 and not TWIST_RE.search(t)
+def plain(t: str) -> bool:
+    return len(t.split()) <= 6 and not TWIST_RE.search(t)
 maj = [{'text': t, 'a': False} for t in fam if not plain(t)] + [{'text': t, 'a': True} for t in adult]
 T = json.loads((SRC / 'majority-templates.json').read_text(encoding='utf-8'))
 for tpl, fills in T.items():
@@ -248,7 +255,7 @@ write('majority', dedupe(maj, lambda x: x['text']))
 
 # ----------------------------------------------------------------- Most Likely To
 fam, adult = read_txt('mostlikely.txt')
-ml = [{'text': f'Who is most likely to {t}?', 'a': False} for t in fam]
+ml: list[Item] = [{'text': f'Who is most likely to {t}?', 'a': False} for t in fam]
 ml += [{'text': f'Who is most likely to {t}?', 'a': True} for t in adult]
 # The Never-Have-I-Ever source turned out to be generic hobby lists ("eaten
 # sushi", "gone rollerblading") — dropped as too boring.
@@ -268,7 +275,7 @@ write('mostlikely', dedupe(ml, lambda x: x['text']))
 
 # ----------------------------------------------------------------- Odd One Out
 fam, adult = read_txt('imposter.txt')
-cats = []
+cats: list[Item] = []
 for lines, is_adult in ((fam, False), (adult, True)):
     for line in lines:
         cat, words = line.split(':', 1)
@@ -285,7 +292,7 @@ write('imposter', imp)
 fam, adult = read_txt('telephone.txt')
 tel = [{'text': t, 'a': False} for t in fam] + [{'text': t, 'a': True} for t in adult]
 G = json.loads((SRC / 'telephone-words.json').read_text(encoding='utf-8'))
-combos = set()
+combos: set[tuple[str, str, str]] = set()
 while len(combos) < 1300:
     combos.add((rng.choice(G['who']), rng.choice(G['doing']), rng.choice(G['where'])))
 for who, doing, where in sorted(combos):

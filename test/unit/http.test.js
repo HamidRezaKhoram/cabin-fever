@@ -12,6 +12,10 @@ before(async () => {
   fs.writeFileSync(path.join(musicDir, 'b song.mp3'), 'ID3fake');
   fs.writeFileSync(path.join(musicDir, 'a.ogg'), 'OggS');
   fs.writeFileSync(path.join(musicDir, 'notes.txt'), 'not music');
+  fs.mkdirSync(path.join(musicDir, 'final'));
+  fs.writeFileSync(path.join(musicDir, 'final', 'boss.mp3'), 'ID3');
+  fs.mkdirSync(path.join(musicDir, 'game', 'quiplash'), { recursive: true });
+  fs.writeFileSync(path.join(musicDir, 'game', 'quiplash', 'laugh.mp3'), 'ID3');
   srv = await startServer({ RUMPUS_MUSIC_DIR: musicDir });
 });
 after(() => srv.stop());
@@ -74,9 +78,13 @@ test('/qr.svg makes a QR code for http URLs and rejects anything else', async ()
   assert.strictEqual((await get(srv.url, '/qr.svg')).status, 400);
 });
 
-test('/api/music lists only audio files from the music folder, sorted, and serves them', async () => {
-  const list = JSON.parse((await get(srv.url, '/api/music')).body);
-  assert.deepStrictEqual(list, ['/music/a.ogg', '/music/b%20song.mp3']);
+test('/api/music groups audio files by scenario folder (root = any) and serves them', async () => {
+  const cats = JSON.parse((await get(srv.url, '/api/music')).body);
+  assert.deepStrictEqual(cats.any, ['/music/a.ogg', '/music/b%20song.mp3']);
+  assert.deepStrictEqual(cats.final, ['/music/final/boss.mp3']);
+  assert.deepStrictEqual(cats['game/quiplash'], ['/music/game/quiplash/laugh.mp3']);
+  assert.ok(!JSON.stringify(cats).includes('notes.txt'));
+  assert.strictEqual((await get(srv.url, '/music/final/boss.mp3')).status, 200);
   const f = await get(srv.url, '/music/a.ogg');
   assert.strictEqual(f.status, 200);
   assert.strictEqual(f.body, 'OggS');
@@ -85,7 +93,7 @@ test('/api/music lists only audio files from the music folder, sorted, and serve
 test('/api/music is an empty list when there is no music folder', async () => {
   const s2 = await startServer();
   try {
-    assert.deepStrictEqual(JSON.parse((await get(s2.url, '/api/music')).body), []);
+    assert.deepStrictEqual(JSON.parse((await get(s2.url, '/api/music')).body), {});
   } finally { await s2.stop(); }
 });
 

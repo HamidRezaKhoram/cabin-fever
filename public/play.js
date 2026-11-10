@@ -1,7 +1,9 @@
 /* Rumpus player (phone) view — renderer of room:stateUpdate. AGPLv3, see LICENSE. */
 'use strict';
 
-const { esc, store, countdown, games, sprites, morph, playerImg } = window.Rumpus;
+/** @typedef {{ isEmpty(): boolean, toDataURL(size?: number): string, clear(): void }} DrawPad */
+
+const { esc, store, countdown, games, sprites, morph, playerImg , hit } = window.Rumpus;
 const socket = io();
 
 const joinView = document.getElementById('join-view');
@@ -9,8 +11,8 @@ const gameView = document.getElementById('game-view');
 const joinForm = document.getElementById('join-form');
 const joinError = document.getElementById('join-error');
 const meTag = document.getElementById('me-tag');
-const codeInput = document.getElementById('code-input');
-const nickInput = document.getElementById('nick-input');
+const codeInput = /** @type {HTMLInputElement} */ (document.getElementById('code-input'));
+const nickInput = /** @type {HTMLInputElement} */ (document.getElementById('nick-input'));
 const banner = document.getElementById('banner');
 const leaveBtn = document.getElementById('leave-btn');
 const reactBar = document.getElementById('react-bar');
@@ -30,68 +32,44 @@ avatarPick.innerHTML = avatarGrid(myAvatar);
 
 // --- draw-your-own profile picture (default) or pick an animal -------------
 let avatarMode = store('rumpus.avatarMode') || 'draw';
+/** @type {DrawPad | null} */
 let joinPad = null;
 const avatarDraw = document.getElementById('avatar-draw');
 function setAvatarMode(mode) {
   avatarMode = mode;
   store('rumpus.avatarMode', mode);
-  document.querySelectorAll('.avatar-mode [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.avatar-mode [data-mode]')).forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
   avatarDraw.hidden = mode !== 'draw';
   avatarPick.hidden = mode !== 'pick';
   if (mode === 'draw' && !joinPad) joinPad = window.Rumpus.drawPad(avatarDraw);
 }
 document.querySelector('.avatar-mode').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-mode]');
+  const b = hit(e.target, '[data-mode]');
   if (b) setAvatarMode(b.dataset.mode);
 });
 setAvatarMode(avatarMode);
 
 // Redraw from the lobby.
 const lobbyDraw = document.getElementById('lobby-draw');
+/** @type {DrawPad | null} */
 let lobbyPad = null;
 document.getElementById('lobby-draw-save').addEventListener('click', () => {
   if (lobbyPad && !lobbyPad.isEmpty()) socket.emit('player:drawAvatar', { image: lobbyPad.toDataURL(128) });
   lobbyDraw.hidden = true;
 });
 avatarPick.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-avatar]');
+  const b = hit(e.target, '[data-avatar]');
   if (!b) return;
   myAvatar = +b.dataset.avatar;
   store('rumpus.avatar', myAvatar);
   avatarPick.innerHTML = avatarGrid(myAvatar);
-
-// --- draw-your-own profile picture (default) or pick an animal -------------
-let avatarMode = store('rumpus.avatarMode') || 'draw';
-let joinPad = null;
-const avatarDraw = document.getElementById('avatar-draw');
-function setAvatarMode(mode) {
-  avatarMode = mode;
-  store('rumpus.avatarMode', mode);
-  document.querySelectorAll('.avatar-mode [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
-  avatarDraw.hidden = mode !== 'draw';
-  avatarPick.hidden = mode !== 'pick';
-  if (mode === 'draw' && !joinPad) joinPad = window.Rumpus.drawPad(avatarDraw);
-}
-document.querySelector('.avatar-mode').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-mode]');
-  if (b) setAvatarMode(b.dataset.mode);
-});
-setAvatarMode(avatarMode);
-
-// Redraw from the lobby.
-const lobbyDraw = document.getElementById('lobby-draw');
-let lobbyPad = null;
-document.getElementById('lobby-draw-save').addEventListener('click', () => {
-  if (lobbyPad && !lobbyPad.isEmpty()) socket.emit('player:drawAvatar', { image: lobbyPad.toDataURL(128) });
-  lobbyDraw.hidden = true;
-});
 });
 
 // --- reactions ----------------------------------------------------------------
 const REACTIONS = ['😂', '🔥', '💀', '👏', '😱', '🤮', '😍', '🍆', '🍑', '🍻', '🙄', '🤡'];
 reactBar.innerHTML = REACTIONS.map((r) => `<button data-react="${r}">${r}</button>`).join('');
 reactBar.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-react]');
+  const b = hit(e.target, '[data-react]');
   if (!b) return;
   socket.emit('player:react', { emoji: b.dataset.react });
   if (navigator.vibrate) navigator.vibrate(15);
@@ -106,35 +84,37 @@ let lastScreenKey = null;
 
 // Delegated input handling: works for nodes added later by morph().
 gameView.addEventListener('submit', (e) => {
-  const f = e.target;
+  const f = /** @type {HTMLFormElement} */ (e.target);
+  const input = /** @type {HTMLInputElement | null} */ (f.querySelector('input'));
+  if (!input) return;
   if (f.matches('form.text-form')) {
     e.preventDefault();
-    const v = f.querySelector('input').value;
+    const v = input.value;
     if (v.trim()) send({ text: v });
   } else if (f.matches('form.number-form')) {
     e.preventDefault();
-    const n = parseFloat(f.querySelector('input').value.replace(/,/g, ''));
+    const n = parseFloat(input.value.replace(/,/g, ''));
     if (Number.isFinite(n)) send({ number: n });
   }
 });
 gameView.addEventListener('click', (e) => {
-  const av = e.target.closest('.lobby-pick [data-avatar]');
+  const av = hit(e.target, '.lobby-pick [data-avatar]');
   if (av && !av.disabled) {
     store('rumpus.avatar', +av.dataset.avatar);
     socket.emit('player:drawAvatar', { image: null }); // back to the pixel animal
     socket.emit('player:avatar', { avatar: +av.dataset.avatar });
     return;
   }
-  if (e.target.closest('[data-lobby-draw]')) {
+  if (hit(e.target, '[data-lobby-draw]')) {
     lobbyDraw.hidden = false;
     if (!lobbyPad) lobbyPad = window.Rumpus.drawPad(document.getElementById('lobby-pad'));
     else lobbyPad.clear();
     lobbyDraw.scrollIntoView({ behavior: 'smooth' });
     return;
   }
-  const b = e.target.closest('[data-send]');
+  const b = hit(e.target, '[data-send]');
   if (!b || b.disabled) return;
-  for (const x of gameView.querySelectorAll('[data-send]')) x.disabled = true;
+  for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) x.disabled = true;
   send(JSON.parse(b.dataset.send));
 });
 
@@ -337,7 +317,7 @@ function render() {
     lastHtml = html;
     bind(g);
     const first = gameView.querySelector('form input');
-    if (first && !('ontouchstart' in window)) first.focus();
+    if (first && !('ontouchstart' in window)) /** @type {HTMLInputElement} */ (first).focus();
   }
   countdown(g.endsAt, '#phone-timer');
   if (state.phase !== 'lobby') lobbyDraw.hidden = true;
@@ -364,7 +344,7 @@ function renderPace() {
   morph(paceBar, html);
 }
 paceBar.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-pace]');
+  const b = hit(e.target, '[data-pace]');
   if (!b || b.disabled) return;
   socket.emit('player:vote', { kind: b.dataset.pace });
   if (navigator.vibrate) navigator.vibrate(20);

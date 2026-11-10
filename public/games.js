@@ -222,7 +222,8 @@
       if (!f) return;
       f.addEventListener('submit', (e) => {
         e.preventDefault();
-        api.send({ truths: [f.t1.value, f.t2.value], lie: f.lie.value });
+        const val = (/** @type {string} */ name) => /** @type {HTMLInputElement} */ (/** @type {HTMLFormElement} */ (f).elements.namedItem(name)).value;
+        api.send({ truths: [val('t1'), val('t2')], lie: val('lie') });
       });
     },
   });
@@ -336,7 +337,7 @@
         ${textForm('Describe it…', 80)}`;
     },
     bind(root, api) {
-      const fill = root.querySelector('[data-fill]');
+      const fill = /** @type {HTMLElement | null} */ (root.querySelector('[data-fill]'));
       if (fill) fill.addEventListener('click', () => api.send({ text: fill.dataset.fill }));
       const padEl = root.querySelector('#pad');
       const endsAt = api.state.gameState.endsAt;
@@ -350,7 +351,7 @@
         });
         autoFn = () => { if (!pad.isEmpty()) submit(); };
       } else {
-        const input = root.querySelector('.text-form input');
+        const input = /** @type {HTMLInputElement | null} */ (root.querySelector('.text-form input'));
         if (input) autoFn = () => { if (input.value.trim()) api.send({ text: input.value }); };
       }
       // Time's up: send whatever they have so it isn't lost.
