@@ -9,12 +9,9 @@
 'use strict';
 
 const crypto = require('crypto');
-let WHITE, BLACK;
-try {
-  ({ WHITE, BLACK } = require('./data/cah-cards'));
-} catch (e) {
-  ({ WHITE, BLACK } = require('./data/cah-cards.sample'));
-}
+const library = require('./library');
+// Fallback deck if the pools are missing.
+const { WHITE, BLACK } = require('./data/cah-cards.sample');
 
 const REVEAL_MS = parseInt(process.env.RUMPUS_CAH_REVEAL_MS || '10000', 10);
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_CAH_ROUNDS || '8', 10);
@@ -35,7 +32,7 @@ class CAHGame {
     this.push = push;
     this.phase = 'cah-submit';
     this.round = 0;
-    this.totalRounds = TOTAL_ROUNDS;
+    this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
     this.whiteDeck = shuffle(WHITE.slice());
     this.blackDeck = shuffle(BLACK.slice());
     this.hands = new Map(); // playerId -> [cardText]
@@ -55,15 +52,17 @@ class CAHGame {
   }
 
   drawWhite(n) {
-    const out = [];
-    for (let i = 0; i < n; i++) {
+    const got = library.draw('cah-white', n, { spicy: this.spicy() }).map((c) => c.text);
+    while (got.length < n) {
       if (this.whiteDeck.length === 0) this.whiteDeck = shuffle(WHITE.slice());
-      out.push(this.whiteDeck.pop());
+      got.push(this.whiteDeck.pop());
     }
-    return out;
+    return got;
   }
 
   drawBlack() {
+    const c = library.drawOne('cah-black', { spicy: this.spicy() });
+    if (c) return c.text;
     if (this.blackDeck.length === 0) this.blackDeck = shuffle(BLACK.slice());
     return this.blackDeck.pop();
   }
@@ -80,10 +79,36 @@ class CAHGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
+    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
+    this.timerFn = fn;
     this.timer = setTimeout(() => {
+      this.timerFn = null;
       if (!this.destroyed) fn();
     }, ms);
+  }
+
+  isFinal() {
+    return this.totalRounds > 1 && this.round === this.totalRounds;
+  }
+
+  mult() {
+    return this.isFinal() ? 2 : 1;
+  }
+
+  spicy() {
+    return !(this.room.settings && this.room.settings.spicy === false);
+  }
+
+  // Host pressed "skip": run the pending phase transition now.
+  skip() {
+    if (!this.timerFn || this.destroyed) return;
+    const fn = this.timerFn;
+    clearTimeout(this.timer);
+    this.timer = null;
+    this.timerFn = null;
+    fn();
   }
 
   currentCzar() {
@@ -155,7 +180,7 @@ class CAHGame {
     if (this.phase !== 'cah-czar') return;
     const pick = this.revealList[choiceIndex];
     const p = this.room.players.get(pick.playerId);
-    if (p) p.score += POINTS_PER_WIN;
+    if (p) p.score += POINTS_PER_WIN * this.mult();
     this.winner = { playerId: pick.playerId, nickname: p ? p.nickname : '(left the game)', text: pick.text };
     // Replenish everyone who played a card back up to HAND_SIZE.
     for (const playerId of this.submissions.keys()) {
@@ -208,6 +233,7 @@ class CAHGame {
       gameId: 'cah',
       round: this.round,
       totalRounds: this.totalRounds,
+      doublePoints: this.isFinal(),
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
     };
@@ -237,6 +263,7 @@ class CAHGame {
       gameId: 'cah',
       round: this.round,
       totalRounds: this.totalRounds,
+      doublePoints: this.isFinal(),
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
       isCzar: playerId === this.czarId,
@@ -273,7 +300,7 @@ class CAHGame {
 
 CAHGame.meta = {
   id: 'cah',
-  name: 'Cards Against Humanity',
+  name: 'Card Chaos',
   blurb: 'Fill in the blank. Whoever the Card Czar picks wins the round.',
   minPlayers: 3,
 };

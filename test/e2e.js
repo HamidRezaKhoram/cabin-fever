@@ -15,7 +15,8 @@
  */
 'use strict';
 
-process.env.PORT = process.env.PORT || '0'; // ephemeral port, avoid clashing with a real instance
+process.env.PORT = process.env.PORT || '0';
+process.env.RUMPUS_DATA_DIR = require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'rumpus-')); // ephemeral port, avoid clashing with a real instance
 // Speed every game module way up so the test doesn't have to wait out real
 // round timers. These envvars are read by games/quiplash.js, games/trivia.js,
 // and games/cah.js respectively.

@@ -1,0 +1,18 @@
+services:
+  rumpus:
+    build: .
+    image: rumpus:local
+    container_name: rumpus
+    restart: unless-stopped
+    # Host networking lets the server see your real LAN IP, so the QR code on
+    # the TV works even if you open the host screen as http://localhost:8012.
+    network_mode: host
+    environment:
+      PORT: "8012"
+      MAX_PLAYERS: "12"
+      RUMPUS_SPICY_DEFAULT: "true"   # 18+ prompts on by default (toggle on the TV)
+      # PUBLIC_URL: "http://192.168.0.10:8012"   # force the join address if needed
+    volumes:
+      - ./content:/app/content:ro,Z   # your own extra prompts (see content/README.md)
+      - ./music:/app/music:ro,Z       # optional: your own mp3s replace the chiptunes
+      - ./data:/app/data:Z            # question history (no repeats across restarts)

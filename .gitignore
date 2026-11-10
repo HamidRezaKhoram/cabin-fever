@@ -1,4 +1,7 @@
 node_modules/
+data/*.json
+music/*
+!music/README.md
 
 # Bring your own deck: the real Cards Against Humanity card text is
 # CC BY-NC-SA (non-commercial), so it isn't shipped in this repo. Drop a

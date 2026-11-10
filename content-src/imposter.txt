@@ -1,0 +1,97 @@
+# Odd One Out — "Category: word, word, …". Lines after "## adult" are 18+. Each word = one secret word.
+Camping gear: Tent, Lantern, Sleeping bag, Compass, Canoe, Hatchet, Cooler, Bug spray, Flashlight, Tarp, Hammock, Pocket knife, Fire starter, Camp stove, Paddle, Life jacket, Map, Thermos, Rope
+Animals: Moose, Beaver, Penguin, Giraffe, Octopus, Kangaroo, Owl, Raccoon, Elephant, Sloth, Zebra, Hedgehog, Flamingo, Skunk, Llama, Walrus, Koala, Porcupine, Chameleon
+Foods: Pizza, Sushi, Tacos, Pancakes, Poutine, Spaghetti, Burger, Curry, Lasagna, Burrito, Ramen, Dumplings, Nachos, Meatloaf, Hot dog, Grilled cheese, Pad Thai, Falafel
+Jobs: Firefighter, Dentist, Pilot, Chef, Teacher, Astronaut, Plumber, Lifeguard, Librarian, Farmer, Detective, Clown, Mechanic, Nurse, Lumberjack, Barber, Magician, Judge
+Places: Airport, Hospital, Library, Beach, Casino, Zoo, Movie theatre, Gym, Museum, Prison, Church, Bowling alley, Laundromat, Supermarket, Water park, Dentist's office, Haunted house
+Sports: Hockey, Tennis, Golf, Bowling, Surfing, Boxing, Curling, Basketball, Baseball, Soccer, Volleyball, Fencing, Archery, Wrestling, Rugby, Skiing, Lacrosse, Badminton, Darts
+Household items: Toaster, Vacuum, Mirror, Couch, Fridge, Lamp, Blender, Pillow, Microwave, Bathtub, Ironing board, Clock, Bookshelf, Doormat, Curtains, Dishwasher, Broom
+Weather: Thunderstorm, Blizzard, Rainbow, Fog, Hail, Heatwave, Tornado, Drizzle, Hurricane, Sleet, Lightning, Frost, Monsoon, Sandstorm, Drought, Heat lightning
+Instruments: Guitar, Drums, Violin, Trumpet, Piano, Harmonica, Banjo, Flute, Saxophone, Accordion, Bagpipes, Ukulele, Cello, Tambourine, Xylophone, Harp, Triangle, Tuba
+Vehicles: Bicycle, Helicopter, Submarine, Tractor, Motorcycle, Sailboat, Train, Snowmobile, Hot air balloon, Ambulance, Skateboard, Rickshaw, Tank, Canoe, Limousine, Monster truck, Segway
+Holidays: Halloween, Christmas, Thanksgiving, New Year's Eve, Valentine's Day, Easter, Canada Day, Birthday, Hanukkah, Diwali, Saint Patrick's Day, April Fools' Day, Mother's Day, Groundhog Day, Lunar New Year
+Fantasy: Dragon, Wizard, Unicorn, Castle, Mermaid, Troll, Ghost, Vampire, Werewolf, Fairy, Goblin, Giant, Phoenix, Elf, Witch, Centaur, Zombie, Genie, Kraken
+Desserts: Cheesecake, Brownie, Butter tart, Ice cream sundae, Apple pie, Cupcake, Tiramisu, Doughnut, Crème brûlée, Nanaimo bar, Churros, Macaron, Banana split, Pudding, Fudge, Cannoli, S'more
+Things at the cottage: Dock, Fire pit, Muskoka chair, Outhouse, Wood stove, Boathouse, Screen door, Hammock, Kayak, Bug zapper, Board games, Rain barrel, Septic tank, Sauna, Paddle boat, Bunk bed
+Body parts: Elbow, Knee, Eyebrow, Belly button, Ankle, Earlobe, Wrist, Chin, Shoulder, Thumb, Toenail, Nostril, Kneecap, Forehead, Armpit, Heel, Tongue, Spine
+Clothing: Tuxedo, Bikini, Poncho, Kilt, Overalls, Hoodie, Pyjamas, Scarf, Raincoat, Toque, Mittens, Flip-flops, Cowboy boots, Wedding dress, Suspenders, Snowsuit, Bathrobe, Bow tie
+Kitchen tools: Spatula, Whisk, Ladle, Cheese grater, Rolling pin, Colander, Can opener, Peeler, Tongs, Corkscrew, Cutting board, Oven mitt, Garlic press, Measuring cup, Frying pan, Wok
+Fruits: Banana, Pineapple, Watermelon, Mango, Kiwi, Coconut, Strawberry, Grapefruit, Pomegranate, Blueberry, Peach, Lemon, Cherry, Papaya, Avocado, Fig, Dragon fruit, Lychee
+Vegetables: Broccoli, Carrot, Eggplant, Potato, Brussels sprouts, Corn, Cucumber, Onion, Pumpkin, Asparagus, Cauliflower, Celery, Radish, Spinach, Zucchini, Beet, Kale, Artichoke
+Party things: Balloon, Piñata, Confetti, Birthday cake, Party hat, Disco ball, Karaoke machine, Punch bowl, Streamers, Goodie bag, Photo booth, Fog machine, DJ, Bouncy castle, Sparkler
+Superpowers: Flying, Invisibility, Super strength, Mind reading, Teleportation, Time travel, Shape-shifting, X-ray vision, Talking to animals, Healing, Super speed, Breathing underwater, Laser eyes, Telekinesis
+School things: Backpack, Locker, Chalkboard, Pencil case, Report card, Detention, Cafeteria, School bus, Recess, Field trip, Science fair, Yearbook, Hall pass, Principal, Gym class, Spelling bee
+Beach: Sandcastle, Sunscreen, Seashell, Lifeguard tower, Beach ball, Umbrella, Surfboard, Flip-flops, Seagull, Crab, Towel, Sunglasses, Snorkel, Pier, Ice cream truck, Jellyfish
+Winter: Snowman, Sled, Icicle, Hot chocolate, Snowball, Ice skates, Toboggan, Snow shovel, Igloo, Snow angel, Fireplace, Mittens, Snowplow, Frostbite, Ski lift, Snowflake
+Ocean life: Shark, Dolphin, Jellyfish, Starfish, Seahorse, Whale, Octopus, Crab, Lobster, Clownfish, Stingray, Sea turtle, Squid, Eel, Pufferfish, Coral, Narwhal, Seal
+Birds: Eagle, Parrot, Penguin, Ostrich, Flamingo, Owl, Loon, Pigeon, Peacock, Woodpecker, Hummingbird, Pelican, Toucan, Goose, Crow, Robin, Turkey, Blue jay, Vulture
+Bugs: Mosquito, Butterfly, Ladybug, Ant, Bee, Cockroach, Grasshopper, Firefly, Dragonfly, Spider, Beetle, Caterpillar, Moth, Tick, Wasp, Stick insect, Termite, Black fly
+Board and card games: Monopoly, Chess, Scrabble, Clue, Checkers, Poker, Uno, Jenga, Battleship, Risk, Trivial Pursuit, Backgammon, Crib, Euchre, Yahtzee, Dominoes, Connect Four, Mahjong
+Movie genres: Horror, Comedy, Western, Musical, Romance, Documentary, Action, Sci-fi, Mystery, Animated, Thriller, Fantasy, War, Superhero, Mockumentary, Disaster, Heist
+Drinks: Coffee, Lemonade, Milkshake, Smoothie, Hot chocolate, Iced tea, Orange juice, Root beer, Kombucha, Bubble tea, Chocolate milk, Espresso, Cola, Ginger ale, Coconut water, Eggnog
+Breakfast: Waffles, Omelette, Bacon, French toast, Cereal, Oatmeal, Bagel, Hash browns, Eggs Benedict, Breakfast burrito, Granola, Croissant, Pancakes, Yogurt, Toast, Crêpes
+Hobbies: Knitting, Fishing, Gardening, Painting, Bird watching, Woodworking, Pottery, Rock climbing, Baking, Stamp collecting, Photography, Juggling, Origami, Scrapbooking, Chess, Geocaching
+Musical styles: Jazz, Country, Heavy metal, Hip hop, Opera, Reggae, Disco, Punk, Classical, Polka, Blues, Techno, Folk, K-pop, Gospel, Salsa, Grunge, Lullaby
+Tools: Hammer, Screwdriver, Wrench, Chainsaw, Drill, Saw, Pliers, Tape measure, Level, Crowbar, Shovel, Axe, Sandpaper, Glue gun, Ladder, Wheelbarrow, Vise, Rake
+Things in space: Moon, Black hole, Comet, Asteroid, Satellite, Space station, Nebula, Galaxy, Meteor, Mars, Saturn, Rocket, Alien, Astronaut, Sun, Milky Way, Telescope, UFO
+Famous landmarks: Eiffel Tower, Great Wall of China, Statue of Liberty, Niagara Falls, Pyramids of Giza, Stonehenge, Colosseum, Taj Mahal, Big Ben, CN Tower, Mount Rushmore, Leaning Tower of Pisa, Machu Picchu, Golden Gate Bridge, Sydney Opera House
+Countries: Canada, Japan, Brazil, Egypt, Australia, Mexico, Italy, India, Iceland, Kenya, Norway, Greece, Thailand, Peru, Ireland, South Korea, Morocco, New Zealand, Jamaica
+Emotions: Jealousy, Joy, Embarrassment, Anger, Boredom, Nostalgia, Panic, Pride, Confusion, Excitement, Loneliness, Relief, Guilt, Awe, Disgust, Hope, Grumpiness, Curiosity
+Fairy tales: Cinderella, Snow White, Little Red Riding Hood, Hansel and Gretel, Jack and the Beanstalk, Rapunzel, Goldilocks, Sleeping Beauty, The Three Little Pigs, Rumpelstiltskin, The Frog Prince, Pinocchio, Peter Pan, The Ugly Duckling
+Things that are hot: Lava, Sauna, Jalapeño, Campfire, Oven, Desert, Hair dryer, Coffee, Sun, Volcano, Hot tub, Curling iron, Toaster, Radiator, Hot sauce, Barbecue
+Things with wings: Airplane, Butterfly, Bat, Angel, Dragon, Bee, Chicken, Glider, Pegasus, Fairy, Helicopter, Mosquito, Eagle, Moth, Cupid, Owl
+Things in a hospital: Stethoscope, X-ray, Wheelchair, Bandage, Stretcher, Syringe, Surgeon, Hospital gown, Ambulance, Crutches, Cast, Waiting room, IV drip, Thermometer, Jell-O, Defibrillator
+Restaurants: Diner, Food truck, Steakhouse, Sushi bar, Pizzeria, Buffet, Drive-through, Café, Bistro, Taco stand, Ice cream parlour, Pub, Bakery, Noodle shop, Dim sum, Hot dog cart
+Things at a wedding: Bouquet, Ring, Veil, Wedding cake, Best man, Bridesmaid, Toast, First dance, Garter, Limo, Vows, Officiant, Rice, Open bar, Seating chart, Photographer
+Things at a circus: Clown, Trapeze, Ringmaster, Lion tamer, Juggler, Tightrope, Cotton candy, Big top, Unicycle, Acrobat, Cannonball, Stilts, Popcorn, Elephant, Magician, Fire breather
+Toys: Yo-yo, Teddy bear, Rubik's cube, Lego, Slinky, Kite, Frisbee, Jack-in-the-box, Rocking horse, Water gun, Action figure, Doll house, Spinning top, Toy train, Play-Doh, Hula hoop
+Things that are scary: Clown, Spider, Dentist, Haunted house, Shark, Heights, Dark basement, Snake, Ghost, Public speaking, Bear, Thunder, Needle, Tax audit, Doll, Zombie
+Things in a bathroom: Toothbrush, Plunger, Shower curtain, Toilet paper, Bathtub, Rubber duck, Bath mat, Mirror, Razor, Hair dryer, Towel, Floss, Soap, Scale, Loofah, Mouthwash
+Shapes: Circle, Triangle, Square, Hexagon, Star, Heart, Oval, Diamond, Pentagon, Crescent, Cube, Pyramid, Sphere, Cylinder, Cone, Arrow, Spiral, Octagon
+Colours: Red, Orange, Yellow, Green, Blue, Purple, Pink, Brown, Black, White, Grey, Turquoise, Gold, Silver, Maroon, Beige, Lavender, Teal, Neon green
+Cheeses: Cheddar, Brie, Mozzarella, Swiss, Parmesan, Gouda, Feta, Blue cheese, Camembert, Cottage cheese, Cheese curds, Ricotta, Halloumi, Gruyère, Havarti, Goat cheese
+Cars and car parts: Steering wheel, Windshield wiper, Seat belt, Glove box, Horn, Tire, Headlight, Sunroof, Gas pedal, Trunk, Rear-view mirror, Muffler, Bumper, Cup holder, Spare tire, Engine
+Things that are sticky: Glue, Honey, Tape, Gum, Maple syrup, Jam, Sap, Velcro, Caramel, Peanut butter, Spider web, Slime, Cotton candy, Post-it note, Band-Aid, Fly paper
+Famous detectives and spies: Sherlock Holmes, Agatha Christie, Inspector Gadget, Scooby-Doo, Nancy Drew, Hercule Poirot, James Bond, Columbo, Encyclopedia Brown, Miss Marple, Hardy Boys, Austin Powers
+Wild west: Cowboy, Sheriff, Saloon, Tumbleweed, Horse, Lasso, Gold rush, Stagecoach, Cactus, Bandit, Spurs, Wanted poster, Rodeo, Six-shooter, Covered wagon, Duel
+Pirates: Treasure chest, Parrot, Eye patch, Peg leg, Plank, Cannon, Skull and crossbones, Captain, Rum, Hook, Map, Ship, Island, Sword, Mutiny, Compass
+Farm: Barn, Tractor, Scarecrow, Haystack, Chicken coop, Pig pen, Silo, Cow, Rooster, Sheep, Pitchfork, Horse, Goat, Combine harvester, Corn field, Farmer's market
+Things at a hockey game: Puck, Stick, Zamboni, Goalie, Penalty box, Referee, Jumbotron, Organ music, Hat trick, Blue line, Face-off, Skates, Helmet, Fight, Beer, Kiss cam
+Things you plug in: Television, Kettle, Phone charger, Christmas lights, Vacuum, Toaster, Laptop, Lamp, Fan, Space heater, Electric guitar, Blender, Hair straightener, Fridge, Slow cooker, Printer
+Things that are round: Ball, Pizza, Wheel, Coin, Planet, Clock, Donut, Bubble, Orange, Button, Plate, Ring, Hula hoop, Frisbee, Bagel, Eyeball
+Things in a garden: Gnome, Watering can, Rose, Sunflower, Hose, Shovel, Seeds, Wheelbarrow, Bird bath, Scarecrow, Compost, Tomato plant, Fence, Bee, Worm, Trellis
+Mythical creatures: Bigfoot, Loch Ness Monster, Yeti, Chupacabra, Kraken, Minotaur, Medusa, Cyclops, Griffin, Leprechaun, Banshee, Hydra, Mothman, Ogopogo, Wendigo
+Things that are slippery: Ice, Banana peel, Soap, Eel, Wet floor, Butter, Water slide, Oil, Slug, Fish, Mud, Ice rink, Bathtub, Lotion, Snow, Seaweed
+Things at an airport: Boarding pass, Security, Luggage carousel, Duty free, Passport, Gate, Runway, Pilot, Flight attendant, Metal detector, Departure board, Lost luggage, Jet lag, Neck pillow, Control tower, Moving walkway
+Dances: Waltz, Tango, Salsa, Moonwalk, Macarena, Twerk, Breakdance, Ballet, Square dance, Conga line, Chicken dance, Floss, Limbo, Robot, Cha-cha, Hokey pokey
+Video games: Tetris, Pac-Man, Minecraft, Fortnite, Pong, Mario Kart, Space Invaders, Solitaire, Snake, Frogger, Galaga, Street Fighter, The Sims, Angry Birds, Candy Crush, Zelda
+Things you'd find in a purse: Lipstick, Wallet, Keys, Gum, Receipts, Hand sanitizer, Tissues, Sunglasses, Phone, Hairbrush, Pen, Mints, Band-Aids, Snacks, Hair tie, Coupon
+Things in a forest: Mushroom, Pine cone, Deer, Waterfall, Log cabin, Moss, Bear, Trail, Stump, Fox, Owl, Campfire, Fern, Woodpecker, Creek, Squirrel
+Things that are loud: Fireworks, Thunder, Jackhammer, Baby, Siren, Rock concert, Airplane, Motorcycle, Alarm clock, Lawn mower, Drum, Foghorn, Leaf blower, Air horn, Train, Uncle at dinner
+Famous inventions: Light bulb, Telephone, Printing press, Wheel, Internet, Airplane, Television, Paperclip, Microwave, Toilet, Refrigerator, Camera, Velcro, Basketball, Insulin, Zipper
+## adult
+Things in a sex shop: Vibrator, Handcuffs, Lube, Blindfold, Whip, Fuzzy handcuffs, Edible underwear, Feather tickler, Massage oil, Leather mask, Nipple tassels, Love swing, Paddle, Corset, Fishnets, Ball gag, Riding crop, Body paint
+Cocktails: Margarita, Mojito, Martini, Piña colada, Cosmopolitan, Long Island iced tea, Bloody Caesar, Sex on the beach, Old fashioned, Mai tai, Daiquiri, Negroni, Moscow mule, Tequila sunrise, Manhattan, Whiskey sour, White Russian, Aperol spritz
+Things at a bachelor party: Stripper, Shots, Limo, Poker, Strip club, Casino, Kegs, Hangover, Blackout, Cigars, Lap dance, Bail money, Steakhouse, Inflatable doll, Tattoo, Vegas
+Things at a bachelorette party: Penis straws, Sash, Tiara, Male stripper, Pole dancing class, Prosecco, Penis cake, Lingerie shower, Party bus, Karaoke, Veil, Body shots, Dare cards, Wine tasting, Club
+Drinking games: Beer pong, Flip cup, Kings, Never have I ever, Quarters, Power hour, Sociables, Shotgunning, Keg stand, Drunk Jenga, Boat race, Waterfall, Slap cup, Edward Fortyhands, Thumper
+Liquor: Tequila, Vodka, Whisky, Rum, Gin, Absinthe, Jägermeister, Sambuca, Moonshine, Brandy, Fireball, Baileys, Schnapps, Mezcal, Sake, Bourbon, Cognac, Ouzo
+Places people hook up: Hot tub, Back seat, Boathouse, Elevator, Office, Beach, Tent, Bathroom stall, Movie theatre, Closet, Hotel balcony, Laundry room, Kitchen counter, Canoe, Airplane bathroom, Parents' bed
+Lingerie: Thong, Garter belt, Corset, G-string, Teddy, Bodysuit, Fishnet stockings, Push-up bra, Negligee, Crotchless panties, Babydoll, Bustier, Lace bra, Boy shorts, Pasties, Kimono robe
+Bedroom roleplay: Doctor and nurse, Teacher and student, Pirate and captive, Cop and robber, Boss and secretary, Pizza delivery guy, Plumber, Maid, Firefighter, Lifeguard, Cowboy, Strangers at a bar, Astronaut, Masseuse, Mechanic, Lumberjack
+Night out: Bouncer, Cover charge, Dance floor, Bar tab, Shots, Last call, Taxi line, Coat check, VIP section, Drunk food, Fake ID, Lost phone, DJ booth, Smoking area, Hangover, Afterparty
+Hangover things: Headache, Greasy breakfast, Advil, Gatorade, Sunglasses, Regret, Bacon, Hair of the dog, Bloody Caesar, Dark room, Vomit, Nap, Pickle juice, Hash browns, Coffee, Group chat apology
+Dating app life: Swipe right, Super like, Catfish, Ghosting, Bio, Red flag, Gym selfie, Fish photo, Unmatch, First message, Video date, Breadcrumbing, Situationship, Booty call, Sliding into DMs, Profile prompt
+Kinks: Spanking, Blindfold, Bondage, Feet, Roleplay, Voyeurism, Exhibitionism, Choking, Hair pulling, Dirty talk, Costume, Food play, Ice cubes, Wax play, Leather, Latex
+Things at a strip club: Pole, Lap dance, Dollar bills, Champagne room, Bouncer, Stage, Glitter, Platform heels, VIP booth, Thong, Neon lights, DJ, Private dance, Bachelor party, Make it rain, Disco ball
+Things at a nude beach: Sunscreen, Tan lines, Volleyball, Towel, Sunburn, Old man, Sand everywhere, Sunglasses, Nothing, Jiggling, Awkward eye contact, Hat, Cooler, Paddleboard, Seagulls, Accidental erection
+Sexy professions: Firefighter, Lifeguard, Personal trainer, Pilot, Doctor, Bartender, Lumberjack, Cowboy, Police officer, Masseuse, Pool boy, French maid, Yoga instructor, Navy officer, Chef, Mechanic
+Things in a nightstand: Condoms, Lube, Vibrator, Reading glasses, Phone charger, Tissues, Bible, Handcuffs, Melatonin, Lip balm, Old receipts, Massage oil, Blindfold, Hand cream, Massage candle, Love letters
+Pickup lines topics: Fallen angel, Library card, Parking ticket, Magician, Wi-Fi connection, Map, Google, Bandage, Space, Cheese, Dictionary, Sun, Twitter, Instagram, Bank, Netflix and chill
+Things that happen in Vegas: Elvis wedding, Casino, Buffet, Blackjack, Show girl, Hangover, Pool party, Strip, Slot machine, Magic show, Lost money, Strip club, Bachelor party, Elopement, Limo, Comp room
+Euphemisms for sex: Netflix and chill, Doing the deed, Hanky-panky, Bow-chicka-wow-wow, Knocking boots, Horizontal tango, Rolling in the hay, Bumping uglies, Making whoopee, Getting lucky, Hiding the salami, Afternoon delight, Sexy time, Shagging, The nasty, Making love
+Beer: Lager, Stout, IPA, Pilsner, Pale ale, Wheat beer, Sour, Porter, Light beer, Radler, Cider, Tallboy, Pitcher, Keg, Growler, Six-pack, Two-four
+Party drugs: Weed, Edibles, Mushrooms, Ecstasy, Molly, Poppers, Laughing gas, LSD, Ketamine, Cocaine, Hash, Pre-roll, Bong, Joint, Vape pen, Gummies
+Wedding night: Honeymoon suite, Rose petals, Champagne, Lingerie, Garter, Do not disturb sign, Jacuzzi, Room service, Bubble bath, Massage oil, Strawberries, Silk sheets, Satin robe, Consummation, Whipped cream, Candles
+Embarrassing ER visits: Stuck ring, Sex injury, Broken penis, Object stuck, Hot tub burn, Drunk fall, Fireworks, Bee sting, Broken toe, Food poisoning, Fish hook, Chainsaw cut, Scalded tongue, Pole dance fall, Trampoline injury, Mosquito allergy
+Famous lovers: Romeo and Juliet, Casanova, Don Juan, Antony and Cleopatra, Bonnie and Clyde, Lancelot and Guinevere, Tristan and Isolde, Marilyn Monroe, Elvis, Valentino, Aphrodite, Cupid, Lady Chatterley, Mr. Darcy, Fifty Shades, Jessica Rabbit

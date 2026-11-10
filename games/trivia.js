@@ -6,6 +6,7 @@
 
 const crypto = require('crypto');
 const { QUESTIONS } = require('./data/trivia-questions');
+const library = require('./library');
 
 const QUESTION_MS = parseInt(process.env.RUMPUS_TRIVIA_QUESTION_MS || '20000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_TRIVIA_REVEAL_MS || '8000', 10);
@@ -27,7 +28,7 @@ class TriviaGame {
     this.push = push;
     this.phase = 'trivia-question';
     this.round = 0;
-    this.totalRounds = Math.min(TOTAL_ROUNDS, QUESTIONS.length);
+    this.totalRounds = Math.min((room.settings && room.settings.rounds) || TOTAL_ROUNDS, QUESTIONS.length);
     this.deck = shuffle(QUESTIONS.map((q, i) => i));
     this.question = null;
     this.answers = new Map(); // playerId -> { choice, answeredAt }
@@ -49,10 +50,36 @@ class TriviaGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
+    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
+    this.timerFn = fn;
     this.timer = setTimeout(() => {
+      this.timerFn = null;
       if (!this.destroyed) fn();
     }, ms);
+  }
+
+  isFinal() {
+    return this.totalRounds > 1 && this.round === this.totalRounds;
+  }
+
+  mult() {
+    return this.isFinal() ? 2 : 1;
+  }
+
+  spicy() {
+    return !(this.room.settings && this.room.settings.spicy === false);
+  }
+
+  // Host pressed "skip": run the pending phase transition now.
+  skip() {
+    if (!this.timerFn || this.destroyed) return;
+    const fn = this.timerFn;
+    clearTimeout(this.timer);
+    this.timer = null;
+    this.timerFn = null;
+    fn();
   }
 
   nextRound() {
@@ -61,8 +88,7 @@ class TriviaGame {
       return;
     }
     this.round += 1;
-    if (this.deck.length === 0) this.deck = shuffle(QUESTIONS.map((q, i) => i));
-    this.question = QUESTIONS[this.deck.pop()];
+    this.question = library.drawOne('trivia', { spicy: this.spicy() }) || QUESTIONS[this.round % QUESTIONS.length];
     this.answers = new Map();
     this.phase = 'trivia-question';
     this.roundStartedAt = Date.now();
@@ -91,14 +117,19 @@ class TriviaGame {
     for (const [playerId, a] of this.answers.entries()) {
       const p = this.room.players.get(playerId);
       if (!p) continue;
+      this.streaks = this.streaks || new Map();
       if (a.choice === correct) {
         const elapsed = Math.min(QUESTION_MS, a.answeredAt - this.roundStartedAt);
-        const speedFrac = 1 - elapsed / QUESTION_MS;
-        const gained = BASE_POINTS + Math.round(SPEED_BONUS * speedFrac);
+        const speedFrac = Math.max(0, 1 - elapsed / QUESTION_MS);
+        const streak = (this.streaks.get(playerId) || 0) + 1;
+        this.streaks.set(playerId, streak);
+        // Streak bonus: +100 for every consecutive correct answer after the first.
+        const gained = (BASE_POINTS + Math.round(SPEED_BONUS * speedFrac) + (streak - 1) * 100) * this.mult();
         p.score += gained;
-        scored.push({ nickname: p.nickname, correct: true, gained });
+        scored.push({ nickname: p.nickname, correct: true, gained, streak });
       } else {
-        scored.push({ nickname: p.nickname, correct: false, gained: 0 });
+        this.streaks.set(playerId, 0);
+        scored.push({ nickname: p.nickname, correct: false, gained: 0, streak: 0 });
       }
     }
     scored.sort((a, b) => b.gained - a.gained);
@@ -139,6 +170,8 @@ class TriviaGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
+      category: this.question && this.question.cat,
     };
     switch (this.phase) {
       case 'trivia-question':
@@ -170,6 +203,8 @@ class TriviaGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
+      category: this.question && this.question.cat,
     };
     switch (this.phase) {
       case 'trivia-question':

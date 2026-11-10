@@ -1,203 +1,496 @@
-/* Rumpus host (TV) view — dumb renderer of room:stateUpdate. AGPLv3, see LICENSE. */
+/* Rumpus host (TV) view — renderer of room:stateUpdate. AGPLv3, see LICENSE. */
 'use strict';
 
+const { esc, store, sfx, countdown, games, av, sprites, music, fx } = window.Rumpus;
 const socket = io();
 
 const codeEl = document.getElementById('room-code');
 const joinUrlEl = document.getElementById('join-url');
+const qrEl = document.getElementById('qr');
 const phaseView = document.getElementById('phase-view');
 const playerList = document.getElementById('player-list');
+const controls = document.getElementById('controls');
+const fsBtn = document.getElementById('fs-btn');
+const overlay = document.getElementById('start-overlay');
+const timerbar = document.getElementById('timerbar');
 
 let state = null;
-let timerInterval = null;
+let roomCode = null;
+let baseUrl = location.origin;
+let lastPhaseKey = null;
+let lastPlayerCount = 0;
+let prevScores = new Map();
+let lastRoundSeen = null;
+let timerTotal = { endsAt: null, total: 1 };
+let wiping = false;
+let pendingHtml = null;
+let lastAwards = [];
 
-joinUrlEl.textContent = location.host + '/play';
+window.Rumpus.background(document.getElementById('bg'), { fps: 12 });
 
-socket.on('connect', () => socket.emit('host:createRoom'));
+// --- press start (unlocks audio) -----------------------------------------------
+overlay.addEventListener('click', async () => {
+  overlay.hidden = true;
+  await music.enable();
+  music.play(cueFor(state));
+});
 
+// "Now playing" toast, like a radio station in a racing game.
+const nowPlaying = document.getElementById('now-playing');
+let npTimer = null;
+music.onTrack(({ name }) => {
+  nowPlaying.innerHTML = `♪ ${esc(name)}`;
+  nowPlaying.classList.remove('show'); void nowPlaying.offsetWidth; nowPlaying.classList.add('show');
+  clearTimeout(npTimer);
+  npTimer = setTimeout(() => nowPlaying.classList.remove('show'), 4000);
+});
+
+// How-to-play cards shown when a game starts.
+const RULES = {
+  quiplash: ['Everyone answers the same prompt', 'Vote for the funniest answer', 'Win every vote = SWEEP bonus'],
+  fibbage: ['Write a believable fake answer', 'Find the TRUE answer among the lies', 'Points for every friend you fool'],
+  trivia: ['Pick the right answer — fast!', 'Speed = bonus points', 'Answer streaks multiply 🔥'],
+  closest: ['Guess the number', 'Closest gets the most points', 'Exact hit = BULLSEYE bonus'],
+  majority: ['Type what everyone ELSE will say', 'Match the crowd to score', 'Unique answers get nothing'],
+  mostlikely: ['Vote which friend fits the prompt', 'Vote with the majority to score', 'No hard feelings… probably'],
+  imposter: ['Everyone gets a secret word — except one', 'Give a one-word clue', 'Vote out the imposter!'],
+  twotruths: ['Write 2 truths and 1 lie about you', 'Spot everyone else\'s lie', 'Points for each person you fool'],
+  telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
+  cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
+};
+function showIntro(gameId) {
+  const meta = (state.availableGames || []).find((g) => g.id === gameId);
+  if (!meta) return;
+  const el = document.createElement('div');
+  el.className = 'intro-card';
+  el.innerHTML = `<div class="intro-inner">
+      ${sprites.iconUrl(gameId) ? `<img class="intro-icon" src="${sprites.iconUrl(gameId)}" alt="">` : ''}
+      <div class="intro-title">${esc(meta.name)}</div>
+      <ol class="intro-rules">${(RULES[gameId] || []).map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
+      <div class="intro-crew">${state.players.map((p) => sprites.avatarImg(p.avatar, 'avatar big bob')).join('')}</div>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 3800);
+  setTimeout(() => el.remove(), 4400);
+}
+
+// Attract mode: avatars stroll across the bottom of the lobby screen.
+setInterval(() => {
+  if (!state || state.phase !== 'lobby' || document.hidden) return;
+  const pool = state.players.length ? state.players.map((p) => p.avatar) : [...Array(sprites.count).keys()];
+  const w = document.createElement('img');
+  w.className = 'walker' + (Math.random() < 0.5 ? ' rtl' : '');
+  w.src = sprites.avatarUrl(pool[Math.floor(Math.random() * pool.length)]);
+  document.body.appendChild(w);
+  setTimeout(() => w.remove(), 14000);
+}, 4500);
+
+// --- volume sliders ----------------------------------------------------------------
+for (const kind of ['music', 'sfx']) {
+  const el = document.getElementById('vol-' + kind);
+  el.value = Math.round(music.volumes()[kind] * 100);
+  el.addEventListener('input', () => {
+    music.setVolume(kind, el.value / 100);
+    if (kind === 'sfx') sfx.pop();
+  });
+}
+
+// Work out the address phones should use. If the TV opened us via localhost,
+// fall back to the server's LAN IP so the QR code actually works.
+fetch('/api/info').then((r) => r.json()).then((info) => {
+  const local = /^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname);
+  if (info.publicUrl) baseUrl = info.publicUrl;
+  else if (local && info.lan && info.lan.length) baseUrl = info.lan[0];
+  updateJoinInfo();
+}).catch(() => {});
+
+function joinUrl(withCode) {
+  return baseUrl + '/play' + (withCode && roomCode ? '?code=' + roomCode : '');
+}
+
+function updateJoinInfo() {
+  joinUrlEl.textContent = joinUrl(false).replace(/^https?:\/\//, '');
+  if (roomCode) qrEl.src = '/qr.svg?data=' + encodeURIComponent(joinUrl(true));
+  if (state && (state.phase === 'lobby' || state.phase === 'gameover')) render();
+}
+
+// --- connection / room resume ------------------------------------------------
+
+socket.on('connect', () => {
+  document.body.classList.remove('offline');
+  const saved = store('rumpus.host');
+  if (saved && saved.code && saved.hostToken) socket.emit('host:resume', saved);
+  else socket.emit('host:createRoom');
+});
+socket.on('host:resumeFailed', () => { store('rumpus.host', null); socket.emit('host:createRoom'); });
 socket.on('host:roomCreated', (msg) => {
+  roomCode = msg.code;
   codeEl.textContent = msg.code || 'ERR';
+  if (msg.code) store('rumpus.host', { code: msg.code, hostToken: msg.hostToken });
+  updateJoinInfo();
+});
+socket.on('host:replaced', () => {
+  phaseView.innerHTML = '<h1>This room was opened on another screen.</h1><p>Reload to start a new room here.</p>';
+  store('rumpus.host', null);
+});
+socket.on('room:stateUpdate', (msg) => { state = msg; window.Rumpus.setState(msg); render(); });
+socket.on('room:reaction', (r) => {
+  fx.reaction(esc(r.emoji), sprites.avatarUrl(r.avatar), esc(r.nickname));
+  sfx.pop();
+});
+socket.on('disconnect', () => document.body.classList.add('offline'));
+
+// --- input --------------------------------------------------------------------
+
+document.addEventListener('click', (e) => {
+  const pickBtn = e.target.closest('.game-pick');
+  if (pickBtn && !pickBtn.disabled) return socket.emit('host:startGame', { gameId: pickBtn.dataset.gameId });
+  const act = e.target.closest('[data-act]');
+  if (!act) return;
+  if (act.dataset.act === 'skip') socket.emit('host:skip');
+  if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
+  if (act.dataset.act === 'newroom' && confirm('Close this room and make a new one? Everyone will need to rejoin.')) {
+    store('rumpus.host', null);
+    location.reload();
+  }
+});
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'set-rounds') socket.emit('host:settings', { rounds: e.target.value === '' ? null : +e.target.value });
+  else if (e.target.id === 'set-timer') socket.emit('host:settings', { timerScale: +e.target.value });
+  else if (e.target.id === 'set-spicy') socket.emit('host:settings', { spicy: e.target.checked });
+});
+fsBtn.addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
 });
 
-socket.on('room:stateUpdate', (msg) => {
-  state = msg;
-  render();
-});
+// --- music moods ----------------------------------------------------------------
 
-socket.on('disconnect', () => {
-  phaseView.innerHTML = '<h1>Disconnected from server</h1><p>Reload this page to make a new room.</p>';
-  startBtn.disabled = true;
-});
-
-phaseView.addEventListener('click', (e) => {
-  const btn = e.target.closest('.game-pick');
-  if (!btn || btn.disabled) return;
-  socket.emit('host:startGame', { gameId: btn.dataset.gameId });
-});
-
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = String(s == null ? '' : s);
-  return d.innerHTML;
+const isVotePhase = (p) => /vote|voting|choose|czar|tt-guess|imp-guess/.test(p);
+const isRevealPhase = (p) => /reveal|results/.test(p);
+function cueFor(st) {
+  if (!st) return 'title';
+  const p = st.phase;
+  const g = st.gameState || {};
+  if (p === 'lobby') return st.players.length ? 'menu' : 'title';
+  if (p === 'gameover') return 'scoreboard';
+  if (isRevealPhase(p)) return 'reveal';
+  if (isVotePhase(p)) return 'vote';
+  if (g.doublePoints) return 'final';
+  return 'game:' + g.gameId;
 }
 
-function startCountdown(endsAt) {
-  stopCountdown();
-  if (!endsAt) return;
-  const el = document.getElementById('timer');
-  if (!el) return;
-  const tick = () => {
-    const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    el.textContent = left + 's';
+// --- per-game stats for end-of-game awards -----------------------------------
+let gameStats = null; // { gameId, rounds: [{ scores: Map }] , start: Map }
+let leaderId = null;
+function snapshotScores() { return new Map(state.players.map((p) => [p.id, p.score])); }
+function computeAwards() {
+  if (!gameStats || !gameStats.snaps.length) return [];
+  const snaps = [gameStats.start, ...gameStats.snaps];
+  const players = state.players;
+  const name = (id) => (players.find((p) => p.id === id) || {}).nickname;
+  const avatar = (id) => (players.find((p) => p.id === id) || {}).avatar;
+  const gains = new Map(players.map((p) => [p.id, []]));
+  for (let i = 1; i < snaps.length; i++) {
+    for (const p of players) gains.get(p.id).push((snaps[i].get(p.id) || 0) - (snaps[i - 1].get(p.id) || 0));
+  }
+  const awards = [];
+  const best = (fn, min = 1) => {
+    let top = null, v = -Infinity;
+    for (const p of players) { const x = fn(p.id); if (x > v) { v = x; top = p.id; } }
+    return v >= min ? { id: top, v } : null;
   };
-  tick();
-  timerInterval = setInterval(tick, 250);
+  const clutch = best((id) => { const g = gains.get(id); return g[g.length - 1] || 0; });
+  if (clutch) awards.push({ title: 'CLUTCH', desc: `+${clutch.v} in the last round`, id: clutch.id });
+  const consistent = best((id) => gains.get(id).filter((x) => x > 0).length, 2);
+  if (consistent) awards.push({ title: 'MR. RELIABLE', desc: `scored in ${consistent.v} rounds`, id: consistent.id });
+  const big = best((id) => Math.max(0, ...gains.get(id)));
+  if (big) awards.push({ title: 'BIG MOMENT', desc: `+${big.v} in one round`, id: big.id });
+  // Biggest climb from the midpoint ranking to the final ranking.
+  const mid = snaps[Math.floor(snaps.length / 2)];
+  const rank = (m) => { const ids = players.map((p) => p.id).sort((a, b) => (m.get(b) || 0) - (m.get(a) || 0)); return (id) => ids.indexOf(id); };
+  const rMid = rank(mid), rEnd = rank(snaps[snaps.length - 1]);
+  const climb = best((id) => rMid(id) - rEnd(id));
+  if (climb) awards.push({ title: 'COMEBACK KID', desc: `climbed ${climb.v} place${climb.v > 1 ? 's' : ''}`, id: climb.id });
+  const last = players.slice().sort((a, b) => a.score - b.score)[0];
+  if (last && players.length > 2) awards.push({ title: 'PARTICIPATION TROPHY', desc: 'there\'s always next game', id: last.id });
+  // Don't give one person every award.
+  const seen = new Map();
+  return awards.filter((a) => { const n = (seen.get(a.id) || 0) + 1; seen.set(a.id, n); return n <= 2; })
+    .map((a) => ({ ...a, name: name(a.id), avatar: avatar(a.id) }));
 }
 
-function stopCountdown() {
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = null;
-}
+// --- rendering ----------------------------------------------------------------
+
+const T = '<span class="timer"></span>';
+const icon = (id) => {
+  const u = sprites.iconUrl(id);
+  return u ? `<img class="game-icon" src="${u}" alt="">` : '';
+};
 
 function gamePicker(label) {
   const count = state.players.length;
-  const games = state.availableGames || [];
-  return `<h1>${label}</h1>
-    <p>Grab your phone, go to <strong>${esc(location.host)}/play</strong>
-    and enter code <strong>${esc(codeEl.textContent)}</strong>.</p>
+  const st = state.settings || {};
+  const opt = (v, cur, text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
+  const crew = state.players.map((p) =>
+    `<figure>${sprites.avatarImg(p.avatar, 'avatar big bob')}${esc(p.nickname)}</figure>`).join('');
+  return `<div class="lobby-head">
+      <div>
+        <h1>${label}</h1>
+        <p class="big-sub">Phones: go to <strong>${esc(joinUrl(false).replace(/^https?:\/\//, ''))}</strong>
+          · code <strong class="accent2">${esc(roomCode || '')}</strong> · or scan →</p>
+        <div class="settings">
+          <label>Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
+            ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
+          <label>Timers <select id="set-timer">${opt(0.6, st.timerScale, 'Fast')}${opt(1, st.timerScale, 'Normal')}
+            ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
+          <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
+          <span class="hint">${count}/${state.maxPlayers || 12} players</span>
+        </div>
+        <div class="lobby-crew">${crew || '<p class="hint">Waiting for players…</p>'}</div>
+      </div>
+      ${roomCode ? `<img class="qr-big" src="/qr.svg?data=${encodeURIComponent(joinUrl(true))}" alt="QR code to join">` : ''}
+    </div>
     <div class="game-grid">` +
-    games.map((gm) => {
+    (state.availableGames || []).map((gm) => {
       const disabled = count < gm.minPlayers;
       return `<button class="game-pick" data-game-id="${esc(gm.id)}" ${disabled ? 'disabled' : ''}>
+        ${icon(gm.id)}
         <span class="game-name">${esc(gm.name)}</span>
         <span class="game-blurb">${esc(gm.blurb)}</span>
-        <span class="game-min">${disabled ? `Needs ${gm.minPlayers}+ players` : ''}</span>
+        <span class="game-min">${disabled ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}</span>
       </button>`;
-    }).join('') +
-    `</div>`;
+    }).join('') + `</div>
+    <p class="hint footer-hint"><button class="link-btn" data-act="newroom">Start a fresh room</button></p>`;
 }
+
+function podium(standings) {
+  const top = standings.slice(0, 3);
+  const order = [1, 0, 2].filter((i) => top[i]);
+  return '<div class="podium">' + order.map((i) => {
+    const s = top[i];
+    return `<div class="step p${i + 1}">
+      ${av(s.nickname, `avatar ${i === 0 ? 'huge' : 'big'} bob`)}
+      <div class="who">${i === 0 ? '👑 ' : ''}${esc(s.nickname)}</div>
+      <div class="pts">${s.score}</div>
+      <div class="block">${i + 1}</div>
+    </div>`;
+  }).join('') + '</div>' +
+  (standings.length > 3 ? '<ol class="answers standings" start="4">' + standings.slice(3).map((s) =>
+    `<li>${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.score}</span></li>`).join('') + '</ol>' : '');
+}
+
+const voterIcons = (names) => names && names.length
+  ? `<span class="voters">${names.map((n) => av(n)).join('')}</span>` : '';
+
+// The original four games' screens.
+function legacyHost(phase, g) {
+  const roundTag = g.round ? `<p class="round-tag">Round ${g.round} of ${g.totalRounds}${g.doublePoints ? '<span class="double-badge">2× POINTS</span>' : ''}</p>` : '';
+  switch (phase) {
+    case 'answering':
+      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
+        <p class="big-sub">Answer on your phones! ${T}</p><p class="count">${g.submittedCount} / ${g.totalPlayers} answers in</p>`;
+    case 'voting':
+      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
+        <p class="big-sub">Vote for the funniest! ${T}</p>
+        <ol class="answers">${g.answers.map((a) => `<li>${esc(a.text)}</li>`).join('')}</ol>
+        <p class="count">${g.votedCount} / ${g.totalPlayers} votes in</p>`;
+    case 'results': {
+      const winnerIdx = new Set((g.winners || []).map((w) => w.index));
+      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1><ol class="answers results">` +
+        g.results.map((r) => `<li class="${winnerIdx.has(r.index) ? 'winner' : ''}">
+          ${esc(r.text)} <span class="byline">— ${av(r.nickname)} ${esc(r.nickname)}</span>
+          <span class="votes">${r.votes} vote${r.votes === 1 ? '' : 's'}${r.gained ? ' · +' + r.gained : ''}</span>
+          ${voterIcons(r.voters)}${r.sweep ? '<span class="sweep">SWEEP! +250</span>' : ''}</li>`).join('') + '</ol>';
+    }
+    case 'trivia-question':
+      return `${roundTag}${g.category ? `<span class="cat-tag">${esc(g.category)}</span>` : ''}<h1 class="prompt">${esc(g.question)}</h1>
+        <p class="big-sub">Fast answers score more! ${T}</p>
+        <ol class="answers">${g.choices.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>
+        <p class="count">${g.answeredCount} / ${g.totalPlayers} answers in</p>`;
+    case 'trivia-reveal':
+      return `${roundTag}<h1 class="prompt">${esc(g.question)}</h1><ol class="answers results">` +
+        g.choices.map((c, i) => `<li class="${i === g.correct ? 'winner' : ''}">${esc(c)}</li>`).join('') +
+        '</ol><ul class="scored-list">' +
+        g.scored.map((s) => `<li class="${s.correct ? 'correct' : 'wrong'}">${av(s.nickname)} ${esc(s.nickname)} ${s.correct ? `+${s.gained}` : '✗'}${s.streak > 1 ? ` <span class="streak">🔥×${s.streak}</span>` : ''}</li>`).join('') + '</ul>';
+    case 'cah-submit':
+      return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}</p>
+        <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">Everyone else, play your worst card!</p>
+        <p class="count">${g.submittedCount} / ${g.neededCount} cards in</p>`;
+    case 'cah-czar':
+      return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}</p>
+        <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">${esc(g.czarNickname)} is picking a winner…</p>
+        <ol class="answers">${g.submissions.map((s) => `<li>${esc(s.text)}</li>`).join('')}</ol>`;
+    case 'cah-reveal':
+      return `${roundTag}<h1 class="prompt">${esc(g.blackCard)}</h1>
+        <p class="big-answer">${esc(g.winner.text)}</p>
+        <p class="big-sub winner-line">${av(g.winner.nickname, 'avatar big bob')} ${esc(g.winner.nickname)} wins the round!</p>`;
+    case 'fib-bluff':
+      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
+        <p class="big-sub">Write a believable LIE on your phone! ${T}</p><p class="count">${g.submittedCount} / ${g.totalPlayers} lies in</p>`;
+    case 'fib-choose':
+      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
+        <p class="big-sub">One of these is TRUE. Find it! ${T}</p>
+        <ol class="answers">${g.options.map((o) => `<li>${esc(o.text)}</li>`).join('')}</ol>
+        <p class="count">${g.pickedCount} / ${g.totalPlayers} guesses in</p>`;
+    case 'fib-reveal':
+      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1><ol class="answers results">` +
+        g.result.options.map((o) => `<li class="${o.isTruth ? 'winner' : ''}">${esc(o.text)}
+          <span class="byline">${o.isTruth ? '— THE TRUTH!' : (o.authors.length ? '— ' + o.authors.map((n) => av(n) + ' ' + esc(n)).join(', ') + '\'s lie' : '')}</span>
+          ${o.pickedBy.length ? `<span class="votes">${o.isTruth ? 'found by' : 'fooled'}</span>${voterIcons(o.pickedBy)}` : ''}</li>`).join('') +
+        '</ol>' + window.Rumpus.scoredList(g.result.scored);
+    default:
+      return null;
+  }
+}
+
+function renderSidebar(phase) {
+  const sorted = state.players.slice();
+  if (phase !== 'lobby') sorted.sort((a, b) => b.score - a.score);
+  playerList.innerHTML = '';
+  sorted.forEach((p, i) => {
+    const li = document.createElement('li');
+    li.dataset.id = p.id;
+    if (!p.connected) li.classList.add('offline');
+    if (i === 0 && p.score > 0 && phase !== 'lobby') li.classList.add('leader');
+    li.innerHTML = `${sprites.avatarImg(p.avatar)}<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}</span>` +
+      `<span class="pscore">${p.score}</span>`;
+    const kick = document.createElement('button');
+    kick.className = 'kick';
+    kick.textContent = '✕';
+    kick.title = 'Kick ' + p.nickname;
+    kick.addEventListener('click', () => {
+      if (confirm(`Kick ${p.nickname}?`)) socket.emit('host:kickPlayer', { playerId: p.id });
+    });
+    li.appendChild(kick);
+    playerList.appendChild(li);
+  });
+  // Score pop-ups
+  for (const p of state.players) {
+    const before = prevScores.get(p.id);
+    if (before != null && p.score > before) {
+      fx.scorePop(playerList.querySelector(`li[data-id="${p.id}"] .pscore`), p.score - before);
+    }
+  }
+  prevScores = new Map(state.players.map((p) => [p.id, p.score]));
+}
+
+function updateTimerBar(endsAt) {
+  if (!endsAt) { timerbar.hidden = true; return; }
+  if (timerTotal.endsAt !== endsAt) timerTotal = { endsAt, total: Math.max(1000, endsAt - Date.now()) };
+  timerbar.hidden = false;
+}
+setInterval(() => {
+  if (timerbar.hidden || !timerTotal.endsAt) return;
+  const left = Math.max(0, timerTotal.endsAt - Date.now());
+  timerbar.firstElementChild.style.width = (100 * left / timerTotal.total) + '%';
+  timerbar.classList.toggle('urgent', left < 5000);
+}, 250);
 
 function render() {
   if (!state) return;
   const g = state.gameState || {};
   const phase = state.phase;
 
-  // Player list with kick controls (host-only input)
-  playerList.innerHTML = '';
-  for (const p of state.players) {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="pname">${esc(p.nickname)}</span>` +
-      `<span class="pscore">${p.score}</span>`;
-    const kick = document.createElement('button');
-    kick.className = 'kick';
-    kick.textContent = 'kick';
-    kick.addEventListener('click', () =>
-      socket.emit('host:kickPlayer', { playerId: p.id }));
-    li.appendChild(kick);
-    playerList.appendChild(li);
+  renderSidebar(phase);
+  if (state.players.length > lastPlayerCount && phase === 'lobby') { sfx.join(); music.play(cueFor(state)); }
+  lastPlayerCount = state.players.length;
+
+  const inGame = phase !== 'lobby' && phase !== 'gameover';
+  controls.hidden = !inGame;
+  controls.innerHTML = inGame
+    ? `<button data-act="skip" ${state.canSkip ? '' : 'disabled'}>Skip ⏭</button><button data-act="end" class="danger">End</button>`
+    : '';
+
+  // Work out end-of-game awards before the game-over screen is drawn.
+  if (phase === 'gameover' && lastPhaseKey && !lastPhaseKey.startsWith('gameover')) {
+    if (gameStats) gameStats.snaps.push(snapshotScores());
+    lastAwards = computeAwards();
+    gameStats = null;
   }
 
-  stopCountdown();
-  let html = '';
-  const roundTag = g.round
-    ? `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p>` : '';
-
+  let html;
   if (phase === 'lobby') {
     html = gamePicker('Choose a game');
-  } else if (phase === 'answering') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.prompt)}</h1>
-      <p class="big-sub">Answer on your phones! <span id="timer" class="timer"></span></p>
-      <p>${g.submittedCount} / ${g.totalPlayers} answers in</p>`;
-  } else if (phase === 'voting') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.prompt)}</h1>
-      <p class="big-sub">Vote on your phones! <span id="timer" class="timer"></span></p>
-      <ol class="answers">` +
-      g.answers.map((a) => `<li>${esc(a.text)}</li>`).join('') +
-      `</ol><p>${g.votedCount} / ${g.totalPlayers} votes in</p>`;
-  } else if (phase === 'results') {
-    const winnerIdx = new Set((g.winners || []).map((w) => w.index));
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.prompt)}</h1>
-      <ol class="answers results">` +
-      g.results.map((r) =>
-        `<li class="${winnerIdx.has(r.index) ? 'winner' : ''}">
-          ${esc(r.text)} <span class="byline">— ${esc(r.nickname)}</span>
-          <span class="votes">${r.votes} vote${r.votes === 1 ? '' : 's'}</span>
-        </li>`).join('') +
-      `</ol>`;
-  } else if (phase === 'trivia-question') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.question)}</h1>
-      <p class="big-sub">Answer on your phones! <span id="timer" class="timer"></span></p>
-      <ol class="answers">` +
-      g.choices.map((c) => `<li>${esc(c)}</li>`).join('') +
-      `</ol><p>${g.answeredCount} / ${g.totalPlayers} answers in</p>`;
-  } else if (phase === 'trivia-reveal') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.question)}</h1>
-      <ol class="answers results">` +
-      g.choices.map((c, i) => `<li class="${i === g.correct ? 'winner' : ''}">${esc(c)}</li>`).join('') +
-      `</ol><ul class="scored-list">` +
-      g.scored.map((s) =>
-        `<li class="${s.correct ? 'correct' : 'wrong'}">${esc(s.nickname)}
-          ${s.correct ? `+${s.gained}` : '✗'}</li>`).join('') +
-      `</ul>`;
-  } else if (phase === 'cah-submit') {
-    html = `${roundTag}
-      <p class="round-tag">Card Czar: ${esc(g.czarNickname)}</p>
-      <h1 class="prompt">${esc(g.blackCard)}</h1>
-      <p class="big-sub">Everyone else, submit a card!</p>
-      <p>${g.submittedCount} / ${g.neededCount} cards in</p>`;
-  } else if (phase === 'cah-czar') {
-    html = `${roundTag}
-      <p class="round-tag">Card Czar: ${esc(g.czarNickname)}</p>
-      <h1 class="prompt">${esc(g.blackCard)}</h1>
-      <p class="big-sub">${esc(g.czarNickname)} is picking a winner…</p>
-      <ol class="answers">` +
-      g.submissions.map((s) => `<li>${esc(s.text)}</li>`).join('') +
-      `</ol>`;
-  } else if (phase === 'cah-reveal') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.blackCard)}</h1>
-      <p class="big-sub winner-line">${esc(g.winner.text)}
-        <span class="byline">— ${esc(g.winner.nickname)} wins the round!</span></p>`;
-  } else if (phase === 'fib-bluff') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.prompt)}</h1>
-      <p class="big-sub">Invent a fake answer on your phones! <span id="timer" class="timer"></span></p>
-      <p>${g.submittedCount} / ${g.totalPlayers} lies in</p>`;
-  } else if (phase === 'fib-choose') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.prompt)}</h1>
-      <p class="big-sub">Which one's the truth? Pick on your phones! <span id="timer" class="timer"></span></p>
-      <ol class="answers">` +
-      g.options.map((o) => `<li>${esc(o.text)}</li>`).join('') +
-      `</ol><p>${g.pickedCount} / ${g.totalPlayers} guesses in</p>`;
-  } else if (phase === 'fib-reveal') {
-    html = `${roundTag}
-      <h1 class="prompt">${esc(g.prompt)}</h1>
-      <ol class="answers results">` +
-      g.result.options.map((o) =>
-        `<li class="${o.isTruth ? 'winner' : ''}">
-          ${esc(o.text)}
-          <span class="byline">${o.isTruth ? '— the truth!' : (o.authors.length ? '— ' + esc(o.authors.join(', ')) + '\'s lie' : '')}</span>
-          <span class="votes">${o.pickedBy.length ? 'fooled ' + o.pickedBy.map(esc).join(', ') : ''}</span>
-        </li>`).join('') +
-      `</ol><ul class="scored-list">` +
-      g.result.scored.map((s) => `<li class="correct">${esc(s.nickname)} +${s.gained}</li>`).join('') +
-      `</ul>`;
   } else if (phase === 'gameover') {
-    html = `<h1>Final scores</h1><ol class="answers standings">` +
-      g.standings.map((s, i) =>
-        `<li class="${i === 0 ? 'winner' : ''}">${esc(s.nickname)}
-         <span class="votes">${s.score}</span></li>`).join('') +
-      `</ol>` + gamePicker('Play again?');
+    const awards = lastAwards;
+    html = '<h1>🏆 Final scores</h1>' + podium(g.standings || []) +
+      (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
+        ${sprites.avatarImg(a.avatar, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
+      gamePicker('Play again?');
+  } else if (games[g.gameId]) {
+    html = games[g.gameId].host(state);
+    if (g.doublePoints && !/2× POINTS/.test(html)) {
+      html = html.replace(/(<p class="round-tag">[^<]*)/, '$1<span class="double-badge">2× POINTS</span>');
+    }
   } else {
-    html = `<h1>${esc(phase)}</h1>`;
+    html = legacyHost(phase, g) || `<h1>${esc(phase)}</h1>`;
   }
 
-  phaseView.innerHTML = html;
-  if (g.endsAt) startCountdown(g.endsAt);
+  const key = phase + ':' + (g.round || 0) + ':' + (g.chainIndex || 0);
+  const phaseChanged = key !== lastPhaseKey;
+  if (phaseChanged) {
+    const wasInGame = lastPhaseKey && !/^(lobby|gameover)/.test(lastPhaseKey);
+    lastPhaseKey = key;
+    // Game just started: title card + stinger, start tracking stats.
+    if (inGame && !wasInGame) {
+      gameStats = { gameId: g.gameId, start: snapshotScores(), snaps: [] };
+      leaderId = null;
+      showIntro(g.gameId);
+      music.play('intro', { then: cueFor(state) });
+    } else if (phase === 'gameover') {
+      sfx.win(); fx.confetti(240);
+      music.play('victory', { then: 'scoreboard' });
+      lastAwards.forEach((a, i) => setTimeout(() => sfx.award(), 1000 + i * 500));
+    } else {
+      music.play(cueFor(state));
+      if (isRevealPhase(phase)) {
+        sfx.reveal();
+        shake();
+        if (gameStats) gameStats.snaps.push(snapshotScores());
+      } else if (inGame) sfx.phase();
+      if (phase === 'cah-reveal' || (phase === 'results' && (g.results || []).some((r) => r.sweep))) fx.confetti(90);
+      if (phase === 'cg-reveal' && g.result && g.result.list.some((e) => e.exact)) { fx.banner('BULLSEYE!', 'gold'); fx.confetti(120); }
+      if (phase === 'imp-reveal' && g.result) fx.banner(g.result.outcome === 'caught' ? 'GOTCHA!' : g.result.outcome === 'stole' ? 'STOLEN!' : 'GOT AWAY!', g.result.outcome === 'caught' ? 'gold' : '');
+    }
+    // Lead change alert (only mid-game, only when the leader actually changes).
+    if (inGame && isRevealPhase(phase)) {
+      const top = state.players.slice().sort((a, b) => b.score - a.score)[0];
+      if (top && top.score > 0 && leaderId && top.id !== leaderId) {
+        setTimeout(() => { fx.banner(`NEW LEADER!\n${top.nickname}`, 'gold'); sfx.leader(); }, 900);
+      }
+      if (top && top.score > 0) leaderId = top.id;
+    }
+    if (phase === 'lobby') music.play(cueFor(state));
+    const roundKey = (g.gameId || '') + ':' + (g.round || 0);
+    if (inGame && g.doublePoints && roundKey !== lastRoundSeen) fx.banner('FINAL ROUND!\nDOUBLE POINTS', 'gold');
+    lastRoundSeen = roundKey;
+    // Pixel wipe between screens (not between lobby re-renders).
+    pendingHtml = html;
+    if (!wiping) {
+      wiping = true;
+      fx.wipe(() => {
+        phaseView.innerHTML = pendingHtml;
+        wiping = false;
+        countdown(g.endsAt, '.timer', tick);
+      });
+    }
+  } else if (wiping) {
+    pendingHtml = html;
+  } else {
+    phaseView.innerHTML = html;
+  }
+  updateTimerBar(inGame ? g.endsAt : null);
+  if (!wiping) countdown(g.endsAt, '.timer', tick);
+}
+
+function tick(left) {
+  if (left > 0 && left <= 5) sfx.tick();
+  const inputish = state && !/lobby|gameover|reveal|results/.test(state.phase);
+  music.setHurry(inputish && left > 0 && left <= 10);
+}
+
+function shake() {
+  const st = document.getElementById('stage');
+  st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
 }

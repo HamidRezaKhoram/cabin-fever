@@ -2,18 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#14121f">
   <title>Rumpus — Controller</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="play">
+  <canvas id="bg"></canvas>
   <header class="playbar">
     <span class="brand small">RUMPUS</span>
     <span id="me-tag"></span>
+    <span id="phone-timer" class="timer"></span>
+    <button id="leave-btn" class="link-btn" hidden>Leave</button>
   </header>
+  <div id="banner" class="banner" hidden></div>
 
   <main id="screen">
-    <!-- Join form -->
     <section id="join-view">
       <h1>Join a room</h1>
       <form id="join-form">
@@ -22,16 +26,24 @@
                placeholder="ABCD" required>
         <label for="nick-input">Nickname</label>
         <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Your name" required>
+        <label>Pick your animal</label>
+        <div id="avatar-pick" class="avatar-pick"></div>
         <button type="submit">Join</button>
       </form>
       <p id="join-error" class="error"></p>
     </section>
 
-    <!-- Game view, rendered off room:stateUpdate -->
     <section id="game-view" hidden></section>
   </main>
 
+  <nav id="react-bar" class="react-bar" hidden></nav>
+
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/common.js"></script>
+  <script src="/sprites.js"></script>
+  <script src="/bg.js"></script>
+  <script src="/draw.js"></script>
+  <script src="/games.js"></script>
   <script src="/play.js"></script>
 </body>
 </html>
