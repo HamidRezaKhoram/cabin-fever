@@ -68,6 +68,7 @@ def dedupe(items: list[Item], key: Callable[[Item], str]) -> list[Item]:
 
 SRC_LABEL = {
     'opentdb': 'Open Trivia DB (CC BY-SA 4.0)', 'otqa': 'OpenTriviaQA (CC BY-SA 4.0)',
+    'ttapi': 'The Trivia API (CC BY-NC 4.0)',
     'cah': 'Cards Against Humanity (CC BY-NC-SA 4.0)', 'wikidata': 'Wikidata (CC0)',
 }
 
@@ -116,6 +117,44 @@ def benign(text: str) -> bool:
 # "all/none of the above", which-of-the-following lists) + TV readability (long stems).
 FLAWED = re.compile(r"\bNOT\b|\bEXCEPT\b|\bnot\b.*\?$|all of the above|none of the above|which of the following|which of these", re.I)
 
+# Players are an international group: questions that only make sense if you grew up in
+# the US (or watch one country's TV) are dropped — sports leagues, TV networks, states, etc.
+US_STATES = ('Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Idaho|Illinois|'
+             'Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|'
+             'Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|'
+             'Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington State|'
+             'West Virginia|Wisconsin|Wyoming')
+LOCAL_RE = re.compile(
+    r"(?<!South )(?<!Latin )(?<!North )(?<!Central )(?<!Native )\b(American|America's|U\.S\.|USA|United States|US (state|president|army|navy|dollar|city|TV)|NFL|NBA|MLB|NHL|NCAA|NASCAR|"
+    r"WWE|Super Bowl|World Series|Stanley Cup|baseball|American football|touchdown|quarterback|college football|"
+    r"Congress|Senate|Supreme Court|Founding Fathers|Confedera\w+|(?<!Spanish )(?<!English )(?<!Russian )(?<!Irish )(?<!Greek )(?<!Chinese )(?<!Syrian )Civil War|Billboard|Grammy|Emmy|Golden Globe|Tony Award|"
+    r"Broadway|Saturday Night Live|SNL|late[- ]night|talk show|sitcom|soap opera|reality (TV|show)|Nickelodeon|"
+    r"Cartoon Network|Disney Channel|HBO|NBC|CBS|ABC|PBS|Fox (network|TV)|MTV|BBC|ITV|Channel 4|Thanksgiving|"
+    r"Fourth of July|Independence Day|Memorial Day|Labor Day|zip code|Walmart|Taco Bell|Wendy's|Twinkie|Hershey|"
+    r"Kool-Aid|Dunkin|state (capital|bird|flower)|county|Hollywood Walk|country music|hip[- ]hop|rapper|R&B|"
+    r"Pittsburgh|Boston|Chicago|Detroit|Philadelphia|Seattle|Dallas|Houston|Atlanta|Baltimore|Cleveland|Denver|"
+    r"Miami|Minneapolis|Milwaukee|Phoenix|Portland|San Diego|San Francisco|Las Vegas|Brooklyn|Manhattan|" + US_STATES + r")\b")
+NICHE_CATS = {'Entertainment: Television', 'Celebrities', 'Entertainment: Musicals & Theatres'}
+# Video games are fine in moderation — only franchises most people have heard of.
+FAMOUS_GAMES = re.compile(r"Mario|Pok[eé]mon|Zelda|Minecraft|Tetris|Pac-Man|Sonic|Grand Theft Auto|GTA|FIFA|Call of Duty|"
+                          r"The Sims|Street Fighter|Angry Birds|Fortnite|Space Invaders|Donkey Kong|Halo|PlayStation|"
+                          r"Nintendo|Xbox|Game Boy|Candy Crush|Among Us|Roblox|Mortal Kombat|Resident Evil", re.I)
+
+def local_only(text: str) -> bool:
+    return bool(LOCAL_RE.search(text))
+
+# One shared category vocabulary for both trivia sources (category rounds need big categories).
+CAT_MAP = {
+    'Entertainment: Film': 'Film & TV', 'Entertainment: Television': 'Film & TV', 'Entertainment: Cartoon & Animations': 'Film & TV',
+    'film_and_tv': 'Film & TV', 'Entertainment: Music': 'Music', 'music': 'Music', 'Science & Nature': 'Science',
+    'science': 'Science', 'Animals': 'Science', 'Geography': 'Geography', 'geography': 'Geography', 'History': 'History',
+    'history': 'History', 'Sports': 'Sport & Leisure', 'sport_and_leisure': 'Sport & Leisure',
+    'Entertainment: Board Games': 'Sport & Leisure', 'Entertainment: Books': 'Arts & Literature', 'Art': 'Arts & Literature',
+    'arts_and_literature': 'Arts & Literature', 'Mythology': 'Society & Culture', 'society_and_culture': 'Society & Culture',
+    'food_and_drink': 'Food & Drink', 'General Knowledge': 'General Knowledge', 'general_knowledge': 'General Knowledge',
+    'Vehicles': 'General Knowledge', 'Entertainment: Video Games': 'Video Games',
+}
+
 def boring_trivia(q: Item) -> bool:
     cat = clean(q.get('category', ''))
     text = clean(q['question'])
@@ -130,7 +169,15 @@ def boring_trivia(q: Item) -> bool:
         return True
     if re.search(r"How many letters are in the English|What is the capital of|What colou?r is", text, re.I):
         return True
-    if cat == 'Entertainment: Video Games' and q['difficulty'] == 'hard':
+    if cat == 'Entertainment: Video Games' and not FAMOUS_GAMES.search(text):
+        return True
+    # OpenTDB's pop-culture questions lean on US charts/shows; only its easy (famous) ones stay —
+    # The Trivia API supplies the internationally known music/film questions.
+    if cat in ('Entertainment: Music', 'Entertainment: Film', 'Entertainment: Cartoon & Animations') and q.get('difficulty') != 'easy':
+        return True
+    if re.search(r"top \d+ hit|chart|debut (album|single)|mixtape|featured on|released in \d{4}|what year was .* released", text, re.I):
+        return True
+    if cat in NICHE_CATS or local_only(' '.join([text, clean(q['correct_answer'])] + [clean(a) for a in q['incorrect_answers']])):
         return True
     return False
 
@@ -183,7 +230,8 @@ for q in opentdb:
     correct = clean(q['correct_answer'])
     wrong = [clean(w) for w in q['incorrect_answers']]
     is_adult = bool(ADULT_RE.search(text + ' ' + correct))
-    cat = clean(q.get('category', ''))
+    raw_cat = clean(q.get('category', ''))
+    cat = CAT_MAP.get(raw_cat, raw_cat)
     if q['type'] == 'boolean':
         choices = ['True', 'False']
         trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct), 'cat': cat, 'a': is_adult, 'src': SRC_LABEL['opentdb']})
@@ -194,7 +242,7 @@ for q in opentdb:
     fib_ok = (short_answer(correct) and not re.search(r'which of (these|the following)|not |following|true|false|\bthese\b', text, re.I)
               and len(text) < 160)
     # Deterministic split so the two games never share a question.
-    fib_ok = fib_ok and not cat.startswith('Entertainment: Video Games') and not cat.startswith('Entertainment: Cartoon')
+    fib_ok = fib_ok and not raw_cat.startswith('Entertainment: Video Games') and not raw_cat.startswith('Entertainment: Cartoon')
     if fib_ok and q['difficulty'] != 'easy' and int(sid('split', text), 16) % 100 < 80:
         fib.append({'q': text, 'answer': correct, 'cat': cat, 'a': is_adult, 'src': SRC_LABEL['opentdb']})
     else:
@@ -202,11 +250,33 @@ for q in opentdb:
         rng.shuffle(choices)
         trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct), 'cat': cat, 'a': is_adult, 'src': SRC_LABEL['opentdb']})
 
+# The Trivia API: an international bank. Keep only questions tagged as globally relevant
+# (no `regions`) and not niche; skip hard ones (they don't separate players at a party).
+ttapi_path = VENDOR / 'the-trivia-api.json'
+ttapi = json.loads(ttapi_path.read_text(encoding='utf-8')) if ttapi_path.exists() else []
+for q in ttapi:
+    text = clean(q['question']['text'])
+    correct = clean(q['correctAnswer'])
+    wrong = [clean(w) for w in q['incorrectAnswers']][:3]
+    if q.get('regions') or q.get('isNiche') or q.get('difficulty') == 'hard' or len(wrong) < 3:
+        continue
+    if FLAWED.search(text) or len(text) > 130 or local_only(' '.join([text, correct] + wrong)) or not benign(text):
+        continue
+    if DRY_RE.search(text) or re.search(r"How many letters are in the English|What is the capital of|What colou?r is", text, re.I):
+        continue
+    choices = wrong + [correct]
+    rng.shuffle(choices)
+    trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct),
+                   'cat': CAT_MAP.get(q['category'], 'General Knowledge'),
+                   'a': bool(ADULT_RE.search(text + ' ' + correct)), 'src': SRC_LABEL['ttapi']})
+
 for line in (SRC / 'adult-trivia.txt').read_text(encoding='utf-8').splitlines():
     if '|' not in line or line.startswith('#'):
         continue
     parts = [p.strip() for p in line.split('|')]
     q, correct, wrong = parts[0], parts[1], parts[2:5]
+    if local_only(' '.join([q, correct] + wrong)):
+        continue
     choices = wrong + [correct]
     rng.shuffle(choices)
     trivia.append({'q': q, 'choices': choices, 'correct': choices.index(correct), 'cat': 'After Dark', 'a': True})

@@ -228,7 +228,12 @@ function legacyPlayer(phase, g, you) {
     case 'trivia-reveal':
       return `<h1>${you.wasCorrect ? 'Nice! ✓' : 'Nope ✗'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>${you.streak > 1 ? `<p class="streak">🔥 ${you.streak} in a row!</p>` : ''}`;
     case 'cah-submit':
-      if (you.isCzar) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Sit tight — everyone else is picking a card.</p>`;
+      if (you.isCzar) {
+        if (!you.nextOptions) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Sit tight — everyone else is picking a card.</p>`;
+        if (you.nextPick != null) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Next round's prompt is locked in ✓ — now wait for the cards.</p>`;
+        return `<h1>You're the Card Czar</h1><p>While everyone plays a card, choose <strong>next round's</strong> prompt:</p><div class="vote-list">` +
+          you.nextOptions.map((t, i) => `<button class="vote-btn" data-send='{"nextBlack":${i}}'>${esc(t)}</button>`).join('') + '</div>';
+      }
       if (you.submitted) return waiting('Card played');
       return `<p class="round-tag">Card Czar: ${esc(g.czarNickname)}</p><h2 class="prompt">${esc(g.blackCard)}</h2><p>Pick a card:</p><div class="vote-list">` +
         (you.hand || []).map((text, i) => `<button class="hand-btn" data-send='{"cardIndex":${i}}'>${esc(text)}</button>`).join('') + '</div>';

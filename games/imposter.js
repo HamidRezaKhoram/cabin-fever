@@ -172,7 +172,11 @@ class ImposterGame extends BaseGame {
       return { ...common, submittedCount: this.clues.size, totalPlayers: this.room.players.size };
     }
     if (this.phase === 'imp-vote') {
-      return { ...common, clues: this.clueList(), votedCount: this.votes.size, totalPlayers: this.room.players.size };
+      // Suspicion meter: how many votes each suspect has so far (never who cast them).
+      const tally = {};
+      for (const t of this.votes.values()) tally[t] = (tally[t] || 0) + 1;
+      const clues = this.clueList().map((c) => ({ ...c, suspicion: tally[c.id] || 0 }));
+      return { ...common, clues, votedCount: this.votes.size, totalPlayers: this.room.players.size };
     }
     if (this.phase === 'imp-guess') {
       return { ...common, clues: this.clueList(), imposter: this.nick(this.imposter), options: this.options };

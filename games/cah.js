@@ -144,9 +144,14 @@ class CAHGame {
       return;
     }
     this.round += 1;
+    // The previous czar picked this round's prompt from three while they waited.
+    const prev = this.nextOptions;
+    this.pickedBy = prev && this.nextPick != null ? this.czarNickname() : null;
+    this.blackCard = prev ? prev[this.nextPick != null ? this.nextPick : crypto.randomInt(prev.length)] : this.drawBlack();
     this.czarId = this.currentCzar();
     this.czarCursor += 1;
-    this.blackCard = this.drawBlack();
+    this.nextOptions = this.round < this.totalRounds ? [this.drawBlack(), this.drawBlack(), this.drawBlack()] : null;
+    this.nextPick = null;
     this.submissions = new Map();
     this.revealList = null;
     this.winner = null;
@@ -162,8 +167,16 @@ class CAHGame {
 
   handleSubmit(playerId, payload) {
     if (this.destroyed) return;
+    if (this.phase === 'cah-submit' && playerId === this.czarId) {
+      // The czar's job while cards come in: choose next round's prompt card.
+      const n = payload.nextBlack;
+      if (this.nextOptions && this.nextPick == null && Number.isInteger(n) && n >= 0 && n < this.nextOptions.length) {
+        this.nextPick = n;
+        this.push();
+      }
+      return;
+    }
     if (this.phase === 'cah-submit') {
-      if (playerId === this.czarId) return; // czar doesn't play a card
       if (this.submissions.has(playerId)) return;
       const hand = this.hands.get(playerId);
       if (!hand) return;
@@ -256,6 +269,7 @@ class CAHGame {
       skipSeq: this.skipSeq || 0,
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
+      pickedBy: this.pickedBy || null,
     };
     switch (this.phase) {
       case 'cah-submit':
@@ -296,6 +310,8 @@ class CAHGame {
         return {
           gameState: base,
           you: {
+            nextOptions: playerId === this.czarId ? this.nextOptions : null,
+            nextPick: playerId === this.czarId ? this.nextPick : null,
             isCzar: playerId === this.czarId,
             hand: this.hands.get(playerId) || [],
             submitted: this.submissions.has(playerId),

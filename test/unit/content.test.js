@@ -109,3 +109,16 @@ test('benign-violation filter: no cruel topics in any pool', () => {
   const cruel = /\b(rape|holocaust|genocide|school shooting|nazis?|hitler)\b/i;
   for (const n of POOLS) assert.ok(!load(n).some((q) => cruel.test(text(q) + ' ' + (q.answer || ''))), `${n} has a non-benign item`);
 });
+
+test('trivia is international: no US-only sports/TV/states, an international bank, few video-game questions', () => {
+  const trivia = load('trivia');
+  const LOCAL = /\b(NFL|NBA|MLB|NHL|NCAA|Super Bowl|World Series|baseball|quarterback|Congress|Senate|Billboard|Grammy|Emmy|Broadway|Saturday Night Live|sitcom|Thanksgiving|Texas|California|Florida|Ohio|Chicago|Boston|Detroit)\b/;
+  const local = trivia.filter((q) => LOCAL.test([q.q, ...q.choices].join(' ')));
+  assert.deepStrictEqual(local.map((q) => q.q), [], 'country-specific trivia slipped through');
+  const intl = trivia.filter((q) => /The Trivia API/.test(q.src || '')).length;
+  assert.ok(intl / trivia.length >= 0.4, `only ${intl} of ${trivia.length} questions come from the international bank`);
+  const games = trivia.filter((q) => q.cat === 'Video Games').length;
+  assert.ok(games / trivia.length <= 0.08, `${games} video-game questions is too many`);
+  const cats = new Set(trivia.map((q) => q.cat));
+  for (const c of ['Geography', 'History', 'Science', 'Music', 'Film & TV', 'Food & Drink', 'Sport & Leisure']) assert.ok(cats.has(c), `category ${c}`);
+});

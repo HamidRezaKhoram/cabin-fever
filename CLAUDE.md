@@ -34,7 +34,9 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
    original or under an open license, and record the source in `CREDITS.md`.
 7. **Licensing:** code is AGPL-3.0. Card Chaos uses Cards Against Humanity official packs
    (CC BY-NC-SA 4.0) → the project is **non-commercial**. Open Trivia DB / OpenTriviaQA are
-   CC BY-SA 4.0. Keep `CREDITS.md` accurate.
+   CC BY-SA 4.0; The Trivia API is CC BY-NC 4.0. Keep `CREDITS.md` accurate.
+   Trivia must work for an **international** group: no US-only (or any one country's) sports
+   leagues, TV, states or charts — `LOCAL_RE` in build-content.py + a content test enforce it.
 8. Commit/push only when asked (or when the user has asked for it in the current task).
    End commit messages with the attribution line the session tells you to use.
 
