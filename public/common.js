@@ -1,7 +1,7 @@
 /* Rumpus shared client helpers. AGPLv3, see LICENSE. */
 'use strict';
 
-window.Rumpus = Object.assign(window.Rumpus || {}, (function () {
+window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(window.Rumpus || {}, (function () {
   function esc(s) {
     const d = document.createElement('div');
     d.textContent = String(s == null ? '' : s);
@@ -170,4 +170,4 @@ window.Rumpus = Object.assign(window.Rumpus || {}, (function () {
   function register(id, impl) { games[id] = impl; }
 
   return { esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
-})());
+})())));

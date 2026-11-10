@@ -48,7 +48,7 @@
     };
   }
 
-  window.Rumpus = window.Rumpus || {};
+  window.Rumpus = window.Rumpus || /** @type {RumpusNS} */ ({});
   window.Rumpus.clock = {
     FPS, add,
     frame: () => frame,

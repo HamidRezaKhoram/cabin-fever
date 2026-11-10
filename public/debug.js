@@ -138,7 +138,7 @@
     }
   });
 
-  window.Rumpus = window.Rumpus || {};
+  window.Rumpus = window.Rumpus || /** @type {RumpusNS} */ ({});
   window.Rumpus.debug = {
     isEnabled: () => enabled,
     log: () => log.slice(),

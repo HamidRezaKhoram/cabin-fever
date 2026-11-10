@@ -42,6 +42,8 @@ interface Room {
   hostToken: string;
   hostSocket: any;
   players: Map<string, Player>;
+  /** Game night playlist (server.js) or null. */
+  night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
   game: GameLike | null;
   closed: boolean;
   settings: RoomSettings;
@@ -68,6 +70,8 @@ interface GameLike {
   timer: NodeJS.Timeout | null;
   matchIndex?: number;
   revealIndex?: number;
+  /** Game night: this game's placings were already added. */
+  nightCounted?: boolean;
   skipSeq?: number;
   subject?: string;
   skippablePhases?: string[];
@@ -107,15 +111,19 @@ interface RumpusClock {
 }
 
 /** window.Rumpus — modules attach themselves as each script loads, so every member is optional at the type level. */
+// Each page loads these modules before its own code runs, so they're declared present
+// (not optional): `window.Rumpus = window.Rumpus || {}` in every module just builds it up.
 interface RumpusNS {
-  clock?: RumpusClock;
-  esc?(s: unknown): string;
-  store?(key: string, val?: any): any;
-  morph?(target: Element, html: string): void;
-  fit?(el: HTMLElement, opts?: { max?: number; min?: number; maxLines?: number }): void;
-  fitAll?(root: Element): void;
-  register?(id: string, impl: { host(s: any): string; player(s: any): string; bind?(root: HTMLElement, api: any): void }): void;
-  games?: Record<string, any>;
+  clock: RumpusClock;
+  /** Game-night leaderboard (games.js). */
+  nightTable(night: any, between?: boolean): string;
+  esc(s: unknown): string;
+  store(key: string, val?: any): any;
+  morph(target: Element, html: string): void;
+  fit(el: HTMLElement, opts?: { max?: number; min?: number; maxLines?: number }): void;
+  fitAll(root: Element): void;
+  register(id: string, impl: { host(s: any): string; player(s: any): string; bind?(root: HTMLElement, api: any): void }): void;
+  games: Record<string, any>;
   /** The remaining modules (sprites, music, fx, debug, …) are attached at runtime. */
   [module: string]: any;
 }
