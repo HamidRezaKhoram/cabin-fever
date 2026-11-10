@@ -9,3 +9,4 @@ games/data/cah-cards.js
 test/ui/.shots/
 test/.music-fixture/
 coverage/
+dist/

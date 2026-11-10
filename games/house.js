@@ -31,6 +31,12 @@ try { rules = { ...defaults(), ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; }
 /** @type {(() => void)[]} */
 const listeners = [];
 
+/** Re-read the saved rules (the browser build: the /admin page saved them in another tab). */
+function reload() {
+  try { rules = { ...defaults(), ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { rules = defaults(); }
+  listeners.forEach((fn) => fn());
+}
+
 function save() {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -120,4 +126,4 @@ function removeCustom(pool, id) {
 /** For tests. */
 function _reset() { rules = defaults(); }
 
-module.exports = { get, update, timerFor, mask, isBanned, setDisabled, isDisabled, addCustom, removeCustom, onChange, _reset };
+module.exports = { get, reload, update, timerFor, mask, isBanned, setDisabled, isDisabled, addCustom, removeCustom, onChange, _reset };

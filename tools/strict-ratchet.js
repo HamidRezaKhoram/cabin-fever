@@ -14,7 +14,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const FILE = path.join(ROOT, 'types', 'strict-baseline.json');
-const CONFIGS = ['tsconfig.json', 'tsconfig.host.json', 'tsconfig.play.json'];
+const CONFIGS = ['tsconfig.json', 'tsconfig.host.json', 'tsconfig.play.json', 'tsconfig.web.json'];
 const FLAGS = ['noImplicitAny', 'strictNullChecks'];
 const tsc = path.join(ROOT, 'node_modules', '.bin', 'tsc');
 

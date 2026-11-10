@@ -159,7 +159,7 @@ function joinUrl(/** @type {any} */ withCode) {
 const startJoin = /** @type {HTMLElement} */ (document.getElementById('start-join'));
 function updateJoinInfo() {
   if (roomCode) {
-    /** @type {HTMLImageElement} */ (document.getElementById('start-qr')).src = '/qr.svg?data=' + encodeURIComponent(joinUrl(true));
+    /** @type {HTMLImageElement} */ (document.getElementById('start-qr')).src = window.Rumpus.qrSrc(joinUrl(true));
     /** @type {HTMLElement} */ (document.getElementById('start-code')).textContent = roomCode;
     /** @type {HTMLElement} */ (document.getElementById('start-addr')).textContent = joinUrl(false).replace(/^https?:\/\//, '');
     startJoin.hidden = false;
@@ -325,7 +325,7 @@ function gamePicker(/** @type {any} */ label) {
   const max = state.maxPlayers || 12;
   // One join card: QR + room code + address together (nothing else on screen repeats them).
   const joinCard = roomCode ? `<div class="join-card">
-      <img class="qr-big" src="/qr.svg?data=${encodeURIComponent(joinUrl(true))}" alt="QR code to join">
+      <img class="qr-big" src="${window.Rumpus.qrSrc(joinUrl(true))}" alt="QR code to join">
       <div class="join-text">
         <span class="join-label">Scan or go to</span>
         <span class="join-addr">${esc(joinUrl(false).replace(/^https?:\/\//, ''))}</span>

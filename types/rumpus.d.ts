@@ -123,6 +123,8 @@ interface RumpusClock {
 // (not optional): `window.Rumpus = window.Rumpus || {}` in every module just builds it up.
 interface RumpusNS {
   clock: RumpusClock;
+  /** QR code image URL for a join link (server /qr.svg, or drawn in the page in the browser build). */
+  qrSrc(text: string): string;
   /** Server clock: `now()` is server time in ms (synced over the socket). */
   time: { sync(socket: any): void; now(): number; offset(): number; rtt(): number | null };
   /** Game-night leaderboard (games.js). */

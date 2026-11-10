@@ -194,6 +194,13 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
    * @param {EventTarget | null} target @param {string} sel
    * @returns {HTMLButtonElement | null} (buttons, links, inputs — anything with dataset/disabled)
    */
+  /** Image URL of a QR code: the server draws it (/qr.svg), the browser build draws it in the page.
+   * @param {string} text */
+  function qrSrc(text) {
+    const C = /** @type {any} */ (window).CABIN;
+    return C && C.qrDataUrl ? C.qrDataUrl(text) : '/qr.svg?data=' + encodeURIComponent(text);
+  }
+
   /** @param {EventTarget | null} target @param {string} sel */
   function hit(target, sel) {
     const el = target instanceof Element ? target.closest(sel) : null;
@@ -241,5 +248,5 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     };
   })();
 
-  return { avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
+  return { qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })())));
