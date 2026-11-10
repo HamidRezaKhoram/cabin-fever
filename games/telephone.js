@@ -22,6 +22,9 @@ const DRAW_MS = parseInt(process.env.RUMPUS_TEL_DRAW_MS || '60000', 10); // play
 const DESCRIBE_MS = parseInt(process.env.RUMPUS_TEL_DESCRIBE_MS || '40000', 10);
 const ENTRY_SHOW_MS = parseInt(process.env.RUMPUS_TEL_ENTRY_MS || '3500', 10);
 const VOTE_MS = parseInt(process.env.RUMPUS_TEL_VOTE_MS || '30000', 10);
+// After each chain is shown, everyone taps their favourite step (not their own): +50 to its author.
+const FAV_MS = parseInt(process.env.RUMPUS_TEL_FAV_MS || '10000', 10);
+const FAV_PTS = 50;
 const MAX_IMAGE = 400 * 1024;
 
 function validImage(s) {
@@ -87,6 +90,7 @@ class TelephoneGame extends BaseGame {
 
   handleSubmit(id, payload) {
     if (this.phase === 'tel-vote') return this.handleVote(id, payload);
+    if (this.phase === 'tel-reveal') return this.handleFav(id, payload);
     if (!['tel-write', 'tel-draw', 'tel-describe'].includes(this.phase)) return;
     if (this.done.has(id)) return;
     const ci = this.chainFor(id);
@@ -111,13 +115,46 @@ class TelephoneGame extends BaseGame {
   beginReveal() {
     this.phase = 'tel-reveal';
     this.revealIndex = 0;
+    /** @type {Map<string, number>[]} per chain: voter → favourite entry index */
+    this.favs = this.chains.map(() => new Map());
     this.scheduleReveal();
     this.push();
   }
 
   scheduleReveal() {
     const c = this.chains[this.revealIndex];
-    this.setTimer(ENTRY_SHOW_MS * (c.entries.length + 1), () => this.advanceReveal(), false);
+    this.favOpen = false;
+    this.setTimer(ENTRY_SHOW_MS * c.entries.length, () => this.openFavs(), false);
+  }
+
+  // The whole chain is on the TV: phones can now pick a favourite step.
+  openFavs() {
+    if (this.phase !== 'tel-reveal') return;
+    this.favOpen = true;
+    if (!this.favVoters().length) { this.setTimer(ENTRY_SHOW_MS, () => this.advanceReveal(), false); this.push(); return; }
+    this.setTimer(FAV_MS, () => this.advanceReveal(), false);
+    this.push();
+  }
+
+  /** @param {string} id @param {number} i */
+  favable(id, i) {
+    const e = this.chains[this.revealIndex].entries[i];
+    return !!e && e.by !== id && !e.auto && !(e.type === 'drawing' && !e.content);
+  }
+
+  favVoters() {
+    const n = this.chains[this.revealIndex].entries.length;
+    return this.playerIds().filter((id) => Array.from({ length: n }, (_, i) => i).some((i) => this.favable(id, i)));
+  }
+
+  handleFav(id, payload) {
+    if (!this.favOpen) return;
+    const votes = this.favs[this.revealIndex];
+    const i = payload.fav;
+    if (votes.has(id) || !Number.isInteger(i) || !this.favable(id, i)) return;
+    votes.set(id, i);
+    this.award(this.chains[this.revealIndex].entries[i].by, FAV_PTS);
+    if (this.favVoters().every((v) => votes.has(v))) { this.clearTimer(); this.advanceReveal(); } else this.push();
   }
 
   advanceReveal() {
@@ -171,10 +208,11 @@ class TelephoneGame extends BaseGame {
 
   // --- views ---------------------------------------------------------------
 
-  chainView(c) {
+  chainView(c, ci = -1) {
+    const votes = ci >= 0 && this.favs ? [...this.favs[ci].values()] : [];
     return {
       owner: this.nick(c.owner),
-      entries: c.entries.map((e) => ({ type: e.type, by: this.nick(e.by), content: e.content })),
+      entries: c.entries.map((e, i) => ({ type: e.type, by: this.nick(e.by), content: e.content, favs: votes.filter((v) => v === i).length })),
     };
   }
 
@@ -183,8 +221,11 @@ class TelephoneGame extends BaseGame {
       return {
         chainIndex: this.revealIndex,
         chainCount: this.chains.length,
-        chain: this.chainView(this.chains[this.revealIndex]),
+        chain: this.chainView(this.chains[this.revealIndex], this.revealIndex),
         entryMs: ENTRY_SHOW_MS,
+        favOpen: !!this.favOpen,
+        favCount: this.favs ? this.favs[this.revealIndex].size : 0,
+        favNeeded: this.favOpen ? this.favVoters().length : 0,
       };
     }
     if (this.phase === 'tel-vote') {
@@ -204,7 +245,18 @@ class TelephoneGame extends BaseGame {
   }
 
   playerOnly(id) {
-    if (this.phase === 'tel-reveal') return { gameState: {}, you: {} };
+    if (this.phase === 'tel-reveal') {
+      if (!this.favOpen) return { gameState: { favOpen: false }, you: {} };
+      const c = this.chains[this.revealIndex];
+      const mine = this.favs[this.revealIndex].get(id);
+      return {
+        gameState: {
+          favOpen: true,
+          entries: c.entries.map((e, i) => ({ type: e.type, content: e.content, by: this.nick(e.by), ok: this.favable(id, i) })),
+        },
+        you: { fav: mine == null ? null : mine, canFav: this.favVoters().includes(id) },
+      };
+    }
     if (this.phase === 'tel-vote') {
       return {
         gameState: { drawings: this.drawingList.filter((d) => d.by !== id).map((d) => ({ key: d.key, image: d.image })) },

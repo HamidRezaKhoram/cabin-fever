@@ -388,13 +388,15 @@
         ? (e.content ? `<img src="${e.content}" alt="drawing">` : '<div class="blank-drawing">(blank)</div>')
         : `<p class="chain-text">${esc(e.content)}</p>`}
       <span class="byline">${i === 0 ? 'started by' : e.type === 'drawing' ? 'drawn by' : 'guessed by'} ${av(e.by)} ${esc(e.by)}</span>
+      ${e.favs ? `<span class="favs">❤ ${e.favs}</span>` : ''}
     </div>`;
   register('telephone', {
     host(s) {
       const g = s.gameState;
       if (s.phase === 'tel-reveal') {
         return `<p class="round-tag">Chain ${g.chainIndex + 1} of ${g.chainCount} — ${av(g.chain.owner)} ${esc(g.chain.owner)}'s</p>
-          <div class="chain">${g.chain.entries.map((e, i) => entryHtml(e, i, g.entryMs)).join('')}</div>`;
+          <div class="chain">${g.chain.entries.map((e, i) => entryHtml(e, i, g.entryMs)).join('')}</div>
+          ${g.favOpen ? `<p class="big-sub">Tap your favourite step on your phone! ❤ +50 ${T}</p>${count(g.favCount, g.favNeeded, 'picked')}` : ''}`;
       }
       if (s.phase === 'tel-vote') {
         return `<h1>Vote for the best doodle!</h1><p class="big-sub">${T}</p>
@@ -414,7 +416,14 @@
     },
     player(s) {
       const g = s.gameState, you = s.you;
-      if (s.phase === 'tel-reveal') return watchTv('<p>The chains are being revealed…</p>');
+      if (s.phase === 'tel-reveal') {
+        if (!g.favOpen) return watchTv('<p>The chains are being revealed…</p>');
+        if (you.fav != null) return waiting('Favourite picked ❤');
+        if (!you.canFav) return watchTv('<p>Everyone else is picking a favourite step…</p>');
+        return `<h2>Favourite step? ❤</h2><div class="fav-pick">` + g.entries.map((e, i) => e.ok
+          ? sendBtn({ fav: i }, e.type === 'drawing' ? `<img src="${e.content}" alt="drawing by ${esc(e.by)}">` : `“${esc(e.content)}”`, 'vote-btn fav-btn')
+          : '').join('') + '</div>';
+      }
       if (s.phase === 'tel-vote') {
         if (you.voted) return waiting('Vote cast');
         if (!g.drawings.length) return '<h1>Nothing to vote on</h1>';

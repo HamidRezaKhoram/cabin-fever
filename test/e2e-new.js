@@ -9,6 +9,7 @@ process.env.PORT = '0';
 process.env.PLAYER_GRACE_MS = '5000';
 process.env.RUMPUS_REVEAL_MS = '300';
 process.env.RUMPUS_TEL_ENTRY_MS = '100';
+process.env.RUMPUS_TEL_FAV_MS = '300';
 process.env.RUMPUS_CONTENT_DIR = '/nonexistent';
 process.env.RUMPUS_DATA_DIR = require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'rumpus-'));
 

@@ -311,6 +311,9 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .lie-label { color: var(--danger); }
 .waiting-on { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4em 1em; color: var(--muted, #b9b3c9); }
 .waiting-on span { display: inline-flex; align-items: center; gap: 0.3em; color: var(--ink, #fff); }
+.favs { color: #ff6b8b; font-family: var(--pixel); }
+.fav-pick { display: grid; gap: 10px; }
+.fav-btn img { width: 60%; max-width: 220px; display: block; margin: 0 auto; background: #fff; }
 .chain { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
 .chain-entry { background: var(--panel); padding: 12px; width: 260px; display: flex; flex-direction: column; gap: 6px; animation: pop-in 0.5s steps(15) both; }
 .chain-entry img { width: 100%; background: #fff; }

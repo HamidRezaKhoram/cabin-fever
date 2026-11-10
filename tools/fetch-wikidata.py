@@ -38,10 +38,12 @@ SELECT ?item ?itemLabel (MIN(YEAR(?d)) AS ?v) WHERE { ?item wdt:P31 wd:Q11424; w
 SELECT ?item ?itemLabel (MIN(YEAR(?d)) AS ?v) WHERE { ?item wdt:P31 wd:Q5; wdt:P569 ?d; wikibase:sitelinks ?sl. FILTER(?sl >= 170)
   ?item wdt:P570 [] . FILTER NOT EXISTS { ?item wdt:P570 [] }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } GROUP BY ?item ?itemLabel LIMIT 1""",
+    # Cheap form: famous living people via a high sitelink cut, no GROUP BY / ORDER BY (the
+    # sorted version times out on the public endpoint).
     'living_birth_year': """
-SELECT ?item ?itemLabel (MIN(YEAR(?d)) AS ?v) WHERE { ?item wdt:P31 wd:Q5; wdt:P569 ?d; wikibase:sitelinks ?sl. FILTER(?sl >= 120)
-  FILTER(YEAR(?d) >= 1900)
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } GROUP BY ?item ?itemLabel ORDER BY DESC(MAX(?sl)) LIMIT 400""",
+SELECT ?item ?itemLabel ?v WHERE { ?item wikibase:sitelinks ?sl. FILTER(?sl >= 150) ?item wdt:P31 wd:Q5; wdt:P569 ?d.
+  FILTER NOT EXISTS { ?item wdt:P570 [] } BIND(YEAR(?d) AS ?v) FILTER(?v >= 1930)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } LIMIT 600""",
     'city_population': """
 SELECT ?item ?itemLabel (MAX(?p) AS ?v) WHERE { ?item wdt:P31/wdt:P279* wd:Q515; wdt:P1082 ?p; wikibase:sitelinks ?sl. FILTER(?sl >= 150)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } GROUP BY ?item ?itemLabel ORDER BY DESC(MAX(?sl)) LIMIT 200""",

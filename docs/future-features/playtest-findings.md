@@ -27,8 +27,8 @@ shipped in this round directly attack the idle numbers below once real players u
 ## Fix list (ordered by impact)
 1. **Doodle Telephone (81 s idle, 1 reveal).** ✅ Draw time cut to 60 s; ✅ the TV names who it's
    still waiting on; ✅ reveal entries actually show now (they were invisible — CSS bug).
-   Still to do: *everyone votes a favourite entry per chain* during the reveal (reaction taps →
-   points); for 6+ players split into two shorter chains.
+   ✅ After each chain, everyone taps a favourite step (+50 to its author).
+   Still to do: for 6+ players split into two shorter chains.
 2. **Two Truths (58 s).** ✅ Write phase cut to 90 s and the TV names who's still writing. Next step if still slow: split it — write *one*
    statement per mini-phase (truth, truth, lie) with 30 s each, and show a teaser on the TV
    ("Ben is lying about something…"). Add a bonus for guessing *which truth* surprised people most.
