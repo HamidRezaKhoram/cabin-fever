@@ -263,3 +263,23 @@ test('CSS: an element hidden with opacity:0 must not use a keyframe animation th
     if (anim && anim[1] in frames) assert.ok(frames[anim[1]], `${m[1].trim()}: opacity:0 + animation ${anim[1]} (no 'to' opacity) → never becomes visible`);
   }
 });
+
+test('PWA: manifest, icons and service worker; the worker never caches live data', () => {
+  const m = JSON.parse(read('public/manifest.webmanifest'));
+  assert.strictEqual(m.start_url, '/play');
+  for (const ic of m.icons) assert.ok(fs.existsSync(path.join(ROOT, 'public', ic.src)), `${ic.src} exists`);
+  const sw = read('public/sw.js');
+  assert.ok(sw.includes('socket\\.io|api'), 'socket.io and /api bypass the cache');
+  assert.match(read('public/play.html'), /rel="manifest"/);
+  assert.match(read('public/play.js'), /serviceWorker\.register\('\/sw\.js'\)/);
+});
+
+test('colour-blind mode: Okabe–Ito palette replaces the green/red pair on TV and phone', () => {
+  const css = read('public/style.css');
+  const rule = css.match(/body\.cb, body\.cb\[data-theme\] \{([^}]*)\}/);
+  assert.ok(rule, 'cb palette rule');
+  assert.match(rule[1], /--accent2: #56b4e9/i);
+  assert.match(rule[1], /--danger: #d55e00/i);
+  assert.match(read('public/host.js'), /id="set-cb"/);
+  assert.match(read('public/play.html'), /id="cb-btn"/);
+});

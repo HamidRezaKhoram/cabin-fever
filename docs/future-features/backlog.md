@@ -22,8 +22,7 @@
 
 **Tech**
 - Strict TypeScript (`strict: true`, `noImplicitAny`) — currently `checkJs` without strict.
-- GitHub Actions CI running `scripts/test-all.sh` on every push.
-- Load test: 12 phones + audience on a Raspberry Pi–class machine.
-- PWA install for phones (works offline after first visit, home-screen icon).
-- Accessibility: colour-blind safe palette option, larger-text toggle on phones, reduced-motion
-  respected everywhere (partly done).
+- ✅ GitHub Actions CI — .github/workflows/ci.yml runs the full suite.
+- ✅ Load test — test/unit/load.test.js: 12 phones, p95 fan-out ≤ 250 ms, server RSS < 200 MB.
+- ✅ PWA — manifest, icons, network-first service worker (needs https or localhost to install).
+- ✅ Accessibility — colour-blind palette (TV + phone), text size on phones, reduced motion everywhere.

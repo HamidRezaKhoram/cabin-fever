@@ -15,6 +15,7 @@ const timerbar = document.getElementById('timerbar');
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
 let roomCode = null;
+document.body.classList.toggle('cb', store('rumpus.cb') === true); // colour-blind palette (this TV)
 // Test tools (bot players) show with /host?debug=1 or /host?bots=1.
 const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.search) || localStorage.getItem('rumpus.debug') === '1'; } catch (e) { return false; } })();
 let baseUrl = location.origin;
@@ -188,6 +189,7 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-timer') socket.emit('host:settings', { timerScale: +t.value });
   else if (t.id === 'set-spicy') socket.emit('host:settings', { spicy: t.checked });
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
+  else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
 });
 fsBtn.addEventListener('click', () => {
   // Fullscreen can be refused (no user gesture, kiosk mode) — that's fine, just stay windowed.
@@ -301,6 +303,7 @@ function gamePicker(label) {
             ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
+          <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
         </div>
