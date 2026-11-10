@@ -47,7 +47,7 @@ function decide(view, rnd = Math.random) {
     case 'trivia-category': return you.isChooser ? tap({ choice: Math.floor(rnd() * (g.categoryOptions || [1]).length) }) : null;
     case 'trivia-question':
       return !you.answered && g.choices ? tap({ choice: Math.floor(rnd() * g.choices.length), double: !!you.canDouble && rnd() < 0.15 }) : null;
-    case 'cg-guess': return !you.submitted ? tap({ number: Math.round(rnd() * 2000) }) : null;
+    case 'cg-guess': return !you.submitted ? tap({ number: Math.round(rnd() * 2000), double: !!you.canDouble && rnd() < 0.15 }) : null;
     // Majority Rules: answer, then bet
     case 'mr-answer':
       if (!you.submitted) return write({ text: pick(WORDS.slice(0, 4), rnd) });

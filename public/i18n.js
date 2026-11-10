@@ -54,6 +54,7 @@
     'How many fireflies?': 'Combien de lucioles ?', 'Count the fireflies!': 'Compte les lucioles !', 'Get ready…': 'Prépare-toi…',
     'What do we play next?': 'On joue à quoi ensuite ?', 'Next up:': 'Prochain jeu :',
     '🎲 Double Down? ×2 if right · −300 if wrong (once per game)': '🎲 Quitte ou double ? ×2 si juste · −300 si faux (une fois par partie)',
+    '🎲 Double Down? ×2 if you place · −200 if not (once per game)': '🎲 Quitte ou double ? ×2 si tu es classé · −200 sinon (une fois par partie)',
     '🔄 Skip this question': '🔄 Passer cette question', '⏩ Hurry them up': '⏩ On accélère', '▶ Next': '▶ Suivant',
     'Voted to skip': 'Vote pour passer', 'Voted to hurry': 'Vote pour accélérer',
     // TV

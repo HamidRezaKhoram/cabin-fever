@@ -4,12 +4,12 @@
 - ✅ **Game-night playlist** — shipped: 3/5/7-game nights, phone votes, night points, grand champion.
 - ✅ **Persistent stats & achievements** — shipped: data/stats.json, 9 achievements, /highlights (tonight, all time, hall of fame).
 - ✅ **House rules editor** — shipped at /admin (per-game timers, 18+ share, banned words).
-- **Wagers / double-down** mechanic for Trivia, Closest, Majority (see playtest-findings.md).
+- ✅ **Wagers** — Double Down in Trivia and Closest Guess (once per game), match bets in Majority Rules.
 
 **Presentation**
 - ✅ **Offline narrator voice** — shipped with espeak-ng in the container (/api/tts); browser voice fallback; lobby toggle.
 - ✅ Animated pixel host — Rocco the raccoon (sprites.js frames, 30 fps clock, speech bubble, cheers on reveals).
-- Per-game background scenes (dock at sunset for Punchline, campfire for Odd One Out, …).
+- ✅ Per-game background scenes — bg.js themes + motifs per game (a test checks every game has one).
 - ✅ Seasonal hats — Santa, witch, bunny ears, maple crown (Canada Day), grad cap; in-season hat listed first.
 - ✅ Highlight reel — shipped with /highlights (best lines, lies, cards and doodles).
 
@@ -19,7 +19,7 @@
 - ✅ More 18+ trivia — +44 fact-checked questions (spirits, biology, history, dating slang, party games).
 
 **Tech**
-- Strict TypeScript (`strict: true`, `noImplicitAny`) — currently `checkJs` without strict.
+- ◐ Strict TypeScript — most strict flags on; noImplicitAny/strictNullChecks on a ratchet (types/strict-baseline.json, only goes down). Finish by paying the baseline to 0.
 - ✅ GitHub Actions CI — .github/workflows/ci.yml runs the full suite.
 - ✅ Load test — test/unit/load.test.js: 12 phones, p95 fan-out ≤ 250 ms, server RSS < 200 MB.
 - ✅ PWA — manifest, icons, network-first service worker (needs https or localhost to install).

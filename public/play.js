@@ -116,7 +116,7 @@ gameView.addEventListener('submit', (e) => {
   } else if (f.matches('form.number-form')) {
     e.preventDefault();
     const n = parseFloat(input.value.replace(/,/g, ''));
-    if (Number.isFinite(n)) send({ number: n });
+    if (Number.isFinite(n)) send(document.querySelector('#game-view [data-dd][aria-pressed="true"]') ? { number: n, double: true } : { number: n });
   }
 });
 gameView.addEventListener('click', (e) => {

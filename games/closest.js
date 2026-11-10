@@ -48,12 +48,17 @@ const BUILTIN = [
 
 const GUESS_MS = parseInt(process.env.RUMPUS_CG_GUESS_MS || '30000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '8000', 10);
+const DOUBLE_RISK = 200; // lost on a Double Down that doesn't place
 const RANK_POINTS = [300, 200, 100];
 
 class ClosestGame extends BaseGame {
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(6);
+    /** @type {Set<string>} players who've used their one Double Down this game */
+    this.doubled = new Set();
+    /** @type {Set<string>} doubling this round */
+    this.doubling = new Set();
   }
 
   start() { this.nextRound(); }
@@ -68,6 +73,7 @@ class ClosestGame extends BaseGame {
     this.item = this.q;
     this.guesses = new Map();
     this.result = null;
+    this.doubling = new Set();
     this.phase = 'cg-guess';
     this.setTimer(GUESS_MS, () => this.reveal());
     this.push();
@@ -78,6 +84,8 @@ class ClosestGame extends BaseGame {
     const n = typeof payload.number === 'number' ? payload.number : parseFloat(String(payload.number || '').replace(/,/g, ''));
     if (!Number.isFinite(n) || Math.abs(n) > 1e12) return;
     this.guesses.set(id, n);
+    // Double Down (once per game): ×2 if you place, −DOUBLE_RISK if you don't.
+    if (payload.double === true && !this.doubled.has(id)) { this.doubled.add(id); this.doubling.add(id); }
     if (this.allIn(this.guesses)) this.reveal();
     else this.push();
   }
@@ -86,7 +94,7 @@ class ClosestGame extends BaseGame {
     if (this.phase !== 'cg-guess') return;
     const ans = this.q.answer;
     const list = [...this.guesses.entries()]
-      .map(([id, n]) => ({ id, nickname: this.nick(id), guess: n, off: Math.abs(n - ans), rank: 0, exact: false, gained: 0 }))
+      .map(([id, n]) => ({ id, nickname: this.nick(id), guess: n, off: Math.abs(n - ans), rank: 0, exact: false, gained: 0, double: false }))
       .sort((a, b) => a.off - b.off);
     // Ties share a rank.
     let rank = 0;
@@ -94,7 +102,12 @@ class ClosestGame extends BaseGame {
       if (i > 0 && e.off !== list[i - 1].off) rank = i;
       e.rank = rank;
       e.exact = e.off === 0;
-      e.gained = this.award(e.id, (RANK_POINTS[rank] || 0) + (e.exact ? 200 : 0));
+      const pts = (RANK_POINTS[rank] || 0) + (e.exact ? 200 : 0);
+      if (this.doubling.has(e.id)) {
+        e.double = true;
+        if (pts > 0) e.gained = this.award(e.id, pts * 2);
+        else { const p = this.room.players.get(e.id); const lost = p ? Math.min(p.score, DOUBLE_RISK) : 0; if (p) p.score -= lost; e.gained = -lost; }
+      } else e.gained = this.award(e.id, pts);
     });
     this.result = { answer: ans, unit: this.q.unit || '', list: list.map(({ id, ...rest }) => rest) };
     this.phase = 'cg-reveal';
@@ -115,7 +128,7 @@ class ClosestGame extends BaseGame {
 
   playerOnly(id) {
     if (this.phase === 'cg-guess') {
-      return { gameState: { question: this.q.q, unit: this.q.unit || '' }, you: { submitted: this.guesses.has(id) } };
+      return { gameState: { question: this.q.q, unit: this.q.unit || '' }, you: { submitted: this.guesses.has(id), canDouble: !this.doubled.has(id) } };
     }
     const me = this.result.list.find((e) => e.nickname === this.nick(id));
     return { gameState: { question: this.q.q, result: this.result }, you: { mine: me || null } };
