@@ -14,7 +14,7 @@ const POOLS = {
   imposter: [{ category: 'Fruit', word: 'Apple', words: ['Apple', 'Pear', 'Plum', 'Fig', 'Kiwi'] },
     { category: 'Fruit', word: 'Pear', words: ['Apple', 'Pear', 'Plum', 'Fig', 'Kiwi'] }],
   telephone: ['Idea A', 'Idea B', 'Idea C', 'Idea D'],
-  'cah-black': [{ text: 'Black card ____.' }],
+  'cah-black': ['', ' two', ' three', ' four', ' five'].map((n) => ({ text: `Black card${n} ____.` })),
   'cah-white': Array.from({ length: 40 }, (_, i) => ({ text: `White ${i}` })),
 };
 
@@ -240,14 +240,21 @@ test('Fib Finder: lies matching the truth are bounced; truth 1000, each fooled 5
 });
 
 // ------------------------------------------------------------------ Card Chaos
-test('Card Chaos: 7-card hands, czar sits out and picks, winner +500', async () => {
-  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat']);
+test('Card Chaos: 7-card hands, czar sits out and picks, winner +500; czar chooses the next prompt', async () => {
+  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat'], { rounds: 3 });
   h.emit('host:startGame', { gameId: 'cah' });
   await h.phase('cah-submit');
-  assert.strictEqual(h.state.gameState.blackCard, 'Black card ____.');
+  assert.match(h.state.gameState.blackCard, /^Black card/);
   const czar = ps.find((p) => p.nickname === h.state.gameState.czarNickname);
   const others = ps.filter((p) => p !== czar);
   await until(() => others.every((p) => p.state.you.hand && p.state.you.hand.length === 7), 'hands');
+  // The czar's job while waiting: pick next round's prompt from three (only the czar sees them).
+  await until(() => czar.state.you.nextOptions && czar.state.you.nextOptions.length === 3, 'czar options');
+  assert.ok(others.every((p) => p.state.you.nextOptions == null));
+  const chosen = czar.state.you.nextOptions[2];
+  others[0].submit({ nextBlack: 0 }); // not the czar: ignored
+  czar.submit({ nextBlack: 2 });
+  await until(() => czar.state.you.nextPick === 2, 'pick stored');
   czar.submit({ cardIndex: 0 }); // ignored
   for (const p of others) p.submit({ cardIndex: 0 });
   await h.phase('cah-czar');
@@ -256,6 +263,10 @@ test('Card Chaos: 7-card hands, czar sits out and picks, winner +500', async () 
   const rev = await h.phase('cah-reveal');
   assert.strictEqual(score(rev.gameState.winner.nickname), 500);
   assert.notStrictEqual(rev.gameState.winner.nickname, czar.nickname);
+  await until(() => h.state.phase === 'cah-submit' && h.state.gameState.round === 2, 'round 2');
+  assert.strictEqual(h.state.gameState.blackCard, chosen, 'round 2 uses the card the czar chose');
+  assert.strictEqual(h.state.gameState.pickedBy, czar.nickname);
+  assert.notStrictEqual(h.state.gameState.czarNickname, czar.nickname, 'czar rotates');
 });
 
 // ------------------------------------------------------------------ Closest Guess
@@ -335,7 +346,12 @@ test('Odd One Out: one imposter who never sees the word; catch + wrong guess = c
   for (const p of ps) p.submit({ text: 'clue' });
   await h.phase('imp-vote');
   imp.submit({ target: imp.id }); // can't vote yourself → ignored
-  for (const c of civs) c.submit({ target: imp.id });
+  civs[0].submit({ target: imp.id });
+  // Suspicion meter on the TV: vote counts per suspect, never who voted.
+  await until(() => h.state.gameState.votedCount === 1, 'one vote');
+  assert.strictEqual(h.state.gameState.clues.find((c) => c.nickname === imp.nickname).suspicion, 1);
+  assert.ok(!JSON.stringify(h.state.gameState.clues).includes('voter'), 'voters stay secret');
+  for (const c of civs.slice(1)) c.submit({ target: imp.id });
   imp.submit({ target: civs[0].id });
   await imp.phase('imp-guess');
   const wrong = imp.state.gameState.options.findIndex((o) => o !== word);

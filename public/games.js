@@ -339,8 +339,10 @@
     stole: `${esc(r.imposter)} was caught but guessed the word! +200`,
     caught: `Caught! ${esc(r.imposter)} was the imposter.`,
   }[r.outcome]);
-  const clueList = (clues) => `<ul class="clue-list">${clues.map((c) =>
-    `<li>${av(c.nickname, 'avatar')}<div><span class="pname">${esc(c.nickname)}</span><span class="clue">${esc(c.clue)}</span></div></li>`).join('')}</ul>`;
+  // meter: show each suspect's suspicion bar (vote phase); clues pop in one by one.
+  const clueList = (clues, meter = false, total = 1) => `<ul class="clue-list">${clues.map((c, i) =>
+    `<li style="animation-delay:${i * 0.6}s">${av(c.nickname, 'avatar')}<div><span class="pname">${esc(c.nickname)}</span><span class="clue">${esc(c.clue)}</span>
+      ${meter ? `<span class="suspicion" title="votes"><i style="width:${Math.round(100 * (c.suspicion || 0) / Math.max(1, total))}%"></i></span>` : ''}</div></li>`).join('')}</ul>`;
   register('imposter', {
     host(s) {
       const g = s.gameState;
@@ -351,7 +353,7 @@
           ${count(g.submittedCount, g.totalPlayers, 'clues in')}`;
       }
       if (s.phase === 'imp-vote') {
-        return `${head}<h1>Who's the imposter?</h1>${clueList(g.clues)}
+        return `${head}<h1>Who's the imposter?</h1>${clueList(g.clues, true, g.totalPlayers)}
           <p class="big-sub">Vote on your phones! ${T}</p>${count(g.votedCount, g.totalPlayers, 'votes in')}`;
       }
       if (s.phase === 'imp-guess') {

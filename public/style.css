@@ -317,6 +317,8 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .waiting-on { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4em 1em; color: var(--muted, #b9b3c9); }
 .waiting-on span { display: inline-flex; align-items: center; gap: 0.3em; color: var(--ink, #fff); }
 .favs { color: #ff6b8b; font-family: var(--pixel); }
+.suspicion { display: block; height: 10px; margin-top: 6px; background: rgba(0,0,0,0.4); box-shadow: 0 0 0 2px var(--edge); }
+.suspicion i { display: block; height: 100%; background: #e83f5b; transition: width 0.4s steps(12); }
 .bet-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; }
 .fav-pick { display: grid; gap: 10px; }
 .fav-btn img { width: 60%; max-width: 220px; display: block; margin: 0 auto; background: #fff; }
