@@ -312,6 +312,14 @@ async function check(name, fn) {
     await phones[2].waitForSelector('.fav-btn'); await phones[2].click('.fav-btn');
   });
 
+  await check('Rocco the host animates on the 30 fps clock, reads prompts aloud, and the offline voice works', async () => {
+    assert.ok(await tv.evaluate(() => /^data:image\/png/.test(document.querySelector('#rocco .rocco-img').getAttribute('src') || '')));
+    const wav = await tv.evaluate(async () => { const r = await fetch('/api/tts?text=Ready'); return { status: r.status, type: r.headers.get('content-type'), head: new TextDecoder().decode((await r.arrayBuffer()).slice(0, 4)) }; });
+    assert.deepStrictEqual(wav, { status: 200, type: 'audio/wav', head: 'RIFF' }, 'espeak-ng voice in the container');
+    await tv.evaluate(() => Rumpus.host.say('Testing ____ one two'));
+    await tv.waitForFunction(() => { const b = document.querySelector('.rocco-bubble'); return b && !b.hidden && /Testing blank one two/.test(b.textContent); });
+  });
+
   await check('in a game the TV switches to that game\'s look and hides the join clutter and the player strip', async () => {
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'telephone');
     assert.strictEqual(await tv.isVisible('.join-card'), false);

@@ -182,6 +182,28 @@ app.delete('/api/admin/content/:pool/:id', (/** @type {any} */ req, /** @type {a
   res.json({ ok: house.removeCustom(String(req.params.pool), String(req.params.id)) });
 });
 
+// Narrator: text → WAV with espeak-ng (installed in the container; fully offline).
+const ttsCache = new Map();
+app.get('/api/tts', (/** @type {any} */ req, /** @type {any} */ res) => {
+  const text = String(req.query.text || '').replace(/[^\p{L}\p{N}\p{P}\p{Zs}]/gu, '').trim().slice(0, 240);
+  if (!text) { res.status(400).end(); return; }
+  if (ttsCache.has(text)) { res.type('audio/wav').send(ttsCache.get(text)); return; }
+  /** @type {Buffer[]} */
+  const chunks = [];
+  // A cheery game-show voice: US English, male variant 3, a bit fast and high.
+  const p = require('child_process').spawn('espeak-ng', ['-v', 'en-us+m3', '-s', '165', '-p', '60', '--stdout', text]);
+  p.on('error', () => { if (!res.headersSent) res.status(501).json({ error: 'no narrator voice installed' }); });
+  p.stdout.on('data', (/** @type {Buffer} */ d) => chunks.push(d));
+  p.on('close', (/** @type {number} */ code) => {
+    if (res.headersSent) return;
+    if (code !== 0 || !chunks.length) { res.status(501).json({ error: 'narrator failed' }); return; }
+    const wav = Buffer.concat(chunks);
+    ttsCache.set(text, wav);
+    if (ttsCache.size > 120) ttsCache.delete(ttsCache.keys().next().value);
+    res.type('audio/wav').send(wav);
+  });
+});
+
 // Highlights + hall of fame (tonight's room if ?room=CODE).
 app.get('/api/highlights', (/** @type {any} */ req, /** @type {any} */ res) => { // express is untyped here
   const room = rooms.get(String(req.query.room || '').toUpperCase()) || null;

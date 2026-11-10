@@ -7,9 +7,8 @@
 - **Wagers / double-down** mechanic for Trivia, Closest, Majority (see playtest-findings.md).
 
 **Presentation**
-- **Offline narrator voice** (Piper TTS, CC0/MIT voices) reading prompts and roasting players —
-  runs in the container, no internet. Big "TV show" upgrade.
-- Animated pixel host character on the TV that reacts to events.
+- ✅ **Offline narrator voice** — shipped with espeak-ng in the container (/api/tts); browser voice fallback; lobby toggle.
+- ✅ Animated pixel host — Rocco the raccoon (sprites.js frames, 30 fps clock, speech bubble, cheers on reveals).
 - Per-game background scenes (dock at sunset for Punchline, campfire for Odd One Out, …).
 - More avatars + seasonal hats; drawn avatars get a pixelate filter to match the art style.
 - ✅ Highlight reel — shipped with /highlights (best lines, lies, cards and doodles).
