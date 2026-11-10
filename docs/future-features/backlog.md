@@ -10,7 +10,7 @@
 - ✅ **Offline narrator voice** — shipped with espeak-ng in the container (/api/tts); browser voice fallback; lobby toggle.
 - ✅ Animated pixel host — Rocco the raccoon (sprites.js frames, 30 fps clock, speech bubble, cheers on reveals).
 - Per-game background scenes (dock at sunset for Punchline, campfire for Odd One Out, …).
-- More avatars + seasonal hats; drawn avatars get a pixelate filter to match the art style.
+- ✅ Seasonal hats — Santa, witch, bunny ears, maple crown (Canada Day), grad cap; in-season hat listed first.
 - ✅ Highlight reel — shipped with /highlights (best lines, lies, cards and doodles).
 
 **Content**

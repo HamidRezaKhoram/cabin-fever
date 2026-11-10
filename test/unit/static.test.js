@@ -283,3 +283,14 @@ test('colour-blind mode: Okabe–Ito palette replaces the green/red pair on TV a
   assert.match(read('public/host.js'), /id="set-cb"/);
   assert.match(read('public/play.html'), /id="cb-btn"/);
 });
+
+test('character maker: seasonal hats show up first in their season', () => {
+  const m = window.Rumpus.avatarMaker;
+  const hat = (d) => m.NAMES.hat[m.seasonHat(new Date(d))];
+  assert.strictEqual(hat('2026-12-10'), 'Santa hat');
+  assert.strictEqual(hat('2026-10-31'), 'Witch hat');
+  assert.strictEqual(hat('2026-04-05'), 'Bunny ears');
+  assert.strictEqual(hat('2026-07-01'), 'Maple crown');
+  assert.strictEqual(hat('2026-05-20'), 'Grad cap');
+  assert.strictEqual(m.seasonHat(new Date('2026-08-15')), -1);
+});
