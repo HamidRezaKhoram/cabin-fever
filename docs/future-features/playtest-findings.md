@@ -32,7 +32,7 @@ shipped in this round directly attack the idle numbers below once real players u
 2. **Two Truths (58 s).** ✅ Write phase cut to 90 s and the TV names who's still writing. Next step if still slow: split it — write *one*
    statement per mini-phase (truth, truth, lie) with 30 s each, and show a teaser on the TV
    ("Ben is lying about something…"). Add a bonus for guessing *which truth* surprised people most.
-3. **Fib Finder (53 s).** Fast liars wait for slow ones: add **"likes"** (tap lies you find funny
+3. **Fib Finder (53 s).** ✅ Done: likes (+50 each) after you've guessed. Was: fast liars wait for slow ones: add **"likes"** (tap lies you find funny
    during the choose phase, +50 each) so everyone has something to do; hurry vote helps.
 4. **Majority Rules (46 s, 1.9 actions/min).** Only one action per round. Add a second tap:
    **"How many will match you?"** wager (0–N) for bonus points — doubles the decisions.

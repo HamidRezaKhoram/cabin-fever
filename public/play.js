@@ -248,7 +248,12 @@ function legacyPlayer(phase, g, you) {
         <button type="submit">Send it</button></form>`;
     }
     case 'fib-choose':
-      if (you.picked) return waiting('Guess locked in');
+      if (you.picked) {
+        return `<h1>Guess locked in ✓</h1><p>While you wait: 👍 the answers that made you laugh (+50 each to whoever wrote them).</p><div class="vote-list">` +
+          g.options.map((o) => ((you.liked || []).includes(o.index)
+            ? `<button class="vote-btn like-btn on" disabled>👍 ${esc(o.text)}</button>`
+            : `<button class="vote-btn like-btn" data-send='{"like":${o.index}}'>${esc(o.text)}</button>`)).join('') + '</div>';
+      }
       return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which one is the truth?</p><div class="vote-list">` +
         g.options.map((o) => `<button class="vote-btn" data-send='{"choice":${o.index}}'>${esc(o.text)}</button>`).join('') + '</div>';
     case 'fib-reveal':
@@ -340,7 +345,7 @@ const PACE = {
 function renderPace() {
   const pc = state && state.pace;
   if (!pc || !pc.allowed || !pc.allowed.length || ended) { paceBar.hidden = true; return; }
-  const answering = !!gameView.querySelector('form, [data-send], #pad');
+  const answering = !!gameView.querySelector('form, [data-send]:not(.like-btn), #pad');
   const show = pc.allowed.filter((k) => (k === 'skipq' ? answering : k === 'hurry' ? !answering : true));
   if (!show.length) { paceBar.hidden = true; return; }
   const mine = (state.you && state.you.paceVotes) || [];

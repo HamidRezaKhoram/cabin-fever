@@ -26,6 +26,7 @@ const REVEAL_MS = parseInt(process.env.RUMPUS_FIB_REVEAL_MS || '10000', 10);
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_FIB_ROUNDS || '5', 10);
 const TRUTH_POINTS = 1000; // for finding the real answer
 const FOOL_POINTS = 500;   // per player your lie fools
+const LIKE_POINTS = 50;    // per 👍 on your lie (players like funny lies while waiting for the rest)
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -130,6 +131,7 @@ class FibbageGame {
     this.bluffs = new Map();
     this.collided = new Set();
     this.picks = new Map();
+    this.likes = new Map(); // option index -> Set(playerId)
     this.options = null;
     this.roundResult = null;
     this.phase = 'fib-bluff';
@@ -157,6 +159,15 @@ class FibbageGame {
       } else {
         this.push();
       }
+    } else if (this.phase === 'fib-choose' && payload.like !== undefined) {
+      // Likes: after locking in a guess, tap any other lie you found funny.
+      const i = payload.like;
+      if (!this.picks.has(playerId) || !Number.isInteger(i) || i < 0 || i >= this.options.length) return;
+      if (this.options[i].authorIds.has(playerId)) return;
+      if (!this.likes.has(i)) this.likes.set(i, new Set());
+      if (this.likes.get(i).has(playerId)) return;
+      this.likes.get(i).add(playerId);
+      this.push();
     } else if (this.phase === 'fib-choose') {
       const choice = payload.choice;
       if (!Number.isInteger(choice) || choice < 0 || choice >= this.options.length) return;
@@ -206,6 +217,11 @@ class FibbageGame {
       }
     }
 
+    for (const [i, who] of this.likes) {
+      if (this.options[i].isTruth) continue;
+      for (const authorId of this.options[i].authorIds) add(authorId, LIKE_POINTS * who.size);
+    }
+
     for (const [playerId, n] of gained.entries()) {
       const p = this.room.players.get(playerId);
       if (p) p.score += n * this.mult();
@@ -222,6 +238,7 @@ class FibbageGame {
         isTruth: o.isTruth,
         authors: [...o.authorIds].map(nick),
         pickedBy: pickedBy[i].map(nick),
+        likes: this.likes.has(i) ? this.likes.get(i).size : 0,
       })),
       scored: [...gained.entries()]
         .map(([id, n]) => ({ nickname: nick(id), gained: n }))
@@ -331,7 +348,7 @@ class FibbageGame {
               .filter((o) => !o.authorIds.has(playerId))
               .map((o) => ({ index: o.index, text: o.text })),
           },
-          you: { picked: this.picks.has(playerId) },
+          you: { picked: this.picks.has(playerId), liked: [...this.likes].filter(([, s]) => s.has(playerId)).map(([i]) => i) },
         };
       case 'fib-reveal': {
         const myPick = this.picks.get(playerId);

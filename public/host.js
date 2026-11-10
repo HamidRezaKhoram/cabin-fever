@@ -365,7 +365,8 @@ function legacyHost(phase, g) {
       return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1><ol class="answers results">` +
         g.result.options.map((o) => `<li class="${o.isTruth ? 'winner' : ''}">${esc(o.text)}
           <span class="byline">${o.isTruth ? '— THE TRUTH!' : (o.authors.length ? '— ' + o.authors.map((n) => av(n) + ' ' + esc(n)).join(', ') + '\'s lie' : '')}</span>
-          ${o.pickedBy.length ? `<span class="votes">${o.isTruth ? 'found by' : 'fooled'}</span>${voterIcons(o.pickedBy)}` : ''}</li>`).join('') +
+          ${o.pickedBy.length ? `<span class="votes">${o.isTruth ? 'found by' : 'fooled'}</span>${voterIcons(o.pickedBy)}` : ''}
+          ${o.likes ? `<span class="votes likes">👍 ${o.likes}</span>` : ''}</li>`).join('') +
         '</ol>' + window.Rumpus.scoredList(g.result.scored);
     default:
       return null;
