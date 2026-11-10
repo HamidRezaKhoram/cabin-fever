@@ -56,6 +56,9 @@ const io = new Server(server, { maxHttpBufferSize: 2e6, pingInterval: 10000, pin
 app.get('/', (req, res) => res.redirect('/play'));
 app.get('/host', (req, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
 app.get('/play', (req, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
+// Pretty URLs the TV links to (static would only serve /admin.html, /highlights.html).
+app.get('/admin', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/highlights', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFile(path.join(__dirname, 'public', 'highlights.html')));
 
 // LAN addresses so the TV can show a scannable URL even when opened via localhost.
 function lanAddresses() {

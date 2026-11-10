@@ -426,6 +426,19 @@ test('Odd One Out: one imposter who never sees the word; catch + wrong guess = c
   assert.strictEqual(score(imp.nickname), 0);
 });
 
+test('Odd One Out: a caught imposter who names the word steals the round', async () => {
+  const { h, ps, imp, civs } = await imposterRound(['Ann', 'Ben', 'Cat', 'Dan']);
+  const word = civs[0].state.you.word;
+  for (const p of ps) p.submit({ text: 'clue' });
+  await h.phase('imp-vote');
+  for (const c of civs) c.submit({ target: imp.id });
+  imp.submit({ target: civs[0].id });
+  await imp.phase('imp-guess');
+  imp.submit({ choice: imp.state.gameState.options.indexOf(word) });
+  const rev = await h.phase('imp-reveal');
+  assert.strictEqual(rev.gameState.result.outcome, 'stole');
+});
+
 test('Odd One Out: a tied vote lets the imposter escape (+300)', async () => {
   const { h, ps, imp, civs, score } = await imposterRound(['Ann', 'Ben', 'Cat', 'Dan']);
   for (const p of ps) p.submit({ text: 'clue' });
@@ -517,6 +530,24 @@ test('Doodle Telephone: chains pass to the right people, bad images rejected, no
   for (const p of ps) p.submit({ key: p.state.gameState.drawings[0].key });
   await h.phase('gameover');
   assert.strictEqual(ps.reduce((n, p) => n + score(p.nickname), 0), 600 + 50, "3 doodle votes × 200 + one favourite × 50");
+});
+
+test('Doodle Telephone: the host skip ends a step and fills missing drawings with blanks', async () => {
+  const { h, ps, by } = await room(['Ann', 'Ben', 'Cat']);
+  h.emit('host:startGame', { gameId: 'telephone' });
+  await h.phase('tel-write');
+  await until(() => ps.every((p) => p.state && p.state.phase === 'tel-write'), 'phones writing');
+  for (const p of ps) p.submit({ text: `${p.nickname} phrase` });
+  await h.phase('tel-draw');
+  await until(() => ps.every((p) => p.state.phase === 'tel-draw'), 'phones drawing');
+  by.Ann.submit({ image: PNG });
+  await until(() => h.state.gameState.submittedCount === 1, 'one drawing');
+  h.emit('host:skip');
+  await h.phase('tel-describe');
+  await until(() => ps.every((p) => p.state.phase === 'tel-describe'), 'phones describing');
+  for (const p of ps) p.submit({ text: 'a guess' });
+  await h.phase('tel-reveal', 10000);
+  assert.strictEqual(h.state.gameState.chain.entries.length, 3, 'the chain is complete even with skipped drawings');
 });
 
 test('Doodle Telephone with 6 players: two groups of 3, chains stay inside their group', async () => {

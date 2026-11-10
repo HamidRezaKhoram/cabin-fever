@@ -167,9 +167,12 @@ scripts/test-all.sh    Runs everything
 2. Unit + integration tests (`node --test test/unit`): HTTP routes, rooms/reconnect/kick/settings,
    avatars, reactions, every game's rules & scoring, library no-repeat/spicy, music catalog,
    static client checks (sprites, CSS 30 fps steps, registries in sync).
-3. Legacy end-to-end smoke scripts (`test/e2e*.js`).
-4. Browser tests (Playwright): TV + 3 phones play real rounds, reconnects, 30 fps frame pacing,
+3. Browser tests (Playwright): TV + 3 phones play real rounds, reconnects, 30 fps frame pacing,
    no console errors, no horizontal scroll on phones.
+
+**Test what the user touches:** request the exact URLs the client uses (a test scans every
+link/fetch in `public/`), give every button/setting a handler (static test), and drive every page
+(TV, phone, /admin, /highlights) in the browser test — server-side tests alone missed broken links.
 
 Useful flags: `UI_ONLY=1` (just the browser tests), `SKIP_UI=1` (skip them).
 When a test is flaky, fix the race (wait for the right state) — don't add sleeps or retries.

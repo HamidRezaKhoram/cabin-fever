@@ -79,6 +79,54 @@ async function check(name, fn) {
     await tv.waitForFunction(() => document.documentElement.lang === 'en' && /Choose a game/.test(document.getElementById('phase-view').textContent));
   });
 
+  await check('menu links: House rules (save, reload, add + delete a prompt) and Hall of fame (every tab) work; the Rounds setting sticks', async () => {
+    // Click the real links (regression: they pointed at URLs the server didn't serve).
+    const open = async (href) => {
+      const [page] = await Promise.all([tv.context().waitForEvent('page'), tv.click(`.settings a[href="${href}"]`)]);
+      page.on('pageerror', (e) => errors.push(`${href}: ${e.message}`));
+      page.on('console', (m) => { if (m.type() === 'error') errors.push(`${href} console: ${m.text()}`); });
+      await page.waitForLoadState('domcontentloaded');
+      return page;
+    };
+    const admin = await open('/admin');
+    await admin.waitForSelector('#timers select[data-timer="trivia"]');
+    // House rules: change, save, reload → the change stuck; then put it back.
+    await admin.selectOption('select[data-timer="trivia"]', '1.5');
+    await admin.fill('#banned', 'zzbadword');
+    await admin.click('#save-rules');
+    await admin.waitForFunction(() => /Saved/.test(document.getElementById('rules-msg').textContent));
+    await admin.reload();
+    await admin.waitForSelector('#timers select[data-timer="trivia"]');
+    assert.strictEqual(await admin.inputValue('select[data-timer="trivia"]'), '1.5');
+    assert.strictEqual(await admin.inputValue('#banned'), 'zzbadword');
+    // Content editor: add a prompt, find it, delete it.
+    await admin.selectOption('#pool', 'mostlikely');
+    await admin.fill('#add-form input[name="text"]', 'Who is most likely to test the admin page?');
+    await admin.click('#add-form button[type="submit"]');
+    await admin.waitForFunction(() => /Added/.test(document.getElementById('add-msg').textContent));
+    await admin.fill('#search', 'test the admin page');
+    await admin.waitForSelector('#items [data-del]');
+    await admin.click('#items [data-del]');
+    await admin.waitForFunction(() => !document.querySelector('#items [data-del]'));
+    await admin.selectOption('select[data-timer="trivia"]', '1');
+    await admin.fill('#banned', '');
+    await admin.click('#save-rules');
+    await admin.waitForFunction(() => /Saved/.test(document.getElementById('rules-msg').textContent));
+    await admin.close();
+    const hl = await open('/highlights');
+    for (const tab of ['alltime', 'fame', 'tonight']) {
+      await hl.click(`.hl-tabs [data-tab="${tab}"]`);
+      await hl.waitForFunction((t) => document.querySelector(`.hl-tabs [data-tab="${t}"]`).classList.contains('on') && document.getElementById('hl-body').textContent.trim().length > 0, tab);
+    }
+    await hl.close();
+    await tv.selectOption('#set-rounds', '3');
+    await tv.selectOption('#set-timer', '1.5'); // forces another server push + re-render
+    await tv.waitForFunction(() => /** @type {HTMLSelectElement} */ (document.getElementById('set-timer')).value === '1.5' && /** @type {HTMLSelectElement} */ (document.getElementById('set-rounds')).value === '3'
+      && !!document.querySelector('#set-rounds option[value="3"][selected]'));
+    await tv.selectOption('#set-timer', '1');
+    await tv.selectOption('#set-rounds', '');
+  });
+
   await check('menu music never stops: loops, moves on, and the watchdog revives it', async () => {
     // test-all mounts a 1-second track in music/title + music/menu, so loops and track changes happen fast.
     await tv.waitForFunction(() => Rumpus.music.status().plays >= 5, null, { timeout: 15000 }).catch(async () => {

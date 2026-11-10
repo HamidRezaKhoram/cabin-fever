@@ -28,7 +28,7 @@ step "3/5 unit + integration tests (node --test)"
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
   npm run -s typecheck && echo "tsc: 0 errors" && npm run -s lint && echo "eslint: 0 problems" &&
   node tools/strict-ratchet.js &&
-  node --test --test-concurrency=4 test/unit/ && node test/e2e-new.js'
+  node --test --test-concurrency=4 test/unit/'
 
 fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi

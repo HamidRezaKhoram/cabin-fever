@@ -125,6 +125,10 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     if (x.nodeType !== 1) return;
     for (const at of [...x.attributes]) if (!y.hasAttribute(at.name)) x.removeAttribute(at.name);
     for (const at of [...y.attributes]) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    // Once the user has touched a control, its attributes no longer drive its live state:
+    // keep checkboxes and dropdown choices in step with what the server says.
+    if (x.nodeName === 'INPUT' && x.checked !== y.hasAttribute('checked') && (x.type === 'checkbox' || x.type === 'radio')) x.checked = y.hasAttribute('checked');
+    if (x.nodeName === 'OPTION' && x.selected !== y.hasAttribute('selected') && y.parentNode && y.parentNode.querySelector('option[selected]')) x.selected = y.hasAttribute('selected');
     if (x.nodeName === 'CANVAS' || x.nodeName === 'TEXTAREA') return;
     morphChildren(x, y);
   }
