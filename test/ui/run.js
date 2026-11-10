@@ -57,12 +57,44 @@ async function check(name, fn) {
   await check('menu music never stops: loops, moves on, and the watchdog revives it', async () => {
     // test-all mounts a 1-second track in music/title + music/menu, so loops and track changes happen fast.
     await tv.waitForFunction(() => Rumpus.music.status().plays >= 5, null, { timeout: 15000 }).catch(async () => {
-      const info = await tv.evaluate(() => ({ st: Rumpus.music.status(), cats: Rumpus.music.customCategories(), enabled: Rumpus.music.isEnabled() }));
+      const info = await tv.evaluate(async () => ({ st: Rumpus.music.status(), cats: Rumpus.music.customCategories(), enabled: Rumpus.music.isEnabled(), api: await (await fetch('/api/music')).text(), href: location.href }));
       throw new Error('menu music status: ' + JSON.stringify(info));
     });
     assert.strictEqual((await tv.evaluate(() => Rumpus.music.status())).playing, true);
     await tv.evaluate(() => Rumpus.music.debugStop && Rumpus.music.debugStop());
     await tv.waitForFunction(() => Rumpus.music.status().playing, null, { timeout: 8000 });
+  });
+
+  await check('game music streams at full quality and changes tracks without a volume jump', async () => {
+    // Sample the track level every frame while switching from the menu beep to a real song.
+    const levels = await tv.evaluate(async () => {
+      const out = [];
+      const before = Rumpus.music.status().level;
+      Rumpus.music.play('game:trivia');
+      for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 33)); out.push(Rumpus.music.status().level); }
+      return { before, out };
+    });
+    const st = await tv.evaluate(() => Rumpus.music.status());
+    assert.ok(st.src.endsWith('/music/game/heckin-crows.ogg'), 'playing ' + st.src);
+    assert.ok(st.expectedLevel > 0, 'manifest gain known before playback');
+    const peak = Math.max(...levels.out);
+    assert.ok(peak <= Math.max(levels.before, st.expectedLevel) + 0.01, `level overshot: ${peak} (before ${levels.before}, target ${st.expectedLevel})`);
+    assert.ok(Math.abs(levels.out[levels.out.length - 1] - st.expectedLevel) < 0.02, `settles at the measured level: ${levels.out.slice(-1)} vs ${st.expectedLevel}`);
+    const t0 = st.time;
+    await tv.waitForFunction((t) => Rumpus.music.status().time > t + 0.5, t0, { timeout: 5000 });
+    const net = await tv.evaluate(async (src) => {
+      const info = (await (await fetch('/api/music-info')).json())[src];
+      const head = await fetch(src, { method: 'HEAD' });
+      const range = await fetch(src, { headers: { Range: 'bytes=0-1023' } });
+      return { info, bytes: Number(head.headers.get('content-length')), type: head.headers.get('content-type'), status: range.status, ranges: head.headers.get('accept-ranges') };
+    }, st.src);
+    assert.ok(net.info.kbps >= 128, `nominal bitrate ${net.info.kbps} kbps`);
+    assert.ok(net.bytes * 8 / net.info.duration / 1000 >= 96, `served file averages ${(net.bytes * 8 / net.info.duration / 1000).toFixed(0)} kbps (not a degraded copy)`);
+    assert.strictEqual(net.bytes, net.info.bytes, 'served file is the measured file, byte for byte');
+    assert.strictEqual(net.status, 206, 'range requests work (audio streams + seeks instead of downloading whole)');
+    assert.strictEqual(net.ranges, 'bytes');
+    assert.match(net.type, /audio\/ogg/);
+    await tv.evaluate(() => Rumpus.music.play('menu'));
   });
 
   await check('TV animates at a steady 30 fps (shared clock)', async () => {

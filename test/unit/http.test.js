@@ -16,6 +16,7 @@ before(async () => {
   fs.writeFileSync(path.join(musicDir, 'final', 'boss.mp3'), 'ID3');
   fs.mkdirSync(path.join(musicDir, 'game', 'quiplash'), { recursive: true });
   fs.writeFileSync(path.join(musicDir, 'game', 'quiplash', 'laugh.mp3'), 'ID3');
+  fs.writeFileSync(path.join(musicDir, 'manifest.json'), JSON.stringify({ 'b song.mp3': { gain: 0.5, kbps: 192 } }));
   srv = await startServer({ RUMPUS_MUSIC_DIR: musicDir });
 });
 after(() => srv.stop());
@@ -88,6 +89,14 @@ test('/api/music groups audio files by scenario folder (root = any) and serves t
   const f = await get(srv.url, '/music/a.ogg');
   assert.strictEqual(f.status, 200);
   assert.strictEqual(f.body, 'OggS');
+});
+
+test('/api/music-info maps track URLs to their measured gain/bitrate; music files support range requests', async () => {
+  assert.deepStrictEqual(JSON.parse((await get(srv.url, '/api/music-info')).body), { '/music/b%20song.mp3': { gain: 0.5, kbps: 192 } });
+  const r = await fetch(srv.url + '/music/b%20song.mp3', { headers: { Range: 'bytes=0-2' } });
+  assert.strictEqual(r.status, 206);
+  assert.strictEqual(await r.text(), 'ID3');
+  assert.ok(!JSON.stringify(JSON.parse((await get(srv.url, '/api/music')).body)).includes('manifest'));
 });
 
 test('/api/music is an empty list when there is no music folder', async () => {

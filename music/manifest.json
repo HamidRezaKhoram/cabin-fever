@@ -1,0 +1,502 @@
+{
+ "category/chippy-melody-1.ogg": {
+  "bytes": 832965,
+  "channels": 2,
+  "duration": 25.6,
+  "gain": 2.424,
+  "kbps": 256,
+  "lufs": -25.69,
+  "peak": -8.84,
+  "rate": 44100
+ },
+ "category/mahjongg-nes-bgm.ogg": {
+  "bytes": 1255683,
+  "channels": 1,
+  "duration": 111.12,
+  "gain": 1.272,
+  "kbps": 96,
+  "lufs": -20.09,
+  "peak": -3.35,
+  "rate": 44100
+ },
+ "final/8-bit-battle-loop.ogg": {
+  "bytes": 880906,
+  "channels": 2,
+  "duration": 26.65,
+  "gain": 0.911,
+  "kbps": 320,
+  "lufs": -17.19,
+  "peak": -4.06,
+  "rate": 44100
+ },
+ "final/boss-fight-bounce.mp3": {
+  "bytes": 2881861,
+  "channels": 2,
+  "duration": 72.02,
+  "gain": 1.33,
+  "kbps": 320,
+  "lufs": -20.48,
+  "peak": -8.66,
+  "rate": 44100
+ },
+ "final/chipped-urgencycombat.ogg": {
+  "bytes": 1385690,
+  "channels": 2,
+  "duration": 42.67,
+  "gain": 0.665,
+  "kbps": 256,
+  "lufs": -14.46,
+  "peak": -1.05,
+  "rate": 44100
+ },
+ "final/great-boss.ogg": {
+  "bytes": 2697178,
+  "channels": 2,
+  "duration": 110.97,
+  "gain": 0.358,
+  "kbps": 192,
+  "lufs": -9.07,
+  "peak": 0.59,
+  "rate": 44100
+ },
+ "final/hail-the-arbiter.ogg": {
+  "bytes": 3420762,
+  "channels": 2,
+  "duration": 105.6,
+  "gain": 0.855,
+  "kbps": 256,
+  "lufs": -16.64,
+  "peak": -3.45,
+  "rate": 44100
+ },
+ "final/pushing-yourself-complete.ogg": {
+  "bytes": 2395327,
+  "channels": 2,
+  "duration": 73.85,
+  "gain": 0.54,
+  "kbps": 256,
+  "lufs": -12.65,
+  "peak": 0.74,
+  "rate": 44100
+ },
+ "final/stargazer.ogg": {
+  "bytes": 3371477,
+  "channels": 2,
+  "duration": 104.0,
+  "gain": 0.933,
+  "kbps": 256,
+  "lufs": -17.4,
+  "peak": -3.82,
+  "rate": 44100
+ },
+ "game/28th-street-timezone.mp3": {
+  "bytes": 1706351,
+  "channels": 2,
+  "duration": 42.63,
+  "gain": 1.278,
+  "kbps": 320,
+  "lufs": -20.13,
+  "peak": -8.69,
+  "rate": 44100
+ },
+ "game/a-wish-to-fulfill-updated.ogg": {
+  "bytes": 4248621,
+  "channels": 2,
+  "duration": 74.69,
+  "gain": 1.479,
+  "kbps": 450,
+  "lufs": -21.4,
+  "peak": -6.64,
+  "rate": 44100
+ },
+ "game/cah/midnight-drive.ogg": {
+  "bytes": 3520972,
+  "channels": 2,
+  "duration": 203.57,
+  "gain": 0.61,
+  "kbps": 160,
+  "lufs": -13.71,
+  "peak": 0.49,
+  "rate": 44100
+ },
+ "game/digital-bananas.mp3": {
+  "bytes": 1865176,
+  "channels": 2,
+  "duration": 46.6,
+  "gain": 3.56,
+  "kbps": 320,
+  "lufs": -29.03,
+  "peak": -15.32,
+  "rate": 44100
+ },
+ "game/doggys-floppy-ears.ogg": {
+  "bytes": 1511175,
+  "channels": 2,
+  "duration": 93.48,
+  "gain": 2.523,
+  "kbps": 160,
+  "lufs": -28.81,
+  "peak": -9.04,
+  "rate": 44100
+ },
+ "game/fibbage/ch-ay-na.ogg": {
+  "bytes": 1431174,
+  "channels": 2,
+  "duration": 58.72,
+  "gain": 0.395,
+  "kbps": 192,
+  "lufs": -9.93,
+  "peak": 1.23,
+  "rate": 44100
+ },
+ "game/fibbage/chipnese.ogg": {
+  "bytes": 994763,
+  "channels": 1,
+  "duration": 83.92,
+  "gain": 1.344,
+  "kbps": 96,
+  "lufs": -21.33,
+  "peak": -3.57,
+  "rate": 44100
+ },
+ "game/free-run-8-bitish.mp3": {
+  "bytes": 2002777,
+  "channels": 2,
+  "duration": 83.28,
+  "gain": 0.86,
+  "kbps": 192,
+  "lufs": -16.69,
+  "peak": -0.33,
+  "rate": 44100
+ },
+ "game/imposter/8-bit-haunted-house-theme.mp3": {
+  "bytes": 1796265,
+  "channels": 2,
+  "duration": 44.86,
+  "gain": 1.063,
+  "kbps": 320,
+  "lufs": -18.53,
+  "peak": -3.8,
+  "rate": 44100
+ },
+ "game/imposter/cunning-plan-short-seamless-loop.ogg": {
+  "bytes": 153893,
+  "channels": 2,
+  "duration": 11.11,
+  "gain": 0.966,
+  "kbps": 160,
+  "lufs": -18.22,
+  "peak": -0.7,
+  "rate": 44100
+ },
+ "game/imposter/spooky-dungeon.mp3": {
+  "bytes": 624736,
+  "channels": 2,
+  "duration": 31.03,
+  "gain": 2.011,
+  "kbps": 160,
+  "lufs": -24.07,
+  "peak": -8.15,
+  "rate": 48000
+ },
+ "game/pushing-ahead.ogg": {
+  "bytes": 1735818,
+  "channels": 2,
+  "duration": 106.67,
+  "gain": 0.754,
+  "kbps": 128,
+  "lufs": -15.55,
+  "peak": -2.45,
+  "rate": 44100
+ },
+ "game/rins-theme-loopable-chiptune-adventureba.ogg": {
+  "bytes": 95724,
+  "channels": 2,
+  "duration": 7.2,
+  "gain": 2.751,
+  "kbps": 160,
+  "lufs": -26.79,
+  "peak": -12.28,
+  "rate": 44100
+ },
+ "game/sandy-seaside-2.ogg": {
+  "bytes": 601707,
+  "channels": 2,
+  "duration": 34.13,
+  "gain": 0.607,
+  "kbps": 160,
+  "lufs": -13.67,
+  "peak": 0.05,
+  "rate": 44100
+ },
+ "game/starter-8-bit-dub.mp3": {
+  "bytes": 1907065,
+  "channels": 2,
+  "duration": 118.94,
+  "gain": 0.716,
+  "kbps": 128,
+  "lufs": -15.1,
+  "peak": -0.08,
+  "rate": 44100
+ },
+ "game/technochiptale.ogg": {
+  "bytes": 2076678,
+  "channels": 2,
+  "duration": 64.0,
+  "gain": 1.305,
+  "kbps": 256,
+  "lufs": -20.31,
+  "peak": -4.3,
+  "rate": 44100
+ },
+ "game/telephone/ooame.mp3": {
+  "bytes": 8137582,
+  "channels": 2,
+  "duration": 254.17,
+  "gain": 0.893,
+  "kbps": 256,
+  "lufs": -17.02,
+  "peak": -0.31,
+  "rate": 44100
+ },
+ "game/telephone/puppy-playing-in-the-garden-snes-port.ogg": {
+  "bytes": 3389329,
+  "channels": 2,
+  "duration": 185.01,
+  "gain": 1.096,
+  "kbps": 150,
+  "lufs": -18.8,
+  "peak": -3.71,
+  "rate": 32000
+ },
+ "game/telephone/since-2-am.ogg": {
+  "bytes": 6542193,
+  "channels": 2,
+  "duration": 291.0,
+  "gain": 1.058,
+  "kbps": 256,
+  "lufs": -18.49,
+  "peak": -3.2,
+  "rate": 44100
+ },
+ "game/trivia/18th-pulse-flurry.ogg": {
+  "bytes": 1341211,
+  "channels": 1,
+  "duration": 115.04,
+  "gain": 1.187,
+  "kbps": 96,
+  "lufs": -19.49,
+  "peak": -4.14,
+  "rate": 44100
+ },
+ "game/trivia/neo-springcore.ogg": {
+  "bytes": 4471146,
+  "channels": 2,
+  "duration": 224.0,
+  "gain": 0.724,
+  "kbps": 160,
+  "lufs": -15.19,
+  "peak": -0.1,
+  "rate": 48000
+ },
+ "game/tropical-fantasy.ogg": {
+  "bytes": 1806890,
+  "channels": 2,
+  "duration": 94.04,
+  "gain": 0.713,
+  "kbps": 160,
+  "lufs": -15.06,
+  "peak": -0.08,
+  "rate": 48000
+ },
+ "game/we-dont-stop.mp3": {
+  "bytes": 3122188,
+  "channels": 2,
+  "duration": 78.03,
+  "gain": 1.574,
+  "kbps": 320,
+  "lufs": -21.94,
+  "peak": -8.79,
+  "rate": 44100
+ },
+ "menu/exploring-town.ogg": {
+  "bytes": 4519249,
+  "channels": 2,
+  "duration": 266.0,
+  "gain": 0.332,
+  "kbps": 160,
+  "lufs": -8.43,
+  "peak": 1.45,
+  "rate": 44100
+ },
+ "menu/lunar-moth.mp3": {
+  "bytes": 2217306,
+  "channels": 2,
+  "duration": 55.41,
+  "gain": 1.834,
+  "kbps": 320,
+  "lufs": -23.27,
+  "peak": -9.92,
+  "rate": 44100
+ },
+ "menu/my-street.ogg": {
+  "bytes": 3868872,
+  "channels": 2,
+  "duration": 212.97,
+  "gain": 0.438,
+  "kbps": 160,
+  "lufs": -10.82,
+  "peak": 1.26,
+  "rate": 44100
+ },
+ "menu/puppy-playing-in-the-garden.ogg": {
+  "bytes": 1110299,
+  "channels": 1,
+  "duration": 89.75,
+  "gain": 1.146,
+  "kbps": 96,
+  "lufs": -22.01,
+  "peak": -2.18,
+  "rate": 44100
+ },
+ "menu/rewind.mp3": {
+  "bytes": 2826936,
+  "channels": 2,
+  "duration": 117.79,
+  "gain": 0.643,
+  "kbps": 192,
+  "lufs": -14.17,
+  "peak": -0.06,
+  "rate": 44100
+ },
+ "menu/talking-cute-chiptune.mp3": {
+  "bytes": 3648226,
+  "channels": 2,
+  "duration": 152.01,
+  "gain": 0.644,
+  "kbps": 192,
+  "lufs": -14.18,
+  "peak": 0.15,
+  "rate": 44100
+ },
+ "reveal/doggys-floppy-ears.ogg": {
+  "bytes": 1511175,
+  "channels": 2,
+  "duration": 93.48,
+  "gain": 2.523,
+  "kbps": 160,
+  "lufs": -28.81,
+  "peak": -9.04,
+  "rate": 44100
+ },
+ "reveal/lunar-moth.mp3": {
+  "bytes": 2217306,
+  "channels": 2,
+  "duration": 55.41,
+  "gain": 1.834,
+  "kbps": 320,
+  "lufs": -23.27,
+  "peak": -9.92,
+  "rate": 44100
+ },
+ "scoreboard/keep-your-dream-alive-seamless-loop.ogg": {
+  "bytes": 1198320,
+  "channels": 2,
+  "duration": 73.4,
+  "gain": 0.875,
+  "kbps": 160,
+  "lufs": -16.84,
+  "peak": -1.0,
+  "rate": 44100
+ },
+ "scoreboard/nes-pomp-and-circumstance-high-scoregall.ogg": {
+  "bytes": 1167362,
+  "channels": 2,
+  "duration": 48.0,
+  "gain": 0.577,
+  "kbps": 192,
+  "lufs": -13.23,
+  "peak": -2.35,
+  "rate": 44100
+ },
+ "title/heckin-crows.ogg": {
+  "bytes": 1030381,
+  "channels": 2,
+  "duration": 61.61,
+  "gain": 0.722,
+  "kbps": 160,
+  "lufs": -15.17,
+  "peak": -1.67,
+  "rate": 44100
+ },
+ "title/keep-your-dream-alive-seamless-loop.ogg": {
+  "bytes": 1198320,
+  "channels": 2,
+  "duration": 73.4,
+  "gain": 0.875,
+  "kbps": 160,
+  "lufs": -16.84,
+  "peak": -1.0,
+  "rate": 44100
+ },
+ "title/upbeat-chiptune-theme.ogg": {
+  "bytes": 1262445,
+  "channels": 2,
+  "duration": 56.89,
+  "gain": 0.427,
+  "kbps": 192,
+  "lufs": -10.61,
+  "peak": 1.11,
+  "rate": 44100
+ },
+ "victory/8-bit-victory-loop.ogg": {
+  "bytes": 1768313,
+  "channels": 2,
+  "duration": 53.33,
+  "gain": 0.776,
+  "kbps": 320,
+  "lufs": -15.8,
+  "peak": -4.11,
+  "rate": 44100
+ },
+ "victory/victory.ogg": {
+  "bytes": 68145,
+  "channels": 1,
+  "duration": 4.88,
+  "gain": 1.457,
+  "kbps": 140,
+  "lufs": -21.27,
+  "peak": -10.79,
+  "rate": 44100
+ },
+ "vote/chipped-urgency.ogg": {
+  "bytes": 1250712,
+  "channels": 2,
+  "duration": 38.4,
+  "gain": 0.324,
+  "kbps": 256,
+  "lufs": -8.22,
+  "peak": 0.62,
+  "rate": 44100
+ },
+ "vote/drama-drama-drama.ogg": {
+  "bytes": 2737818,
+  "channels": 2,
+  "duration": 112.63,
+  "gain": 0.375,
+  "kbps": 192,
+  "lufs": -9.47,
+  "peak": 0.73,
+  "rate": 44100
+ },
+ "vote/encounter-with-jing.ogg": {
+  "bytes": 2178189,
+  "channels": 1,
+  "duration": 180.0,
+  "gain": 1.547,
+  "kbps": 96,
+  "lufs": -22.14,
+  "peak": -4.79,
+  "rate": 44100
+ }
+}

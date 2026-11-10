@@ -100,6 +100,16 @@ function musicCategories() {
   return out;
 }
 app.get('/api/music', (req, res) => res.json(musicCategories()));
+// Measured per-track info (tools/music-manifest.py): loudness gain + bitrate, keyed by URL.
+app.get('/api/music-info', (req, res) => {
+  /** @type {Record<string, {gain: number, kbps: number}>} */
+  const out = {};
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(MUSIC_DIR, 'manifest.json'), 'utf8'));
+    for (const [rel, v] of Object.entries(m)) out['/music/' + rel.split('/').map(encodeURIComponent).join('/')] = v;
+  } catch (e) { /* no manifest: the TV measures tracks itself */ }
+  res.json(out);
+});
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
 app.get('/api/content-stats', (req, res) => res.json(library.stats()));
 

@@ -20,7 +20,7 @@ git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated file
 
 step "2/5 type checks (tsc --checkJs on JS, mypy --strict on Python)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
-  pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/build-content.py tools/make-icons.py'
+  pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/build-content.py tools/make-icons.py tools/fetch-wikidata.py tools/music-manifest.py'
 
 step "3/5 unit + integration tests (node --test)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
@@ -35,15 +35,22 @@ step "4/5 build image + start server"
 "$CT" build -q -t homejack:test . >/dev/null
 "$CT" rm -f homejack-test >/dev/null 2>&1 || true
 # A 1-second test track in music/menu/ so the browser test can check the menu music never stops.
-python3 - "$ROOT/test/ui/.music" <<'PY'
+python3 - "$ROOT/test/.music-fixture" <<'PY'
 import math, struct, sys, wave, os
 for scene in ('title', 'menu'):
     d = os.path.join(sys.argv[1], scene); os.makedirs(d, exist_ok=True)
     with wave.open(os.path.join(d, 'test-beep.wav'), 'w') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)
         w.writeframes(b''.join(struct.pack('<h', int(6000 * math.sin(2 * math.pi * 440 * i / 22050))) for i in range(22050)))
+# One real bundled track (with its measured manifest entry) to check quality + streaming.
+import json, shutil
+root = os.path.dirname(os.path.dirname(sys.argv[1]))
+os.makedirs(os.path.join(sys.argv[1], 'game'), exist_ok=True)
+shutil.copy(os.path.join(root, 'music/title/heckin-crows.ogg'), os.path.join(sys.argv[1], 'game/heckin-crows.ogg'))
+man = json.load(open(os.path.join(root, 'music/manifest.json')))
+json.dump({'game/heckin-crows.ogg': man['title/heckin-crows.ogg']}, open(os.path.join(sys.argv[1], 'manifest.json'), 'w'))
 PY
-"$CT" run -d --name homejack-test --network host -e PORT=$PORT -v "$ROOT/test/ui/.music":/app/music:ro,Z \
+"$CT" run -d --name homejack-test --network host -e PORT=$PORT -v "$ROOT/test/.music-fixture":/app/music:ro,Z \
   -e RUMPUS_DEBUG=1 -e RUMPUS_ANSWER_MS=20000 -e RUMPUS_VOTE_MS=8000 -e RUMPUS_RESULTS_MS=5000 -e RUMPUS_REVEAL_MS=2000 \
   homejack:test >/dev/null
 trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
