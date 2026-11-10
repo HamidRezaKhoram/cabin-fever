@@ -18,7 +18,7 @@ const FALLBACK = ([
 ]);
 
 const WRITE_MS = parseInt(process.env.RUMPUS_TEL_WRITE_MS || '45000', 10);
-const DRAW_MS = parseInt(process.env.RUMPUS_TEL_DRAW_MS || '80000', 10);
+const DRAW_MS = parseInt(process.env.RUMPUS_TEL_DRAW_MS || '60000', 10); // playtest: 80 s left the fast drawers idle
 const DESCRIBE_MS = parseInt(process.env.RUMPUS_TEL_DESCRIBE_MS || '40000', 10);
 const ENTRY_SHOW_MS = parseInt(process.env.RUMPUS_TEL_ENTRY_MS || '3500', 10);
 const VOTE_MS = parseInt(process.env.RUMPUS_TEL_VOTE_MS || '30000', 10);
@@ -198,6 +198,8 @@ class TelephoneGame extends BaseGame {
       stepType: this.stepType(this.step),
       submittedCount: this.done.size,
       totalPlayers: this.room.players.size,
+      // Who the room is waiting for — shown on the TV so it's never a silent counter.
+      waitingOn: this.order.filter((id) => this.room.players.has(id) && !this.done.has(id)).map((id) => this.nick(id)),
     };
   }
 

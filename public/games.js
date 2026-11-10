@@ -403,8 +403,10 @@
         draw: 'Draw what your phone says!',
         describe: 'Describe the drawing on your phone!',
       }[g.stepType];
+      const verb = { write: 'writing', draw: 'drawing', describe: 'guessing' }[g.stepType];
       return `${roundTag(g, 'Step')}<h1>${msg}</h1><p class="big-sub">${T}</p>
-        ${count(g.submittedCount, g.totalPlayers, 'done')}`;
+        ${count(g.submittedCount, g.totalPlayers, 'done')}
+        ${g.waitingOn && g.waitingOn.length ? `<p class="waiting-on">Still ${verb}: ${g.waitingOn.map((n) => `<span>${av(n)} ${esc(n)}</span>`).join('')}</p>` : ''}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;

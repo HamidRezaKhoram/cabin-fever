@@ -377,6 +377,9 @@ test('Doodle Telephone: chains pass to the right people, bad images rejected, no
   await h.phase('tel-write');
   await until(() => ps.every((p) => p.state && p.state.phase === 'tel-write'), 'phones writing');
   assert.ok(ps.every((p) => POOLS.telephone.includes(p.state.you.suggestion)));
+  by.Ann.submit({ text: 'Ann phrase' });
+  await until(() => h.state.gameState.submittedCount === 1, 'one done');
+  assert.deepStrictEqual([...h.state.gameState.waitingOn].sort(), ['Ben', 'Cat'], 'TV names who it is waiting on');
   for (const p of ps) p.submit({ text: `${p.nickname} phrase` });
   await h.phase('tel-draw');
   await until(() => ps.every((p) => p.state.phase === 'tel-draw'), 'phones drawing');
