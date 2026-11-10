@@ -286,6 +286,10 @@ async function check(name, fn) {
     const drawn = await tv.$eval('.chain-entry img[alt="drawing"]', (i) => ({ w: i.naturalWidth, h: i.getBoundingClientRect().height }));
     assert.ok(drawn.w === 480 && drawn.h > 100, `the drawing is shown on the TV: ${JSON.stringify(drawn)}`);
     await shot(tv, '06-telephone-reveal');
+    // Then every phone picks a favourite step; the TV shows the hearts.
+    for (const p of phones.slice(0, 2)) { await p.waitForSelector('.fav-btn', { timeout: 15000 }); await p.click('.fav-btn'); }
+    await tv.waitForSelector('.chain-entry .favs'); // checked before the last vote moves the reveal on
+    await phones[2].waitForSelector('.fav-btn'); await phones[2].click('.fav-btn');
   });
 
   await check('in a game the TV switches to that game\'s look and hides the join clutter and the player strip', async () => {

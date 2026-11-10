@@ -399,12 +399,28 @@ test('Doodle Telephone: chains pass to the right people, bad images rejected, no
   for (const p of ps) p.submit({ text: 'a guess' });
   await h.phase('tel-reveal', 10000);
   assert.strictEqual(h.state.gameState.chain.entries.length, 3);
-  await h.phase('tel-vote', 10000);
+  // Once the chain is fully shown, phones pick a favourite step (never their own) → +50 to its author.
+  await until(() => ps.every((p) => p.state.phase === 'tel-reveal' && p.state.gameState.favOpen), 'favourites open', 8000);
+  const voter = ps[0];
+  const own = voter.state.gameState.entries.findIndex((e) => e.by === voter.nickname);
+  assert.strictEqual(voter.state.gameState.entries[own].ok, false, 'cannot favourite your own step');
+  voter.submit({ fav: own });
+  await sleep(100);
+  assert.strictEqual(voter.state.you.fav, null);
+  const pick = voter.state.gameState.entries.findIndex((e) => e.ok);
+  const author = voter.state.gameState.entries[pick].by;
+  const before = score(author);
+  voter.submit({ fav: pick });
+  await until(() => score(author) === before + 50, 'author gets +50');
+  voter.submit({ fav: pick });
+  await sleep(100);
+  assert.strictEqual(score(author), before + 50, 'one favourite per chain');
+  await h.phase('tel-vote', 15000);
   await until(() => ps.every((p) => p.state.phase === 'tel-vote'), 'phones in vote phase');
   for (const p of ps) assert.strictEqual(p.state.gameState.drawings.length, 2, 'own drawing excluded');
   for (const p of ps) p.submit({ key: p.state.gameState.drawings[0].key });
   await h.phase('gameover');
-  assert.strictEqual(ps.reduce((n, p) => n + score(p.nickname), 0), 600);
+  assert.strictEqual(ps.reduce((n, p) => n + score(p.nickname), 0), 600 + 50, "3 doodle votes × 200 + one favourite × 50");
 });
 
 // ------------------------------------------------------------------ 18+ toggle
