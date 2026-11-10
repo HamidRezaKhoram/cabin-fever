@@ -6,13 +6,15 @@ const assert = require('node:assert');
 const { startServer, until, makeHost } = require('../helpers');
 const { decide } = require('../../games/bot-brain');
 
+// Short real-time timers so bots can finish every game quickly.
+const QUICK = {
+  RUMPUS_MG_INTRO_MS: '200', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_TUG_MS: '1500', RUMPUS_MG_ROAST_MS: '3000',
+  RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
+  RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000',
+};
 let srv;
 test.before(async () => {
-  srv = await startServer({
-    RUMPUS_MG_INTRO_MS: '200', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_TUG_MS: '1500', RUMPUS_MG_ROAST_MS: '3000',
-    RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
-    RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000',
-  });
+  srv = await startServer(QUICK);
 });
 test.after(() => srv.stop());
 
@@ -58,7 +60,7 @@ test('game night: phones vote the next game, placings earn night points, a champ
   const { placePoints } = require('../../games/night');
   const pts = placePoints([{ id: 'a', score: 900 }, { id: 'b', score: 900 }, { id: 'c', score: 100 }, { id: 'd', score: 0 }]);
   assert.deepStrictEqual([pts.get('a'), pts.get('b'), pts.get('c'), pts.get('d')], [10, 10, 4, 0], 'ties share the better placing; 0 points = no night points');
-  const s2 = await startServer({ RUMPUS_NIGHT_VOTE_MS: '3000', RUMPUS_NIGHT_PICK_MS: '200', RUMPUS_NIGHT_GAP_MS: '300' });
+  const s2 = await startServer({ ...QUICK, RUMPUS_NIGHT_VOTE_MS: '3000', RUMPUS_NIGHT_PICK_MS: '200', RUMPUS_NIGHT_GAP_MS: '300' });
   try {
     const h = await makeHost(s2);
     h.emit('host:addBots', { count: 4, speed: 20 });

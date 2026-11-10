@@ -664,3 +664,4 @@ body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: 
 .rocco-bubble { max-width: min(46vw, 640px); background: var(--ink); color: var(--edge); font-size: max(22px, 3vh); padding: 10px 14px;
   box-shadow: 0 0 0 4px var(--edge); margin-bottom: 4vh; animation: pop-in 0.3s steps(9) both; }
 .rocco-bubble[hidden] { display: none; }
+.game-lang { font-family: var(--pixel); font-size: 10px; color: var(--dim); margin-left: 6px; }

@@ -49,7 +49,8 @@
     talkUntil = Date.now() + Math.min(ms, 600 + t.length * 55);
     if (!enabled) return;
     if (voice) { voice.pause(); voice = null; }
-    const a = new Audio('/api/tts?text=' + encodeURIComponent(t));
+    const fr = R.i18n && R.i18n.lang() === 'fr';
+    const a = new Audio('/api/tts?text=' + encodeURIComponent(t) + (fr ? '&lang=fr' : ''));
     voice = a;
     if (R.music && R.music.duck) R.music.duck(Math.min(8000, 800 + t.length * 70), 0.45);
     a.play().catch(() => {

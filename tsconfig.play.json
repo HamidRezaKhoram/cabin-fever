@@ -11,6 +11,7 @@
   "files": [
     "types/rumpus.d.ts",
     "public/common.js",
+    "public/i18n.js",
     "public/clock.js",
     "public/debug.js",
     "public/sprites.js",

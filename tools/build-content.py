@@ -88,6 +88,14 @@ def fill(tpl: str, f: str) -> str:
 def clean(s: str) -> str:
     return html.unescape(s).strip()
 
+
+def french(name: str) -> list[Item]:
+    """Original French content pack (content-src/fr/<name>): items tagged lang 'fr'."""
+    if not (SRC / 'fr' / name).exists():
+        return []
+    fam, adult = read_txt('fr/' + name)
+    return [{'text': t, 'a': False, 'lang': 'fr'} for t in fam] + [{'text': t, 'a': True, 'lang': 'fr'} for t in adult]
+
 # ----------------------------------------------------------------- "boring" filters
 # The user asked for no boring / generic / everyday questions. These filters
 # drop dry or niche trivia, plain "name a fruit" prompts and obvious numbers.
@@ -214,7 +222,7 @@ if cah:
 fam, adult = read_txt('punchline.txt')
 punch = [{'text': t, 'a': False} for t in fam] + [{'text': t, 'a': True} for t in adult]
 punch += [{'text': b['text'], 'a': b['a'] or bool(ADULT_RE.search(b['text'])), 'src': SRC_LABEL['cah']} for b in cah_black if b['pick'] == 1]
-write('punchline', dedupe(punch, lambda x: x['text']))
+write('punchline', dedupe(punch + french('punchline.txt'), lambda x: x['text']))
 
 # ----------------------------------------------------------------- Trivia + Fib Finder (OpenTDB split) + adult
 def short_answer(a: str) -> bool:
@@ -392,7 +400,7 @@ T = json.loads((SRC / 'majority-templates.json').read_text(encoding='utf-8'))
 for tpl, fills in T.items():
     for f in fills:
         maj.append({'text': fill(tpl, f), 'a': False})
-write('majority', dedupe(maj, lambda x: x['text']))
+write('majority', dedupe(maj + french('majority.txt'), lambda x: x['text']))
 
 # ----------------------------------------------------------------- Most Likely To
 fam, adult = read_txt('mostlikely.txt')
@@ -412,7 +420,7 @@ MUNDANE = re.compile(r"^Who is most likely to (fall asleep first tonight|burn th
 ml = [m for m in ml if not MUNDANE.search(m['text'])]
 for tpl, fills in json.loads((SRC / 'mostlikely-templates.json').read_text(encoding='utf-8')).items():
     ml += [{'text': fill(tpl, f), 'a': False} for f in fills]
-write('mostlikely', dedupe(ml, lambda x: x['text']))
+write('mostlikely', dedupe(ml + french('mostlikely.txt'), lambda x: x['text']))
 
 # ----------------------------------------------------------------- Odd One Out
 fam, adult = read_txt('imposter.txt')
@@ -438,6 +446,6 @@ while len(combos) < 1300:
     combos.add((rng.choice(G['who']), rng.choice(G['doing']), rng.choice(G['where'])))
 for who, doing, where in sorted(combos):
     tel.append({'text': f'{who} {doing} {where}', 'a': False})
-write('telephone', dedupe(tel, lambda x: x['text']))
+write('telephone', dedupe(tel + french('telephone.txt'), lambda x: x['text']))
 
 print('\nPools written to', OUT.relative_to(ROOT))

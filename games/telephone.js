@@ -41,7 +41,7 @@ class TelephoneGame extends BaseGame {
     this.totalRounds = this.n; // one "round" per step
     this.chains = this.order.map((owner) => ({ owner, entries: [] }));
     this.doubleFinal = false;
-    const ideas = library.draw('telephone', this.order.length, { spicy: this.spicy() });
+    const ideas = library.draw('telephone', this.order.length, { spicy: this.spicy(), lang: this.room.settings.lang });
     this.suggestions = new Map(this.order.map((id, i) => [id, ideas[i] ? ideas[i].text : FALLBACK[i % FALLBACK.length]]));
     this.step = -1;
     this.done = new Map();

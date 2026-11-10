@@ -1,14 +1,14 @@
 {
   "tsconfig.json": {
-    "noImplicitAny": 260,
+    "noImplicitAny": 256,
     "strictNullChecks": 130
   },
   "tsconfig.host.json": {
-    "noImplicitAny": 621,
+    "noImplicitAny": 620,
     "strictNullChecks": 65
   },
   "tsconfig.play.json": {
-    "noImplicitAny": 301,
+    "noImplicitAny": 300,
     "strictNullChecks": 74
   }
 }
