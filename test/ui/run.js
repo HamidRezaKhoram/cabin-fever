@@ -46,6 +46,12 @@ async function check(name, fn) {
   await check('TV shows PRESS START, then a room code; music engine starts on click', async () => {
     await tv.goto(BASE + '/host?debug=1');
     await tv.waitForSelector('#start-overlay:not([hidden])');
+    // The title screen already shows a big QR + room code so people can join right away.
+    await tv.waitForSelector('#start-join:not([hidden]) .start-qr[src*="qr.svg"]');
+    const big = await tv.evaluate(() => ({ qr: document.querySelector('.start-qr').getBoundingClientRect().height, code: parseFloat(getComputedStyle(document.getElementById('start-code')).fontSize), vh: innerHeight, text: document.getElementById('start-code').textContent }));
+    assert.match(big.text, /^[A-Z]{4}$/);
+    assert.ok(big.qr >= big.vh * 0.4, `QR is big on the title screen (${big.qr}px of ${big.vh}px)`);
+    assert.ok(big.code >= big.vh * 0.09, `room code is huge (${big.code}px)`);
     await shot(tv, '01-press-start');
     await tv.click('#start-overlay');
     await tv.waitForFunction(() => /^[A-Z]{4}$/.test(document.getElementById('room-code').textContent));
