@@ -83,7 +83,8 @@ function saveSoon() {
       fs.mkdirSync(DATA_DIR, { recursive: true });
       fs.writeFileSync(HISTORY_FILE + '.tmp', JSON.stringify(history));
       fs.renameSync(HISTORY_FILE + '.tmp', HISTORY_FILE);
-    } catch (e) {
+    } catch (err) {
+      const e = /** @type {Error} */ (err);
       if (!warned) console.warn(`[library] can't save question history (${e.message}) — repeats possible after restart`);
       warned = true;
     }
@@ -109,7 +110,8 @@ function normalizeCustom(name, raw) {
 function load(name) {
   if (pools.has(name)) return pools.get(name);
   let items = [];
-  try { items = JSON.parse(fs.readFileSync(path.join(POOL_DIR, `${name}.json`), 'utf8')); } catch (e) {
+  try { items = JSON.parse(fs.readFileSync(path.join(POOL_DIR, `${name}.json`), 'utf8')); } catch (err) {
+    const e = /** @type {Error} */ (err);
     console.warn(`[library] pool ${name} missing: ${e.message}`);
   }
   try {
@@ -119,7 +121,8 @@ function load(name) {
       items = process.env.RUMPUS_CONTENT_MODE === 'replace' ? custom : items.concat(custom);
       console.log(`[library] ${name}: +${custom.length} custom items`);
     }
-  } catch (e) {
+  } catch (err) {
+    const e = /** @type {NodeJS.ErrnoException} */ (err);
     if (e.code !== 'ENOENT') console.warn(`[library] content/${name}.json: ${e.message}`);
   }
   const pool = { all: items, family: items.filter((i) => !i.a), adult: items.filter((i) => i.a) };

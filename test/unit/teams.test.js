@@ -1,7 +1,7 @@
 'use strict';
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
-const { startServer, until, makeHost, makePlayer, joinError, contentDir } = require('../helpers');
+const { startServer, until, makeHost, makePlayer, contentDir } = require('../helpers');
 
 let srv;
 before(async () => { srv = await startServer({ RUMPUS_CONTENT_DIR: contentDir({ closest: [{ q: 'N?', answer: 10 }] }), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_ANSWER_MS: '30000' }); });

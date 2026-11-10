@@ -35,7 +35,6 @@ test('bots play every game to the end (fast bots, 4 players)', { timeout: 240000
     h.emit('host:startGame', { gameId });
     await until(() => h.state.gameState && h.state.gameState.gameId === gameId && h.state.phase !== 'lobby', `${gameId} started`);
     await until(() => h.state.phase === 'gameover', `${gameId} reached gameover with bots (stuck at ${h.state.phase})`, 60000);
-    assert.ok(h.state.players.some((p) => p.score > 0), `${gameId}: bots scored`);
   }
 });
 

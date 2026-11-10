@@ -33,7 +33,8 @@ function loadContent(name, builtin) {
       const mode = process.env.RUMPUS_CONTENT_MODE === 'replace' ? 'replace' : 'append';
       return mode === 'replace' ? extra : builtin.concat(extra);
     }
-  } catch (e) {
+  } catch (err) {
+    const e = /** @type {NodeJS.ErrnoException} */ (err);
     if (e.code !== 'ENOENT') console.warn(`[content] could not load ${file}: ${e.message}`);
   }
   return builtin;
@@ -183,10 +184,10 @@ class BaseGame {
   get skippablePhases() { return []; }
   start() {}
   nextRound() {}
-  /** @param {string} id @param {Record<string, any>} payload */ handleSubmit(id, payload) {} // eslint-disable-line no-unused-vars
-  /** @param {string} id */ onPlayerLeft(id) {} // eslint-disable-line no-unused-vars
+  /** @param {string} id @param {Record<string, any>} payload */ handleSubmit(id, payload) {}  
+  /** @param {string} id */ onPlayerLeft(id) {}  
   /** @returns {Record<string, any>} */ hostView() { return {}; }
-  /** @param {string} id @returns {{ gameState?: Record<string, any>, you?: Record<string, any> }} */ playerOnly(id) { return {}; } // eslint-disable-line no-unused-vars
+  /** @param {string} id @returns {{ gameState?: Record<string, any>, you?: Record<string, any> }} */ playerOnly(id) { return {}; }  
   hostGameState() {
     if (this.phase === 'gameover') return { ...this.base(), standings: this.standings() };
     return { ...this.base(), ...this.hostView() };
