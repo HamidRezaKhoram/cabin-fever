@@ -89,6 +89,7 @@ reactBar.addEventListener('click', (e) => {
 });
 
 let me = null;
+/** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
 let lastHtml = null;
 let cleanups = [];
@@ -315,7 +316,8 @@ function render() {
     const rank = (g.standings || []).findIndex((s) => s.nickname === you.nickname);
     html = '<h1>Game over</h1>' +
       (top ? `<p class="prompt">${esc(top.nickname)} wins with ${top.score}!</p>` : '') +
-      `<p>You finished #${rank + 1} with <strong>${myScore()}</strong> points.</p><p>Watch the TV for the next game.</p>`;
+      `<p>You finished #${rank + 1} with <strong>${myScore()}</strong> points.</p><p>Watch the TV for the next game.</p>
+      <p><a class="hl-link" href="/highlights?room=${esc(state.code)}" target="_blank">📸 Tonight's highlights &amp; hall of fame</a></p>`;
   } else if (games[g.gameId]) {
     html = games[g.gameId].player(state);
   } else {

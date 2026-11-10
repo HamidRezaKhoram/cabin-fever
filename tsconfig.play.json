@@ -18,6 +18,7 @@
     "public/draw.js",
     "public/avatar-maker.js",
     "public/games.js",
-    "public/play.js"
+    "public/play.js",
+    "public/highlights.js"
   ]
 }

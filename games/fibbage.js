@@ -15,6 +15,8 @@
  */
 'use strict';
 
+const stats = require('./stats');
+
 const crypto = require('crypto');
 const { QUESTIONS } = require('./data/fibbage-questions');
 const library = require('./library');
@@ -217,6 +219,19 @@ class FibbageGame {
       }
     }
 
+    // Stats: every fooled player counts for the lie's authors; the best lie of the round is a highlight.
+    let bestLie = -1;
+    const options = /** @type {{ text: string, isTruth: boolean, authorIds: Set<string> }[]} */ (this.options || []);
+    options.forEach((o, i) => {
+      if (o.isTruth || !pickedBy[i].length) return;
+      for (const a of o.authorIds) stats.feat(this.room, a, 'fooled', pickedBy[i].length);
+      if (bestLie < 0 || pickedBy[i].length > pickedBy[bestLie].length) bestLie = i;
+    });
+    if (bestLie >= 0) {
+      const o = options[bestLie];
+      const by = [...o.authorIds].map((id) => (this.room.players.get(id) || { nickname: '?' }).nickname).join(' & ');
+      stats.highlight(this.room, { game: 'Fib Finder', prompt: this.prompt, text: o.text, by, note: `fooled ${pickedBy[bestLie].length}` });
+    }
     for (const [i, who] of this.likes) {
       if (this.options[i].isTruth) continue;
       for (const authorId of this.options[i].authorIds) add(authorId, LIKE_POINTS * who.size);

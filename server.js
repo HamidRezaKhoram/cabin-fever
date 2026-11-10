@@ -22,6 +22,7 @@ const flow = require('./games/flow');
 const { cleanLook, LOOK_PARTS } = require('./games/avatar-schema');
 const botBrain = require('./games/bot-brain');
 const { NightGame, placePoints } = require('./games/night');
+const stats = require('./games/stats');
 const NIGHT_GAP_MS = parseInt(process.env.RUMPUS_NIGHT_GAP_MS || '12000', 10);
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -114,6 +115,11 @@ app.get('/api/music-info', (req, res) => {
   res.json(out);
 });
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
+// Highlights + hall of fame (tonight's room if ?room=CODE).
+app.get('/api/highlights', (/** @type {any} */ req, /** @type {any} */ res) => { // express is untyped here
+  const room = rooms.get(String(req.query.room || '').toUpperCase()) || null;
+  res.json(stats.summary(room));
+});
 app.get('/api/content-stats', (req, res) => res.json(library.stats()));
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -200,6 +206,7 @@ function paceState(room) {
 // other players' in-progress input.
 function broadcast(room) {
   if (room.closed) return;
+  recordStats(room);
   countNight(room);
   if (DEBUG) {
     const g = room.game;
@@ -275,9 +282,21 @@ function countNight(room) {
   for (const [id, n] of pts) night.points.set(id, (night.points.get(id) || 0) + n);
   night.played.push(/** @type {any} */ (game.constructor).meta.id);
   const final = night.played.length >= night.total;
+  if (final) {
+    const best = Math.max(0, ...night.points.values());
+    for (const [id, n] of night.points) if (best > 0 && n === best) stats.nightWin(room, id);
+  }
   night.nextAt = Date.now() + NIGHT_GAP_MS;
   night.timer = setTimeout(() => { night.timer = null; if (room.night === night) nightVote(room, final); }, NIGHT_GAP_MS);
 }
+/** Every finished game counts towards the all-time stats (once). @param {Room} room */
+function recordStats(room) {
+  const game = room.game;
+  if (!game || game instanceof NightGame || game.phase !== 'gameover' || game.statsRecorded) return;
+  game.statsRecorded = true;
+  stats.recordGame(room, /** @type {any} */ (game.constructor).meta.id);
+}
+
 /** @param {Room} room */
 function endNight(room) {
   if (room.night && room.night.timer) clearTimeout(room.night.timer);

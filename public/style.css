@@ -632,3 +632,14 @@ body.host.in-game.sidebar-peek #sidebar { display: flex; position: fixed; top: 5
 .preset-opt { background: var(--panel); padding: 4px; }
 .preset-opt img { width: 100%; height: auto; image-rendering: pixelated; display: block; }
 #join-form .maker .preset-opt { width: 100%; }
+/* ---------- highlights page ---------- */
+.highlights-page #screen { max-width: 760px; margin: 0 auto; padding: 16px; }
+.hl-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.hl-tabs button.on { background: var(--accent); }
+.hl-card { background: var(--panel); padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 0 0 4px var(--edge); }
+.hl-prompt { color: var(--dim); margin: 0 0 6px; }
+.hl-text { font-size: 1.4em; color: var(--accent2); margin: 4px 0; }
+.hl-img { width: min(100%, 320px); background: #fff; display: block; margin: 6px 0; }
+.hl-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { background: var(--panel2); padding: 4px 8px; box-shadow: 0 0 0 2px var(--edge); }
+.hl-link { color: var(--accent); }

@@ -5,6 +5,8 @@
  */
 'use strict';
 
+const stats = require('./stats');
+
 const { BaseGame, shuffle, cleanText } = require('./base');
 
 const WRITE_MS = parseInt(process.env.RUMPUS_TT_WRITE_MS || '90000', 10); // playtest: 120 s was the game's dead air
@@ -83,6 +85,8 @@ class TwoTruthsGame extends BaseGame {
       if (c === set.lieIndex) { right.push(id); this.award(id, 100); } else fooled.push(id);
     }
     const subjectGained = this.award(this.subject, fooled.length * 75);
+    stats.feat(this.room, this.subject, 'fooled', fooled.length);
+    if (fooled.length >= 2) stats.highlight(this.room, { game: 'Two Truths', text: set.statements[set.lieIndex], by: this.nick(this.subject), note: `lie that fooled ${fooled.length}` });
     this.result = {
       lieIndex: set.lieIndex,
       right: right.map((id) => this.nick(id)),

@@ -5,6 +5,8 @@
  */
 'use strict';
 
+const stats = require('./stats');
+
 const { BaseGame, shuffle, cleanText } = require('./base');
 const library = require('./library');
 
@@ -153,7 +155,9 @@ class TelephoneGame extends BaseGame {
     const i = payload.fav;
     if (votes.has(id) || !Number.isInteger(i) || !this.favable(id, i)) return;
     votes.set(id, i);
-    this.award(this.chains[this.revealIndex].entries[i].by, FAV_PTS);
+    const author = this.chains[this.revealIndex].entries[i].by;
+    this.award(author, FAV_PTS);
+    stats.feat(this.room, author, 'favs');
     if (this.favVoters().every((v) => votes.has(v))) { this.clearTimer(); this.advanceReveal(); } else this.push();
   }
 
@@ -193,9 +197,20 @@ class TelephoneGame extends BaseGame {
 
   finishVote() {
     if (this.phase !== 'tel-vote') return;
+    /** @type {Map<string, number>} */
+    const count = new Map();
     for (const key of this.votes.values()) {
       const d = this.drawingList.find((x) => x.key === key);
-      if (d) this.award(d.by, 200);
+      if (d) { this.award(d.by, 200); count.set(key, (count.get(key) || 0) + 1); }
+    }
+    const top = [...count].sort((a, b) => b[1] - a[1])[0];
+    const d = top && (this.drawingList || []).find((x) => x.key === top[0]);
+    if (d) {
+      stats.feat(this.room, d.by, 'favs');
+      const [ci = 0, ei = 0] = d.key.split(':').map(Number);
+      const prev = ei > 0 && this.chains[ci] ? this.chains[ci].entries[ei - 1] : null;
+      const prompt = prev ? prev.content : '';
+      stats.highlight(this.room, { game: 'Doodle Telephone', prompt: prompt || '', image: d.image, by: this.nick(d.by), note: `best doodle · ${top[1]} vote${top[1] === 1 ? '' : 's'}` });
     }
     this.gameOver();
   }
