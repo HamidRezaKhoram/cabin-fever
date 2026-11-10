@@ -76,6 +76,7 @@ mkdir -p "$ROOT/test/ui/.shots"
   cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/run.js /pw/run.js && node /pw/run.js'
 
 step "6/6 GitHub Pages build (the TV's browser hosts the room; tested with no server)"
+mkdir -p "$ROOT/dist"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v "$ROOT/dist":/out:Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null && node tools/build-pages.js /out'
 "$CT" run --rm --network host -e DIST=/dist -v "$ROOT/dist":/dist:Z -v "$ROOT/test/ui":/tests:ro,Z -v homejack-pw:/pw "$PW_IMG" sh -c '
