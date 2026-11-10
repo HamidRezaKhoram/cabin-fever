@@ -1,7 +1,7 @@
 /*
  * Browser test of the GitHub Pages build (dist/): no game server at all — the TV page hosts the
  * room and phones connect to it (tab-to-tab transport, so no internet is needed here).
- * Serves dist/ under /homejack/ exactly like GitHub Pages does. Run inside the Playwright
+ * Serves dist/ under /cabin-fever/ exactly like GitHub Pages does. Run inside the Playwright
  * container: DIST=/dist node pages.js. Exits non-zero on the first failure. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -13,15 +13,15 @@ const { chromium } = require('playwright');
 
 const DIST = process.env.DIST || '/dist';
 const PORT = Number(process.env.PAGES_PORT || 18090);
-const BASE = `http://localhost:${PORT}/homejack/`;
+const BASE = `http://localhost:${PORT}/cabin-fever/`;
 /** @type {Map<string, number>} path → requests (to check the cache only fetches changed files) */
 const hits = new Map();
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.ttf': 'font/ttf', '.webmanifest': 'application/manifest+json' };
 
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, BASE);
-  if (!u.pathname.startsWith('/homejack/')) { res.writeHead(404); res.end(); return; }
-  const rel = decodeURIComponent(u.pathname.slice('/homejack/'.length)) || 'index.html';
+  if (!u.pathname.startsWith('/cabin-fever/')) { res.writeHead(404); res.end(); return; }
+  const rel = decodeURIComponent(u.pathname.slice('/cabin-fever/'.length)) || 'index.html';
   let file = path.join(DIST, rel);
   if (!path.extname(rel) && fs.existsSync(file + '.html')) file += '.html'; // like GitHub Pages
   if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
@@ -77,7 +77,7 @@ async function check(name, fn) {
     await tv.click('#start-overlay');
     await tv.waitForFunction(() => /play/.test((document.querySelector('.join-addr') || {}).textContent || ''), null, { timeout: 8000 });
     const addr = await tv.evaluate(() => (document.querySelector('.join-addr') || {}).textContent || '');
-    assert.match(addr, /localhost:\d+\/homejack\/play/, `join address points at the Pages URL (${addr})`);
+    assert.match(addr, /localhost:\d+\/cabin-fever\/play/, `join address points at the Pages URL (${addr})`);
   });
 
   const phones = [];

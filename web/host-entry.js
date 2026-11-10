@@ -13,7 +13,7 @@ const fsShim = require('./shims/fs');
 const { Sock, pairWires, pickTransport, PREFIX } = require('./net');
 const { qrDataUrl } = require('./qr');
 
-/** The page's folder ("/homejack/" on GitHub Pages, "/" elsewhere). */
+/** The page's folder ("/cabin-fever/" on GitHub Pages, "/" elsewhere). */
 const BASE = location.pathname.replace(/[^/]*$/, '');
 
 /** @type {Promise<void> | null} */

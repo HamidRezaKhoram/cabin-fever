@@ -5,7 +5,7 @@ phones open `/play`. No internet at the cottage — everything must work fully o
 **Always assume it runs on a local server** (LAN, one machine, a handful of players) — no auth,
 no scaling concerns, plain HTTP is fine.
 
-Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch `main`).
+Repo: https://github.com/HamidRezaKhoram/cabin-fever (git remote `cabinfever`, branch `main`; renamed from homejack in Nov 2026).
 `origin` is the upstream we forked (rodwilco/rumpus) — never push there.
 
 ## Hard rules (every session)
@@ -197,7 +197,7 @@ new features and update it when something ships.
 
 ## Common tasks
 
-- Play in a browser (no install): https://hamidrezakhoram.github.io/homejack/ — `.github/workflows/pages.yml`
+- Play in a browser (no install): https://hamidrezakhoram.github.io/cabin-fever/ — `.github/workflows/pages.yml`
   deploys on every push to main. Build locally: `node tools/build-pages.js dist` (node container).
   `?net=local` uses tab-to-tab connections (tests, one-computer play) instead of PeerJS.
 - Run locally: `docker compose up -d --build` → TV `http://<lan-ip>:8012/host`. The https twin
