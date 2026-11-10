@@ -16,16 +16,18 @@ const REPLY_MS = parseInt(process.env.RUMPUS_CR_REPLY_MS || '25000', 10);
 const PICK_MS = parseInt(process.env.RUMPUS_CR_PICK_MS || '20000', 10);
 const REVEAL_STEP_MS = parseInt(process.env.RUMPUS_CR_REVEAL_STEP_MS || '1800', 10);
 
-const MUTUAL = 200, EGO = 100, STAY_IN = 100;
+const MUTUAL = 200, EGO = 100, STAY_IN = 100, MATCHMADE = 300, GOSSIP_HIT = 200, WINK_DATE = 50;
 const REPLY_EMOJI = ['😍', '😂', '🙈', '🔥', '🤔', '💔'];
 
-/** @typedef {'heartbreaker' | 'romantic' | 'wallflower' | 'player'} AgendaId */
+/** @typedef {'heartbreaker' | 'romantic' | 'wallflower' | 'player' | 'matchmaker' | 'gossip'} AgendaId */
 /** @type {Record<AgendaId, { name: string, desc: string }>} */
 const AGENDAS = {
   heartbreaker: { name: 'Heartbreaker', desc: '+200 for every one-sided pick on you, but mutual dates cost you 100.' },
   romantic: { name: 'Hopeless Romantic', desc: 'Mutual dates score double — but staying in costs 300.' },
   wallflower: { name: 'Wallflower', desc: 'Your notes are anonymous. +300 for a mutual date on the last evening.' },
   player: { name: 'Player', desc: 'You get 5 notes a night instead of 3.' },
+  matchmaker: { name: 'Matchmaker', desc: 'Once per game, secretly set up two other players. +300 if they ever end up on a date.' },
+  gossip: { name: 'Gossip', desc: 'You hear who writes to whom. Each night, bet on one couple: +200 if they date.' },
 };
 
 /** @typedef {{ id: number, from: string, to: string, text: string, reply: string | null }} Note */
@@ -36,7 +38,7 @@ class CrushGame extends BaseGame {
     super(room, push);
     this.totalRounds = this.rounds(4);
     const ids = shuffle(this.playerIds());
-    const deck = /** @type {AgendaId[]} */ (Object.keys(AGENDAS));
+    const deck = /** @type {AgendaId[]} */ (shuffle(Object.keys(AGENDAS)));
     /** @type {Map<string, AgendaId>} */
     this.agendas = new Map(ids.map((/** @type {string} */ id, /** @type {number} */ i) => [id, deck[i % deck.length]]));
     /** @type {Note[]} */
@@ -52,6 +54,14 @@ class CrushGame extends BaseGame {
     this.pairs = [];
     /** @type {Set<string>} players whose agenda the TV has exposed */
     this.exposed = new Set();
+    /** @type {Map<string, { a: string, b: string, paid: boolean }>} matchmaker → their once-per-game setup */
+    this.setups = new Map();
+    /** @type {Map<string, [string, string]>} gossip → tonight's predicted couple */
+    this.predictions = new Map();
+    /** @type {{ by: string, kind: 'matchmaker' | 'gossip', a: string, b: string, gained: number }[]} tonight's agenda payoffs */
+    this.bonuses = [];
+    /** @type {Map<string, string>} tonight's winks: from → to (one each, anonymous) */
+    this.winks = new Map();
   }
 
   start() { this.nextRound(); }
@@ -67,6 +77,9 @@ class CrushGame extends BaseGame {
     this.notes = [];
     this.picks = new Map();
     this.pairs = [];
+    this.predictions = new Map();
+    this.bonuses = [];
+    this.winks = new Map();
     const spicy = this.spicy();
     this.cards = new Map(this.playerIds().map((id) => [id, library.draw('crush-openers', 4, { spicy }).map((x) => x.text || '')]));
     this.replyCards = library.draw('crush-replies', 3, { spicy }).map((x) => x.text || '');
@@ -82,6 +95,15 @@ class CrushGame extends BaseGame {
 
   /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
+    // Agenda side actions work any time before the reveal and never use up a turn.
+    if (Array.isArray(payload.setup) || Array.isArray(payload.predict)) return this.sideAction(id, payload);
+    // A wink: one free, anonymous nudge a night — something to do while others write.
+    if (payload.wink !== undefined) {
+      const to = String(payload.wink);
+      if (!['cr-mingle', 'cr-reply', 'cr-pick'].includes(this.phase) || this.winks.has(id) || to === id || !this.room.players.has(to)) return;
+      this.winks.set(id, to);
+      return this.push();
+    }
     if (this.phase === 'cr-mingle') {
       const to = String(payload.to || '');
       const text = cleanText(payload.text, 80);
@@ -104,6 +126,19 @@ class CrushGame extends BaseGame {
       if (this.allIn(this.picks)) this.reveal();
       else this.push();
     }
+  }
+
+  /** @param {string} id @param {Record<string, any>} payload */
+  sideAction(id, payload) {
+    if (!['cr-mingle', 'cr-reply', 'cr-pick'].includes(this.phase)) return;
+    const pair = /** @type {unknown[]} */ (payload.setup || payload.predict).map(String);
+    const [a, b] = pair;
+    if (pair.length !== 2 || !a || !b || a === b || !this.room.players.has(a) || !this.room.players.has(b)) return;
+    const ag = this.agendas.get(id);
+    if (payload.setup && ag === 'matchmaker' && !this.setups.has(id) && a !== id && b !== id) this.setups.set(id, { a, b, paid: false });
+    else if (payload.predict && ag === 'gossip' && !this.predictions.has(id)) this.predictions.set(id, [a, b]);
+    else return;
+    this.push();
   }
 
   toReply() {
@@ -154,6 +189,21 @@ class CrushGame extends BaseGame {
       }
       this.pairs.push({ a, b, mutual, gained: {} });
     }
+    // Agenda payoffs: a matchmaker's setup or a gossip's bet that became a mutual date.
+    const dated = (/** @type {string} */ x, /** @type {string} */ y) => this.pairs.some((p) => p.mutual && ((p.a === x && p.b === y) || (p.a === y && p.b === x)));
+    this.bonuses = [];
+    for (const [by, st] of this.setups) {
+      if (st.paid || !dated(st.a, st.b)) continue;
+      st.paid = true;
+      add(by, MATCHMADE);
+      this.bonuses.push({ by, kind: 'matchmaker', a: st.a, b: st.b, gained: 0 });
+    }
+    for (const [by, [x, y]] of this.predictions) {
+      if (!dated(x, y)) continue;
+      add(by, GOSSIP_HIT);
+      this.bonuses.push({ by, kind: 'gossip', a: x, b: y, gained: 0 });
+    }
+    for (const [from, to] of this.winks) if (dated(from, to)) add(from, WINK_DATE);
     // Apply (×1/×2/×3 by evening), never below zero.
     for (const [id, n] of Object.entries(pts)) {
       const p = this.room.players.get(id);
@@ -163,6 +213,7 @@ class CrushGame extends BaseGame {
       p.score = Math.max(0, p.score + real);
       for (const pr of this.pairs) if (pr.a === id || pr.b === id) pr.gained[id] = p.score - before;
     }
+    for (const bo of this.bonuses) bo.gained = (bo.kind === 'matchmaker' ? MATCHMADE : GOSSIP_HIT) * this.mult();
     this.phase = 'cr-reveal';
     this.setTimer(REVEAL_STEP_MS * (this.pairs.length + 2), () => this.nextRound(), false);
     this.push();
@@ -192,6 +243,7 @@ class CrushGame extends BaseGame {
       evening: this.round,
       admirers: Object.entries(admirers).map(([nickname, count]) => ({ nickname, count })).sort((x, y) => y.count - x.count),
       notesSent: this.notes.length,
+      winks: this.winks.size,
       repliesSent: this.notes.filter((n) => n.reply).length,
       pickedCount: this.picks.size,
       totalPlayers: this.room.players.size,
@@ -200,6 +252,8 @@ class CrushGame extends BaseGame {
         a: this.nick(p.a), b: p.b ? this.nick(p.b) : null, mutual: p.mutual,
         gained: Object.fromEntries(Object.entries(p.gained).map(([k, v]) => [this.nick(k), v])),
       })) : [],
+      // Payoffs reveal the agenda behind them — the room finds out who was pulling strings.
+      bonuses: this.phase === 'cr-reveal' ? this.bonuses.map((x) => ({ by: this.nick(x.by), kind: x.kind, a: this.nick(x.a), b: this.nick(x.b), gained: x.gained })) : [],
       stepMs: REVEAL_STEP_MS,
     };
   }
@@ -211,6 +265,10 @@ class CrushGame extends BaseGame {
     const inbox = this.notes.filter((n) => n.to === id).map((n) => ({ id: n.id, from: anon(n.from) ? 'Secret admirer' : this.nick(n.from), text: n.text, reply: n.reply }));
     const outbox = this.notes.filter((n) => n.from === id).map((n) => ({ id: n.id, to: this.nick(n.to), text: n.text, reply: n.reply }));
     const me = this.pairs.find((p) => p.a === id || p.b === id);
+    const ag = this.agendas.get(id);
+    const setup = this.setups.get(id);
+    const pred = this.predictions.get(id);
+    const pairNames = (/** @type {string} */ a, /** @type {string} */ b) => [this.nick(a), this.nick(b)];
     return {
       gameState: {
         evening: this.round,
@@ -224,6 +282,14 @@ class CrushGame extends BaseGame {
         replyCards: [...REPLY_EMOJI, ...this.replyCards],
         inbox, outbox,
         picked: this.picks.has(id),
+        winked: this.winks.has(id),
+        winksIn: [...this.winks.values()].filter((t) => t === id).length,
+        // Matchmaker: once per game. Gossip: who wrote to whom (never the words), one bet a night.
+        setup: ag === 'matchmaker' ? (setup ? { pair: pairNames(setup.a, setup.b), paid: setup.paid } : null) : undefined,
+        canSetup: ag === 'matchmaker' && !setup,
+        heard: ag === 'gossip' ? this.notes.filter((n) => n.from !== id && n.to !== id).map((n) => ({ from: anon(n.from) ? 'Secret admirer' : this.nick(n.from), to: this.nick(n.to) })) : undefined,
+        prediction: ag === 'gossip' ? (pred ? pairNames(pred[0], pred[1]) : null) : undefined,
+        canPredict: ag === 'gossip' && !pred,
         date: me ? { with: me.a === id ? (me.b ? this.nick(me.b) : null) : this.nick(me.a), mutual: me.mutual, askedBy: me.b === id && !me.mutual, gained: me.gained[id] || 0 } : null,
       },
     };

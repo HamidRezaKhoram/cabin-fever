@@ -54,8 +54,10 @@ test('free-for-all series: tap race, quick draw, fireflies, roast — scoring an
   const show = await playing(h, 'fireflies', 'show');
   const n = show.gameState.flies.length;
   assert.ok(n >= 12 && n <= 40);
+  ps[1].submit({ number: n }); // locking in while the fireflies are still showing is allowed
+  await until(() => h.state.gameState.doneCount === 1, 'early guess counted');
   await playing(h, 'fireflies', 'guess');
-  ps[0].submit({ number: n + 10 }); ps[1].submit({ number: n }); ps[2].submit({ number: n - 3 });
+  ps[0].submit({ number: n + 10 }); ps[1].submit({ number: 1 }) /* second guess ignored */; ps[2].submit({ number: n - 3 });
   const r3 = await until(() => h.state.phase === 'mg-result' && h.state.gameState.mini === 'fireflies' && h.state, 'fly result');
   assert.strictEqual(r3.gameState.result.answer, n);
   assert.strictEqual(r3.gameState.result.rows.find((r) => r.nickname === 'P1').gained, 300 * 2, 'round 3 of 4 is ×2');

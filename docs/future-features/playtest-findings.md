@@ -53,3 +53,11 @@ shipped in this round directly attack the idle numbers below once real players u
    calls it out as one of the most satisfying mechanics; audience voting (see backlog).
 
 Re-run after each fix: `node test/playtest.js` (inside the node container) and compare.
+
+## Round 3 (Nov 10 2026)
+| Game | Before | After | What changed |
+|---|---|---|---|
+| Minigame Mayhem | 53–78 s idle | 16–17 s, 36 actions/min | The big idle was a playtest bug (Quick Draw's 2–5 s wait wasn't scaled at 10×). Also: results 6 → 4.5 s, firefly guesses can lock in while they're still on screen, bots react in 0.2–0.5 s. |
+| Cottage Crush | 53 s (73 s at 6p), 3.2–3.9 actions/min | 34 s (42 s at 6p), 6.0 actions/min | One free anonymous **wink** a night (+50 if it becomes a date), Matchmaker + Gossip agendas give two players side actions. |
+
+Tooling: `worstIdleAt` in the report names the stretch; a static test forces every game timer to be scaled.

@@ -29,7 +29,7 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
     RUMPUS_TT_WRITE_MS: T(90000), RUMPUS_TT_GUESS_MS: T(25000),
     RUMPUS_TEL_WRITE_MS: T(45000), RUMPUS_TEL_DRAW_MS: T(60000), RUMPUS_TEL_DESCRIBE_MS: T(40000), RUMPUS_TEL_ENTRY_MS: T(3500), RUMPUS_TEL_VOTE_MS: T(30000),
     RUMPUS_TEL_FAV_MS: T(10000),
-    RUMPUS_MG_INTRO_MS: T(3500), RUMPUS_MG_RESULT_MS: T(6000), RUMPUS_MG_TUG_MS: T(15000), RUMPUS_MG_DRAW_WINDOW: T(4000),
+    RUMPUS_MG_INTRO_MS: T(3500), RUMPUS_MG_RESULT_MS: T(4500), RUMPUS_MG_TUG_MS: T(15000), RUMPUS_MG_DRAW_WINDOW: T(4000), RUMPUS_MG_DRAW_MIN: T(2000), RUMPUS_MG_DRAW_MAX: T(5000),
     RUMPUS_MG_FLY_SHOW_MS: T(5000), RUMPUS_MG_FLY_GUESS_MS: T(10000), RUMPUS_MG_ROAST_MS: T(12000),
     RUMPUS_CR_MINGLE_MS: T(45000), RUMPUS_CR_REPLY_MS: T(25000), RUMPUS_MR_BET_WINDOW_MS: T(8000), RUMPUS_CR_PICK_MS: T(20000), RUMPUS_CR_REVEAL_STEP_MS: T(1800),
   });
@@ -40,7 +40,8 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
       const bots = [];
       for (const n of NAMES) bots.push(await makePlayer(srv, h.code, n));
       await until(() => h.state.players.length === NAMES.length, 'joined');
-      const stats = new Map(bots.map((b) => [b.nickname, { actions: 0, lastActive: 0, maxIdle: 0 }]));
+      const stats = new Map(bots.map((b) => [b.nickname, { actions: 0, lastActive: 0, maxIdle: 0, lastAt: 'start', idleAt: '' }]));
+      const where = () => `${h.state.phase}${h.state.gameState && h.state.gameState.mini ? ':' + h.state.gameState.mini : ''}`;
       let reveals = 0, phases = 0, lastPhase = null;
       const t0 = Date.now();
       h.emit('host:startGame', { gameId });
@@ -57,12 +58,16 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
         // Human-ish think time: writing takes longer than tapping.
         await sleep(thinkMs(d.kind) / SPEED);
         busy.delete(b.nickname);
-        if (JSON.stringify(b.state.gameState) + JSON.stringify(b.state.you) !== html) return; // screen moved on
+        // A person whose screen moved on doesn't act; a live counter ticking over doesn't stop them.
+        const again = decide(b.state);
+        const sameAction = again && Object.keys(again.payload).join() === Object.keys(payload).join();
+        if (JSON.stringify(b.state.gameState) + JSON.stringify(b.state.you) !== html && !sameAction) return;
         b.submit(payload);
         const st = stats.get(b.nickname);
         const now = Date.now();
-        st.maxIdle = Math.max(st.maxIdle, now - (st.lastActive || t0));
+        if (now - (st.lastActive || t0) > st.maxIdle) { st.maxIdle = now - (st.lastActive || t0); st.idleAt = `${st.lastAt} → ${where()}`; }
         st.lastActive = now;
+        st.lastAt = where();
         st.actions++;
       };
       while (h.state.phase !== 'gameover') {
@@ -73,13 +78,15 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
       }
       const dur = (Date.now() - t0) * SPEED;
       const end = Date.now();
-      const st = [...stats.values()].map((x) => ({ ...x, maxIdle: Math.max(x.maxIdle, end - (x.lastActive || t0)) }));
+      const st = [...stats.values()].map((x) => (end - (x.lastActive || t0) > x.maxIdle ? { ...x, maxIdle: end - (x.lastActive || t0), idleAt: `${x.lastAt} → end` } : x));
+      const worst = st.reduce((a, b) => (b.maxIdle > a.maxIdle ? b : a));
       rows.push({
         game: gameId,
         minutes: +(dur / 60000).toFixed(1),
         actionsPerPlayer: +(st.reduce((n, x) => n + x.actions, 0) / st.length).toFixed(1),
         actionsPerMin: +((st.reduce((n, x) => n + x.actions, 0) / st.length) / (dur / 60000)).toFixed(1),
-        worstIdleSec: Math.round(Math.max(...st.map((x) => x.maxIdle)) * SPEED / 1000),
+        worstIdleSec: Math.round(worst.maxIdle * SPEED / 1000),
+        worstIdleAt: worst.idleAt, // the screen where that player last acted → where they next could
         reveals,
         screens: phases,
       });

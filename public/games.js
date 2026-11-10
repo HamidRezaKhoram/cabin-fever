@@ -146,9 +146,8 @@
         return `<button class="mg-big ${g.sub === 'go' ? 'go' : 'wait'}" data-mg="draw">${g.sub === 'go' ? 'GO!' : 'WAIT…'}</button>`;
       }
       if (g.mini === 'fireflies') {
-        if (g.sub === 'show') return watchTv('<p>Count the fireflies!</p>');
         if (you.done) return waiting('Guess locked');
-        return `<h2>How many fireflies?</h2><form class="number-form"><input name="number" inputmode="numeric" autocomplete="off" required><button type="submit">Lock it in</button></form>`;
+        return `<h2>${g.sub === 'show' ? 'Count the fireflies on the TV!' : 'How many fireflies?'}</h2><form class="number-form"><input name="number" inputmode="numeric" autocomplete="off" required><button type="submit">Lock it in</button></form>`;
       }
       if (you.done) return waiting('Roasted');
       return `<button class="mg-big roast" data-mg="roast">HOLD TO ROAST</button><p class="mg-count">Let go at 3.0 s</p>`;
@@ -408,21 +407,45 @@
       if (s.phase === 'cr-mingle') {
         return `${tag}<h1>💌 Mingle!</h1><p class="big-sub">Slip notes to your crushes on your phones. ${T}</p>
           <ul class="crush-admirers">${g.admirers.map((/** @type {{ nickname: string, count: number }} */ x) => `<li>${av(x.nickname)} ${esc(x.nickname)} has ${x.count} admirer${x.count === 1 ? '' : 's'} 👀</li>`).join('')}</ul>
-          <p class="count">${g.notesSent} notes sent</p>${exposedHtml(g.exposed)}`;
+          <p class="count">${g.notesSent} notes sent${g.winks ? ` · 😉 ${g.winks} wink${g.winks === 1 ? '' : 's'}` : ''}</p>${exposedHtml(g.exposed)}`;
       }
       if (s.phase === 'cr-reply') return `${tag}<h1>✍️ Replies</h1><p class="big-sub">Answer your admirers… ${T}</p><p class="count">${g.repliesSent} / ${g.notesSent} replied</p>${exposedHtml(g.exposed)}`;
       if (s.phase === 'cr-pick') return `${tag}<h1>🌙 Who will you ask out?</h1><p class="big-sub">Pick a date on your phone — or stay in. ${T}</p>${count(g.pickedCount, g.totalPlayers, 'picked')}`;
       return `${tag}<h1>The dock reveal</h1><ol class="answers crush-pairs">${g.pairs.map((/** @type {any} */ p, /** @type {number} */ i) => `<li style="animation-delay:${(i * g.stepMs) / 1000}s" class="${p.mutual ? 'winner' : ''}">
-          ${p.b === null ? `${av(p.a)} ${esc(p.a)} stayed in 🛋` : p.mutual ? `${av(p.a)} ${esc(p.a)} ❤️ ${av(p.b)} ${esc(p.b)} — it's a date!` : `${av(p.a)} ${esc(p.a)} asked ${av(p.b)} ${esc(p.b)}… 💔`}</li>`).join('')}</ol>${exposedHtml(g.exposed)}`;
+          ${p.b === null ? `${av(p.a)} ${esc(p.a)} stayed in 🛋` : p.mutual ? `${av(p.a)} ${esc(p.a)} ❤️ ${av(p.b)} ${esc(p.b)} — it's a date!` : `${av(p.a)} ${esc(p.a)} asked ${av(p.b)} ${esc(p.b)}… 💔`}</li>`).join('')}</ol>
+          ${(g.bonuses || []).map((/** @type {any} */ x, /** @type {number} */ i) => `<p class="crush-bonus" style="animation-delay:${((g.pairs.length + i) * g.stepMs) / 1000}s">${x.kind === 'matchmaker'
+            ? `💘 ${av(x.by)} ${esc(x.by)} was the <b>Matchmaker</b> — set up ${esc(x.a)} &amp; ${esc(x.b)}! +${x.gained}`
+            : `👂 ${av(x.by)} ${esc(x.by)} the <b>Gossip</b> called ${esc(x.a)} &amp; ${esc(x.b)}! +${x.gained}`}</p>`).join('')}${exposedHtml(g.exposed)}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
-      const role = you.agenda ? `<div class="role">Your secret agenda: <strong>${esc(you.agenda.name)}</strong><br><small>${esc(you.agenda.desc)}</small></div>` : '';
+      /** @typedef {{ id: string, nickname: string }} Target */
+      /** Two-name picker for the Matchmaker's setup / the Gossip's bet. @param {string} kind @param {string} label @param {Target[]} list */
+      const pairForm = (kind, label, list) => `<form class="crush-pair" data-kind="${kind}">
+          <select name="a">${list.map((/** @type {Target} */ t) => `<option value="${esc(t.id)}">${esc(t.nickname)}</option>`).join('')}</select> &amp;
+          <select name="b">${list.map((/** @type {Target} */ t, /** @type {number} */ i) => `<option value="${esc(t.id)}" ${i === 1 ? 'selected' : ''}>${esc(t.nickname)}</option>`).join('')}</select>
+          <button type="submit">${label}</button></form>`;
+      // Gossip includes their own name in the bet list (they might date someone themselves).
+      const gossipTargets = [{ id: you.playerId, nickname: you.nickname }, ...g.targets];
+      let side = '';
+      if (you.agenda && you.agenda.id === 'matchmaker') {
+        side = you.canSetup && g.targets.length >= 2 ? `<div class="crush-side"><b>💘 Set two people up (once per game)</b>${pairForm('setup', 'Set them up', g.targets)}</div>`
+          : you.setup ? `<p class="crush-side">💘 Your setup: ${esc(you.setup.pair[0])} &amp; ${esc(you.setup.pair[1])}${you.setup.paid ? ' — it worked! ✓' : ''}</p>` : '';
+      } else if (you.agenda && you.agenda.id === 'gossip') {
+        const heard = (you.heard || []).map((/** @type {{ from: string, to: string }} */ h) => `<li>${esc(h.from)} → ${esc(h.to)}</li>`).join('');
+        side = `<div class="crush-side"><b>👂 You heard tonight</b>${heard ? `<ul class="crush-heard">${heard}</ul>` : '<p class="hint">No whispers yet…</p>'}
+          ${you.canPredict ? `<b>Bet on a couple (+200 if they date)</b>${pairForm('predict', 'Bet', gossipTargets)}` : you.prediction ? `<p>Your bet: ${esc(you.prediction[0])} &amp; ${esc(you.prediction[1])}</p>` : ''}</div>`;
+      }
+      // One free anonymous wink a night (+50 if it turns into a date) — for whoever is waiting.
+      const wink = you.winked ? '<p class="hint">😉 Wink sent</p>'
+        : `<div class="crush-side"><b>😉 Wink at someone (free, anonymous)</b><div class="crush-pair">${g.targets.map((/** @type {Target} */ t) => sendBtn({ wink: t.id }, esc(t.nickname))).join('')}</div></div>`;
+      const winksIn = you.winksIn ? `<p class="crush-exposed">😉 Someone winked at you${you.winksIn > 1 ? ` (${you.winksIn}×)` : ''}!</p>` : '';
+      const role = (you.agenda ? `<div class="role">Your secret agenda: <strong>${esc(you.agenda.name)}</strong><br><small>${esc(you.agenda.desc)}</small></div>` : '') + (s.phase === 'cr-reveal' ? '' : side);
       /** @param {any[]} list @param {boolean} mine */
       const notes = (list, mine) => list.map((n) => `<li class="crush-note"><b>${mine ? '→ ' + esc(n.to) : esc(n.from)}:</b> ${esc(n.text)}${n.reply ? `<br><span class="byline">↩ ${esc(n.reply)}</span>` : ''}</li>`).join('');
       if (s.phase === 'cr-mingle') {
         const inbox = you.inbox.length ? `<h3>💌 Your notes</h3><ul class="crush-list">${notes(you.inbox, false)}</ul>` : '';
-        if (you.notesLeft <= 0) return role + waiting('Notes sent', 'Watch the TV for gossip…') + inbox;
+        if (you.notesLeft <= 0) return role + waiting('Notes sent', 'Watch the TV for gossip…') + wink + winksIn + inbox;
         return `${role}<h2>💌 ${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left</h2>
           <label>To <select class="crush-to">${g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => `<option value="${esc(t.id)}">${esc(t.nickname)}</option>`).join('')}</select></label>
           <div class="vote-list">${you.cards.map((/** @type {string} */ c) => `<button type="button" class="vote-btn crush-card" data-text="${esc(c)}">${esc(c)}</button>`).join('')}</div>
@@ -430,14 +453,14 @@
       }
       if (s.phase === 'cr-reply') {
         const open = you.inbox.filter((/** @type {any} */ n) => !n.reply);
-        if (!open.length) return role + waiting(you.inbox.length ? 'All replied' : 'No notes tonight 😢', 'Waiting for the others…') + (you.outbox.length ? `<h3>Your sent notes</h3><ul class="crush-list">${notes(you.outbox, true)}</ul>` : '');
+        if (!open.length) return role + waiting(you.inbox.length ? 'All replied' : 'No notes tonight 😢', 'Waiting for the others…') + wink + winksIn + (you.outbox.length ? `<h3>Your sent notes</h3><ul class="crush-list">${notes(you.outbox, true)}</ul>` : '');
         const n = open[0];
         return `<h2>${esc(n.from)} wrote:</h2><p class="prompt">“${esc(n.text)}”</p><p>Reply:</p>
           <div class="vote-list crush-replies">${you.replyCards.map((/** @type {string} */ r) => sendBtn({ reply: n.id, text: r }, esc(r))).join('')}</div>`;
       }
       if (s.phase === 'cr-pick') {
-        if (you.picked) return waiting('Date picked 🌙');
-        return `${role}<h2>Who will you ask out tonight?</h2><div class="vote-list">` +
+        if (you.picked) return role + waiting('Date picked 🌙');
+        return `${role}${winksIn}<h2>Who will you ask out tonight?</h2><div class="vote-list">` +
           g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('') +
           sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>';
       }
@@ -446,6 +469,12 @@
         ${d ? `<p>${d.gained >= 0 ? '+' : ''}${d.gained} points</p>` : ''}`;
     },
     bind(root, api) {
+      root.querySelectorAll('.crush-pair').forEach((f) => f.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const form = /** @type {HTMLFormElement} */ (f);
+        const pair = [/** @type {HTMLSelectElement} */ (form.elements.namedItem('a')).value, /** @type {HTMLSelectElement} */ (form.elements.namedItem('b')).value];
+        if (pair[0] !== pair[1]) api.send({ [form.dataset.kind || 'setup']: pair });
+      }));
       const to = /** @type {HTMLSelectElement | null} */ (root.querySelector('.crush-to'));
       if (!to) return;
       root.querySelectorAll('.crush-card').forEach((b) => b.addEventListener('click', () => {

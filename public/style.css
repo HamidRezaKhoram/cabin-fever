@@ -673,3 +673,7 @@ body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: 
 .crush-pairs li { animation: pop-in 0.4s steps(12) both; }
 .crush-exposed { color: var(--accent); }
 .crush-to { width: 100%; }
+.crush-bonus { animation: pop-in 0.4s steps(12) both; color: var(--accent); }
+.crush-side { background: var(--panel); padding: 8px 10px; margin: 8px 0; box-shadow: 0 0 0 3px var(--edge); }
+.crush-heard { list-style: none; padding: 0; margin: 4px 0; }
+.crush-pair { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }

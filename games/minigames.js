@@ -12,7 +12,8 @@ const { BaseGame, shuffle } = require('./base');
 
 const env = (k, d) => parseInt(process.env[k] || String(d), 10);
 const INTRO_MS = env('RUMPUS_MG_INTRO_MS', 3500);
-const RESULT_MS = env('RUMPUS_MG_RESULT_MS', 6000);
+// Playtest: 6 s result screens were the main dead air between minis.
+const RESULT_MS = env('RUMPUS_MG_RESULT_MS', 4500);
 const TUG_MS = env('RUMPUS_MG_TUG_MS', 15000);
 const DRAW_WAIT_MIN = env('RUMPUS_MG_DRAW_MIN', 2000);
 const DRAW_WAIT_MAX = env('RUMPUS_MG_DRAW_MAX', 5000);
@@ -145,7 +146,7 @@ class MinigamesGame extends BaseGame {
       else this.reactions.set(id, now - this.goAt);
       if (this.playerIds().every((p) => this.early.has(p) || this.reactions.has(p))) return this.finish();
       this.push();
-    } else if (this.mini === 'fireflies' && this.sub === 'guess') {
+    } else if (this.mini === 'fireflies') { // lock in while they're still on screen, or after
       const n = Number(payload.number);
       if (!Number.isFinite(n) || n < 0 || n > 999 || this.entries.has(id)) return;
       this.entries.set(id, Math.round(n));

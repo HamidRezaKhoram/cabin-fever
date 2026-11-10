@@ -294,3 +294,17 @@ test('character maker: seasonal hats show up first in their season', () => {
   assert.strictEqual(hat('2026-05-20'), 'Grad cap');
   assert.strictEqual(m.seasonHat(new Date('2026-08-15')), -1);
 });
+
+// Regression: Quick Draw's wait wasn't sped up in the 10× playtest, so the report showed
+// 50–78 s of fake idle in Minigame Mayhem. Every game timer must be scaled there.
+test('the pacing playtest scales every game timer (no fake idle in the report)', () => {
+  const root = path.join(__dirname, '..', '..');
+  const play = fs.readFileSync(path.join(root, 'test', 'playtest.js'), 'utf8');
+  const NOT_TIMED_BY_BOTS = new Set(['RUMPUS_HURRY_MS', 'RUMPUS_NIGHT_PICK_MS', 'RUMPUS_NIGHT_VOTE_MS']); // pace votes / game night aren't playtested
+  for (const f of fs.readdirSync(path.join(root, 'games')).filter((x) => x.endsWith('.js'))) {
+    const src = fs.readFileSync(path.join(root, 'games', f), 'utf8');
+    for (const [, name] of src.matchAll(/(RUMPUS_[A-Z_]+_(?:MS|MIN|MAX|WINDOW))\b/g)) {
+      if (!NOT_TIMED_BY_BOTS.has(name)) assert.ok(play.includes(name), `${f}: ${name} is not scaled in test/playtest.js`);
+    }
+  }
+});
