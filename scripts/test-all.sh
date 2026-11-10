@@ -20,7 +20,7 @@ python3 tools/make-icons.py >/dev/null
 git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated files changed — review and commit them:"; git status --short games/data/pools public/sprites.js; }
 
 step "2/6 type checks (tsc --checkJs on JS, mypy --strict on Python)"
-"$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
+"$CT" run --rm -v "$ROOT":/src:ro,Z -v cabin-fever-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
   pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/*.py'
 
 step "3/6 unit + integration tests (node --test, with coverage ≥ 80%)"
@@ -33,7 +33,7 @@ if [ -z "${BOT_GAMES:-}" ]; then
 fi
 echo "bots will play: $BOT_GAMES"
 mkdir -p "$ROOT/test/ui/snapshots"
-"$CT" run --rm -e BOT_GAMES="$BOT_GAMES" -e SNAP_DIR=/snapshots -v "$ROOT/test/ui/snapshots":/snapshots:Z -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
+"$CT" run --rm -e BOT_GAMES="$BOT_GAMES" -e SNAP_DIR=/snapshots -v "$ROOT/test/ui/snapshots":/snapshots:Z -v "$ROOT":/src:ro,Z -v cabin-fever-npm:/root/.npm "$NODE_IMG" sh -c '
   (command -v openssl >/dev/null || apk add --no-cache -q openssl >/dev/null 2>&1 || true) &&
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
   npm run -s typecheck && echo "tsc: 0 errors" && npm run -s lint && echo "eslint: 0 problems" &&
@@ -44,8 +44,8 @@ fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
 
 step "4/6 build image + start server"
-"$CT" build -q -t homejack:test . >/dev/null
-"$CT" rm -f homejack-test >/dev/null 2>&1 || true
+"$CT" build -q -t cabin-fever:test . >/dev/null
+"$CT" rm -f cabin-fever-test >/dev/null 2>&1 || true
 # A 1-second test track in music/menu/ so the browser test can check the menu music never stops.
 python3 - "$ROOT/test/.music-fixture" <<'PY'
 import math, struct, sys, wave, os
@@ -62,24 +62,24 @@ shutil.copy(os.path.join(root, 'music/title/heckin-crows.ogg'), os.path.join(sys
 man = json.load(open(os.path.join(root, 'music/manifest.json')))
 json.dump({'game/heckin-crows.ogg': man['title/heckin-crows.ogg']}, open(os.path.join(sys.argv[1], 'manifest.json'), 'w'))
 PY
-"$CT" run -d --name homejack-test --network host -e PORT=$PORT -v "$ROOT/test/.music-fixture":/app/music:ro,Z \
+"$CT" run -d --name cabin-fever-test --network host -e PORT=$PORT -v "$ROOT/test/.music-fixture":/app/music:ro,Z \
   -e RUMPUS_DEBUG=1 -e RUMPUS_ANSWER_MS=20000 -e RUMPUS_VOTE_MS=8000 -e RUMPUS_RESULTS_MS=5000 -e RUMPUS_REVEAL_MS=2000 \
-  homejack:test >/dev/null
-trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
+  cabin-fever:test >/dev/null
+trap '"$CT" rm -f cabin-fever-test >/dev/null 2>&1 || true' EXIT
 for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
 echo "test server music: $(curl -s "http://localhost:$PORT/api/music")"
 
 step "5/6 browser tests (TV + 3 phones)"
 mkdir -p "$ROOT/test/ui/.shots"
 "$CT" run --rm --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots \
-  -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v homejack-pw:/pw "$PW_IMG" sh -c '
+  -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v cabin-fever-pw:/pw "$PW_IMG" sh -c '
   cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/run.js /pw/run.js && node /pw/run.js'
 
 step "6/6 GitHub Pages build (the TV's browser hosts the room; tested with no server)"
 mkdir -p "$ROOT/dist"
-"$CT" run --rm -v "$ROOT":/src:ro,Z -v "$ROOT/dist":/out:Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
+"$CT" run --rm -v "$ROOT":/src:ro,Z -v "$ROOT/dist":/out:Z -v cabin-fever-npm:/root/.npm "$NODE_IMG" sh -c '
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null && node tools/build-pages.js /out'
-"$CT" run --rm --network host -e DIST=/dist -v "$ROOT/dist":/dist:Z -v "$ROOT/test/ui":/tests:ro,Z -v homejack-pw:/pw "$PW_IMG" sh -c '
+"$CT" run --rm --network host -e DIST=/dist -v "$ROOT/dist":/dist:Z -v "$ROOT/test/ui":/tests:ro,Z -v cabin-fever-pw:/pw "$PW_IMG" sh -c '
   cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/pages.js /pw/pages.js && node /pw/pages.js'
 
 printf '\n\033[1;32mALL TESTS PASSED\033[0m\n'

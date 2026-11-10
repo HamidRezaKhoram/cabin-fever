@@ -3,7 +3,7 @@
 Party games for one shared TV screen, with everyone playing from their phone
 (a fork of Rumpus). Two ways to play:
 
-- **In the browser, nothing to install:** open https://hamidrezakhoram.github.io/homejack/
+- **In the browser, nothing to install:** open https://hamidrezakhoram.github.io/cabin-fever/
   on the TV/laptop and pick *Host on this screen*; phones scan its QR code. The TV's
   browser hosts the room itself and phones connect straight to it (WebRTC via PeerJS —
   the free PeerJS broker only introduces them). Needs internet to load and connect. Game

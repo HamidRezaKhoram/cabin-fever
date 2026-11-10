@@ -8,7 +8,7 @@
 const assert = require('assert');
 const { chromium, devices } = require('playwright');
 
-const URL_BASE = (process.env.LIVE_URL || 'https://hamidrezakhoram.github.io/homejack/').replace(/\/?$/, '/');
+const URL_BASE = (process.env.LIVE_URL || 'https://hamidrezakhoram.github.io/cabin-fever/').replace(/\/?$/, '/');
 
 (async () => {
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });

@@ -33,7 +33,7 @@ last commit — `BOT_GAMES=all ./scripts/test-all.sh` plays every game (CI does)
 picks some. Their snapshots are re-recorded as they play.
 
 ## The GitHub Pages build
-- `test/ui/pages.js` (test-all step 6): builds `dist/`, serves it under `/homejack/` like Pages,
+- `test/ui/pages.js` (test-all step 6): builds `dist/`, serves it under `/cabin-fever/` like Pages,
   and plays a round with **no server** (the TV page hosts; tab-to-tab transport, no internet);
   checks seat rejoin, /admin, and that a new deploy downloads only the changed file.
 - `./scripts/test-live.sh [url]`: the live site over the real PeerJS broker, TV + 2 phones as separate

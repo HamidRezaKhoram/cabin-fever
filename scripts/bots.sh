@@ -4,5 +4,5 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CT=$(command -v podman || command -v docker)
-exec "$CT" run --rm -it --network host -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm docker.io/library/node:20-alpine sh -c "
+exec "$CT" run --rm -it --network host -v "$ROOT":/src:ro,Z -v cabin-fever-npm:/root/.npm docker.io/library/node:20-alpine sh -c "
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null && node tools/bots.js $*"
