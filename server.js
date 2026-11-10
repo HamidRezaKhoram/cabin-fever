@@ -19,7 +19,8 @@ const fs = require('fs');
 const QRCode = require('qrcode');
 const library = require('./games/library');
 const flow = require('./games/flow');
-const { cleanLook } = require('./games/avatar-schema');
+const { cleanLook, LOOK_PARTS } = require('./games/avatar-schema');
+const botBrain = require('./games/bot-brain');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
@@ -146,6 +147,7 @@ function playersSummary(room) {
     avatar: p.avatar,
     team: room.settings.teams ? p.team || null : null,
     look: p.look || null, // character-maker look (rendered on clients)
+    bot: !!p.bot,
   }));
 }
 
@@ -248,10 +250,56 @@ function closeRoom(room) {
   console.log(`[room ${room.code}] closed`);
 }
 
+// --- bots (test tool) ----------------------------------------------------------
+const BOT_NAMES = ['Robo Rita', 'Beep Bob', 'Chip', 'Pixel Pat', 'Bolt', 'Sprocket', 'Widget', 'Gizmo', 'Byte', 'Cog', 'Servo', 'Tinker'];
+/** A bot is a normal seat whose "socket" is a stub: it receives the same state a phone gets
+ * and answers through the shared bot brain after a human-ish think time (÷ speed).
+ * @param {Room} room @param {number} speed */
+function addBot(room, speed) {
+  const taken = new Set([...room.players.values()].map((x) => x.nickname.toLowerCase()));
+  const nickname = BOT_NAMES.find((n) => !taken.has(n.toLowerCase())) || `Bot ${room.players.size + 1}`;
+  const used = new Set([...room.players.values()].map((x) => x.avatar));
+  const free = [...Array(AVATAR_COUNT).keys()].filter((i) => !used.has(i));
+  /** @type {Record<string, number>} */
+  const look = {};
+  for (const [k, count] of Object.entries(LOOK_PARTS)) look[k] = crypto.randomInt(count);
+  /** @type {Player} */
+  const p = {
+    id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, score: 0, connected: true,
+    avatar: free.length ? free[crypto.randomInt(free.length)] : crypto.randomInt(AVATAR_COUNT), look, bot: true,
+    socket: null,
+  };
+  p.socket = {
+    connected: true, data: {},
+    emit: (/** @type {string} */ ev) => { if (ev === 'room:stateUpdate') botTick(room, p, speed); },
+    disconnect() { this.connected = false; },
+  };
+  if (room.settings.teams) assignTeam(room, p);
+  room.players.set(p.id, p);
+  console.log(`[room ${room.code}] bot joined: ${nickname}`);
+}
+/** @param {Room} room @param {Player} p @param {number} speed */
+function botTick(room, p, speed) {
+  if (p.botTimer || !room.game || !room.players.has(p.id)) return;
+  const view = () => ({ phase: room.game.phase, ...room.game.playerView(p.id) });
+  const first = botBrain.decide(view());
+  if (!first) return;
+  p.botTimer = setTimeout(() => {
+    p.botTimer = null;
+    if (!room.game || !room.players.has(p.id) || room.closed) return;
+    const now = botBrain.decide(view()); // re-check: the screen may have moved on
+    if (!now) return;
+    try { room.game.handleSubmit(p.id, now.payload); } catch (e) { console.error(`[room ${room.code}] bot error:`, e); }
+    // Some screens have a follow-up (bet after answering, likes, mashing): think again.
+    setImmediate(() => botTick(room, p, speed));
+  }, botBrain.thinkMs(first.kind) / speed);
+}
+
 function removePlayer(room, playerId) {
   const p = room.players.get(playerId);
   if (!p) return;
   clearTimeout(p.dropTimer);
+  if (p.botTimer) clearTimeout(p.botTimer);
   room.players.delete(playerId);
   if (room.game) room.game.onPlayerLeft(playerId);
   console.log(`[room ${room.code}] player left: ${p.nickname}`);
@@ -392,6 +440,21 @@ io.on('connection', (socket) => {
     room.game.destroy();
     room.game = null;
     broadcast(room);
+  });
+
+  // Test tool: fill the room with bot players (TV lobby → "🤖 Add bots", or tools/bots.js).
+  socket.on('host:addBots', (msg) => {
+    const room = hostRoom(socket);
+    if (!room || (roomPhase(room) !== 'lobby' && roomPhase(room) !== 'gameover')) return;
+    const n = Math.max(1, Math.min(MAX_PLAYERS, Number(msg && msg.count) || 1));
+    const speed = Math.max(1, Math.min(20, Number(msg && msg.speed) || 1));
+    for (let i = 0; i < n && room.players.size < MAX_PLAYERS; i++) addBot(room, speed);
+    broadcast(room);
+  });
+  socket.on('host:removeBots', () => {
+    const room = hostRoom(socket);
+    if (!room) return;
+    for (const p of [...room.players.values()]) if (p.bot) removePlayer(room, p.id);
   });
 
   socket.on('host:kickPlayer', (msg) => {

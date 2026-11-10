@@ -168,13 +168,14 @@ test('Trivia: Double Down once per game — ×2 when right, −300 (never below 
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat'], { rounds: 3 });
   h.emit('host:startGame', { gameId: 'trivia' });
   await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 1, 'q1');
-  assert.strictEqual(by.Ann.state.you.canDouble, true);
+  await until(() => by.Ann.state.phase === 'trivia-question' && by.Ann.state.you.canDouble === true, 'Ann can double');
   by.Ann.submit({ choice: 1, double: true }); by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 0, double: true }); // Cat wrong at 0 points
   let st = await until(() => h.state.phase === 'trivia-reveal' && h.state, 'reveal 1');
   const s1 = Object.fromEntries(st.gameState.scored.map((x) => [x.nickname, x]));
   assert.ok(s1.Ann.double && s1.Ann.gained >= 1000 && s1.Ann.gained <= 2000, `doubled: ${s1.Ann.gained}`);
   assert.strictEqual(score('Cat'), 0, 'a wrong double down never takes you below zero');
   await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 2, 'q2');
+  await until(() => by.Ann.state.phase === 'trivia-question' && by.Ann.state.gameState.round === 2, 'Ann on q2');
   assert.strictEqual(by.Ann.state.you.canDouble, false, 'only once per game');
   by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 1 }); by.Ann.submit({ choice: 1, double: true }); // Ann's second double is ignored
   st = await until(() => h.state.phase === 'trivia-reveal' && h.state.gameState.round === 2 && h.state, 'reveal 2');

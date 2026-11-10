@@ -25,6 +25,9 @@ interface Player {
   look?: Record<string, number> | null;
   dropTimer?: NodeJS.Timeout | null;
   lastReact?: number;
+  /** Test bot (driven by games/bot-brain.js). */
+  bot?: boolean;
+  botTimer?: NodeJS.Timeout | null;
 }
 
 interface PaceVotes {

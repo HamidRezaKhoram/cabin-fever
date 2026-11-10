@@ -12,10 +12,11 @@
 
 const SPEED = 10;
 const T = (ms) => String(Math.round(ms / SPEED));
-const { startServer, until, sleep, makeHost, makePlayer, PNG } = require('./helpers');
+const { startServer, until, sleep, makeHost, makePlayer } = require('./helpers');
+const { decide, thinkMs } = require('../games/bot-brain');
 
-const GAMES = ['quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely', 'imposter', 'twotruths', 'telephone', 'cah'];
-const rnd = (a, b) => a + Math.random() * (b - a);
+const GAMES = (process.env.GAMES || 'quiplash,fibbage,trivia,closest,majority,mostlikely,imposter,twotruths,telephone,cah,minigames').split(',');
+const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, +(process.env.PLAYERS || 4));
 
 (async () => {
   const srv = await startServer({
@@ -25,16 +26,17 @@ const rnd = (a, b) => a + Math.random() * (b - a);
     RUMPUS_CAH_REVEAL_MS: T(10000), RUMPUS_CAH_ROUNDS: '8', RUMPUS_REVEAL_MS: T(7000),
     RUMPUS_CG_GUESS_MS: T(30000), RUMPUS_MR_ANSWER_MS: T(30000), RUMPUS_ML_VOTE_MS: T(25000),
     RUMPUS_IMP_CLUE_MS: T(40000), RUMPUS_IMP_VOTE_MS: T(40000), RUMPUS_IMP_GUESS_MS: T(20000),
-    RUMPUS_TT_WRITE_MS: T(120000), RUMPUS_TT_GUESS_MS: T(25000),
-    RUMPUS_TEL_WRITE_MS: T(45000), RUMPUS_TEL_DRAW_MS: T(80000), RUMPUS_TEL_DESCRIBE_MS: T(40000), RUMPUS_TEL_ENTRY_MS: T(3500), RUMPUS_TEL_VOTE_MS: T(30000),
+    RUMPUS_TT_WRITE_MS: T(90000), RUMPUS_TT_GUESS_MS: T(25000),
+    RUMPUS_TEL_WRITE_MS: T(45000), RUMPUS_TEL_DRAW_MS: T(60000), RUMPUS_TEL_DESCRIBE_MS: T(40000), RUMPUS_TEL_ENTRY_MS: T(3500), RUMPUS_TEL_VOTE_MS: T(30000),
+    RUMPUS_TEL_FAV_MS: T(10000),
   });
   const rows = [];
   try {
     for (const gameId of GAMES) {
       const h = await makeHost(srv);
       const bots = [];
-      for (const n of ['Ann', 'Ben', 'Cat', 'Dan']) bots.push(await makePlayer(srv, h.code, n));
-      await until(() => h.state.players.length === 4, 'joined');
+      for (const n of NAMES) bots.push(await makePlayer(srv, h.code, n));
+      await until(() => h.state.players.length === NAMES.length, 'joined');
       const stats = new Map(bots.map((b) => [b.nickname, { actions: 0, lastActive: 0, maxIdle: 0 }]));
       let reveals = 0, phases = 0, lastPhase = null;
       const t0 = Date.now();
@@ -46,37 +48,12 @@ const rnd = (a, b) => a + Math.random() * (b - a);
         if (!s || busy.has(b.nickname)) return;
         const html = JSON.stringify(s.gameState) + JSON.stringify(s.you);
         const g = s.gameState || {}, you = s.you || {};
-        let payload = null;
-        switch (s.phase) {
-          case 'answering': if (!you.submitted) payload = { text: 'lol ' + Math.random().toString(36).slice(2, 6) }; break;
-          case 'voting': if (!you.isAuthor && !you.voted) payload = { choice: Math.random() < 0.5 ? 0 : 1 }; break;
-          case 'fib-bluff': if (!you.submitted) payload = { text: 'fake ' + Math.random().toString(36).slice(2, 6) }; break;
-          case 'fib-choose': if (!you.picked && g.options) payload = { choice: g.options[0].index }; break;
-          case 'trivia-category': if (you.isChooser) payload = { choice: 0 }; break;
-          case 'trivia-question': if (!you.answered) payload = { choice: Math.floor(Math.random() * g.choices.length) }; break;
-          case 'cg-guess': if (!you.submitted) payload = { number: Math.round(rnd(1, 2000)) }; break;
-          case 'mr-answer':
-            if (!you.submitted) payload = { text: ['beer', 'beer', 'wine', 'chips'][Math.floor(Math.random() * 4)] };
-            else if (you.bet == null) payload = { bet: Math.floor(Math.random() * (g.maxBet + 1)) };
-            break;
-          case 'ml-vote': if (!you.voted && g.targets) payload = { target: g.targets[Math.floor(Math.random() * g.targets.length)].id }; break;
-          case 'imp-clue': if (!you.submitted) payload = { text: 'clue' }; break;
-          case 'imp-vote': if (!you.voted && g.clues && g.clues.length) payload = { target: g.clues[0].id }; break;
-          case 'imp-guess': if (you.isImposter && g.options && g.options.length) payload = { choice: 0 }; break;
-          case 'tt-write': if (!you.submitted) payload = { truths: ['t1', 't2'], lie: 'lie' }; break;
-          case 'tt-guess': if (!you.isSubject && !you.guessed) payload = { choice: Math.floor(Math.random() * 3) }; break;
-          case 'tel-write': case 'tel-describe': if (!you.submitted) payload = { text: 'a thing' }; break;
-          case 'tel-draw': if (!you.submitted) payload = { image: PNG }; break;
-          case 'tel-vote': if (!you.voted && g.drawings && g.drawings.length) payload = { key: g.drawings[0].key }; break;
-          case 'cah-submit': if (!you.isCzar && !you.submitted && you.hand) payload = { cardIndex: 0 }; break;
-          case 'cah-czar': if (you.isCzar && g.submissions) payload = { choice: 0 }; break;
-          default: break;
-        }
+        const d = decide(s);
+        const payload = d && d.payload;
         if (!payload) return;
         busy.add(b.nickname);
         // Human-ish think time: writing takes longer than tapping.
-        const writing = 'text' in payload || 'truths' in payload || 'image' in payload;
-        await sleep((writing ? rnd(8000, 25000) : rnd(2000, 7000)) / SPEED);
+        await sleep(thinkMs(d.kind) / SPEED);
         busy.delete(b.nickname);
         if (JSON.stringify(b.state.gameState) + JSON.stringify(b.state.you) !== html) return; // screen moved on
         b.submit(payload);
