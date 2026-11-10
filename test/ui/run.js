@@ -172,6 +172,16 @@ async function check(name, fn) {
     assert.strictEqual(await phones[1].inputValue('.text-form input'), 'half-typed');
   });
 
+  await check('TV fills the screen: the prompt is big (10-foot rule) and content is vertically centred', async () => {
+    const m = await tv.evaluate(() => {
+      const h = document.querySelector('#phase-view h1.prompt');
+      const pv = document.getElementById('phase-view');
+      return { font: parseFloat(getComputedStyle(h).fontSize), vh: innerHeight, inGame: pv.classList.contains('in-game') };
+    });
+    assert.ok(m.inGame, 'stage layout active');
+    assert.ok(m.font >= m.vh * 0.05, `prompt font ${m.font}px is under 5% of screen height (${m.vh}px)`);
+  });
+
   await check('Majority reveal shows grouped answers with avatars', async () => {
     await phones[1].click('.text-form button');
     await phones[2].fill('.text-form input', 'Bananas');

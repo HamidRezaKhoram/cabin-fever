@@ -7,7 +7,6 @@
  */
 'use strict';
 
-const crypto = require('crypto');
 const library = require('./library');
 const { BaseGame, shuffle, cleanText } = require('./base');
 

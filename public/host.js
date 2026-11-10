@@ -1,12 +1,12 @@
 /* Rumpus host (TV) view — renderer of room:stateUpdate. AGPLv3, see LICENSE. */
 'use strict';
 
-const { esc, store, sfx, countdown, games, av, sprites, music, fx, morph, clock, playerImg, playerUrl } = window.Rumpus;
+const { esc, store, sfx, countdown, games, av, sprites, music, fx, morph, clock, playerImg, playerUrl, fitAll , hit } = window.Rumpus;
 const socket = io();
 
 const codeEl = document.getElementById('room-code');
 const joinUrlEl = document.getElementById('join-url');
-const qrEl = document.getElementById('qr');
+const qrEl = /** @type {HTMLImageElement} */ (document.getElementById('qr'));
 const phaseView = document.getElementById('phase-view');
 const playerList = document.getElementById('player-list');
 const controls = document.getElementById('controls');
@@ -87,10 +87,10 @@ setInterval(() => {
 
 // --- volume sliders ----------------------------------------------------------------
 for (const kind of ['music', 'sfx']) {
-  const el = document.getElementById('vol-' + kind);
-  el.value = Math.round(music.volumes()[kind] * 100);
+  const el = /** @type {HTMLInputElement} */ (document.getElementById('vol-' + kind));
+  el.value = String(Math.round(music.volumes()[kind] * 100));
   el.addEventListener('input', () => {
-    music.setVolume(kind, el.value / 100);
+    music.setVolume(kind, Number(el.value) / 100);
     if (kind === 'sfx') sfx.pop();
   });
 }
@@ -148,15 +148,15 @@ socket.on('room:event', (ev) => {
 // --- input --------------------------------------------------------------------
 
 document.addEventListener('click', (e) => {
-  const kick = e.target.closest('[data-kick]');
+  const kick = hit(e.target, '[data-kick]');
   if (kick) {
     const p = state && state.players.find((x) => x.id === kick.dataset.kick);
     if (p && confirm(`Kick ${p.nickname}?`)) socket.emit('host:kickPlayer', { playerId: p.id });
     return;
   }
-  const pickBtn = e.target.closest('.game-pick');
+  const pickBtn = hit(e.target, '.game-pick');
   if (pickBtn && !pickBtn.disabled) return socket.emit('host:startGame', { gameId: pickBtn.dataset.gameId });
-  const act = e.target.closest('[data-act]');
+  const act = hit(e.target, '[data-act]');
   if (!act) return;
   if (act.dataset.act === 'skip') socket.emit('host:skip');
   if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
@@ -166,9 +166,10 @@ document.addEventListener('click', (e) => {
   }
 });
 document.addEventListener('change', (e) => {
-  if (e.target.id === 'set-rounds') socket.emit('host:settings', { rounds: e.target.value === '' ? null : +e.target.value });
-  else if (e.target.id === 'set-timer') socket.emit('host:settings', { timerScale: +e.target.value });
-  else if (e.target.id === 'set-spicy') socket.emit('host:settings', { spicy: e.target.checked });
+  const t = /** @type {HTMLInputElement} */ (e.target);
+  if (t.id === 'set-rounds') socket.emit('host:settings', { rounds: t.value === '' ? null : +t.value });
+  else if (t.id === 'set-timer') socket.emit('host:settings', { timerScale: +t.value });
+  else if (t.id === 'set-spicy') socket.emit('host:settings', { spicy: t.checked });
 });
 fsBtn.addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -403,7 +404,7 @@ function updateTimerBar(endsAt) {
 clock.add(() => {
   if (timerbar.hidden || !timerTotal.endsAt) return;
   const left = Math.max(0, timerTotal.endsAt - Date.now());
-  timerbar.firstElementChild.style.transform = `scaleX(${(left / timerTotal.total).toFixed(4)})`;
+  /** @type {HTMLElement} */ (timerbar.firstElementChild).style.transform = `scaleX(${(left / timerTotal.total).toFixed(4)})`;
   timerbar.classList.toggle('urgent', left < 5000);
 });
 
@@ -466,6 +467,7 @@ function render() {
       music.play('victory', { then: 'scoreboard' });
       lastAwards.forEach((a, i) => setTimeout(() => sfx.award(), 1000 + i * 500));
     } else {
+      music.setIntensity(g.multiplier === 2 ? 2 : 1);
       music.play(cueFor(state));
       if (isRevealPhase(phase)) {
         if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();
@@ -503,6 +505,7 @@ function render() {
       wiping = true;
       fx.wipe(() => {
         phaseView.innerHTML = pendingHtml;
+        layoutStage();
         wiping = false;
         countdown((state.gameState || {}).endsAt, '.timer', tick);
       });
@@ -511,10 +514,23 @@ function render() {
     pendingHtml = html;
   } else {
     morph(phaseView, html); // small updates (counts, votes) without restarting animations
+    layoutStage();
   }
   updateTimerBar(inGame ? g.endsAt : null);
   if (!wiping) countdown(g.endsAt, '.timer', tick);
 }
+
+// Make the main question/prompt fill the stage (TV readability).
+function layoutStage() {
+  const inGame = state && !['lobby', 'gameover'].includes(state.phase);
+  phaseView.classList.toggle('in-game', !!inGame);
+  if (!inGame) return;
+  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = h.dataset.fit || '0.12,3'; });
+  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.vs-card')).forEach((c) => { c.dataset.fit = '0.07,5'; });
+  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.big-answer')).forEach((c) => { c.dataset.fit = '0.12,2'; });
+  fitAll(phaseView);
+}
+window.addEventListener('resize', () => layoutStage());
 
 function tick(left) {
   if (left > 0 && left <= 5) sfx.tick();

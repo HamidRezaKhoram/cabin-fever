@@ -9,3 +9,8 @@ music/*
 # otherwise the game falls back to the small sample deck.
 games/data/cah-cards.js
 test/ui/.shots/
+music/**/*.mp3
+music/**/*.ogg
+music/**/*.m4a
+music/**/*.wav
+music/**/*.opus

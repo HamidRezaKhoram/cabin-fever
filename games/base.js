@@ -43,10 +43,16 @@ function cleanText(v, max = 120) {
   return typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '';
 }
 
+/** @implements {GameLike} */
 class BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
+    /** @type {number} */ this.totalRounds = 0;
+    /** @type {boolean | undefined} game has no rounds of its own → always ×1 */ this.doubleFinal = undefined;
+    /** @type {number} */ this.skipSeq = 0;
     this.room = room;
     this.push = push;
+    /** @type {Partial<RoomSettings>} */
     this.settings = room.settings || {};
     this.phase = 'starting';
     this.round = 0;
@@ -161,7 +167,7 @@ class BaseGame {
 
   base() {
     return {
-      gameId: this.constructor.meta.id,
+      gameId: /** @type {any} */ (this.constructor).meta.id,
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
@@ -172,8 +178,15 @@ class BaseGame {
     };
   }
 
-  // Subclasses implement: start(), handleSubmit(id, payload), onPlayerLeft(id),
-  // hostView() -> object, playerOnly(id) -> { gameState, you }.
+  // ---- implemented by each game -------------------------------------------
+  /** @returns {string[]} phases where a majority may vote to skip the question */
+  get skippablePhases() { return []; }
+  start() {}
+  nextRound() {}
+  /** @param {string} id @param {Record<string, any>} payload */ handleSubmit(id, payload) {} // eslint-disable-line no-unused-vars
+  /** @param {string} id */ onPlayerLeft(id) {} // eslint-disable-line no-unused-vars
+  /** @returns {Record<string, any>} */ hostView() { return {}; }
+  /** @param {string} id @returns {{ gameState?: Record<string, any>, you?: Record<string, any> }} */ playerOnly(id) { return {}; } // eslint-disable-line no-unused-vars
   hostGameState() {
     if (this.phase === 'gameover') return { ...this.base(), standings: this.standings() };
     return { ...this.base(), ...this.hostView() };

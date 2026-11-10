@@ -129,9 +129,45 @@ window.Rumpus = Object.assign(window.Rumpus || {}, (function () {
     morphChildren(x, y);
   }
 
+  // Fit-to-fill: grow text until it fills its box (up to maxLines / max size),
+  // so short prompts become big and long ones still fit. TV "10-foot" rule:
+  // size relative to screen height, never below ~28px at 1080p.
+  function fit(el, { max = 0.14, min = 0.032, maxLines = 4 } = {}) {
+    if (!el || !el.isConnected) return;
+    const vh = window.innerHeight;
+    let lo = Math.round(vh * min), hi = Math.round(vh * max), best = lo;
+    const width = el.clientWidth || el.parentElement.clientWidth;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      el.style.fontSize = mid + 'px';
+      // Measure with the element's real line height (not a guess).
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || mid * 1.25;
+      const lines = Math.round(el.scrollHeight / lh);
+      if (el.scrollWidth <= width + 1 && lines <= maxLines) { best = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    el.style.fontSize = best + 'px';
+  }
+  function fitAll(root) {
+    if (!root) return;
+    root.querySelectorAll('[data-fit]').forEach((el) => {
+      const [max, lines] = (el.dataset.fit || '').split(',').map(Number);
+      fit(el, { max: max || 0.14, maxLines: lines || 4 });
+    });
+  }
+
+  /**
+   * Typed event delegation: the closest element matching `sel` from an event target.
+   * @param {EventTarget | null} target @param {string} sel
+   * @returns {HTMLButtonElement | null} (buttons, links, inputs — anything with dataset/disabled)
+   */
+  function hit(target, sel) {
+    const el = target instanceof Element ? target.closest(sel) : null;
+    return /** @type {HTMLButtonElement | null} */ (el);
+  }
+
   // Per-game renderers: { host(state) -> html, player(state) -> html, bind(root, api) }
   const games = {};
   function register(id, impl) { games[id] = impl; }
 
-  return { esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl };
+  return { esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })());

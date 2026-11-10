@@ -84,7 +84,7 @@ class ClosestGame extends BaseGame {
     if (this.phase !== 'cg-guess') return;
     const ans = this.q.answer;
     const list = [...this.guesses.entries()]
-      .map(([id, n]) => ({ id, nickname: this.nick(id), guess: n, off: Math.abs(n - ans) }))
+      .map(([id, n]) => ({ id, nickname: this.nick(id), guess: n, off: Math.abs(n - ans), rank: 0, exact: false, gained: 0 }))
       .sort((a, b) => a.off - b.off);
     // Ties share a rank.
     let rank = 0;

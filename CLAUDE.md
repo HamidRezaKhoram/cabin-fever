@@ -37,6 +37,30 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
 8. Commit/push only when asked (or when the user has asked for it in the current task).
    End commit messages with the attribution line the session tells you to use.
 
+## Types (enforced)
+
+- JavaScript is type-checked with `tsc --checkJs` (three configs: `tsconfig.json` server+games,
+  `tsconfig.host.json` TV page, `tsconfig.play.json` phone page). Shared types live in
+  `types/rumpus.d.ts` (Room, Player, GameLike, PoolItem, window.Rumpus…). Use JSDoc
+  (`/** @type {HTMLInputElement} */ (el)`, `@param`, `@returns`) — don't silence errors with `any`
+  unless the value really is untyped. Use `Rumpus.hit(e.target, sel)` for typed event delegation.
+- Python tools pass `mypy --strict`. Annotate every function.
+- Both run in `scripts/test-all.sh`; 0 errors is required.
+
+## Screen layout (10-foot UI)
+
+- Design against 1080p and size relative to screen height: body ≥ 3.2vh (~35px), secondary ≥ 2.6vh,
+  never below 28px on the TV. Few elements, big, centred vertically during play.
+- Main prompts/answers get `data-fit` and are grown by `Rumpus.fit()` to fill their box.
+- A browser test asserts the TV prompt is ≥ 5% of the screen height.
+
+## Music
+
+- 50+ procedural chiptunes in `public/music.js`, organised by cue: title, menu, intro, game:<id>,
+  category, vote, reveal, final, victory, scoreboard. Round 2 plays the game theme faster and
+  busier (`setIntensity`); the final ×3 question switches to the high-energy `final` cue.
+- User tracks: `music/<scenario>/` (see music/README.md) override the chiptunes per scenario.
+
 ## Game-flow rules (games/flow.js)
 
 - **Escalating stakes** for every multi-question game: first half ×1, second half ×2, final

@@ -312,7 +312,7 @@
   // A "deck" plays one compiled track into its own gain (for crossfades).
   let decks = [];
   let hurry = false;
-  let schedTimer = null;
+  let intensity = 1; // 1 = round 1, 2 = round 2 (faster, busier); the final round has its own cue
   const listeners = [];
 
   function newDeck(tr, onEnd) {
@@ -325,7 +325,8 @@
 
   function scheduleDeck(d) {
     const tr = d.tr;
-    const tempo = tr.bpm * (hurry && !tr.once ? 1.12 : 1);
+    const boost = tr.once ? 1 : (hurry ? 1.12 : 1) * (intensity >= 2 ? 1.08 : 1);
+    const tempo = tr.bpm * boost;
     const six = 60 / tempo / 4;
     const out = d.gain;
     while (!d.stopping && d.next < ctx.currentTime + 0.15) {
@@ -356,7 +357,8 @@
       const D = tr.drums;
       if (D.k[inBar] === 'x') voice(out, 150, t, 0.18, { type: 'sine', vol: 0.45, slide: 0.3 });
       if (D.s[inBar] === 'x') { noise(out, t, 0.14, 0.16, 1200); voice(out, 220, t, 0.06, { type: 'triangle', vol: 0.07 }); }
-      if (D.h[inBar] === 'x' || (hurry && !tr.once)) noise(out, t, inBar % 8 === 6 ? 0.1 : 0.03, 0.05, 7000);
+      if (D.h[inBar] === 'x' || ((hurry || intensity >= 2) && !tr.once)) noise(out, t, inBar % 8 === 6 ? 0.1 : 0.03, 0.05, 7000);
+      if (intensity >= 2 && !tr.once && inBar % 4 === 2) voice(out, 150, t, 0.12, { type: 'sine', vol: 0.25, slide: 0.3 }); // extra kick
 
       d.step++;
       d.next += six;
@@ -386,7 +388,9 @@
   let afterOnce = null;
   let rotation = {};
   try { rotation = JSON.parse(localStorage.getItem('rumpus.rotation') || '{}'); } catch (e) { rotation = {}; }
-  let customAudio = null, customList = [];
+  let customAudio = null;
+  let customCats = {};     // scenario -> [urls] from ./music/<scenario>/
+  let customCue = null;
 
   function nextIndex(cue) {
     const n = CATALOG[cue].length;
@@ -398,6 +402,7 @@
 
   function startCue(cue, then) {
     if (!CATALOG[cue]) cue = 'menu';
+    if (customAudio) { customAudio.pause(); customCue = null; }
     const tr = track(cue, nextIndex(cue));
     decks.forEach((d) => fadeOut(d, tr.once ? 0.3 : 0.9));
     currentCue = cue;
@@ -416,21 +421,39 @@
    * time they're entered. One-shot cues (victory, intro) play, then go to
    * `then` (or whatever was requested meanwhile).
    */
+  // Custom tracks for a cue: music/<cue>, then the cue's group (game:x → game), then music/ root.
+  function customFor(cue) {
+    const tries = cue.startsWith('game:') ? ['game/' + cue.slice(5), 'game'] : [cue];
+    for (const k of tries.concat('any')) if (customCats[k] && customCats[k].length) return customCats[k];
+    return null;
+  }
+
+  function playCustom(cue, list) {
+    decks.forEach((d) => fadeOut(d, 0.6));
+    currentCue = cue;
+    customCue = cue;
+    if (!customAudio) {
+      customAudio = new Audio();
+      customAudio.addEventListener('ended', () => { if (customCue) playCustom(customCue, customFor(customCue)); });
+    }
+    const src = list[Math.floor(Math.random() * list.length)];
+    customAudio.src = src;
+    customAudio.volume = musicVol;
+    customAudio.loop = list.length === 1;
+    customAudio.play().catch(() => {});
+    listeners.forEach((fn) => fn({ cue, name: decodeURIComponent(src.split('/').pop()).replace(/\.\w+$/, '') }));
+  }
+
   function play(cue, opts = {}) {
     if (!enabled) { pendingCue = cue; return; }
-    if (customAudio) return;
-    if (cue === currentCue && decks.some((d) => !d.stopping)) return;
+    if (cue === currentCue && (customCue === cue || decks.some((d) => !d.stopping))) return;
+    const custom = customFor(cue);
+    if (custom) { playCustom(cue, custom); return; }
+    if (customAudio) { customAudio.pause(); customCue = null; }
     const playingOnce = decks.some((d) => !d.stopping && d.tr.once);
     if (playingOnce && !CATALOG[cue][0].once) { pendingCue = cue; return; } // let the jingle finish
     afterOnce = opts.then || null;
     startCue(cue, opts.then);
-  }
-
-  function nextCustom() {
-    if (!customList.length) return;
-    customAudio.src = customList[Math.floor(Math.random() * customList.length)];
-    customAudio.play().catch(() => {});
-    listeners.forEach((fn) => fn({ cue: 'custom', name: decodeURIComponent(customAudio.src.split('/').pop()).replace(/\.\w+$/, '') }));
   }
 
   async function enable() {
@@ -438,21 +461,19 @@
     if (ctx.state === 'suspended') await ctx.resume();
     if (enabled) return;
     enabled = true;
-    try { customList = await (await fetch('/api/music')).json(); } catch (e) { customList = []; }
-    if (customList.length) {
-      customAudio = new Audio();
-      customAudio.volume = musicVol;
-      customAudio.addEventListener('ended', nextCustom);
-      nextCustom();
-      return;
-    }
-    schedTimer = setInterval(tickAll, 25);
+    try {
+      const cats = await (await fetch('/api/music')).json();
+      customCats = cats && !Array.isArray(cats) ? cats : {};
+    } catch (e) { customCats = {}; }
+    setInterval(tickAll, 25);
     const first = pendingCue || 'title';
     pendingCue = null;
-    startCue(first);
+    currentCue = null;
+    play(first);
   }
 
   function setHurry(on) { hurry = !!on; }
+  function setIntensity(n) { intensity = n; }
 
   // Briefly lower the music so a reveal sting cuts through.
   function duck(ms = 1200, level = 0.35) {
@@ -490,7 +511,8 @@
   };
 
   window.Rumpus.music = {
-    enable, play, setVolume, setHurry, duck, sfx: SFX,
+    enable, play, setVolume, setHurry, setIntensity, duck, sfx: SFX,
+    customCategories: () => customCats,
     volumes: () => ({ music: musicVol, sfx: sfxVol }),
     isEnabled: () => enabled,
     onTrack: (fn) => listeners.push(fn),

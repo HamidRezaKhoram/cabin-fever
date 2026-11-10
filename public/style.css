@@ -416,3 +416,45 @@ button.game-pick:not(:disabled):hover .game-art img { animation: bob 0.6s steps(
 .avatar-draw[hidden], .avatar-pick[hidden], .lobby-draw[hidden] { display: none; }
 .lobby-draw { margin-top: 14px; background: rgba(20,18,31,0.86); padding: 14px; box-shadow: 0 0 0 4px var(--edge); }
 img.avatar.drawn { background: #fff; box-shadow: 0 0 0 2px var(--edge); object-fit: cover; image-rendering: auto; }
+
+/* ---------- v6: fill the screen (10-foot UI) ----------
+ * Reference frame 1080p; sizes scale with screen height so bigger TVs get bigger text.
+ * Body text ≥ 3.2vh (~35px @1080p), secondary ≥ 2.6vh (~28px). Prompts are sized by
+ * Rumpus.fit() to fill their box. Few elements, big, generously spaced. */
+body.host { font-size: max(22px, 3.2vh); }
+body.host .phase-view.in-game { display: flex; flex-direction: column; justify-content: center; gap: 2.2vh; min-height: 100%; }
+body.host .phase-view.in-game > * { margin-top: 0; margin-bottom: 0; }
+body.host h1 { font-size: max(24px, 4.6vh); }
+body.host h1.prompt { line-height: 1.35; }
+body.host .big-sub { font-size: max(24px, 3.6vh); }
+body.host .count { font-size: max(20px, 2.8vh); }
+body.host .round-tag { font-size: max(12px, 1.6vh); }
+body.host ol.answers { font-size: max(26px, 4.2vh); line-height: 1.4; }
+body.host ol.answers li { margin: 1vh 0; }
+body.host .vs-card { font-size: max(26px, 4.4vh); padding: 3vh 2.4vw; min-height: 22vh; display: flex; flex-direction: column; justify-content: center; }
+body.host .vs-badge { font-size: max(22px, 4.5vh); }
+body.host .vs-meta { font-size: max(18px, 2.6vh); }
+body.host .vs-bar { height: 2.2vh; }
+body.host ul.scored-list { font-size: max(22px, 3.2vh); }
+body.host .clue-list .clue { font-size: max(26px, 4.6vh); }
+body.host .clue-list li { padding: 2vh 1.4vw; }
+body.host .bar-row { font-size: max(22px, 3.6vh); grid-template-columns: minmax(180px, 26vw) 1fr 70px; }
+body.host .bar { height: 4vh; }
+body.host .cat-card div { font-size: max(14px, 2.4vh); padding: 6vh 2vw; }
+body.host .chain-entry { width: min(30vw, 34vh); }
+body.host .chain-text { font-size: max(22px, 3.6vh); }
+body.host .big-answer { font-size: max(22px, 7vh); }
+body.host .double-badge { font-size: max(11px, 1.6vh); }
+body.host .timer { font-size: 0.9em; }
+body.host .pname { font-size: max(20px, 2.8vh); }
+body.host .pscore { font-size: max(11px, 1.5vh); }
+body.host img.avatar { width: max(40px, 5vh); height: max(40px, 5vh); }
+body.host img.avatar.tiny { width: max(24px, 3.2vh); height: max(24px, 3.2vh); }
+body.host img.avatar.big { width: max(96px, 11vh); height: max(96px, 11vh); }
+body.host img.avatar.huge { width: max(140px, 16vh); height: max(140px, 16vh); }
+body.host #sidebar { width: auto; }
+body.host { grid-template-columns: 1fr clamp(240px, 19vw, 420px); }
+/* Phones: scale with width. */
+body.play { font-size: clamp(20px, 5.4vw, 30px); }
+body.play h2.prompt { font-size: clamp(16px, 4.6vw, 26px); }
+body.play .vote-btn, body.play .hand-btn { font-size: clamp(20px, 5.6vw, 30px); }
