@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Pre-commit: types must be correct and lint clean before anything is committed.
+# (Enabled per clone with: git config core.hooksPath .githooks — scripts/test-all.sh does it.)
+# Node isn't on the host, so this runs in the same container the tests use.
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+CT=$(command -v podman || command -v docker)
+echo "pre-commit: type check + lint + strict ratchet…"
+"$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm docker.io/library/node:20-alpine sh -c '
+  cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
+  npm run -s typecheck && npm run -s lint && node tools/strict-ratchet.js >/dev/null' \
+  || { echo "pre-commit: FAILED — fix the type/lint errors above (or run ./scripts/test-all.sh)"; exit 1; }
+echo "pre-commit: ok"

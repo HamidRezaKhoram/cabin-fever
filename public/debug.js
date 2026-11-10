@@ -38,7 +38,7 @@
     log.push({ t: stamp(), kind: String(kind), msg });
     if (log.length > MAX_LOG) log.shift();
     if (enabled) {
-      // eslint-disable-next-line no-console
+       
       console.debug(`[rumpus ${kind}] ${msg}`);
       dirty = true;
     }

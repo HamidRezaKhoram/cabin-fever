@@ -48,7 +48,24 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
   (`/** @type {HTMLInputElement} */ (el)`, `@param`, `@returns`) — don't silence errors with `any`
   unless the value really is untyped. Use `Rumpus.hit(e.target, sel)` for typed event delegation.
 - Python tools pass `mypy --strict`. Annotate every function.
-- Both run in `scripts/test-all.sh`; 0 errors is required.
+- **ESLint + typescript-eslint (type-aware)**: `npm run lint` (eslint.config.js) must report 0
+  problems — no floating promises (`await`, `.catch()` or `void`), no unused vars, `===`, `const`.
+- Strict flags on: strictFunctionTypes, strictBindCallApply, noImplicitThis, alwaysStrict,
+  useUnknownInCatchVariables, noImplicitReturns. **Ratchet** for the rest: `tools/strict-ratchet.js`
+  counts `noImplicitAny` / `strictNullChecks` errors per tsconfig against
+  `types/strict-baseline.json` — counts may only go down (it lowers the baseline automatically;
+  commit it). New code must be fully typed.
+- **Pre-commit hook** (`.githooks/pre-commit`, enabled by test-all via `core.hooksPath`): type check +
+  lint + ratchet must pass before any commit. Don't bypass it with `--no-verify`.
+- All of these run in `scripts/test-all.sh`; 0 errors is required.
+
+## Test tools (bots)
+
+- `games/bot-brain.js` decides what a player sends on any screen — **teach it every new mechanic**
+  (a unit test makes bots finish every game).
+- TV: `/host?debug=1` or `/host?bots=1` → lobby shows 🤖 +1 / +3 / +3 fast / Remove bots.
+- CLI: `./scripts/bots.sh CODE [count] [speed] [url]` joins bot phones to a real room over the LAN.
+- Pacing report: `GAMES=trivia PLAYERS=6 node test/playtest.js` (in the node container).
 
 ## Screen layout (10-foot UI)
 

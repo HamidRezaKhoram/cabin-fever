@@ -1,5 +1,18 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "module": "commonjs", "lib": ["ES2022"], "types": ["node"] },
-  "include": ["server.js", "games/**/*.js", "types/rumpus.d.ts"]
+  "compilerOptions": {
+    "module": "commonjs",
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "server.js",
+    "games/**/*.js",
+    "types/rumpus.d.ts",
+    "tools/**/*.js"
+  ]
 }

@@ -4,7 +4,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const flow = require('../../games/flow');
-const { startServer, until, sleep, makeHost, makePlayer, contentDir } = require('../helpers');
+const { startServer, until, makeHost, makePlayer, contentDir } = require('../helpers');
 
 test('stage multipliers: first half ×1, second half ×2, final question ×3', () => {
   const sched = (n) => Array.from({ length: n }, (_, i) => flow.stage(i + 1, n));

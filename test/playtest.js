@@ -47,7 +47,6 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
         const s = b.state;
         if (!s || busy.has(b.nickname)) return;
         const html = JSON.stringify(s.gameState) + JSON.stringify(s.you);
-        const g = s.gameState || {}, you = s.you || {};
         const d = decide(s);
         const payload = d && d.payload;
         if (!payload) return;

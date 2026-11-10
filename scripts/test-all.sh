@@ -13,6 +13,7 @@ SKIP_UI=${SKIP_UI:-0}
 step() { printf '\n\033[1;33m== %s ==\033[0m\n' "$*"; }
 
 if [ "${UI_ONLY:-0}" != 1 ]; then
+git -C "$ROOT" config core.hooksPath .githooks 2>/dev/null || true
 step "1/5 content pools are up to date"
 python3 tools/build-content.py >/dev/null
 python3 tools/make-icons.py >/dev/null
@@ -25,7 +26,8 @@ step "2/5 type checks (tsc --checkJs on JS, mypy --strict on Python)"
 step "3/5 unit + integration tests (node --test)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
-  npm run -s typecheck && echo "tsc: 0 errors" &&
+  npm run -s typecheck && echo "tsc: 0 errors" && npm run -s lint && echo "eslint: 0 problems" &&
+  node tools/strict-ratchet.js &&
   node --test --test-concurrency=4 test/unit/ && node test/e2e-new.js'
 
 fi

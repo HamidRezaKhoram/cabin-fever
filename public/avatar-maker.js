@@ -73,6 +73,7 @@
 
   /** Clamp/convert any stored look (incl. older formats) to valid indexes. @param {Record<string, number>} look */
   function norm(look) {
+    /** @type {Record<string, number>} */
     const l = {};
     for (const p of PARTS) {
       const v = look && look[p];
@@ -276,9 +277,10 @@
 
   /** @returns {Record<string, number>} */
   function random() {
+    /** @type {Record<string, number>} */
     const l = {};
     for (const p of PARTS) l[p] = Math.floor(Math.random() * NAMES[p].length);
-    for (const [p, keep] of [['facial', 0.3], ['glasses', 0.35], ['hat', 0.4], ['earrings', 0.5], ['makeup', 0.5]]) if (Math.random() > keep) l[p] = 0;
+    for (const [p, keep] of /** @type {[string, number][]} */ ([['facial', 0.3], ['glasses', 0.35], ['hat', 0.4], ['earrings', 0.5], ['makeup', 0.5]])) if (Math.random() > keep) l[p] = 0;
     return l;
   }
 

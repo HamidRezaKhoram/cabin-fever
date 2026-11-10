@@ -32,7 +32,7 @@ body {
   -webkit-font-smoothing: none;
   overflow-x: hidden;
 }
-img.avatar, .game-icon, canvas { image-rendering: pixelated; }
+img.avatar, canvas { image-rendering: pixelated; }
 
 #bg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; object-fit: cover; image-rendering: pixelated; }
 body.play #bg { opacity: 0.45; }
@@ -227,8 +227,6 @@ button.game-pick {
   font-family: var(--body);
 }
 button.game-pick:not(:disabled):hover, button.game-pick:not(:disabled):focus { background: var(--panel2); transform: translateY(-3px); }
-button.game-pick:not(:disabled):hover .game-icon { animation: bob 0.6s steps(18) infinite; }
-.game-icon { width: 48px; height: 48px; grid-row: 1 / span 3; }
 button.game-pick .game-name { font-size: 12px; color: var(--accent); line-height: 1.5; }
 button.game-pick .game-blurb { color: var(--dim); font-size: 19px; }
 button.game-pick .game-min { color: var(--danger); font-size: 16px; }

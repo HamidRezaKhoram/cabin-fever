@@ -366,7 +366,7 @@ io.on('connection', (socket) => {
   socket.on('host:createRoom', () => {
     if (socket.data.room) return;
     const code = makeRoomCode();
-    if (!code) return socket.emit('host:roomCreated', { code: null });
+    if (!code) return void socket.emit('host:roomCreated', { code: null });
     const room = {
       code,
       hostToken: token(),
@@ -387,7 +387,7 @@ io.on('connection', (socket) => {
     if (socket.data.room) return;
     const room = rooms.get(String((msg && msg.code) || '').toUpperCase());
     if (!room || room.closed || !msg.hostToken || msg.hostToken !== room.hostToken) {
-      return socket.emit('host:resumeFailed');
+      return void socket.emit('host:resumeFailed');
     }
     console.log(`[room ${room.code}] host resumed`);
     attachHost(room, socket);
@@ -476,23 +476,23 @@ io.on('connection', (socket) => {
     const code = (msg && typeof msg.code === 'string' ? msg.code : '').trim().toUpperCase();
     const nickname = (msg && typeof msg.nickname === 'string' ? msg.nickname : '').trim().replace(/\s+/g, ' ').slice(0, 16);
     const room = rooms.get(code);
-    if (!room || room.closed) return socket.emit('player:joinError', { reason: 'No room with that code.' });
-    if (!nickname) return socket.emit('player:joinError', { reason: 'Pick a nickname.' });
+    if (!room || room.closed) return void socket.emit('player:joinError', { reason: 'No room with that code.' });
+    if (!nickname) return void socket.emit('player:joinError', { reason: 'Pick a nickname.' });
     const existing = [...room.players.values()].find((p) => p.nickname.toLowerCase() === nickname.toLowerCase());
     if (existing) {
       // Same name while that seat is offline = probably the same person on a
       // new browser/cleared storage. Let them reclaim it.
       if (!existing.connected) {
         console.log(`[room ${room.code}] ${nickname} reclaimed seat by name`);
-        return attachPlayer(room, existing, socket);
+        return void attachPlayer(room, existing, socket);
       }
-      return socket.emit('player:joinError', { reason: 'That nickname is taken.' });
+      return void socket.emit('player:joinError', { reason: 'That nickname is taken.' });
     }
     if (roomPhase(room) !== 'lobby' && roomPhase(room) !== 'gameover') {
-      return socket.emit('player:joinError', { reason: 'Game in progress — join when this one ends.' });
+      return void socket.emit('player:joinError', { reason: 'Game in progress — join when this one ends.' });
     }
     if (room.players.size >= MAX_PLAYERS) {
-      return socket.emit('player:joinError', { reason: `Room is full (${MAX_PLAYERS} players max).` });
+      return void socket.emit('player:joinError', { reason: `Room is full (${MAX_PLAYERS} players max).` });
     }
     // Avatar: the one they asked for if free, otherwise the first unused one.
     const used = new Set([...room.players.values()].map((x) => x.avatar));
@@ -514,7 +514,7 @@ io.on('connection', (socket) => {
     if (socket.data.room) return;
     const room = rooms.get(String((msg && msg.code) || '').toUpperCase());
     const p = room && !room.closed && [...room.players.values()].find((x) => x.token === msg.token);
-    if (!p) return socket.emit('player:rejoinFailed');
+    if (!p) return void socket.emit('player:rejoinFailed');
     console.log(`[room ${room.code}] player rejoined: ${p.nickname}`);
     attachPlayer(room, p, socket);
   });

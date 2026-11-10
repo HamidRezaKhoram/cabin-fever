@@ -1,6 +1,23 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": [] },
-  "files": ["types/rumpus.d.ts", "public/common.js", "public/clock.js", "public/debug.js", "public/sprites.js",
-            "public/bg.js", "public/draw.js", "public/games.js", "public/play.js"]
+  "compilerOptions": {
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": []
+  },
+  "files": [
+    "types/rumpus.d.ts",
+    "public/common.js",
+    "public/clock.js",
+    "public/debug.js",
+    "public/sprites.js",
+    "public/bg.js",
+    "public/draw.js",
+    "public/avatar-maker.js",
+    "public/games.js",
+    "public/play.js"
+  ]
 }

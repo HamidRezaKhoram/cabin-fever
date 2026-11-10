@@ -188,8 +188,9 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
 });
 fsBtn.addEventListener('click', () => {
-  if (document.fullscreenElement) document.exitFullscreen();
-  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  // Fullscreen can be refused (no user gesture, kiosk mode) — that's fine, just stay windowed.
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
 });
 
 // --- music moods ----------------------------------------------------------------
@@ -263,10 +264,6 @@ const art = (id) => {
   if (!u) return '';
   const [w, h] = sprites.iconSize(id);
   return `<div class="game-art" style="--art-bg:${ART_BG[id] || '#2f2850'}"><img src="${u}" width="${w * 4}" height="${h * 4}" alt=""></div>`;
-};
-const icon = (id) => {
-  const u = sprites.iconUrl(id);
-  return u ? `<img class="game-icon" src="${u}" alt="">` : '';
 };
 
 function gamePicker(label) {
@@ -582,7 +579,7 @@ new ResizeObserver(() => {
   const w = phaseView.clientWidth;
   if (Math.abs(w - lastStageW) > 4) { lastStageW = w; layoutStage(); }
 }).observe(phaseView);
-if (document.fonts) document.fonts.ready.then(() => layoutStage());
+if (document.fonts) void document.fonts.ready.then(() => layoutStage());
 
 function tick(left) {
   if (left > 0 && left <= 5) sfx.tick();
