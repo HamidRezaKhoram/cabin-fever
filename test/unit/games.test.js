@@ -306,6 +306,19 @@ test('Closest Guess: bullseye 300+200, ties share a rank, far guesses get nothin
   assert.strictEqual(rev.gameState.result.list.find((e) => e.nickname === 'Dan').guess, 1000);
 });
 
+test('Closest Guess: Double Down doubles a placing guess; a miss costs 200 (never below 0)', async () => {
+  const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
+  h.emit('host:startGame', { gameId: 'closest' });
+  await h.phase('cg-guess');
+  await until(() => by.Ann.state.phase === 'cg-guess' && by.Ann.state.you.canDouble === true, 'can double');
+  // Ann places 2nd and doubles; Dan misses and doubles with 0 points.
+  by.Ben.submit({ number: 42 }); by.Ann.submit({ number: 40, double: true }); by.Cat.submit({ number: 30 }); by.Dan.submit({ number: 5000, double: true });
+  const rev = await h.phase('cg-reveal');
+  assert.strictEqual(score('Ann'), 400, '2nd place 200 × 2');
+  assert.strictEqual(score('Dan'), 0, 'never below zero');
+  assert.ok(rev.gameState.result.list.find((e) => e.nickname === 'Ann').double);
+});
+
 test('Closest Guess: junk numbers are rejected and the timer still ends the round', async () => {
   const s2 = await startServer({ RUMPUS_CONTENT_DIR: contentDir(POOLS), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_CG_GUESS_MS: '400' });
   try {

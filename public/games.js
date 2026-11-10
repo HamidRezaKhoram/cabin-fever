@@ -259,7 +259,7 @@
       return `${roundTag(g)}<h1 class="prompt">${esc(g.question)}</h1>
         <p class="big-answer">${fmt(r.answer)} ${esc(r.unit)}</p>
         <ol class="answers results suspense">${r.list.map((e, i) => `
-          <li class="${e.rank === 0 ? 'winner' : ''}" style="animation-delay:${(r.list.length - 1 - i) * 0.6 + 0.8}s">${av(e.nickname)} ${esc(e.nickname)}: ${fmt(e.guess)}${e.exact ? ' <span class="sweep">BULLSEYE!</span>' : ''}
+          <li class="${e.rank === 0 ? 'winner' : ''}" style="animation-delay:${(r.list.length - 1 - i) * 0.6 + 0.8}s">${av(e.nickname)} ${esc(e.nickname)}: ${fmt(e.guess)}${e.exact ? ' <span class="sweep">BULLSEYE!</span>' : ''}${e.double ? ' <span class="streak">🎲</span>' : ''}
             <span class="byline">(off by ${fmt(+e.off.toFixed(3))})</span>
             ${e.gained ? `<span class="votes">+${e.gained}</span>` : ''}</li>`).join('')}</ol>`;
     },
@@ -268,6 +268,7 @@
       if (s.phase === 'cg-guess') {
         if (you.submitted) return waiting('Guess locked');
         return `${roundTag(g)}<h2 class="prompt">${esc(g.question)}</h2>
+          ${you.canDouble ? '<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if you place · −200 if not (once per game)</button>' : ''}
           <form class="number-form">
             <input name="number" type="text" inputmode="decimal" pattern="-?[0-9.,]+" autocomplete="off"
               placeholder="Your guess${g.unit ? ' (' + esc(g.unit) + ')' : ''}" required>
