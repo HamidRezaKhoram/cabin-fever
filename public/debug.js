@@ -15,7 +15,9 @@
 
 (function () {
   const MAX_LOG = 400;
+  /** @type {{ t: string, kind: string, msg: string }[]} */
   const log = [];
+  /** @type {string[]} */
   const errors = [];
   const t0 = performance.now();
   let enabled = false;
@@ -27,19 +29,21 @@
   } catch (e) { enabled = /[?&]debug=1/.test(location.search); }
 
   const stamp = () => ((performance.now() - t0) / 1000).toFixed(2).padStart(7);
+  /** @param {unknown} v */
   function short(v) {
     let s;
     try { s = JSON.stringify(v, (k, x) => (typeof x === 'string' && x.length > 80 ? x.slice(0, 77) + '…' : x)); } catch (e) { s = String(v); }
     s = s == null ? String(v) : s;
     return s.length > 300 ? s.slice(0, 297) + '…' : s;
   }
+  /** @param {string} kind @param {unknown} msg */
   function add(kind, msg) {
-    msg = msg == null ? '' : String(msg);
-    log.push({ t: stamp(), kind: String(kind), msg });
+    const text = msg == null ? '' : String(msg);
+    log.push({ t: stamp(), kind: String(kind), msg: text });
     if (log.length > MAX_LOG) log.shift();
     if (enabled) {
        
-      console.debug(`[rumpus ${kind}] ${msg}`);
+      console.debug(`[rumpus ${kind}] ${text}`);
       dirty = true;
     }
   }
@@ -51,15 +55,16 @@
   console.error = (...a) => { add('console.error', a.map(String).join(' ')); origErr(...a); };
 
   // ---- socket.io hooks (wrap the io() factory)
+  /** @type {{ status: string, latency: number | null, inCount: number, outCount: number, lastState: any, phase: string | null }} */
   const sock = { status: 'init', latency: null, inCount: 0, outCount: 0, lastState: null, phase: null };
   const origIo = window.io;
   if (origIo) {
     window.io = function (...args) {
       const s = origIo(...args);
       s.on('connect', () => { sock.status = 'connected ' + s.id; add('socket', 'connected ' + s.id); });
-      s.on('disconnect', (r) => { sock.status = 'DISCONNECTED (' + r + ')'; add('socket', 'disconnect: ' + r); });
-      s.on('connect_error', (e) => { sock.status = 'connect_error'; add('socket', 'connect_error ' + e.message); });
-      s.onAny((ev, payload) => {
+      s.on('disconnect', (/** @type {string} */ r) => { sock.status = 'DISCONNECTED (' + r + ')'; add('socket', 'disconnect: ' + r); });
+      s.on('connect_error', (/** @type {Error} */ e) => { sock.status = 'connect_error'; add('socket', 'connect_error ' + e.message); });
+      s.onAny((/** @type {string} */ ev, /** @type {any} */ payload) => { // any socket event: JSON from the server
         sock.inCount++;
         if (ev === 'room:stateUpdate') {
           sock.lastState = payload;
@@ -69,7 +74,7 @@
           add('◀ state', `phase=${payload.phase} players=${(payload.players || []).length} pace=${short(payload.pace && payload.pace.counts)} g=${short(g).slice(0, 160)}`);
         } else add('◀ ' + ev, short(payload));
       });
-      s.onAnyOutgoing((ev, payload) => { sock.outCount++; add('▶ ' + ev, short(payload)); });
+      s.onAnyOutgoing((/** @type {string} */ ev, /** @type {unknown} */ payload) => { sock.outCount++; add('▶ ' + ev, short(payload)); });
       // latency probe
       setInterval(() => {
         if (!s.connected) return;
@@ -84,7 +89,9 @@
   }
 
   // ---- panel
-  let panel = null, dirty = true;
+  /** @type {HTMLElement | null} */
+  let panel = null;
+  let dirty = true;
   function ensurePanel() {
     if (panel) return panel;
     panel = document.createElement('div');
@@ -106,23 +113,24 @@
     ensurePanel().style.display = 'flex';
     const st = sock.lastState || {};
     const g = st.gameState || {};
-    const clk = window.Rumpus.clock ? window.Rumpus.clock.stats() : {};
+    const clk = window.Rumpus.clock ? window.Rumpus.clock.stats() : { fps: 0, avgMs: 0, maxMs: 0, medianFps: 0, samples: 0 };
     const left = g.endsAt ? Math.max(0, (g.endsAt - Date.now()) / 1000).toFixed(1) + 's' : '-';
     const mem = performance.memory ? (performance.memory.usedJSHeapSize / 1048576).toFixed(1) + ' MB' : 'n/a';
-    panel.firstChild.textContent =
+    const pn = /** @type {HTMLElement} */ (panel);
+    /** @type {ChildNode} */ (pn.firstChild).textContent =
       `DEBUG ${location.pathname}  up ${stamp().trim()}s  heap ${mem}\n` +
       `fps ${clk.fps ? clk.fps.toFixed(1) : '-'}  avg ${clk.avgMs ? clk.avgMs.toFixed(1) : '-'}ms  worst ${clk.maxMs ? clk.maxMs.toFixed(0) : '-'}ms  frames ${window.Rumpus.clock ? window.Rumpus.clock.frame() : '-'}\n` +
       `socket ${sock.status}  rtt ${sock.latency == null ? '-' : sock.latency + 'ms'}  in ${sock.inCount} out ${sock.outCount}\n` +
       `room ${st.code || '-'}  phase ${st.phase || '-'}  game ${g.gameId || '-'}  round ${g.round || '-'}/${g.totalRounds || '-'}  ×${g.multiplier || 1}\n` +
       `timer ${left}  pace ${short(st.pace || {})}\n` +
       `you ${short(st.you || {})}\n` +
-      `players ${(st.players || []).map((p) => `${p.nickname}:${p.score}${p.connected ? '' : '(off)'}`).join(' ')}\n` +
+      `players ${(st.players || []).map((/** @type {any} */ p) => `${p.nickname}:${p.score}${p.connected ? '' : '(off)'}`).join(' ')}\n` +
       `music ${window.Rumpus.music && window.Rumpus.music.isEnabled ? (window.Rumpus.music.isEnabled() ? 'on' : 'off') : '-'}  errors ${errors.length}`;
     if (dirty) {
-      const pre = panel.lastChild;
+      const pre = /** @type {HTMLElement} */ (pn.lastChild);
       pre.innerHTML = log.slice(-150).map((l) => {
         const cls = /ERROR|error/.test(l.kind) ? 'err' : l.kind === 'PHASE' ? 'ph' : '';
-        return `<span class="${cls}">${l.t} ${l.kind.padEnd(10)} ${l.msg.replace(/[<&]/g, (c) => (c === '<' ? '&lt;' : '&amp;'))}</span>`;
+        return `<span class="${cls}">${l.t} ${l.kind.padEnd(10)} ${l.msg.replace(/[<&]/g, (/** @type {string} */ c) => (c === '<' ? '&lt;' : '&amp;'))}</span>`;
       }).join('\n');
       pre.scrollTop = pre.scrollHeight;
       dirty = false;

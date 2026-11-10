@@ -6,23 +6,23 @@ const { esc, store, countdown, games, sprites, morph, playerImg , hit } = window
 const socket = io();
 window.Rumpus.time.sync(socket);
 
-const joinView = document.getElementById('join-view');
-const gameView = document.getElementById('game-view');
-const joinForm = document.getElementById('join-form');
-const joinError = document.getElementById('join-error');
-const meTag = document.getElementById('me-tag');
+const joinView = /** @type {HTMLElement} */ (document.getElementById('join-view'));
+const gameView = /** @type {HTMLElement} */ (document.getElementById('game-view'));
+const joinForm = /** @type {HTMLElement} */ (document.getElementById('join-form'));
+const joinError = /** @type {HTMLElement} */ (document.getElementById('join-error'));
+const meTag = /** @type {HTMLElement} */ (document.getElementById('me-tag'));
 const codeInput = /** @type {HTMLInputElement} */ (document.getElementById('code-input'));
 const nickInput = /** @type {HTMLInputElement} */ (document.getElementById('nick-input'));
-const banner = document.getElementById('banner');
-const leaveBtn = document.getElementById('leave-btn');
-const reactBar = document.getElementById('react-bar');
+const banner = /** @type {HTMLElement} */ (document.getElementById('banner'));
+const leaveBtn = /** @type {HTMLElement} */ (document.getElementById('leave-btn'));
+const reactBar = /** @type {HTMLElement} */ (document.getElementById('react-bar'));
 
 // Text size (accessibility): 100% → 120% → 140%, remembered on this phone.
 const SIZES = [1, 1.2, 1.4];
 let sizeIx = Math.max(0, SIZES.indexOf(Number(store('rumpus.textSize')) || 1));
 const applySize = () => document.body.style.setProperty('--phone-scale', String(SIZES[sizeIx]));
 applySize();
-document.getElementById('text-size').addEventListener('click', () => {
+/** @type {HTMLElement} */ (document.getElementById('text-size')).addEventListener('click', () => {
   sizeIx = (sizeIx + 1) % SIZES.length;
   store('rumpus.textSize', SIZES[sizeIx]);
   applySize();
@@ -35,15 +35,15 @@ cbBtn.addEventListener('click', () => { const on = !document.body.classList.cont
 // Installable app (PWA): offline-friendly reloads on the phone.
 // (Browsers only allow service workers on https or localhost; on a plain-http LAN this quietly does nothing.)
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-const avatarPick = document.getElementById('avatar-pick');
+const avatarPick = /** @type {HTMLElement} */ (document.getElementById('avatar-pick'));
 
 window.Rumpus.background(document.getElementById('bg'), { fps: 4 });
 
 // --- avatar picker (join form) ---------------------------------------------
 let myAvatar = store('rumpus.avatar');
 if (!Number.isInteger(myAvatar)) myAvatar = Math.floor(Math.random() * sprites.count);
-function avatarGrid(selected, taken = new Set()) {
-  return sprites.AVATARS.map((a, i) =>
+function avatarGrid(/** @type {any} */ selected, taken = new Set()) {
+  return sprites.AVATARS.map((/** @type {any} */ a, /** @type {any} */ i) =>
     `<button type="button" class="${i === selected ? 'on' : ''}" data-avatar="${i}" title="${a.name}" ${taken.has(i) && i !== selected ? 'disabled' : ''}>
       <img src="${sprites.avatarUrl(i)}" alt="${a.name}"></button>`).join('');
 }
@@ -53,9 +53,9 @@ avatarPick.innerHTML = avatarGrid(myAvatar);
 const maker = window.Rumpus.avatarMaker;
 let myLook = store('rumpus.look') ? maker.norm(store('rumpus.look')) : maker.random(); // migrates older saved looks
 let avatarMode = store('rumpus.avatarMode') === 'pick' ? 'pick' : 'make';
-const avatarMake = document.getElementById('avatar-make');
-maker.editor(avatarMake, myLook, (l) => { myLook = l; store('rumpus.look', l); });
-function setAvatarMode(mode) {
+const avatarMake = /** @type {HTMLElement} */ (document.getElementById('avatar-make'));
+maker.editor(avatarMake, myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); });
+function setAvatarMode(/** @type {any} */ mode) {
   avatarMode = mode;
   store('rumpus.avatarMode', mode);
   /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.avatar-mode [data-mode]')).forEach((b) => {
@@ -65,16 +65,16 @@ function setAvatarMode(mode) {
   avatarMake.hidden = mode !== 'make';
   avatarPick.hidden = mode !== 'pick';
 }
-document.querySelector('.avatar-mode').addEventListener('click', (e) => {
+/** @type {HTMLElement} */ (document.querySelector('.avatar-mode')).addEventListener('click', (e) => {
   const b = hit(e.target, '[data-mode]');
   if (b) setAvatarMode(b.dataset.mode);
 });
 setAvatarMode(avatarMode);
 
 // Edit your character from the lobby.
-const lobbyMaker = document.getElementById('lobby-maker');
+const lobbyMaker = /** @type {HTMLElement} */ (document.getElementById('lobby-maker'));
 let lobbyMakerReady = false;
-document.getElementById('lobby-maker-save').addEventListener('click', () => {
+/** @type {HTMLElement} */ (document.getElementById('lobby-maker-save')).addEventListener('click', () => {
   socket.emit('player:look', { look: myLook });
   lobbyMaker.hidden = true;
 });
@@ -88,6 +88,7 @@ avatarPick.addEventListener('click', (e) => {
 
 // --- reactions ----------------------------------------------------------------
 const REACTIONS = ['😂', '🔥', '💀', '👏', '😱', '🤮', '😍', '🍆', '🍑', '🍻', '🙄', '🤡'];
+/** @type {Record<string, string>} */
 const REACT_NAMES = { '😂': 'laughing', '🔥': 'fire', '💀': 'dead', '👏': 'applause', '😱': 'shocked', '🤮': 'gross', '😍': 'love it', '🍆': 'eggplant', '🍑': 'peach', '🍻': 'cheers', '🙄': 'eye roll', '🤡': 'clown' };
 reactBar.innerHTML = REACTIONS.map((r) => `<button data-react="${r}" aria-label="React: ${REACT_NAMES[r] || r}">${r}</button>`).join('');
 reactBar.addEventListener('click', (e) => {
@@ -97,12 +98,16 @@ reactBar.addEventListener('click', (e) => {
   if (navigator.vibrate) navigator.vibrate(15);
 });
 
+/** @type {{ playerId: string } | null} */
 let me = null;
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
+/** @type {string | null} */
 let lastHtml = null;
+/** @type {(() => void)[]} */
 let cleanups = [];
 let ended = false;
+/** @type {string | null} */
 let lastScreenKey = null;
 
 // Delegated input handling: works for nodes added later by morph().
@@ -132,7 +137,7 @@ gameView.addEventListener('click', (e) => {
   if (tb) { socket.emit('player:team', { team: tb.dataset.team }); return; }
   if (hit(e.target, '[data-lobby-maker]')) {
     lobbyMaker.hidden = false;
-    if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-maker-box'), myLook, (l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
+    if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-maker-box'), myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
     lobbyMaker.scrollIntoView({ behavior: 'smooth' });
     return;
   }
@@ -149,7 +154,7 @@ gameView.addEventListener('click', (e) => {
 
 // Prefill from QR link (?code=ABCD) and from last time.
 const params = new URLSearchParams(location.search);
-if (params.get('code')) codeInput.value = params.get('code').toUpperCase().slice(0, 4);
+if (params.get('code')) codeInput.value = String(params.get('code')).toUpperCase().slice(0, 4);
 // ?seat=CODE.TOKEN: the same seat on the other address (http ↔ https for tilt controls).
 const seatParam = /^([A-Z]{4})\.([0-9a-f]{16,64})$/.exec(params.get('seat') || '');
 if (seatParam) {
@@ -185,8 +190,8 @@ socket.on('player:rejoinFailed', () => {
   store('rumpus.seat', null);
   showJoin();
 });
-socket.on('player:joinError', (msg) => { joinError.textContent = msg.reason || 'Could not join.'; });
-socket.on('player:joined', (msg) => {
+socket.on('player:joinError', (/** @type {any} */ msg) => { joinError.textContent = msg.reason || 'Could not join.'; });
+socket.on('player:joined', (/** @type {any} */ msg) => {
   me = { playerId: msg.playerId };
   store('rumpus.seat', { code: msg.roomState.code, token: msg.token });
   joinView.hidden = true;
@@ -200,7 +205,7 @@ socket.on('player:kicked', () => {
   store('rumpus.seat', null);
   showMessage('<h1>You were removed from the room</h1><p><a href="/play">Join again</a></p>');
 });
-socket.on('room:stateUpdate', (msg) => { state = msg; render(); });
+socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; render(); });
 socket.on('disconnect', () => {
   if (ended) return;
   banner.textContent = 'Connection lost — reconnecting…';
@@ -214,7 +219,7 @@ function showJoin() {
   leaveBtn.hidden = true;
 }
 
-function showMessage(html) {
+function showMessage(/** @type {any} */ html) {
   gameView.innerHTML = html;
   gameView.hidden = false;
   joinView.hidden = true;
@@ -225,29 +230,31 @@ function showMessage(html) {
 
 function myScore() {
   if (!state || !me) return 0;
-  const p = state.players.find((x) => x.id === me.playerId);
+  const myId = me.playerId;
+  const p = state.players.find((/** @type {any} */ x) => x.id === myId);
   return p ? p.score : 0;
 }
 
-const waiting = (t) => `<h1>${t} ✓</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div><p>Waiting for the slowpokes… send some taunts below 👇</p>`;
-function meAvatar(cls) {
-  const p = state && me && state.players.find((x) => x.id === me.playerId);
+const waiting = (/** @type {any} */ t) => `<h1>${t} ✓</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div><p>Waiting for the slowpokes… send some taunts below 👇</p>`;
+function meAvatar(/** @type {any} */ cls) {
+  const myId = me && me.playerId;
+  const p = state && myId && state.players.find((/** @type {any} */ x) => x.id === myId);
   return p ? playerImg(p, cls) : '';
 }
 
 // The original four games' phone screens.
-function legacyPlayer(phase, g, you) {
+function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type {any} */ you) {
   switch (phase) {
     case 'trivia-category':
       if (!you.isChooser) return `<h1>Category round!</h1><p>${esc(g.chooser)} is picking the next category… 🤔</p>`;
       return `<h1>You're in last place 😅</h1><p>So YOU pick the next category:</p><div class="vote-list">` +
-        g.categoryOptions.map((c, i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
+        g.categoryOptions.map((/** @type {any} */ c, /** @type {any} */ i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-question':
       if (you.answered) return waiting('Locked in');
       return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.question)}</h2>
         ${you.canDouble ? `<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if right · −300 if wrong (once per game)</button>` : ''}
         <div class="vote-list">` +
-        g.choices.map((c, i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
+        g.choices.map((/** @type {any} */ c, /** @type {any} */ i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-reveal':
       return `<h1>${you.wasCorrect ? 'Nice! ✓' : 'Nope ✗'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>${you.streak > 1 ? `<p class="streak">🔥 ${you.streak} in a row!</p>` : ''}`;
     case 'cah-submit':
@@ -255,15 +262,15 @@ function legacyPlayer(phase, g, you) {
         if (!you.nextOptions) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Sit tight — everyone else is picking a card.</p>`;
         if (you.nextPick != null) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Next round's prompt is locked in ✓ — now wait for the cards.</p>`;
         return `<h1>You're the Card Czar</h1><p>While everyone plays a card, choose <strong>next round's</strong> prompt:</p><div class="vote-list">` +
-          you.nextOptions.map((t, i) => `<button class="vote-btn" data-send='{"nextBlack":${i}}'>${esc(t)}</button>`).join('') + '</div>';
+          you.nextOptions.map((/** @type {any} */ t, /** @type {any} */ i) => `<button class="vote-btn" data-send='{"nextBlack":${i}}'>${esc(t)}</button>`).join('') + '</div>';
       }
       if (you.submitted) return waiting('Card played');
       return `<p class="round-tag">Card Czar: ${esc(g.czarNickname)}</p><h2 class="prompt">${esc(g.blackCard)}</h2><p>Pick a card:</p><div class="vote-list">` +
-        (you.hand || []).map((text, i) => `<button class="hand-btn" data-send='{"cardIndex":${i}}'>${esc(text)}</button>`).join('') + '</div>';
+        (you.hand || []).map((/** @type {any} */ text, /** @type {any} */ i) => `<button class="hand-btn" data-send='{"cardIndex":${i}}'>${esc(text)}</button>`).join('') + '</div>';
     case 'cah-czar':
       if (!you.isCzar) return `<h1>Card played ✓</h1><p>${esc(g.czarNickname)} is judging…</p>`;
       return `<h2 class="prompt">${esc(g.blackCard)}</h2><p>Pick the winner:</p><div class="vote-list">` +
-        g.submissions.map((s) => `<button class="vote-btn" data-send='{"choice":${s.index}}'>${esc(s.text)}</button>`).join('') + '</div>';
+        g.submissions.map((/** @type {any} */ s) => `<button class="vote-btn" data-send='{"choice":${s.index}}'>${esc(s.text)}</button>`).join('') + '</div>';
     case 'cah-reveal':
       return `<h1>Round winner</h1><p class="prompt">"${esc(g.winner.text)}" — ${esc(g.winner.nickname)}</p>`;
     case 'fib-bluff': {
@@ -278,12 +285,12 @@ function legacyPlayer(phase, g, you) {
     case 'fib-choose':
       if (you.picked) {
         return `<h1>Guess locked in ✓</h1><p>While you wait: 👍 the answers that made you laugh (+50 each to whoever wrote them).</p><div class="vote-list">` +
-          g.options.map((o) => ((you.liked || []).includes(o.index)
+          g.options.map((/** @type {any} */ o) => ((you.liked || []).includes(o.index)
             ? `<button class="vote-btn like-btn on" disabled>👍 ${esc(o.text)}</button>`
             : `<button class="vote-btn like-btn" data-send='{"like":${o.index}}'>${esc(o.text)}</button>`)).join('') + '</div>';
       }
       return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which one is the truth?</p><div class="vote-list">` +
-        g.options.map((o) => `<button class="vote-btn" data-send='{"choice":${o.index}}'>${esc(o.text)}</button>`).join('') + '</div>';
+        g.options.map((/** @type {any} */ o) => `<button class="vote-btn" data-send='{"choice":${o.index}}'>${esc(o.text)}</button>`).join('') + '</div>';
     case 'fib-reveal':
       return `<h1>${you.foundTruth ? 'You found it! ✓' : 'Fooled ✗'}</h1><p class="prompt">The truth: ${esc(g.answer)}</p>`;
     default:
@@ -291,7 +298,7 @@ function legacyPlayer(phase, g, you) {
   }
 }
 
-function send(payload) {
+function send(/** @type {any} */ payload) {
   socket.emit('player:submit', { payload });
 }
 
@@ -313,23 +320,24 @@ function render() {
   if (state.hostConnected === false) banner.textContent = 'TV disconnected — waiting for it to come back…';
 
   let html;
+  const myId = me.playerId;
   if (state.phase === 'lobby') {
-    const taken = new Set(state.players.filter((p) => p.id !== me.playerId).map((p) => p.avatar));
-    const mine = (state.players.find((p) => p.id === me.playerId) || {}).avatar;
+    const taken = new Set(state.players.filter((/** @type {any} */ p) => p.id !== myId).map((/** @type {any} */ p) => p.avatar));
+    const mine = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).avatar;
     html = `<h1>You're in!</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div>
       <p>Watch the TV — the host is picking a game.</p>
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
       <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
       <button class="ghost-btn" data-lobby-maker>🧑 Edit my character</button>
       ${state.settings && state.settings.teams ? (() => {
-        const mineTeam = (state.players.find((p) => p.id === me.playerId) || {}).team;
+        const mineTeam = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).team;
         const other = mineTeam === 'red' ? 'blue' : 'red';
         return `<p class="team-badge team-${mineTeam}">You're on ${mineTeam === 'red' ? '🔴 RED' : '🔵 BLUE'}</p>
           <button class="ghost-btn" data-team="${other}">Switch to ${other === 'red' ? '🔴 Red' : '🔵 Blue'}</button>`;
       })() : ''}`;
   } else if (state.phase === 'gameover') {
     const top = g.standings && g.standings[0];
-    const rank = (g.standings || []).findIndex((s) => s.nickname === you.nickname);
+    const rank = (g.standings || []).findIndex((/** @type {any} */ s) => s.nickname === you.nickname);
     html = '<h1>Game over</h1>' +
       (top ? `<p class="prompt">${esc(top.nickname)} wins with ${top.score}!</p>` : '') +
       `<p>You finished #${rank + 1} with <strong>${myScore()}</strong> points.</p><p>Watch the TV for the next game.</p>
@@ -368,7 +376,8 @@ function render() {
 }
 
 // Majority-vote pace buttons: skip question / hurry up / next.
-const paceBar = document.getElementById('pace-bar');
+const paceBar = /** @type {HTMLElement} */ (document.getElementById('pace-bar'));
+/** @type {Record<string, { label: string, done: string }>} */
 const PACE = {
   skipq: { label: '🔄 Skip this question', done: 'Voted to skip' },
   hurry: { label: '⏩ Hurry them up', done: 'Voted to hurry' },
@@ -378,10 +387,10 @@ function renderPace() {
   const pc = state && state.pace;
   if (!pc || !pc.allowed || !pc.allowed.length || ended) { paceBar.hidden = true; return; }
   const answering = !!gameView.querySelector('form, [data-send]:not(.like-btn), #pad');
-  const show = pc.allowed.filter((k) => (k === 'skipq' ? answering : k === 'hurry' ? !answering : true));
+  const show = pc.allowed.filter((/** @type {any} */ k) => (k === 'skipq' ? answering : k === 'hurry' ? !answering : true));
   if (!show.length) { paceBar.hidden = true; return; }
   const mine = (state.you && state.you.paceVotes) || [];
-  const html = show.map((k) => `<button class="pace-btn ${mine.includes(k) ? 'on' : ''}" data-pace="${k}" ${mine.includes(k) ? 'disabled' : ''}>
+  const html = show.map((/** @type {any} */ k) => `<button class="pace-btn ${mine.includes(k) ? 'on' : ''}" data-pace="${k}" ${mine.includes(k) ? 'disabled' : ''}>
       ${mine.includes(k) ? '✓ ' + PACE[k].done : PACE[k].label} <small>${pc.counts[k] || 0}/${pc.need}</small></button>`).join('');
   paceBar.hidden = false;
   morph(paceBar, html);
@@ -393,7 +402,7 @@ paceBar.addEventListener('click', (e) => {
   if (navigator.vibrate) navigator.vibrate(20);
 });
 
-function bind(g) {
+function bind(/** @type {any} */ g) {
   const impl = games[g.gameId];
   // rerender(): a renderer changed local UI state (e.g. picked a spell, now picks a target).
   const rerender = () => { lastHtml = null; render(); };

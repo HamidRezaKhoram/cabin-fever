@@ -7,16 +7,17 @@ window.Rumpus.time.sync(socket);
 // Real-time games (Lantern Lake) stream positions to the TV 30×/s outside the normal state push.
 socket.on('room:frame', (/** @type {Record<string, any>} */ f) => { window.Rumpus.frame = f; });
 
-const codeEl = document.getElementById('room-code');
-const phaseView = document.getElementById('phase-view');
-const playerList = document.getElementById('player-list');
-const controls = document.getElementById('controls');
-const fsBtn = document.getElementById('fs-btn');
-const overlay = document.getElementById('start-overlay');
-const timerbar = document.getElementById('timerbar');
+const codeEl = /** @type {HTMLElement} */ (document.getElementById('room-code'));
+const phaseView = /** @type {HTMLElement} */ (document.getElementById('phase-view'));
+const playerList = /** @type {HTMLElement} */ (document.getElementById('player-list'));
+const controls = /** @type {HTMLElement} */ (document.getElementById('controls'));
+const fsBtn = /** @type {HTMLElement} */ (document.getElementById('fs-btn'));
+const overlay = /** @type {HTMLElement} */ (document.getElementById('start-overlay'));
+const timerbar = /** @type {HTMLElement} */ (document.getElementById('timerbar'));
 
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
+/** @type {string | null} */
 let roomCode = null;
 /** Games with French content (others use English question banks). */
 const FRENCH_GAMES = ['quiplash', 'mostlikely', 'majority', 'telephone', 'twotruths', 'minigames', 'looncall', 'lantern'];
@@ -24,22 +25,29 @@ document.body.classList.toggle('cb', store('rumpus.cb') === true); // colour-bli
 // Test tools (bot players) show with /host?debug=1 or /host?bots=1.
 const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.search) || localStorage.getItem('rumpus.debug') === '1'; } catch (e) { return false; } })();
 let baseUrl = location.origin;
+/** @type {string | null} */
 let lastPhaseKey = null;
 let lastPlayerCount = 0;
+/** @type {Map<string, number>} */
 let prevScores = new Map();
+/** @type {number | null} */
 let lastRoundSeen = null;
+/** @type {{ endsAt: number | null, total: number }} */
 let timerTotal = { endsAt: null, total: 1 };
 let wiping = false;
+/** @type {string | null} */
 let pendingHtml = null;
+/** @type {any[]} awards shown at game over */
 let lastAwards = [];
 
 const scene = window.Rumpus.background(document.getElementById('bg'), { fps: 12 });
+/** @type {number | null} */
 let sidebarTimer = null;
 let rosterKey = '';
 /** In a game the player strip is hidden; flash it for 5 s when someone joins, leaves or reconnects. */
 function peekSidebar() {
   document.body.classList.add('sidebar-peek');
-  clearTimeout(sidebarTimer);
+  if (sidebarTimer) clearTimeout(sidebarTimer);
   sidebarTimer = setTimeout(() => document.body.classList.remove('sidebar-peek'), 5000);
 }
 
@@ -51,12 +59,13 @@ overlay.addEventListener('click', async () => {
 });
 
 // "Now playing" toast, like a radio station in a racing game.
-const nowPlaying = document.getElementById('now-playing');
+const nowPlaying = /** @type {HTMLElement} */ (document.getElementById('now-playing'));
+/** @type {number | null} */
 let npTimer = null;
-music.onTrack(({ name }) => {
+music.onTrack((/** @type {{ name: string }} */ { name }) => {
   nowPlaying.innerHTML = `♪ ${esc(name)}`;
   nowPlaying.classList.remove('show'); void nowPlaying.offsetWidth; nowPlaying.classList.add('show');
-  clearTimeout(npTimer);
+  if (npTimer) clearTimeout(npTimer);
   npTimer = setTimeout(() => nowPlaying.classList.remove('show'), 4000);
 });
 
@@ -98,8 +107,8 @@ function narratePrompt(g) {
   setTimeout(() => window.Rumpus.host.say(text), 900);
 }
 
-function showIntro(gameId) {
-  const meta = (state.availableGames || []).find((g) => g.id === gameId);
+function showIntro(/** @type {any} */ gameId) {
+  const meta = (state.availableGames || []).find((/** @type {any} */ g) => g.id === gameId);
   if (!meta) return;
   const el = document.createElement('div');
   el.className = 'intro-card';
@@ -107,7 +116,7 @@ function showIntro(gameId) {
       ${sprites.iconUrl(gameId) ? `<img class="intro-icon" src="${sprites.iconUrl(gameId)}" alt="">` : ''}
       <div class="intro-title">${esc(meta.name)}</div>
       <ol class="intro-rules">${(RULES[gameId] || []).map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
-      <div class="intro-crew">${state.players.map((p) => playerImg(p, 'avatar big bob')).join('')}</div>
+      <div class="intro-crew">${state.players.map((/** @type {any} */ p) => playerImg(p, 'avatar big bob')).join('')}</div>
     </div>`;
   document.body.appendChild(el);
   setTimeout(() => el.classList.add('out'), 3800);
@@ -117,7 +126,7 @@ function showIntro(gameId) {
 // Attract mode: avatars stroll across the bottom of the lobby screen.
 setInterval(() => {
   if (!state || state.phase !== 'lobby' || document.hidden) return;
-  const pool = state.players.length ? state.players.map((p) => p.avatar) : [...Array(sprites.count).keys()];
+  const pool = state.players.length ? state.players.map((/** @type {any} */ p) => p.avatar) : [...Array(sprites.count).keys()];
   const w = document.createElement('img');
   w.className = 'walker' + (Math.random() < 0.5 ? ' rtl' : '');
   w.src = sprites.avatarUrl(pool[Math.floor(Math.random() * pool.length)]);
@@ -143,16 +152,16 @@ fetch('/api/info').then((r) => r.json()).then((info) => {
   updateJoinInfo();
 }).catch(() => {});
 
-function joinUrl(withCode) {
+function joinUrl(/** @type {any} */ withCode) {
   return baseUrl + '/play' + (withCode && roomCode ? '?code=' + roomCode : '');
 }
 
-const startJoin = document.getElementById('start-join');
+const startJoin = /** @type {HTMLElement} */ (document.getElementById('start-join'));
 function updateJoinInfo() {
   if (roomCode) {
     /** @type {HTMLImageElement} */ (document.getElementById('start-qr')).src = '/qr.svg?data=' + encodeURIComponent(joinUrl(true));
-    document.getElementById('start-code').textContent = roomCode;
-    document.getElementById('start-addr').textContent = joinUrl(false).replace(/^https?:\/\//, '');
+    /** @type {HTMLElement} */ (document.getElementById('start-code')).textContent = roomCode;
+    /** @type {HTMLElement} */ (document.getElementById('start-addr')).textContent = joinUrl(false).replace(/^https?:\/\//, '');
     startJoin.hidden = false;
   }
   if (state && (state.phase === 'lobby' || state.phase === 'gameover')) render();
@@ -167,7 +176,7 @@ socket.on('connect', () => {
   else socket.emit('host:createRoom');
 });
 socket.on('host:resumeFailed', () => { store('rumpus.host', null); socket.emit('host:createRoom'); });
-socket.on('host:roomCreated', (msg) => {
+socket.on('host:roomCreated', (/** @type {any} */ msg) => {
   roomCode = msg.code;
   codeEl.textContent = msg.code || 'ERR';
   if (msg.code) store('rumpus.host', { code: msg.code, hostToken: msg.hostToken });
@@ -177,13 +186,13 @@ socket.on('host:replaced', () => {
   phaseView.innerHTML = '<h1>This room was opened on another screen.</h1><p>Reload to start a new room here.</p>';
   store('rumpus.host', null);
 });
-socket.on('room:stateUpdate', (msg) => { state = msg; window.Rumpus.setState(msg); render(); });
-socket.on('room:reaction', (r) => {
+socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; window.Rumpus.setState(msg); render(); });
+socket.on('room:reaction', (/** @type {any} */ r) => {
   fx.reaction(esc(r.emoji), playerUrl({ id: r.playerId, avatar: r.avatar, look: r.look }), esc(r.nickname));
   sfx.pop();
 });
 socket.on('disconnect', () => document.body.classList.add('offline'));
-socket.on('room:event', (ev) => {
+socket.on('room:event', (/** @type {any} */ ev) => {
   if (ev.type === 'skipped') { fx.banner('QUESTION SKIPPED!\nFresh one coming up'); sfx.whoosh(); }
   else if (ev.type === 'hurry') { fx.banner('HURRY UP!\n10 SECONDS LEFT'); sfx.boo(); }
   else if (ev.type === 'ready') sfx.whoosh();
@@ -194,7 +203,7 @@ socket.on('room:event', (ev) => {
 document.addEventListener('click', (e) => {
   const kick = hit(e.target, '[data-kick]');
   if (kick) {
-    const p = state && state.players.find((x) => x.id === kick.dataset.kick);
+    const p = state && state.players.find((/** @type {any} */ x) => x.id === kick.dataset.kick);
     if (p && confirm(`Kick ${p.nickname}?`)) socket.emit('host:kickPlayer', { playerId: p.id });
     return;
   }
@@ -230,8 +239,8 @@ fsBtn.addEventListener('click', () => {
 
 // --- music moods ----------------------------------------------------------------
 
-const isRevealPhase = (p) => /reveal|results/.test(p);
-function cueFor(st) {
+const isRevealPhase = (/** @type {any} */ p) => /reveal|results/.test(p);
+function cueFor(/** @type {any} */ st) {
   if (!st) return 'title';
   const p = st.phase;
   const g = st.gameState || {};
@@ -248,38 +257,40 @@ function cueFor(st) {
 }
 
 // --- per-game stats for end-of-game awards -----------------------------------
-let gameStats = null; // { gameId, rounds: [{ scores: Map }] , start: Map }
+/** @type {{ gameId: string, start: Map<string, number>, snaps: Map<string, number>[] } | null} per-game score history for the awards */
+let gameStats = null;
+/** @type {string | null} */
 let leaderId = null;
-function snapshotScores() { return new Map(state.players.map((p) => [p.id, p.score])); }
+function snapshotScores() { return new Map(state.players.map((/** @type {any} */ p) => [p.id, p.score])); }
 function computeAwards() {
   if (!gameStats || !gameStats.snaps.length) return [];
   const snaps = [gameStats.start, ...gameStats.snaps];
   const players = state.players;
-  const name = (id) => (players.find((p) => p.id === id) || {}).nickname;
-  const avatar = (id) => (players.find((p) => p.id === id) || {}).avatar;
-  const gains = new Map(players.map((p) => [p.id, []]));
+  const name = (/** @type {any} */ id) => (players.find((/** @type {any} */ p) => p.id === id) || {}).nickname;
+  const avatar = (/** @type {any} */ id) => (players.find((/** @type {any} */ p) => p.id === id) || {}).avatar;
+  const gains = new Map(players.map((/** @type {any} */ p) => [p.id, []]));
   for (let i = 1; i < snaps.length; i++) {
     for (const p of players) gains.get(p.id).push((snaps[i].get(p.id) || 0) - (snaps[i - 1].get(p.id) || 0));
   }
   const awards = [];
-  const best = (fn, min = 1) => {
+  const best = (/** @type {any} */ fn, min = 1) => {
     let top = null, v = -Infinity;
     for (const p of players) { const x = fn(p.id); if (x > v) { v = x; top = p.id; } }
     return v >= min ? { id: top, v } : null;
   };
-  const clutch = best((id) => { const g = gains.get(id); return g[g.length - 1] || 0; });
+  const clutch = best((/** @type {any} */ id) => { const g = gains.get(id); return g[g.length - 1] || 0; });
   if (clutch) awards.push({ title: 'CLUTCH', desc: `+${clutch.v} in the last round`, id: clutch.id });
-  const consistent = best((id) => gains.get(id).filter((x) => x > 0).length, 2);
+  const consistent = best((/** @type {any} */ id) => gains.get(id).filter((/** @type {any} */ x) => x > 0).length, 2);
   if (consistent) awards.push({ title: 'MR. RELIABLE', desc: `scored in ${consistent.v} rounds`, id: consistent.id });
-  const big = best((id) => Math.max(0, ...gains.get(id)));
+  const big = best((/** @type {any} */ id) => Math.max(0, ...gains.get(id)));
   if (big) awards.push({ title: 'BIG MOMENT', desc: `+${big.v} in one round`, id: big.id });
   // Biggest climb from the midpoint ranking to the final ranking.
   const mid = snaps[Math.floor(snaps.length / 2)];
-  const rank = (m) => { const ids = players.map((p) => p.id).sort((a, b) => (m.get(b) || 0) - (m.get(a) || 0)); return (id) => ids.indexOf(id); };
+  const rank = (/** @type {any} */ m) => { const ids = players.map((/** @type {any} */ p) => p.id).sort((/** @type {any} */ a, /** @type {any} */ b) => (m.get(b) || 0) - (m.get(a) || 0)); return (/** @type {any} */ id) => ids.indexOf(id); };
   const rMid = rank(mid), rEnd = rank(snaps[snaps.length - 1]);
-  const climb = best((id) => rMid(id) - rEnd(id));
+  const climb = best((/** @type {any} */ id) => rMid(id) - rEnd(id));
   if (climb) awards.push({ title: 'COMEBACK KID', desc: `climbed ${climb.v} place${climb.v > 1 ? 's' : ''}`, id: climb.id });
-  const last = players.slice().sort((a, b) => a.score - b.score)[0];
+  const last = players.slice().sort((/** @type {any} */ a, /** @type {any} */ b) => a.score - b.score)[0];
   if (last && players.length > 2) awards.push({ title: 'PARTICIPATION TROPHY', desc: 'there\'s always next game', id: last.id });
   // Don't give one person every award.
   const seen = new Map();
@@ -291,24 +302,25 @@ function computeAwards() {
 
 const T = '<span class="timer"></span>';
 // Each game's art is drawn at 4× its own pixel size, on its own colour theme.
+/** @type {Record<string, string>} */
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
   mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e', wizards: '#1d1430',
 };
-const art = (id) => {
+const art = (/** @type {any} */ id) => {
   const u = sprites.iconUrl(id);
   if (!u) return '';
   const [w, h] = sprites.iconSize(id);
   return `<div class="game-art" style="--art-bg:${ART_BG[id] || '#2f2850'}"><img src="${u}" width="${w * 4}" height="${h * 4}" alt=""></div>`;
 };
 
-function gamePicker(label) {
+function gamePicker(/** @type {any} */ label) {
   const count = state.players.length;
   const st = state.settings || {};
-  const opt = (v, cur, text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
-  const fig = (p) => `<figure class="${p.team ? 'team-' + p.team : ''}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}</figure>`;
+  const opt = (/** @type {any} */ v, /** @type {any} */ cur, /** @type {any} */ text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
+  const fig = (/** @type {any} */ p) => `<figure class="${p.team ? 'team-' + p.team : ''}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}</figure>`;
   const crew = st.teams
-    ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((p) => p.team === t).map(fig).join('')}</div>`).join('')
+    ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((/** @type {any} */ p) => p.team === t).map(fig).join('')}</div>`).join('')
     : state.players.map(fig).join('');
   const max = state.maxPlayers || 12;
   // One join card: QR + room code + address together (nothing else on screen repeats them).
@@ -339,14 +351,14 @@ function gamePicker(label) {
           <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
           <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator voice</label>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
-            <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
+            <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((/** @type {any} */ p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
         </div>
         ${crew ? `<div class="lobby-crew">${crew}</div>` : ''}
       </div>
       ${joinCard}
     </div>
     <div class="game-grid">` +
-    (state.availableGames || []).map((gm) => {
+    (state.availableGames || []).map((/** @type {any} */ gm) => {
       const disabled = count < gm.minPlayers;
       return `<button class="game-pick" data-game-id="${esc(gm.id)}" ${disabled ? 'disabled' : ''}>
         ${art(gm.id)}
@@ -361,7 +373,7 @@ function gamePicker(label) {
     <p class="hint footer-hint"><button class="link-btn" data-act="newroom">Start a fresh room</button></p>`;
 }
 
-function podium(standings) {
+function podium(/** @type {any} */ standings) {
   const top = standings.slice(0, 3);
   const order = [1, 0, 2].filter((i) => top[i]);
   return '<div class="podium">' + order.map((i) => {
@@ -373,32 +385,32 @@ function podium(standings) {
       <div class="block">${i + 1}</div>
     </div>`;
   }).join('') + '</div>' +
-  (standings.length > 3 ? '<ol class="answers standings" start="4">' + standings.slice(3).map((s) =>
+  (standings.length > 3 ? '<ol class="answers standings" start="4">' + standings.slice(3).map((/** @type {any} */ s) =>
     `<li>${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.score}</span></li>`).join('') + '</ol>' : '');
 }
 
-const voterIcons = (names) => names && names.length
-  ? `<span class="voters">${names.map((n) => av(n)).join('')}</span>` : '';
+const voterIcons = (/** @type {any} */ names) => names && names.length
+  ? `<span class="voters">${names.map((/** @type {any} */ n) => av(n)).join('')}</span>` : '';
 
 // The original four games' screens.
-function legacyHost(phase, g) {
+function legacyHost(/** @type {any} */ phase, /** @type {any} */ g) {
   const roundTag = g.round ? `<p class="round-tag">Question ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>` : '';
   switch (phase) {
     case 'trivia-category':
       return `<p class="round-tag">Category round</p>
         <h1>${av(g.chooser, 'avatar big bob')} ${esc(g.chooser)} is in last place…</h1>
         <p class="big-sub">…so they pick the next category! ${T}</p>
-        <div class="cat-card">${g.categoryOptions.map((c) => `<div>${esc(c)}</div>`).join('')}</div>`;
+        <div class="cat-card">${g.categoryOptions.map((/** @type {any} */ c) => `<div>${esc(c)}</div>`).join('')}</div>`;
     case 'trivia-question':
       return `${roundTag}${g.category ? `<span class="cat-banner">${esc(g.category)}</span>` : ''}<h1 class="prompt">${esc(g.question)}</h1>
         <p class="big-sub">Fast answers score more! ${T}</p>
-        <ol class="answers">${g.choices.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>
+        <ol class="answers">${g.choices.map((/** @type {any} */ c) => `<li>${esc(c)}</li>`).join('')}</ol>
         <p class="count">${g.answeredCount} / ${g.totalPlayers} answers in</p>`;
     case 'trivia-reveal':
       return `${roundTag}<h1 class="prompt">${esc(g.question)}</h1><ol class="answers results">` +
-        g.choices.map((c, i) => `<li class="${i === g.correct ? 'winner' : ''}">${esc(c)}</li>`).join('') +
+        g.choices.map((/** @type {any} */ c, /** @type {any} */ i) => `<li class="${i === g.correct ? 'winner' : ''}">${esc(c)}</li>`).join('') +
         '</ol><ul class="scored-list">' +
-        g.scored.map((s) => `<li class="${s.correct ? 'correct' : 'wrong'}">${av(s.nickname)} ${esc(s.nickname)} ${s.correct ? `+${s.gained}` : `✗${s.gained < 0 ? ` ${s.gained}` : ''}`}${s.double ? ' <span class="streak">🎲 DOUBLE DOWN</span>' : ''}${s.streak > 1 ? ` <span class="streak">🔥×${s.streak}</span>` : ''}</li>`).join('') + '</ul>';
+        g.scored.map((/** @type {any} */ s) => `<li class="${s.correct ? 'correct' : 'wrong'}">${av(s.nickname)} ${esc(s.nickname)} ${s.correct ? `+${s.gained}` : `✗${s.gained < 0 ? ` ${s.gained}` : ''}`}${s.double ? ' <span class="streak">🎲 DOUBLE DOWN</span>' : ''}${s.streak > 1 ? ` <span class="streak">🔥×${s.streak}</span>` : ''}</li>`).join('') + '</ul>';
     case 'cah-submit':
       return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}${g.pickedBy ? ` · prompt chosen by ${av(g.pickedBy)} ${esc(g.pickedBy)}` : ''}</p>
         <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">Everyone else, play your worst card!</p>
@@ -406,7 +418,7 @@ function legacyHost(phase, g) {
     case 'cah-czar':
       return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}</p>
         <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">${esc(g.czarNickname)} is picking a winner…</p>
-        <ol class="answers">${g.submissions.map((s) => `<li>${esc(s.text)}</li>`).join('')}</ol>`;
+        <ol class="answers">${g.submissions.map((/** @type {any} */ s) => `<li>${esc(s.text)}</li>`).join('')}</ol>`;
     case 'cah-reveal':
       return `${roundTag}<h1 class="prompt">${esc(g.blackCard)}</h1>
         <p class="big-answer">${esc(g.winner.text)}</p>
@@ -417,12 +429,12 @@ function legacyHost(phase, g) {
     case 'fib-choose':
       return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
         <p class="big-sub">One of these is TRUE. Find it! ${T}</p>
-        <ol class="answers">${g.options.map((o) => `<li>${esc(o.text)}</li>`).join('')}</ol>
+        <ol class="answers">${g.options.map((/** @type {any} */ o) => `<li>${esc(o.text)}</li>`).join('')}</ol>
         <p class="count">${g.pickedCount} / ${g.totalPlayers} guesses in</p>`;
     case 'fib-reveal':
       return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1><ol class="answers results">` +
-        g.result.options.map((o) => `<li class="${o.isTruth ? 'winner' : ''}">${esc(o.text)}
-          <span class="byline">${o.isTruth ? '— THE TRUTH!' : (o.authors.length ? '— ' + o.authors.map((n) => av(n) + ' ' + esc(n)).join(', ') + '\'s lie' : '')}</span>
+        g.result.options.map((/** @type {any} */ o) => `<li class="${o.isTruth ? 'winner' : ''}">${esc(o.text)}
+          <span class="byline">${o.isTruth ? '— THE TRUTH!' : (o.authors.length ? '— ' + o.authors.map((/** @type {any} */ n) => av(n) + ' ' + esc(n)).join(', ') + '\'s lie' : '')}</span>
           ${o.pickedBy.length ? `<span class="votes">${o.isTruth ? 'found by' : 'fooled'}</span>${voterIcons(o.pickedBy)}` : ''}
           ${o.likes ? `<span class="votes likes">👍 ${o.likes}</span>` : ''}</li>`).join('') +
         '</ol>' + window.Rumpus.scoredList(g.result.scored);
@@ -431,17 +443,17 @@ function legacyHost(phase, g) {
   }
 }
 
-function renderSidebar(phase) {
+function renderSidebar(/** @type {any} */ phase) {
   const sorted = state.players.slice();
-  if (phase !== 'lobby') sorted.sort((a, b) => b.score - a.score);
+  if (phase !== 'lobby') sorted.sort((/** @type {any} */ a, /** @type {any} */ b) => b.score - a.score);
   const ts = state.teamScores;
-  const teamBar = document.getElementById('team-bar');
+  const teamBar = /** @type {HTMLElement} */ (document.getElementById('team-bar'));
   if (ts) {
     const total = Math.max(1, ts.red + ts.blue);
     teamBar.hidden = false;
     morph(teamBar, `<div class="tb red" style="flex:${Math.max(0.15, ts.red / total)}">🔴 ${ts.red}</div><div class="tb blue" style="flex:${Math.max(0.15, ts.blue / total)}">${ts.blue} 🔵</div>`);
   } else teamBar.hidden = true;
-  morph(playerList, sorted.map((p, i) => {
+  morph(playerList, sorted.map((/** @type {any} */ p, /** @type {any} */ i) => {
     const cls = [!p.connected && 'offline', i === 0 && p.score > 0 && phase !== 'lobby' && 'leader'].filter(Boolean).join(' ');
     return `<li data-id="${esc(p.id)}" class="${cls}${p.team ? ' team-' + p.team : ''}">${playerImg(p)}` +
       `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}</span>` +
@@ -454,10 +466,10 @@ function renderSidebar(phase) {
       fx.scorePop(playerList.querySelector(`li[data-id="${p.id}"] .pscore`), p.score - before);
     }
   }
-  prevScores = new Map(state.players.map((p) => [p.id, p.score]));
+  prevScores = new Map(state.players.map((/** @type {any} */ p) => [p.id, p.score]));
 }
 
-function updateTimerBar(endsAt) {
+function updateTimerBar(/** @type {any} */ endsAt) {
   if (!endsAt) { timerbar.hidden = true; return; }
   if (timerTotal.endsAt !== endsAt) timerTotal = { endsAt, total: Math.max(1000, endsAt - Date.now()) };
   timerbar.hidden = false;
@@ -495,9 +507,9 @@ function render() {
   // Storm Watch takes over the whole screen with its own frame.
   document.body.classList.toggle('mode-storm', inGame && g.gameId === 'storm');
   document.body.classList.toggle('lobby', phase === 'lobby'); // the lobby shows the players itself
-  if (!inGame || !wasInGame) { clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
+  if (!inGame || !wasInGame) { if (sidebarTimer) clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
   // Someone joined, left or (re)connected → flash the player strip for 5 s.
-  const roster = state.players.map((p) => p.id + (p.connected ? '+' : '-')).sort().join(',');
+  const roster = state.players.map((/** @type {any} */ p) => p.id + (p.connected ? '+' : '-')).sort().join(',');
   if (inGame && wasInGame && roster !== rosterKey) peekSidebar();
   rosterKey = roster;
   controls.hidden = !inGame;
@@ -574,15 +586,15 @@ function render() {
         shake();
         if (gameStats) gameStats.snaps.push(snapshotScores());
       } else if (inGame) sfx.phase();
-      if (phase === 'cah-reveal' || (phase === 'results' && g.result && g.result.sides.some((sd) => sd.shutout))) fx.confetti(90);
-      if (phase === 'results' && g.result && g.result.sides.some((sd) => sd.shutout)) fx.banner('SHUTOUT!', 'gold');
+      if (phase === 'cah-reveal' || (phase === 'results' && g.result && g.result.sides.some((/** @type {any} */ sd) => sd.shutout))) fx.confetti(90);
+      if (phase === 'results' && g.result && g.result.sides.some((/** @type {any} */ sd) => sd.shutout)) fx.banner('SHUTOUT!', 'gold');
       if (phase === 'trivia-category') fx.banner('CATEGORY ROUND!', 'gold');
-      if (phase === 'cg-reveal' && g.result && g.result.list.some((e) => e.exact)) { fx.banner('BULLSEYE!', 'gold'); fx.confetti(120); }
+      if (phase === 'cg-reveal' && g.result && g.result.list.some((/** @type {any} */ e) => e.exact)) { fx.banner('BULLSEYE!', 'gold'); fx.confetti(120); }
       if (phase === 'imp-reveal' && g.result) fx.banner(g.result.outcome === 'caught' ? 'GOTCHA!' : g.result.outcome === 'stole' ? 'STOLEN!' : 'GOT AWAY!', g.result.outcome === 'caught' ? 'gold' : '');
     }
     // Lead change alert (only mid-game, only when the leader actually changes).
     if (inGame && isRevealPhase(phase)) {
-      const top = state.players.slice().sort((a, b) => b.score - a.score)[0];
+      const top = state.players.slice().sort((/** @type {any} */ a, /** @type {any} */ b) => b.score - a.score)[0];
       if (top && top.score > 0 && leaderId && top.id !== leaderId) {
         setTimeout(() => { fx.banner(`NEW LEADER!\n${top.nickname}`, 'gold'); sfx.leader(); }, 900);
       }
@@ -603,7 +615,7 @@ function render() {
     if (!wiping) {
       wiping = true;
       fx.wipe(() => {
-        phaseView.innerHTML = pendingHtml;
+        phaseView.innerHTML = pendingHtml || '';
         layoutStage();
         wiping = false;
         countdown((state.gameState || {}).endsAt, '.timer', tick);
@@ -617,7 +629,7 @@ function render() {
   }
   updateTimerBar(inGame ? g.endsAt : null);
   // Content attribution for sourced questions (Wikidata, Open Trivia DB, …).
-  const srcEl = document.getElementById('source-line');
+  const srcEl = /** @type {HTMLElement} */ (document.getElementById('source-line'));
   srcEl.hidden = !(inGame && g.source);
   if (inGame && g.source && srcEl.textContent !== 'Source: ' + g.source) srcEl.textContent = 'Source: ' + g.source;
   if (!wiping) countdown(g.endsAt, '.timer', tick);
@@ -642,13 +654,13 @@ new ResizeObserver(() => {
 }).observe(phaseView);
 if (document.fonts) void document.fonts.ready.then(() => layoutStage());
 
-function tick(left) {
+function tick(/** @type {any} */ left) {
   if (left > 0 && left <= 5) sfx.tick();
   const inputish = state && !/lobby|gameover|reveal|results/.test(state.phase);
   music.setHurry(inputish && left > 0 && left <= 10);
 }
 
 function shake() {
-  const st = document.getElementById('stage');
+  const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
   st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
 }

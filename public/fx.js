@@ -11,8 +11,11 @@
   // ---- Pixel wipe: blocks fill the screen in random order, then clear.
   // 9 frames in + 9 frames out at 30 fps (~0.6 s total).
   const WIPE_FRAMES = 9;
+  /** @type {HTMLCanvasElement | null} */
   let wipeCanvas = null;
+  /** @type {{ midpoint: () => void, f: number } | null} */
   let wipeState = null;
+  /** @param {() => void} midpoint @param {string[]} [colors] */
   function wipe(midpoint, colors = ['#ffb02e', '#5ee0a0', '#ff5d73', '#7c5cff', '#14121f']) {
     if (reduced) { midpoint(); return; }
     if (wipeState) {
@@ -28,17 +31,20 @@
       wipeCanvas.className = 'wipe';
       document.body.appendChild(wipeCanvas);
     }
+    const wc = wipeCanvas;
     const cols = 32, rows = 18;
-    wipeCanvas.width = cols; wipeCanvas.height = rows;
-    const g = wipeCanvas.getContext('2d');
+    wc.width = cols; wc.height = rows;
+    const g = /** @type {CanvasRenderingContext2D} */ (wc.getContext('2d'));
+    /** @type {number[][]} */
     const cells = [];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) cells.push([x, y, (x + y * 0.6) / (cols + rows * 0.6) + Math.random() * 0.25]);
     cells.sort((p, q) => p[2] - q[2]);
     const col = colors[(Math.random() * colors.length) | 0];
     wipeState = { midpoint, f: 0 };
-    wipeCanvas.style.display = 'block';
+    wc.style.display = 'block';
     const off = clock().add(() => {
       const st = wipeState;
+      if (!st) return;
       st.f++;
       g.clearRect(0, 0, cols, rows);
       g.fillStyle = col;
@@ -51,7 +57,7 @@
         for (let i = n; i < cells.length; i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
         if (st.f >= WIPE_FRAMES * 2) {
           off();
-          wipeCanvas.style.display = 'none';
+          wc.style.display = 'none';
           wipeState = null;
         }
       }
@@ -60,7 +66,13 @@
   const isWiping = () => !!wipeState;
 
   // ---- Confetti: chunky pixel squares with gravity, stepped at 30 fps.
-  let confCanvas = null, parts = [], confOff = null;
+  /** @type {HTMLCanvasElement | null} */
+  let confCanvas = null;
+  /** @type {{ x: number, y: number, vx: number, vy: number, c: string, s: number, life: number }[]} */
+  let parts = [];
+  /** @type {(() => void) | null} */
+  let confOff = null;
+  /** @param {number} [n] */
   function confetti(n = 160) {
     if (reduced) return;
     if (!confCanvas) {
@@ -76,8 +88,9 @@
         c: cols[(Math.random() * cols.length) | 0], s: Math.random() < 0.3 ? 2 : 1, life: 70 + Math.random() * 30 });
     }
     if (confOff) return;
-    const g = confCanvas.getContext('2d');
-    confCanvas.style.display = 'block';
+    const cc = confCanvas;
+    const g = /** @type {CanvasRenderingContext2D} */ (cc.getContext('2d'));
+    cc.style.display = 'block';
     confOff = clock().add(() => {
       g.clearRect(0, 0, W, H);
       parts = parts.filter((p) => p.life-- > 0 && p.y < H + 10);
@@ -86,11 +99,12 @@
         g.fillStyle = p.c;
         g.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
       }
-      if (!parts.length) { confOff(); confOff = null; confCanvas.style.display = 'none'; }
+      if (!parts.length) { if (confOff) confOff(); confOff = null; cc.style.display = 'none'; }
     });
   }
 
   // ---- Floating emoji reaction with the sender's avatar.
+  /** @param {string} emoji @param {string} avatarUrl @param {string} name */
   function reaction(emoji, avatarUrl, name) {
     const el = document.createElement('div');
     el.className = 'reaction';
@@ -102,6 +116,7 @@
   }
 
   // ---- "+300" pop-up next to an element.
+  /** @param {Element | null} el @param {number} delta */
   function scorePop(el, delta) {
     if (!el || !delta) return;
     const r = el.getBoundingClientRect();
@@ -115,6 +130,7 @@
   }
 
   // ---- Big banner that slams in (e.g. "FINAL ROUND! DOUBLE POINTS").
+  /** @param {string} text @param {string} [cls] */
   function banner(text, cls = '') {
     const el = document.createElement('div');
     el.className = 'slam ' + cls;

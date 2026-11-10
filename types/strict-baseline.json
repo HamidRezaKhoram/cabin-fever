@@ -4,11 +4,11 @@
     "strictNullChecks": 0
   },
   "tsconfig.host.json": {
-    "noImplicitAny": 486,
-    "strictNullChecks": 58
+    "noImplicitAny": 0,
+    "strictNullChecks": 0
   },
   "tsconfig.play.json": {
-    "noImplicitAny": 295,
-    "strictNullChecks": 74
+    "noImplicitAny": 0,
+    "strictNullChecks": 0
   }
 }

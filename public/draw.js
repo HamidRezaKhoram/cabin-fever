@@ -6,6 +6,8 @@
   const SIZES = [4, 10, 22];
   const W = 480, H = 480;
 
+  /** @typedef {{ color: string, size: number, pts: number[][] }} Stroke */
+  /** @param {HTMLElement} host */
   function drawPad(host) {
     host.innerHTML = `
       <canvas class="draw-canvas" width="${W}" height="${H}"></canvas>
@@ -18,11 +20,13 @@
           <button type="button" class="tool-btn" data-act="clear">Clear</button>
         </div>
       </div>`;
-    const canvas = host.querySelector('canvas');
-    const g = canvas.getContext('2d');
+    const canvas = /** @type {HTMLCanvasElement} */ (host.querySelector('canvas'));
+    const g = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
     let color = COLORS[0];
     let size = SIZES[1];
+    /** @type {Stroke[]} */
     const strokes = [];
+    /** @type {Stroke | null} */
     let cur = null;
 
     function redraw() {
@@ -34,11 +38,12 @@
         g.strokeStyle = s.color;
         g.lineWidth = s.size;
         g.beginPath();
-        s.pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+        s.pts.forEach(([x, y], /** @type {number} */ i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
         if (s.pts.length === 1) g.lineTo(s.pts[0][0] + 0.1, s.pts[0][1]);
         g.stroke();
       }
     }
+    /** @param {PointerEvent} e */
     function pos(e) {
       const r = canvas.getBoundingClientRect();
       return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H];
@@ -60,14 +65,14 @@
     canvas.addEventListener('pointercancel', end);
     canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
-    host.querySelector('.draw-tools').addEventListener('click', (e) => {
-      const b = e.target.closest('button');
+    /** @type {HTMLElement} */ (host.querySelector('.draw-tools')).addEventListener('click', (e) => {
+      const b = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('button') : null);
       if (!b) return;
       if (b.dataset.color) {
         color = b.dataset.color;
         host.querySelectorAll('.swatch').forEach((x) => x.classList.toggle('on', x === b));
       } else if (b.dataset.size) {
-        size = +b.dataset.size;
+        size = Number(b.dataset.size);
         host.querySelectorAll('.size').forEach((x) => x.classList.toggle('on', x === b));
       } else if (b.dataset.act === 'undo') {
         strokes.pop(); redraw();
@@ -78,12 +83,12 @@
     redraw();
     return {
       isEmpty: () => strokes.length === 0,
-      toDataURL: (size) => {
+      toDataURL: (/** @type {number} [size] */ size) => {
         end();
         if (!size) return canvas.toDataURL('image/jpeg', 0.72);
         const c = document.createElement('canvas');
         c.width = c.height = size;
-        c.getContext('2d').drawImage(canvas, 0, 0, size, size);
+        /** @type {CanvasRenderingContext2D} */ (c.getContext('2d')).drawImage(canvas, 0, 0, size, size);
         return c.toDataURL('image/jpeg', 0.8);
       },
       clear: () => { strokes.length = 0; redraw(); },

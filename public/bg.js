@@ -12,6 +12,7 @@
   // the original pace while every frame now moves a little (smooth, no jumps).
   const TICKS_PER_FRAME = 0.4;
 
+  /** @param {number} seed @returns {() => number} */
   function rand(seed) {
     let s = seed >>> 0;
     return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -47,11 +48,11 @@
   // ------------------------------------------------------------------ game scenes
   // Original pixel motifs that show what each game is about. STATIC parts are
   // painted once into the background layer; ANIM parts are drawn every frame.
-  /** @param {CanvasRenderingContext2D} g */
+  /** @param {CanvasRenderingContext2D} g @param {number} x @param {number} y @param {number} w @param {number} h @param {string} c */
   const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
-  /** @param {CanvasRenderingContext2D} g */
+  /** @param {CanvasRenderingContext2D} g @param {number} cx @param {number} cy @param {number} r @param {string} c */
   const D = (g, cx, cy, r, c) => { g.fillStyle = c; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) g.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1); };
-  /** @param {CanvasRenderingContext2D} g */
+  /** @param {CanvasRenderingContext2D} g @param {number} x @param {number} y @param {number} [s] */
   const sheepAt = (g, x, y, s = 1) => {
     R(g, x - 3 * s, y + 2 * s, 1, 2 * s, '#2b2d42'); R(g, x + 2 * s, y + 2 * s, 1, 2 * s, '#2b2d42');
     D(g, x - 2 * s, y, 2 * s, '#f4f1e8'); D(g, x + 1 * s, y, 2 * s, '#f4f1e8'); D(g, x, y - 1 * s, 2 * s, '#ffffff');
@@ -81,7 +82,7 @@
       q.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') R(g, 142 + x * 6, 22 + y * 6, 6, 6, '#ffd23f'); }));
     },
     closest(g) { // target board on the dock + measuring ticks along the shore
-      for (const [r, c] of [[16, '#f4f1e8'], [13, '#e83f5b'], [10, '#f4f1e8'], [7, '#e83f5b'], [4, '#f4f1e8'], [2, '#4caf50']]) D(g, 70, 92, r, c);
+      for (const [r, c] of /** @type {[number, string][]} */ ([[16, '#f4f1e8'], [13, '#e83f5b'], [10, '#f4f1e8'], [7, '#e83f5b'], [4, '#f4f1e8'], [2, '#4caf50']])) D(g, 70, 92, r, c);
       R(g, 69, 108, 3, 6, '#5a3b22');
       for (let x = 0; x < W; x += 8) R(g, x, 113, 1, x % 32 === 0 ? 5 : 2, '#f4f1e8');
     },
@@ -272,7 +273,7 @@
       for (let x = (i % 2); x < W; x += 2) g.fillRect(x, i * bh - 1, 1, 1);
     }
     // moon
-    const disc = (cx, cy, rad, col) => {
+    const disc = (/** @type {number} */ cx, /** @type {number} */ cy, /** @type {number} */ rad, /** @type {string} */ col) => {
       g.fillStyle = col;
       for (let y = -rad; y <= rad; y++) for (let x = -rad; x <= rad; x++) if (x * x + y * y <= rad * rad) g.fillRect(cx + x, cy + y, 1, 1);
     };
@@ -309,12 +310,14 @@
       g.fillRect(0, y, W, 1);
     }
     paintCottage(g, th);
-    if (STATIC[th.name]) STATIC[th.name](g);
+    const sc = th.name ? STATIC[th.name] : undefined;
+    if (sc) sc(g);
   }
 
+  /** @param {HTMLCanvasElement} canvas */
   function start(canvas) {
     canvas.width = W; canvas.height = H;
-    const g = canvas.getContext('2d');
+    const g = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
     const r = rand(42);
     const layer = document.createElement('canvas');
     layer.width = W; layer.height = H;
@@ -325,8 +328,10 @@
 
     const stars = Array.from({ length: 90 }, () => ({ x: (r() * W) | 0, y: (r() * (HORIZON - 30)) | 0, p: r() * 6.28, b: r() }));
     const flies = Array.from({ length: 14 }, () => ({ x: r() * W, y: HORIZON - 30 + r() * 26, vx: (r() - 0.5) * 0.12, vy: (r() - 0.5) * 0.08, p: r() * 6.28 }));
+    /** @type {{ x: number, y: number, l: number } | null} */
     let shooting = null;
 
+    /** @param {number} frame */
     function draw(frame) {
       const t = frame * TICKS_PER_FRAME;
       g.drawImage(layer, 0, 0);
@@ -396,7 +401,8 @@
           g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3);
         }
       }
-      if (ANIM[th.name]) ANIM[th.name](g, t);
+      const an = th.name ? ANIM[th.name] : undefined;
+      if (an) an(g, t);
     }
 
     draw(0);

@@ -14,12 +14,16 @@
 (function () {
   const FPS = 30;
   const STEP = 1000 / FPS;
+  /** @type {Set<(frame: number) => void>} */
   const subs = new Set();
+  /** @type {number | null} */
   let raf = null;
   let next = 0;
   let frame = 0;
-  const stats = { frames: 0, since: performance.now(), intervals: [] };
+  /** @type {{ frames: number, since: number, intervals: number[], last: number }} */
+  const stats = { frames: 0, since: performance.now(), intervals: [], last: 0 };
 
+  /** @param {number} now */
   function loop(now) {
     raf = requestAnimationFrame(loop);
     // Half a display frame of tolerance so 60 Hz screens land on every 2nd vsync.
@@ -39,6 +43,7 @@
     }
   }
 
+  /** @param {(frame: number) => void} fn */
   function add(fn) {
     subs.add(fn);
     if (!raf) { next = performance.now(); raf = requestAnimationFrame(loop); }

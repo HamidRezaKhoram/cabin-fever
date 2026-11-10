@@ -76,12 +76,10 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - Python tools pass `mypy --strict`. Annotate every function.
 - **ESLint + typescript-eslint (type-aware)**: `npm run lint` (eslint.config.js) must report 0
   problems — no floating promises (`await`, `.catch()` or `void`), no unused vars, `===`, `const`.
-- Strict flags on: strictFunctionTypes, strictBindCallApply, noImplicitThis, alwaysStrict,
-  useUnknownInCatchVariables, noImplicitReturns. **Ratchet** for the rest: `tools/strict-ratchet.js`
-  counts `noImplicitAny` / `strictNullChecks` errors per tsconfig against
-  `types/strict-baseline.json` — counts may only go down (it lowers the baseline automatically;
-  commit it). New code must be fully typed. `node tools/strict-ratchet.js --explain` lists exactly
-  which strict errors are new since HEAD.
+- **Full `strict` mode is on** (tsconfig.base.json) for server, TV and phone code: 0 errors, kept at 0.
+  Type every new function and module variable. Server JSON in renderers is genuinely untyped —
+  annotate it as an explicit `/** @type {any} */` at that boundary, never leave it implicit.
+  `tools/strict-ratchet.js` still runs (baseline 0 everywhere in `types/strict-baseline.json`).
 - **Pre-commit hook** (`.githooks/pre-commit`, enabled by test-all via `core.hooksPath`): type check +
   lint + ratchet must pass before any commit. Don't bypass it with `--no-verify`.
 - All of these run in `scripts/test-all.sh`; 0 errors is required.

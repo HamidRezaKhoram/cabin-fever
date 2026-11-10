@@ -17,13 +17,21 @@
 
 (function () {
   // ------------------------------------------------------------------ theory
+  /** @typedef {Record<string, any>} Spec a track recipe: seed/mode/bpm/lead/drums… or a hand-written score */
+  /** @typedef {{ midi: number, len: number }} Note */
+  /** @typedef {{ name: string, bpm: number, steps: number, chords: number[][], lead: (Note | null)[], arp: string, bass: string,
+   *   drums: { k: string, s: string, h: string }, swing?: number, once?: boolean, wave: number, leadVol: number, echo: boolean }} Track */
+  /** @typedef {{ tr: Track, gain: GainNode, step: number, next: number, stopping: boolean, onEnd?: (() => void) | null, dead?: boolean }} Deck */
+  /** @type {Record<string, number>} */
   const NOTE = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
-  const midiOf = (n) => { const m = /^([A-G][#b]?)(\d)$/.exec(n); return m ? 12 * (+m[2] + 1) + NOTE[m[1]] : null; };
-  const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  const midiOf = (/** @type {string} */ n) => { const m = /^([A-G][#b]?)(\d)$/.exec(n); return m ? 12 * (+m[2] + 1) + NOTE[m[1]] : null; };
+  const hz = (/** @type {number} */ midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  /** @type {Record<string, number[]>} */
   const MODES = {
     major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10],
     mixo: [0, 2, 4, 5, 7, 9, 10], harmonic: [0, 2, 3, 5, 7, 8, 11], lydian: [0, 2, 4, 6, 7, 9, 11],
   };
+  /** @type {Record<string, number[][]>} */
   const PROGS = {
     major: [[0, 5, 3, 4], [0, 4, 5, 3], [0, 3, 4, 3], [3, 4, 2, 5], [0, 3, 0, 4], [5, 3, 0, 4], [0, 2, 3, 4], [0, 4, 3, 4], [0, 5, 1, 4]],
     minor: [[0, 5, 6, 0], [0, 5, 2, 6], [0, 3, 4, 0], [0, 6, 5, 6], [0, 3, 6, 2], [0, 2, 3, 4]],
@@ -33,12 +41,14 @@
     lydian: [[0, 1, 0, 1], [0, 1, 4, 0]],
   };
 
+  /** @param {number} seed @returns {() => number} */
   function rng(seed) {
     let s = (seed * 2654435761) >>> 0 || 1;
     return () => ((s ^= s << 13, s ^= s >>> 17, s ^= s << 5) >>> 0) / 4294967296;
   }
 
   // Lead rhythms per 2 bars (32 steps): x = note on, - = hold, . = rest
+  /** @type {Record<string, string[]>} */
   const RHYTHMS = {
     melodic: [
       'x-x-x-x-x---x-x-x-x-x---x-------', 'x---x-x-x---x---x-x-x-x-x-------', 'x-x---x-x-x---x-x---x-x-x-------',
@@ -54,6 +64,7 @@
       'x.x.x.x...x.x...x.x.x.x...x.....', 'x...x.x.x...x...x...x.x.x.x.....', 'x.x...x.x.x...x.x.x...x.x.......',
     ],
   };
+  /** @type {Record<string, { k: string, s: string, h: string }>} */
   const DRUMS = {
     pop: { k: 'x.......x.x.....', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.' },
     four: { k: 'x...x...x...x...', s: '....x.......x...', h: '..x...x...x...x.' },
@@ -68,12 +79,14 @@
 
   // --------------------------------------------------------------- composer
   // Produces a compiled track: per-16th-step lists of events.
+  /** @param {Spec} spec @returns {Track} */
   function compose(spec) {
     const r = rng(spec.seed);
     const mode = MODES[spec.mode];
     const root = spec.root; // midi of tonic, around 60
     const prog = spec.prog || PROGS[spec.mode][Math.floor(r() * PROGS[spec.mode].length)];
     const bars = spec.bars || 8;
+    /** @type {number[]} scale degree per bar */
     const chords = [];
     for (let b = 0; b < bars; b++) {
       let deg = prog[b % prog.length];
@@ -81,9 +94,9 @@
       chords.push(deg);
     }
     // Scale-degree -> midi (degree index can exceed 7)
-    const deg2midi = (d) => root + 12 * Math.floor(d / 7) + mode[((d % 7) + 7) % 7];
-    const chordTones = (deg) => [deg, deg + 2, deg + 4];
-    const nearestChordTone = (pitchDeg, chordDeg) => {
+    const deg2midi = (/** @type {number} */ d) => root + 12 * Math.floor(d / 7) + mode[((d % 7) + 7) % 7];
+    const chordTones = (/** @type {number} */ deg) => [deg, deg + 2, deg + 4];
+    const nearestChordTone = (/** @type {number} */ pitchDeg, /** @type {number} */ chordDeg) => {
       let best = pitchDeg, bd = 99;
       for (let o = -14; o <= 14; o += 7) for (const t of chordTones(chordDeg)) {
         const c = t + o, d = Math.abs(c - pitchDeg);
@@ -142,11 +155,14 @@
   }
 
   // Hand-written signature tracks, converted into the same compiled format.
+  /** @type {Record<string, string[]>} */
   const CHORD_NAMES = {
     C: ['C', 'E', 'G'], Am: ['A', 'C', 'E'], F: ['F', 'A', 'C'], G: ['G', 'B', 'D'], Em: ['E', 'G', 'B'],
     Dm: ['D', 'F', 'A'], Bb: ['Bb', 'D', 'F'], A: ['A', 'C#', 'E'],
   };
+  /** @param {Spec} spec @returns {Track} */
   function handwritten(spec) {
+    /** @type {string[]} */
     const lead = [];
     for (const bar of spec.lead) for (const tok of bar.trim().split(/\s+/)) lead.push(tok, '_');
     const steps = spec.chords.length * 16;
@@ -160,7 +176,7 @@
     }
     return {
       name: spec.name, bpm: spec.bpm, swing: spec.swing || 0, steps, once: !!spec.once,
-      chords: spec.chords.map((c) => CHORD_NAMES[c].map((n, i) => midiOf(n + (i && NOTE[n] < NOTE[CHORD_NAMES[c][0]] ? 5 : 4)))),
+      chords: spec.chords.map((/** @type {string} */ c) => CHORD_NAMES[c].map((n, i) => /** @type {number} */ (midiOf(n + (i && NOTE[n] < NOTE[CHORD_NAMES[c][0]] ? 5 : 4))))),
       lead: L, arp: spec.arp, bass: spec.bass, drums: DRUMS[spec.drums], wave: 0.25, leadVol: 0.09, echo: true,
     };
   }
@@ -171,7 +187,7 @@
   const NOUN = ['Shuffle', 'Boogie', 'Groove', 'Waltz', 'Hustle', 'Jam', 'Rumble', 'Strut', 'Bop', 'Stomp', 'Getaway', 'Swing',
     'Caper', 'Showdown', 'Serenade', 'Parade', 'Two-Step', 'Fever', 'Heist', 'Anthem', 'Overture', 'March', 'Lullaby', 'Fanfare'];
   const usedNames = new Set(['Rumpus Theme', 'Lakeside Lounge', 'Ballot Box Boogie', "Champion's Fanfare"]);
-  const titleFor = (seed) => {
+  const titleFor = (/** @type {number} */ seed) => {
     const r = rng(seed + 7);
     for (;;) {
       const n = ADJ[Math.floor(r() * ADJ.length)] + ' ' + NOUN[Math.floor(r() * NOUN.length)];
@@ -180,6 +196,7 @@
   };
 
   // Per-game musical identity.
+  /** @type {Record<string, Spec>} */
   const GAME_STYLE = {
     quiplash:   { mode: 'major', bpm: 128, lead: 'bouncy', drums: 'pop', arp: 'up', bass: 'octave', root: 60 },
     fibbage:    { mode: 'mixo', bpm: 112, lead: 'staccato', drums: 'shuffle', arp: 'broken', bass: 'walk', root: 62, swing: 0.18 },
@@ -199,8 +216,9 @@
     looncall:   { mode: 'mixo', bpm: 96, lead: 'sparse', drums: 'pop', arp: 'updown', bass: 'octave', root: 60, swing: 0.1 },
   };
 
-  const CATALOG = {}; // cue -> [spec]
-  const add = (cue, spec) => (CATALOG[cue] = CATALOG[cue] || []).push(spec);
+  /** @type {Record<string, Spec[]>} cue → recipes */
+  const CATALOG = {};
+  const add = (/** @type {string} */ cue, /** @type {Spec} */ spec) => (CATALOG[cue] = CATALOG[cue] || []).push(spec);
 
   // Title + menu signature themes (hand-written) and generated companions.
   add('title', { hand: true, name: 'Rumpus Theme', bpm: 132, arp: 'up', bass: 'octave', drums: 'pop',
@@ -249,7 +267,9 @@
   // Game-start stingers, play once (5)
   [901, 902, 903, 904, 905].forEach((seed, i) => add('intro', { seed, mode: i % 2 ? 'mixo' : 'major', bpm: 140, bars: 2, lead: 'bouncy', drums: 'march', arp: 'up', bass: 'octave', root: 62 + i, once: true }));
 
+  /** @type {Map<string, Track>} */
   const compiled = new Map();
+  /** @param {string} cue @param {number} i @returns {Track} */
   function track(cue, i) {
     const key = cue + '#' + i;
     if (!compiled.has(key)) {
@@ -257,7 +277,7 @@
       const t = spec.hand ? handwritten(spec) : compose({ ...spec, name: spec.name || titleFor(spec.seed) });
       compiled.set(key, t);
     }
-    return compiled.get(key);
+    return /** @type {Track} */ (compiled.get(key));
   }
   const TOTAL = Object.values(CATALOG).reduce((n, l) => n + l.length, 0);
 
@@ -273,7 +293,9 @@
     const v = JSON.parse(localStorage.getItem('rumpus.vol') || 'null');
     if (v) { musicVol = v.music; sfxVol = v.sfx; }
   } catch (e) { /* ignore */ }
+  /** @type {Record<number, PeriodicWave>} */
   const waves = {};
+  /** @type {AudioBuffer | null} */
   let noiseBuf = null;
 
   function ensure() {
@@ -330,12 +352,14 @@
 
   // -------------------------------------------------------------- sequencer
   // A "deck" plays one compiled track into its own gain (for crossfades).
-  /** @type {any[]} decks: { tr, gain, step, next, stopping, onEnd } (compiled tracks are untyped) */
+  /** @type {Deck[]} */
   let decks = [];
   let hurry = false;
   let intensity = 1; // 1 = round 1, 2 = round 2 (faster, busier); the final round has its own cue
+  /** @type {((e: { cue: string, name: string }) => void)[]} */
   const listeners = [];
 
+  /** @param {Track} tr @param {(() => void) | null} [onEnd] @returns {Deck} */
   function newDeck(tr, onEnd) {
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -344,6 +368,7 @@
     return { tr, gain, step: 0, next: ctx.currentTime + 0.08, stopping: false, onEnd };
   }
 
+  /** @param {Deck} d */
   function scheduleDeck(d) {
     const tr = d.tr;
     const boost = tr.once ? 1 : (hurry ? 1.12 : 1) * (intensity >= 2 ? 1.08 : 1);
@@ -363,7 +388,7 @@
         if (tr.echo) voice(out, hz(n.midi - 12), t + six * 0.5, n.len * six * 0.6, { wave: 0.125, vol: 0.022 });
       }
       // arpeggio
-      const arpNote = (i) => hz(chord[i % 3] + (i >= 3 ? 12 : 0));
+      const arpNote = (/** @type {number} */ i) => hz(chord[i % 3] + (i >= 3 ? 12 : 0));
       if (tr.arp === 'up') voice(out, arpNote(inBar % 4), t, six * 0.8, { wave: 0.125, vol: 0.032 });
       else if (tr.arp === 'updown') voice(out, arpNote([0, 1, 2, 3, 2, 1][inBar % 6]), t, six * 0.8, { wave: 0.125, vol: 0.032 });
       else if (tr.arp === 'eighths' && inBar % 2 === 0) voice(out, arpNote((inBar / 2) % 4), t, six * 1.6, { wave: 0.125, vol: 0.03 });
@@ -395,6 +420,7 @@
     decks.forEach(scheduleDeck);
   }
 
+  /** @param {Deck} d @param {number} [secs] */
   function fadeOut(d, secs = 0.8) {
     if (d.stopping) return;
     d.stopping = true;
@@ -406,16 +432,21 @@
   let enabled = false;
   /** @type {string | null} */
   let currentCue = null;
+  /** @type {string | null} */
   let pendingCue = null;
+  /** @type {string | null} */
   let afterOnce = null;
+  /** @type {Record<string, number>} */
   let rotation = {};
   try { rotation = JSON.parse(localStorage.getItem('rumpus.rotation') || '{}'); } catch (e) { rotation = {}; }
   /** @type {HTMLAudioElement | null} */
   let customAudio = null;
-  let customCats = {};     // scenario -> [urls] from ./music/<scenario>/
+  /** @type {Record<string, string[]>} scenario → urls from ./music/<scenario>/ */
+  let customCats = {};
   /** @type {string | null} */
   let customCue = null;
 
+  /** @param {string} cue */
   function nextIndex(cue) {
     const n = CATALOG[cue].length;
     const i = rotation[cue] == null ? Math.floor(Math.random() * n) : (rotation[cue] + 1) % n;
@@ -424,6 +455,7 @@
     return i;
   }
 
+  /** @param {string} cue @param {string | null} [then] */
   function startCue(cue, then) {
     if (!CATALOG[cue]) cue = 'menu';
     if (customAudio) { customAudio.pause(); customCue = null; }
@@ -447,6 +479,7 @@
    * `then` (or whatever was requested meanwhile).
    */
   // Custom tracks for a cue: music/<cue>, then the cue's group (game:x → game), then music/ root.
+  /** @param {string} cue @returns {string[] | null} */
   function customFor(cue) {
     const tries = cue.startsWith('game:') ? ['game/' + cue.slice(5), 'game'] : [cue];
     for (const k of tries.concat('any')) if (customCats[k] && customCats[k].length) return customCats[k];
@@ -458,6 +491,7 @@
   // Loudness normalisation: every custom track is measured once (RMS of the decoded
   // audio) and played through a gain that brings it to the same target as the others.
   const TARGET_RMS = 0.1;
+  /** @type {GainNode | null} */
   let normGain = null;
   let loopsLeft = 0;
   let plays = 0;                 // how many track plays have started (status/tests)
@@ -510,7 +544,7 @@
           customCue = null;
           currentCue = null;
           play(follow);
-        } else playCustom(customCue, customFor(customCue));
+        } else playCustom(customCue, customFor(customCue) || []);
       });
     }
     const pool = list.filter((u) => !badTracks.has(u));
@@ -523,17 +557,18 @@
     loopsLeft = MENU_FAMILY.has(cue) ? 2 : 0; // menu songs play 3× before moving on
     plays++;
     const g = ctx.currentTime;
-    normGain.gain.cancelScheduledValues(g);
-    normGain.gain.setValueAtTime(normGain.gain.value, g);
+    const ng = /** @type {GainNode} */ (normGain); // made together with customAudio above
+    ng.gain.cancelScheduledValues(g);
+    ng.gain.setValueAtTime(ng.gain.value, g);
     // Fade the old song out (no hard cut), then start the new one silent and fade it in
     // to its measured level — the level is known before it plays, so nothing jumps.
-    normGain.gain.linearRampToValueAtTime(0, g + (wasPlaying ? FADE_OUT : 0.01));
+    ng.gain.linearRampToValueAtTime(0, g + (wasPlaying ? FADE_OUT : 0.01));
     const start = (/** @type {number} */ level) => {
       if (token !== swapToken) return;
       const t = ctx.currentTime;
-      normGain.gain.cancelScheduledValues(t);
-      normGain.gain.setValueAtTime(0, t);
-      normGain.gain.linearRampToValueAtTime(level, t + FADE_IN);
+      ng.gain.cancelScheduledValues(t);
+      ng.gain.setValueAtTime(0, t);
+      ng.gain.linearRampToValueAtTime(level, t + FADE_IN);
     };
     const audio = customAudio;
     setTimeout(() => {
@@ -546,9 +581,10 @@
       if (known) start(known);
       else loudnessGain(src).then(start).catch(() => start(1)); // user-added track: measure first, stay silent until then
     }, wasPlaying ? FADE_OUT * 1000 : 0);
-    listeners.forEach((fn) => fn({ cue, name: decodeURIComponent(src.split('/').pop()).replace(/\.\w+$/, '') }));
+    listeners.forEach((fn) => fn({ cue, name: decodeURIComponent(src.split('/').pop() || '').replace(/\.\w+$/, '') }));
   }
 
+  /** @param {string} cue @param {{ then?: string }} [opts] */
   function play(cue, opts = {}) {
     if (!enabled) { pendingCue = cue; return; }
     // 'silence': a game that makes its own music in strict time (Loon Call) takes over the speakers.
@@ -612,6 +648,7 @@
 
   let catsError = '';
   /** @type {Record<string, {gain: number, kbps: number}>} */
+  /** @type {Record<string, { gain: number, kbps?: number }>} */
   let trackInfo = {};
   async function loadCategories() {
     try { trackInfo = await (await fetch('/api/music-info', { cache: 'no-store' })).json() || {}; } catch (e) { trackInfo = {}; }
@@ -642,10 +679,13 @@
     };
   }
 
+  /** @param {boolean} on */
   function setHurry(on) { hurry = !!on; }
+  /** @param {number} n */
   function setIntensity(n) { intensity = n; }
 
   // Briefly lower the music so a reveal sting cuts through.
+  /** @param {number} [ms] @param {number} [level] */
   function duck(ms = 1200, level = 0.35) {
     if (!ctx) return;
     const t = ctx.currentTime;
@@ -654,6 +694,7 @@
     duckGain.gain.setTargetAtTime(1, t + ms / 1000, 0.25);
   }
 
+  /** @param {string} kind @param {number} v */
   function setVolume(kind, v) {
     if (kind === 'music') musicVol = v; else sfxVol = v;
     try { localStorage.setItem('rumpus.vol', JSON.stringify({ music: musicVol, sfx: sfxVol })); } catch (e) { /* ignore */ }
@@ -668,6 +709,7 @@
     if (kind === 'music') ramp(musicBus, musicVol * musicVol); else ramp(sfxBus, sfxVol * sfxVol);
   }
 
+  /** @param {(t: number, dest: AudioNode) => void} fn */
   function sfx(fn) { if (ctx && enabled) fn(ctx.currentTime, sfxBus); }
   const SFX = {
     join: () => sfx((t, d) => { voice(d, 660, t, 0.1, { vol: 0.15 }); voice(d, 990, t + 0.09, 0.14, { vol: 0.15 }); }),
@@ -706,11 +748,11 @@
     customCategories: () => customCats,
     volumes: () => ({ music: musicVol, sfx: sfxVol }),
     isEnabled: () => enabled,
-    onTrack: (fn) => listeners.push(fn),
+    onTrack: (/** @type {(e: { cue: string, name: string }) => void} */ fn) => listeners.push(fn),
     trackCount: TOTAL,
     details: () => Object.fromEntries(Object.entries(CATALOG).map(([k, v]) => [k, v.map((sp, i) => {
       const t = track(k, i);
-      const notes = t.lead.filter(Boolean).map((n) => n.midi);
+      const notes = t.lead.filter((n) => n !== null).map((n) => /** @type {Note} */ (n).midi);
       return { name: t.name, bpm: t.bpm, bars: t.steps / 16, notes: notes.length, lo: Math.min(...notes), hi: Math.max(...notes) };
     })])),
     catalog: () => Object.fromEntries(Object.entries(CATALOG).map(([k, v]) => [k, v.map((s, i) => track(k, i).name)])),

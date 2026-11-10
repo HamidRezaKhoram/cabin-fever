@@ -12,16 +12,21 @@
   const { esc, register, scoredList, av } = window.Rumpus;
   const T = '<span class="timer"></span>';
 
+  /** @param {{ round?: number, totalRounds?: number }} g @param {string} [label] */
   const roundTag = (g, label = 'Round') =>
     g.round ? `<p class="round-tag">${label} ${g.round} of ${g.totalRounds}</p>` : '';
+  /** @param {string} title @param {string} [sub] */
   const waiting = (title, sub = 'Waiting for the other players…') => `<h1>${title} ✓</h1><p>${sub}</p>`;
+  /** A button that sends `payload` when tapped (wired by play.js). @param {Record<string, unknown>} payload @param {string} label @param {string} [cls] */
   const sendBtn = (payload, label, cls = 'vote-btn') =>
     `<button class="${cls}" data-send="${esc(JSON.stringify(payload))}">${label}</button>`;
+  /** @param {string} placeholder @param {number} [max] @param {string} [button] */
   const textForm = (placeholder, max = 60, button = 'Send it') => `
     <form class="text-form">
       <input name="text" maxlength="${max}" autocomplete="off" placeholder="${esc(placeholder)}" required>
       <button type="submit">${button}</button>
     </form>`;
+  /** @param {number} a @param {number} b @param {string} what */
   const count = (a, b, what) => `<p class="count">${a} / ${b} ${what}</p>`;
   /** TV row naming who everyone is waiting on. @param {string[] | undefined} names @param {string} verb */
   const waitingRow = (names, verb) => (names && names.length
@@ -49,14 +54,14 @@
       }
       const r = g.result;
       return `${tag}<h1 class="prompt">${esc(r.prompt)}</h1>
-        <div class="versus">${r.sides.map((sd, i) => `
+        <div class="versus">${r.sides.map((/** @type {any} */ sd, /** @type {any} */ i) => `
           ${i === 1 ? '<div class="vs-badge">VS</div>' : ''}
           <div class="vs-card ${i ? 'b' : 'a'} ${r.winner === i ? 'won' : r.winner === -1 ? '' : 'lost'}">
             ${esc(sd.text)}
             <div class="vs-meta">${av(sd.nickname, 'avatar')} ${esc(sd.nickname)}</div>
             <div class="vs-bar"><i style="width:${sd.pct}%"></i></div>
             <div class="vs-meta"><b>${sd.pct}%</b> · ${sd.votes} vote${sd.votes === 1 ? '' : 's'} · +${sd.gained}
-              <span class="voters">${sd.voters.map((n) => av(n)).join('')}</span></div>
+              <span class="voters">${sd.voters.map((/** @type {any} */ n) => av(n)).join('')}</span></div>
             ${sd.shutout ? '<span class="sweep">SHUTOUT! +250</span>' : ''}
             ${sd.bet ? `<div class="vs-meta">🎲 ${esc(sd.bet.label)}: ${sd.bet.won ? `won +${sd.bet.pts}` : `lost ${sd.bet.pts}`}</div>` : ''}
           </div>`).join('')}
@@ -78,7 +83,7 @@
         }
         if (you.voted) return waiting('Vote cast');
         return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which is funnier?</p><div class="vote-list">` +
-          g.answers.map((a, i) => sendBtn({ choice: i }, esc(a.text))).join('') + '</div>';
+          g.answers.map((/** @type {any} */ a, /** @type {any} */ i) => sendBtn({ choice: i }, esc(a.text))).join('') + '</div>';
       }
       const r = g.result;
       if (you.side >= 0) {
@@ -91,7 +96,7 @@
   });
 
   // ---------------------------------------------------------------- Cottage Olympics
-  const teamName = (t) => (t === 'red' ? '🔴 RED' : t === 'blue' ? '🔵 BLUE' : '');
+  const teamName = (/** @type {string | null | undefined} */ t) => (t === 'red' ? '🔴 RED' : t === 'blue' ? '🔵 BLUE' : '');
   register('minigames', {
     host(s) {
       const g = s.gameState;
@@ -104,7 +109,7 @@
         const head = r.winnerTeam ? (r.winnerTeam === 'tie' ? 'TIE!' : `${teamName(r.winnerTeam)} WINS!`) : `${esc((r.rows[0] || {}).nickname || '')} WINS!`;
         return `${tag}<h1 class="prompt">${esc(g.miniName)}: ${head}</h1>
           ${r.answer != null ? `<p class="big-answer">${g.mini === 'fireflies' ? r.answer + ' fireflies' : 'Target: 3.0 s'}</p>` : ''}
-          <ol class="answers results">${r.rows.map((row) => `<li class="${row.gained ? 'winner' : ''} ${row.team ? 'team-' + row.team : ''}">
+          <ol class="answers results">${r.rows.map((/** @type {any} */ row) => `<li class="${row.gained ? 'winner' : ''} ${row.team ? 'team-' + row.team : ''}">
             ${av(row.nickname)} ${esc(row.nickname)} — ${esc(row.burnt ? 'BURNT 🔥' : row.value)}${typeof row.value === 'number' && row.unit ? ' ' + row.unit : ''}
             ${row.gained ? `<span class="votes">+${row.gained}</span>` : ''}</li>`).join('')}</ol>`;
       }
@@ -118,8 +123,8 @@
               <div class="tug-lake"><div class="tug-rope"><div class="tug-flag" style="left:${50 - pos * 45}%"></div></div></div>
               <div class="tug-team blue">${g.tug.blue} 🔵</div></div>`;
         }
-        const max = Math.max(1, ...g.taps.map((t) => t.taps));
-        return `${tag}<h1 class="prompt">TAP RACE!</h1><div class="bars">${g.taps.map((t) => `
+        const max = Math.max(1, ...g.taps.map((/** @type {any} */ t) => t.taps));
+        return `${tag}<h1 class="prompt">TAP RACE!</h1><div class="bars">${g.taps.map((/** @type {any} */ t) => `
           <div class="bar-row"><span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
           <span class="bar" style="width:${(t.taps / max) * 100}%;animation:none"></span><span class="bar-n">${t.taps}</span></div>`).join('')}</div>`;
       }
@@ -128,7 +133,7 @@
       }
       if (g.mini === 'fireflies') {
         if (g.sub === 'show') {
-          return `<div class="fly-field">${g.flies.map((f) => `<i style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
+          return `<div class="fly-field">${g.flies.map((/** @type {any} */ f) => `<i style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
         }
         return `${tag}<h1 class="prompt">How many fireflies?</h1><p class="big-sub">Guess on your phones! ${T}</p>${count(g.doneCount, g.totalPlayers, 'guesses in')}`;
       }
@@ -193,13 +198,13 @@
       const r = g.result;
       const max = r.tally.length ? r.tally[0].votes : 1;
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
-        <div class="bars">${r.tally.map((t, i) => `
+        <div class="bars">${r.tally.map((/** @type {any} */ t, /** @type {any} */ i) => `
           <div class="bar-row ${r.winners.includes(t.nickname) ? 'winner' : ''}" style="animation-delay:${(r.tally.length - 1 - i) * 0.6}s">
             <span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
             <span class="bar" style="width:${(t.votes / max) * 100}%"></span>
             <span class="bar-n">${t.votes}</span>
           </div>`).join('')}</div>
-        ${r.winners.length ? `<p class="big-sub winner-line">The group has spoken: ${r.winners.map((n) => av(n, 'avatar big bob') + ' ' + esc(n)).join(' & ')}!</p>` : '<p>No votes. Cowards.</p>'}
+        ${r.winners.length ? `<p class="big-sub winner-line">The group has spoken: ${r.winners.map((/** @type {any} */ n) => av(n, 'avatar big bob') + ' ' + esc(n)).join(' & ')}!</p>` : '<p>No votes. Cowards.</p>'}
         ${scoredList(r.gained)}`;
     },
     player(s) {
@@ -207,7 +212,7 @@
       if (s.phase === 'ml-vote') {
         if (you.voted) return waiting('Vote cast');
         return `${roundTag(g)}<h2 class="prompt">${esc(g.prompt)}</h2><div class="vote-list">` +
-          g.targets.map((t) => sendBtn({ target: t.id }, av(t.nickname) + ' ' + esc(t.nickname) + (t.id === you.playerId ? ' (you)' : ''))).join('') +
+          g.targets.map((/** @type {any} */ t) => sendBtn({ target: t.id }, av(t.nickname) + ' ' + esc(t.nickname) + (t.id === you.playerId ? ' (you)' : ''))).join('') +
           '</div>';
       }
       return `<h1>${you.withCrowd ? 'With the crowd! +100' : you.picked ? 'Against the grain ✗' : 'No vote'}</h1>
@@ -225,11 +230,11 @@
           ${count(g.submittedCount, g.totalPlayers, 'answers in')}${count(g.betCount, g.totalPlayers, 'bets placed')}`;
       }
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
-        <ol class="answers results suspense">${g.result.groups.map((gr, i, all) => `
+        <ol class="answers results suspense">${g.result.groups.map((/** @type {any} */ gr, /** @type {any} */ i, /** @type {any} */ all) => `
           <li class="${gr.top ? 'winner' : ''}" style="animation-delay:${(all.length - 1 - i) * 0.5}s">${esc(gr.label)}
             <span class="votes">×${gr.count}</span>
-            <span class="voters">${gr.names.map((n) => av(n)).join('')}</span></li>`).join('')}</ol>
-        ${(g.result.bets || []).some((b) => b.gained) ? `<p class="big-sub">🎯 Called it: ${g.result.bets.filter((b) => b.gained).map((b) => `${av(b.nickname)} ${esc(b.nickname)} (${b.bet})`).join(', ')}</p>` : ''}
+            <span class="voters">${gr.names.map((/** @type {any} */ n) => av(n)).join('')}</span></li>`).join('')}</ol>
+        ${(g.result.bets || []).some((/** @type {any} */ b) => b.gained) ? `<p class="big-sub">🎯 Called it: ${g.result.bets.filter((/** @type {any} */ b) => b.gained).map((/** @type {any} */ b) => `${av(b.nickname)} ${esc(b.nickname)} (${b.bet})`).join(', ')}</p>` : ''}
         ${scoredList(g.result.gained)}`;
     },
     player(s) {
@@ -251,7 +256,7 @@
   });
 
   // ---------------------------------------------------------------- Closest Cast
-  const fmt = (n) => (Math.abs(n) >= 10000 ? Number(n).toLocaleString() : String(n));
+  const fmt = (/** @type {number} */ n) => (Math.abs(n) >= 10000 ? Number(n).toLocaleString() : String(n));
   register('closest', {
     host(s) {
       const g = s.gameState;
@@ -262,7 +267,7 @@
       const r = g.result;
       return `${roundTag(g)}<h1 class="prompt">${esc(g.question)}</h1>
         <p class="big-answer">${fmt(r.answer)} ${esc(r.unit)}</p>
-        <ol class="answers results suspense">${r.list.map((e, i) => `
+        <ol class="answers results suspense">${r.list.map((/** @type {any} */ e, /** @type {any} */ i) => `
           <li class="${e.rank === 0 ? 'winner' : ''}" style="animation-delay:${(r.list.length - 1 - i) * 0.6 + 0.8}s">${av(e.nickname)} ${esc(e.nickname)}: ${fmt(e.guess)}${e.exact ? ' <span class="sweep">BULLSEYE!</span>' : ''}${e.double ? ' <span class="streak">🎲</span>' : ''}
             <span class="byline">(off by ${fmt(+e.off.toFixed(3))})</span>
             ${e.gained ? `<span class="votes">+${e.gained}</span>` : ''}</li>`).join('')}</ol>`;
@@ -299,9 +304,9 @@
       const r = g.result;
       return `${roundTag(g, 'Player')}<h1 class="prompt">${av(g.subject, 'avatar big bob')} ${esc(g.subject)}</h1>
         <p class="big-sub">${r ? 'The lie was…' : `Which one is the lie? ${T}`}</p>
-        <ol class="answers ${r ? 'results' : ''}">${g.statements.map((st, i) => `
+        <ol class="answers ${r ? 'results' : ''}">${g.statements.map((/** @type {any} */ st, /** @type {any} */ i) => `
           <li class="${r && r.lieIndex === i ? 'lie' : ''}">${esc(st)}
-            ${r && r.picks[i].length ? `<span class="voters">${r.picks[i].map((n) => av(n)).join('')}</span>` : ''}</li>`).join('')}</ol>
+            ${r && r.picks[i].length ? `<span class="voters">${r.picks[i].map((/** @type {any} */ n) => av(n)).join('')}</span>` : ''}</li>`).join('')}</ol>
         ${r ? `<p>${r.subjectGained ? `${esc(g.subject)} fooled ${r.fooled.length} and gets +${r.subjectGained}!` : `Nobody was fooled by ${esc(g.subject)}.`}</p>`
             : count(g.guessedCount, g.needed, 'guesses in')}`;
     },
@@ -321,7 +326,7 @@
         if (you.isSubject) return `<h1>It's about you!</h1><p>Keep a straight face 😐</p>`;
         if (you.guessed) return waiting('Guess locked');
         return `<h2 class="prompt">Which is ${esc(g.subject)}'s lie?</h2><div class="vote-list">` +
-          g.statements.map((st, i) => sendBtn({ choice: i }, esc(st))).join('') + '</div>';
+          g.statements.map((/** @type {any} */ st, /** @type {any} */ i) => sendBtn({ choice: i }, esc(st))).join('') + '</div>';
       }
       if (you.isSubject) return `<h1>You fooled ${g.result.fooled.length}</h1>`;
       return `<h1>${you.correct ? 'Spotted it! +100' : you.guessed ? 'Fooled ✗' : 'No guess'}</h1>
@@ -339,12 +344,13 @@
   });
 
   // ---------------------------------------------------------------- Odd Duck Out
-  const outcomeText = (r) => ({
+  const outcomeText = (/** @type {{ outcome: string, imposter: string }} */ r) => (/** @type {Record<string, string>} */ ({
     escaped: `${esc(r.imposter)} got away with it! +300`,
     stole: `${esc(r.imposter)} was caught but guessed the word! +200`,
     caught: `Caught! ${esc(r.imposter)} was the imposter.`,
-  }[r.outcome]);
+  }))[r.outcome];
   // meter: show each suspect's suspicion bar (vote phase); clues pop in one by one.
+  /** @param {any[]} clues clue rows from the server @param {boolean} [meter] @param {number} [total] */
   const clueList = (clues, meter = false, total = 1) => `<ul class="clue-list">${clues.map((c, i) =>
     `<li style="animation-delay:${i * 0.6}s">${av(c.nickname, 'avatar')}<div><span class="pname">${esc(c.nickname)}</span><span class="clue">${esc(c.clue)}</span>
       ${meter ? `<span class="suspicion" title="votes"><i style="width:${Math.round(100 * (c.suspicion || 0) / Math.max(1, total))}%"></i></span>` : ''}</div></li>`).join('')}</ul>`;
@@ -364,7 +370,7 @@
       if (s.phase === 'imp-guess') {
         return `${head}<h1>${av(g.imposter, 'avatar big bob')} ${esc(g.imposter)} was caught!</h1>
           <p class="big-sub">…but can they guess the secret word? ${T}</p>
-          <ol class="answers">${g.options.map((o) => `<li>${esc(o)}</li>`).join('')}</ol>`;
+          <ol class="answers">${g.options.map((/** @type {any} */ o) => `<li>${esc(o)}</li>`).join('')}</ol>`;
       }
       const r = g.result;
       return `${head}<h1 class="prompt">${outcomeText(r)}</h1>
@@ -385,12 +391,12 @@
       if (s.phase === 'imp-vote') {
         if (you.voted) return role + waiting('Vote cast');
         return `${role}<h2>Who's the imposter?</h2><div class="vote-list">` +
-          g.clues.map((c) => sendBtn({ target: c.id }, `${esc(c.nickname)} <span class="byline">“${esc(c.clue)}”</span>`)).join('') + '</div>';
+          g.clues.map((/** @type {any} */ c) => sendBtn({ target: c.id }, `${esc(c.nickname)} <span class="byline">“${esc(c.clue)}”</span>`)).join('') + '</div>';
       }
       if (s.phase === 'imp-guess') {
         if (!you.isImposter) return role + `<h1>${esc(g.imposter)} is guessing…</h1>`;
         return `${role}<h2>You were caught! Guess the word to steal points:</h2><div class="vote-list">` +
-          g.options.map((o, i) => sendBtn({ choice: i }, esc(o))).join('') + '</div>';
+          g.options.map((/** @type {any} */ o, /** @type {any} */ i) => sendBtn({ choice: i }, esc(o))).join('') + '</div>';
       }
       return `<h1>${outcomeText(g.result)}</h1><p class="prompt">Word: ${esc(g.result.word)}</p>`;
     },
@@ -1221,21 +1227,21 @@
       const g = s.gameState;
       if (s.phase === 'tel-reveal') {
         return `<p class="round-tag">Chain ${g.chainIndex + 1} of ${g.chainCount} — ${av(g.chain.owner)} ${esc(g.chain.owner)}'s</p>
-          <div class="chain">${g.chain.entries.map((e, i) => entryHtml(e, i, g.entryMs)).join('')}</div>
+          <div class="chain">${g.chain.entries.map((/** @type {any} */ e, /** @type {any} */ i) => entryHtml(e, i, g.entryMs)).join('')}</div>
           ${g.favOpen ? `<p class="big-sub">Tap your favourite step on your phone! ❤ +50 ${T}</p>${count(g.favCount, g.favNeeded, 'picked')}` : ''}`;
       }
       if (s.phase === 'tel-vote') {
         return `<h1>Vote for the best doodle!</h1><p class="big-sub">${T}</p>
-          <div class="doodle-grid">${g.drawings.map((d, i) =>
+          <div class="doodle-grid">${g.drawings.map((/** @type {any} */ d, /** @type {any} */ i) =>
             `<figure><img src="${d.image}" alt=""><figcaption>${i + 1}</figcaption></figure>`).join('')}</div>
           ${count(g.votedCount, g.totalPlayers, 'votes in')}`;
       }
-      const msg = {
+      const msg = /** @type {Record<string, string>} */ ({
         write: 'Write a silly phrase for someone else to draw!',
         draw: 'Draw what your phone says!',
         describe: 'Describe the drawing on your phone!',
-      }[g.stepType];
-      const verb = { write: 'writing', draw: 'drawing', describe: 'guessing' }[g.stepType];
+      })[g.stepType];
+      const verb = /** @type {Record<string, string>} */ ({ write: 'writing', draw: 'drawing', describe: 'guessing' })[g.stepType];
       return `${roundTag(g, 'Step')}<h1>${msg}</h1><p class="big-sub">${T}</p>
         ${count(g.submittedCount, g.totalPlayers, 'done')}
         ${waitingRow(g.waitingOn, verb)}`;
@@ -1246,7 +1252,7 @@
         if (!g.favOpen) return watchTv('<p>The chains are being revealed…</p>');
         if (you.fav != null) return waiting('Favourite picked ❤');
         if (!you.canFav) return watchTv('<p>Everyone else is picking a favourite step…</p>');
-        return `<h2>Favourite step? ❤</h2><div class="fav-pick">` + g.entries.map((e, i) => e.ok
+        return `<h2>Favourite step? ❤</h2><div class="fav-pick">` + g.entries.map((/** @type {any} */ e, /** @type {any} */ i) => e.ok
           ? sendBtn({ fav: i }, e.type === 'drawing' ? `<img src="${e.content}" alt="drawing by ${esc(e.by)}">` : `“${esc(e.content)}”`, 'vote-btn fav-btn')
           : '').join('') + '</div>';
       }
@@ -1254,7 +1260,7 @@
         if (you.voted) return waiting('Vote cast');
         if (!g.drawings.length) return '<h1>Nothing to vote on</h1>';
         return `<h2>Best doodle?</h2><div class="doodle-pick">` +
-          g.drawings.map((d) => sendBtn({ key: d.key }, `<img src="${d.image}" alt="">`, 'doodle-btn')).join('') + '</div>';
+          g.drawings.map((/** @type {any} */ d) => sendBtn({ key: d.key }, `<img src="${d.image}" alt="">`, 'doodle-btn')).join('') + '</div>';
       }
       if (you.submitted) return waiting('Passed it on');
       if (g.stepType === 'write') {
@@ -1279,7 +1285,7 @@
       if (padEl) {
         const pad = window.Rumpus.drawPad(padEl);
         const submit = () => api.send({ image: pad.toDataURL() });
-        root.querySelector('#draw-done').addEventListener('click', () => {
+        /** @type {HTMLElement} */ (root.querySelector('#draw-done')).addEventListener('click', () => {
           if (pad.isEmpty() && !confirm('Submit a blank drawing?')) return;
           submit();
         });
