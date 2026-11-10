@@ -149,7 +149,8 @@ test('accessibility basics: focus ring, reduced motion, 48px targets, labelled r
   assert.match(css, /body\.play button, body\.play input, body\.play select \{ min-height: 48px; \}/);
   assert.match(read('public/play.js'), /aria-label="React: /);
   assert.match(read('public/play.html'), /id="game-view"[^>]*aria-live="polite"/);
-  assert.match(read('public/avatar-maker.js'), /aria-label="Previous /);
+  assert.match(read('public/avatar-maker.js'), /aria-pressed=/);
+  assert.match(read('public/avatar-maker.js'), /role="tablist"/);
 });
 
 test('character maker options match the server schema', () => {

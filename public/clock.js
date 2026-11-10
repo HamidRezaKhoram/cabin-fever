@@ -52,6 +52,8 @@
   window.Rumpus.clock = {
     FPS, add,
     frame: () => frame,
+    /** Start a fresh measurement window (tests / debug panel). */
+    resetStats() { stats.intervals = []; stats.last = 0; },
     // For tests: measured fps and frame-interval jitter over the last ~4 s.
     stats() {
       const iv = stats.intervals;

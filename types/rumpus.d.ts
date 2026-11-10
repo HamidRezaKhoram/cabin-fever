@@ -102,6 +102,7 @@ interface RumpusClock {
   add(fn: (frame: number) => void): () => void;
   frame(): number;
   stats(): { fps: number; avgMs: number; maxMs: number; samples: number };
+  resetStats(): void;
 }
 
 /** window.Rumpus — modules attach themselves as each script loads, so every member is optional at the type level. */

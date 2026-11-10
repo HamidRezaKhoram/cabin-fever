@@ -237,11 +237,13 @@ test('character maker: a look is validated, shared with everyone, editable, and 
   const a = await makePlayer(srv, h.code, 'Maker', { look });
   const b = await makePlayer(srv, h.code, 'Cheater', { look: { ...look, hat: 99 } });
   await until(() => h.state.players.length === 2, 'joined');
-  assert.deepStrictEqual(h.state.players.find((p) => p.nickname === 'Maker').look, look);
+  const { LOOK_PARTS } = require('../../games/avatar-schema');
+  const full = { ...Object.fromEntries(Object.keys(LOOK_PARTS).map((k) => [k, 0])), ...look }; // new parts default to 0
+  assert.deepStrictEqual(h.state.players.find((p) => p.nickname === 'Maker').look, full);
   assert.strictEqual(h.state.players.find((p) => p.nickname === 'Cheater').look, null, 'invalid look rejected');
   a.sock.emit('player:look', { look: { ...look, hat: 4 } });
   await until(() => h.state.players.find((p) => p.nickname === 'Maker').look.hat === 4, 'edited');
-  b.sock.emit('player:look', { look: { skin: 1 } }); // incomplete → ignored
+  b.sock.emit('player:look', { look: { skin: 1, hat: -1 } }); // out of range → ignored (missing parts default to 0)
   a.sock.emit('player:look', { look: null });
   await until(() => h.state.players.find((p) => p.nickname === 'Maker').look === null, 'cleared');
   assert.strictEqual(h.state.players.find((p) => p.nickname === 'Cheater').look, null);
