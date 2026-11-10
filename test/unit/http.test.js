@@ -48,6 +48,40 @@ test('every script and stylesheet referenced by the pages is served', async () =
   }
 });
 
+// Regression: the TV linked to /admin and /highlights but only /admin.html existed, and the
+// tests fetched the .html files — so test the exact URLs the client code uses.
+test('every same-site URL written in the client code (links, fetches, redirects, worker cache) is served', async () => {
+  const dir = path.join(__dirname, '..', '..', 'public');
+  const urls = new Set();
+  for (const f of fs.readdirSync(dir).filter((x) => /\.(js|html|webmanifest)$/.test(x))) {
+    const src = fs.readFileSync(path.join(dir, f), 'utf8');
+    const re = /(?:href|src|action)=["'](\/[^"'$?#{}\s]*)|fetch\(\s*['`](\/[^'`$?#{}\s]*)|location\.(?:href|assign)\s*=?\(?\s*['`](\/[^'`$?#{}\s]*)|"start_url":\s*"(\/[^"?#]*)"/g;
+    for (const m of src.matchAll(re)) urls.add(m[1] || m[2] || m[3] || m[4]);
+    const shell = /SHELL\s*=\s*\[([^\]]*)\]/.exec(src);
+    if (shell) for (const m of shell[1].matchAll(/'(\/[^']*)'/g)) urls.add(m[1]);
+  }
+  for (const must of ['/admin', '/highlights', '/play', '/host']) assert.ok(urls.has(must) || must === '/host', `scanner should find ${must}`);
+  assert.ok(urls.size >= 25, `found only ${urls.size} URLs — is the scanner broken?`);
+  for (const u of urls) {
+    const r = await get(srv.url, u === '/qr.svg' ? '/qr.svg?data=http%3A%2F%2Fx' : u);
+    assert.ok(r.status === 200 || r.status === 302, `${u} returned ${r.status}`);
+  }
+});
+
+test('every TV button action and setting control has a handler', () => {
+  const dir = path.join(__dirname, '..', '..', 'public');
+  for (const f of ['host.js', 'play.js', 'games.js', 'admin.js', 'highlights.js']) {
+    const src = fs.readFileSync(path.join(dir, f), 'utf8');
+    const all = ['host.js', 'play.js', 'games.js', 'admin.js', 'highlights.js'].map((x) => fs.readFileSync(path.join(dir, x), 'utf8')).join('\n');
+    for (const [, act] of src.matchAll(/data-act="([\w-]+)"/g)) {
+      assert.ok(all.includes(`act === '${act}'`), `${f}: button data-act="${act}" has no click handler`);
+    }
+    for (const [, id] of src.matchAll(/id="(set-[\w-]+)"/g)) {
+      assert.ok(all.includes(`'${id}'`), `${f}: control #${id} has no change handler`);
+    }
+  }
+});
+
 test('pages load nothing from the internet (offline-safe)', async () => {
   for (const page of ['/host', '/play', '/style.css', '/host.js', '/play.js', '/common.js', '/music.js']) {
     const body = (await get(srv.url, page)).body;

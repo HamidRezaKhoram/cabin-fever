@@ -2,8 +2,17 @@
 
 ## The suite (run before and after every change)
 `./scripts/test-all.sh` — content build check, mypy, tsc + type-aware ESLint + strict ratchet,
-unit/integration (`node --test test/unit`), legacy e2e, browser tests (Playwright: TV + 3
-phones). Flags: `UI_ONLY=1`, `SKIP_UI=1`. The pre-commit hook runs the type/lint part.
+unit/integration (`node --test test/unit`), browser tests (Playwright: TV + 3
+phones, plus /admin and /highlights driven through the real links). Flags: `UI_ONLY=1`, `SKIP_UI=1`. The pre-commit hook runs the type/lint part.
+
+## Lessons: why bugs slipped past (Nov 2026)
+- `/admin` and `/highlights` 404'd while tests passed: the tests fetched `/admin.html` and nobody
+  clicked the TV link. Now `http.test.js` scans every URL literal in `public/` and requests it,
+  a static test checks every `data-act` button and `set-*` control has a handler, and the browser
+  test clicks the links and uses both pages (save → reload → still saved; add → delete a prompt).
+- Rule: a feature isn't tested until a test does what the user does — same URL, same click.
+- Removed `test/e2e-new.js` (duplicated the unit tests; its two unique checks moved into
+  `games.test.js`).
 
 ## Bots — one brain, three uses
 `games/bot-brain.js` decides what a player sends on any phone screen (every game, every

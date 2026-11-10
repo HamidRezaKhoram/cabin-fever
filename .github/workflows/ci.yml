@@ -1,5 +1,5 @@
 # CI: the same full suite we run locally (content, mypy, tsc + eslint + strict ratchet,
-# unit/integration, e2e, browser tests with a real TV + 3 phones) on every push and PR.
+# unit/integration, browser tests with a real TV + 3 phones) on every push and PR.
 name: test
 on: [push, pull_request]
 jobs:
