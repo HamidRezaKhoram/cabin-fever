@@ -83,6 +83,11 @@ async function main() {
   for (const page of ['play', 'host', 'admin', 'highlights']) write(path.join(OUT, page, 'index.html'), `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=../${page}.html"><script>location.replace('../${page}.html' + location.search)</script>`);
   write(path.join(OUT, 'index.html'), fs.readFileSync(path.join(ROOT, 'web', 'index.html')));
   write(path.join(OUT, '.nojekyll'), '');
+  // The narrator's natural voice, if fetched (tools/fetch-kokoro.js). Not precached: the TV loads
+  // it on first use and transformers.js keeps it in the browser's cache; phones never download it.
+  const voice = path.join(ROOT, 'vendor', 'kokoro');
+  if (fs.existsSync(path.join(voice, 'model', 'config.json'))) fs.cpSync(voice, path.join(OUT, 'tts'), { recursive: true });
+  else console.warn('narrator voice not fetched (node tools/fetch-kokoro.js): the browser voice will be used');
 
   // 3. Content pools in one file (preloaded into the browser stand-in for fs).
   /** @type {Record<string, string>} */
@@ -119,7 +124,7 @@ async function main() {
   /** @type {Record<string, string>} */
   const files = {};
   for (const rel of walk(OUT)) {
-    if (rel.startsWith('music/') || rel === 'sw.js' || rel === '.nojekyll') continue;
+    if (rel.startsWith('music/') || rel.startsWith('tts/') || rel === 'sw.js' || rel === '.nojekyll') continue;
     files[rel] = hash(fs.readFileSync(path.join(OUT, rel)));
   }
   const version = hash(JSON.stringify(files) + JSON.stringify(media));

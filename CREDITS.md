@@ -9,6 +9,9 @@ Rumpus code is AGPL-3.0 (see LICENSE). Bundled content comes from:
 | Closest Cast & Fish Tales facts (heights, lengths, years, populations, birth names, city nicknames) | [Wikidata](https://www.wikidata.org) — item ID shown on screen with each question | CC0 (public domain) |
 | Rainy Day Cards cards + some Campfire Quips prompts | [Cards Against Humanity](https://cardsagainsthumanity.com) official packs, via [json-against-humanity](https://github.com/crhallberg/json-against-humanity) | CC BY-NC-SA 4.0 — **non-commercial use only** |
 | Music in `music/` (52 tracks) | OpenGameArt.org "CC0 - Retro Music" collection — artists listed in `music/CREDITS.md` | CC0 (public domain) |
+| Narrator voice (4 voices: US/UK × female/male) | [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [kokoro-js](https://www.npmjs.com/package/kokoro-js) + [onnxruntime-web](https://github.com/microsoft/onnxruntime) — downloaded by `tools/fetch-kokoro.js` | Apache-2.0 (model, kokoro-js); MIT (onnxruntime) |
+| Browser version networking | [PeerJS](https://peerjs.com) (WebRTC); its free public broker only introduces phones to the TV | MIT |
+| QR codes | [node-qrcode](https://github.com/soldair/node-qrcode) | MIT |
 | Fonts: Press Start 2P, VT323 | Google Fonts | SIL Open Font License 1.1 (see public/fonts) |
 | Everything else — Campfire Quips/Most Likely/Majority/Odd Duck Out/Doodle prompts, 18+ bar trivia, pixel art, the 50 chiptune tracks | Original to this project | AGPL-3.0 |
 

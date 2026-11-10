@@ -229,6 +229,7 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
   else if (t.id === 'set-lang') socket.emit('host:settings', { lang: t.value });
   else if (t.id === 'set-narrator') window.Rumpus.host.setEnabled(t.checked);
+  else if (t.id === 'set-voice') { window.Rumpus.host.setVoice(t.value); window.Rumpus.host.say(t.value === 'classic' ? 'Beep boop. Classic voice.' : 'Hi! I will be your host tonight.'); }
   else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
 });
 fsBtn.addEventListener('click', () => {
@@ -350,6 +351,7 @@ function gamePicker(/** @type {any} */ label) {
           <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
           <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
           <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator voice</label>
+          <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => opt(v[0], window.Rumpus.host.voice(), v[1])).join('')}</select></label>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((/** @type {any} */ p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
         </div>

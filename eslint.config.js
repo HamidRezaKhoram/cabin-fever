@@ -27,7 +27,7 @@ const COMMON = {
 };
 
 module.exports = [
-  { ignores: ['node_modules/**', 'test/ui/.shots/**', 'test/.music-fixture/**', 'public/socket.io/**', 'content-src/**', 'dist/**'] },
+  { ignores: ['node_modules/**', 'test/ui/.shots/**', 'test/.music-fixture/**', 'public/socket.io/**', 'content-src/**', 'dist/**', 'vendor/**', 'tts/**'] },
   js.configs.recommended,
   // Type-aware: server + games (+ the bot CLI) through tsconfig.json.
   {
@@ -44,7 +44,7 @@ module.exports = [
   // Type-aware: browser pages (TV and phone share files, so both projects are listed).
   {
     files: ['public/**/*.js'],
-    ignores: ['public/sw.js'],
+    ignores: ['public/sw.js', 'public/tts-worker.js'],
     languageOptions: {
       sourceType: 'script', globals: { ...globals.browser, io: 'readonly' },
       parser: tseslint.parser,
@@ -69,6 +69,12 @@ module.exports = [
   {
     files: ['web/sw-template.js'],
     languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __FILES__: 'readonly', __MEDIA__: 'readonly' } },
+    rules: COMMON,
+  },
+  // The narrator's voice worker: an ES module in a worker scope (loads the Kokoro build at runtime).
+  {
+    files: ['public/tts-worker.js'],
+    languageOptions: { sourceType: 'module', globals: globals.worker },
     rules: COMMON,
   },
   // The service worker runs in its own scope (no DOM, no page tsconfig).
