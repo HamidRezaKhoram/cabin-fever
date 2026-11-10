@@ -21,6 +21,8 @@ const library = require('./games/library');
 const flow = require('./games/flow');
 const { cleanLook, LOOK_PARTS } = require('./games/avatar-schema');
 const botBrain = require('./games/bot-brain');
+const { NightGame, placePoints } = require('./games/night');
+const NIGHT_GAP_MS = parseInt(process.env.RUMPUS_NIGHT_GAP_MS || '12000', 10);
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
@@ -198,6 +200,7 @@ function paceState(room) {
 // other players' in-progress input.
 function broadcast(room) {
   if (room.closed) return;
+  countNight(room);
   if (DEBUG) {
     const g = room.game;
     const key = g ? [g.phase, g.round, g.matchIndex, g.skipSeq].join('/') : 'lobby';
@@ -214,6 +217,7 @@ function broadcast(room) {
     maxPlayers: MAX_PLAYERS,
     pace: paceState(room),
     teamScores: teamScores(room),
+    night: nightSummary(room),
   };
   if (room.hostSocket && room.hostSocket.connected) {
     room.hostSocket.emit('room:stateUpdate', {
@@ -233,10 +237,68 @@ function broadcast(room) {
   }
 }
 
+/** @param {Room} room @param {any} GameClass */
+function startGame(room, GameClass) {
+  if (room.game) room.game.destroy();
+  for (const p of room.players.values()) p.score = 0;
+  const game = new GameClass(room, () => broadcast(room));
+  room.game = game;
+  console.log(`[room ${room.code}] starting game: ${GameClass.meta.id}`);
+  game.start();
+}
+
+// --- game night -------------------------------------------------------------
+/** Between games: vote on 3 games not played yet tonight (or show the final table). @param {Room} room @param {boolean} final */
+function nightVote(room, final) {
+  const night = room.night;
+  if (!night) return;
+  const fits = GAME_LIST.filter((m) => room.players.size >= (m.minPlayers || 2));
+  const fresh = fits.filter((m) => !night.played.includes(m.id));
+  const pool = (fresh.length >= 3 ? fresh : fits).slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  if (room.game) room.game.destroy();
+  for (const p of room.players.values()) p.score = 0;
+  room.game = new NightGame(room, () => broadcast(room), {
+    options: pool.slice(0, 3).map((m) => ({ id: m.id, name: m.name, minPlayers: m.minPlayers })),
+    final,
+    onPick: (/** @type {string} */ id) => { const G = /** @type {Record<string, any>} */ (GAMES)[id]; if (room.night && G) startGame(room, G); },
+  });
+  room.game.start();
+}
+/** A game of the night just ended: add placings, then queue the next vote (or the final table). @param {Room} room */
+function countNight(room) {
+  const night = room.night;
+  const game = room.game;
+  if (!night || !game || game instanceof NightGame || game.phase !== 'gameover' || game.nightCounted) return;
+  game.nightCounted = true;
+  const pts = placePoints([...room.players.values()].map((p) => ({ id: p.id, score: p.score })));
+  for (const [id, n] of pts) night.points.set(id, (night.points.get(id) || 0) + n);
+  night.played.push(/** @type {any} */ (game.constructor).meta.id);
+  const final = night.played.length >= night.total;
+  night.nextAt = Date.now() + NIGHT_GAP_MS;
+  night.timer = setTimeout(() => { night.timer = null; if (room.night === night) nightVote(room, final); }, NIGHT_GAP_MS);
+}
+/** @param {Room} room */
+function endNight(room) {
+  if (room.night && room.night.timer) clearTimeout(room.night.timer);
+  room.night = null;
+}
+/** @param {Room} room */
+function nightSummary(room) {
+  const night = room.night;
+  if (!night) return null;
+  return {
+    total: night.total, played: night.played.length, nextAt: night.nextAt || null,
+    standings: [...room.players.values()].map((p) => ({ nickname: p.nickname, points: night.points.get(p.id) || 0 }))
+      .sort((a, b) => b.points - a.points),
+  };
+}
+
 function closeRoom(room) {
   if (room.closed) return;
   room.closed = true;
   clearTimeout(room.closeTimer);
+  endNight(room);
   if (room.game) room.game.destroy();
   room.game = null;
   for (const p of room.players.values()) {
@@ -422,11 +484,20 @@ io.on('connection', (socket) => {
     const GameClass = GAMES[msg && msg.gameId];
     if (!GameClass) return;
     if (room.players.size < (GameClass.meta.minPlayers || 2)) return;
-    if (room.game) room.game.destroy();
-    for (const p of room.players.values()) p.score = 0;
-    room.game = new GameClass(room, () => broadcast(room));
-    console.log(`[room ${room.code}] starting game: ${GameClass.meta.id}`);
-    room.game.start();
+    if (room.night) endNight(room); // picking a game by hand ends a game night
+    startGame(room, GameClass);
+  });
+
+  // Game night: a playlist of `count` games chosen by phone votes, with a running leaderboard.
+  socket.on('host:startNight', (msg) => {
+    const room = hostRoom(socket);
+    if (!room) return;
+    const phase = roomPhase(room);
+    if ((phase !== 'lobby' && phase !== 'gameover') || room.players.size < 2) return;
+    const total = Math.max(2, Math.min(10, Number(msg && msg.count) || 3));
+    room.night = { total, played: [], points: new Map(), timer: null };
+    console.log(`[room ${room.code}] game night: ${total} games`);
+    nightVote(room, false);
   });
 
   socket.on('host:skip', () => {
@@ -436,6 +507,7 @@ io.on('connection', (socket) => {
 
   socket.on('host:endGame', () => {
     const room = hostRoom(socket);
+    if (room && room.night) endNight(room);
     if (!room || !room.game) return;
     room.game.destroy();
     room.game = null;

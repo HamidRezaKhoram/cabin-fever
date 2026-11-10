@@ -1,10 +1,7 @@
 # Backlog — worth doing, too big for now
 
 **Gameplay**
-- **Audience mode:** extra phones join as audience (unlimited), vote on answers; audience votes
-  give a small bonus. Great for big cottage weekends.
-- **Game-night playlist:** auto-rotate games ("3 games, chosen by vote") with a running
-  multi-game leaderboard and a grand champion at the end.
+- ✅ **Game-night playlist** — shipped: 3/5/7-game nights, phone votes, night points, grand champion.
 - **Persistent stats & achievements** across sessions (data/stats.json): wins per player name,
   funniest line hall-of-fame, "liar of the year". Exportable highlights page.
 - **House rules editor** on the TV (timers per game, rounds, 18+ share slider, banned words).

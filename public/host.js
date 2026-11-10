@@ -172,6 +172,7 @@ document.addEventListener('click', (e) => {
   const act = hit(e.target, '[data-act]');
   if (!act) return;
   if (act.dataset.act === 'skip') socket.emit('host:skip');
+  if (act.dataset.act === 'night') socket.emit('host:startNight', { count: +act.dataset.n });
   if (act.dataset.act === 'bots') socket.emit('host:addBots', { count: +act.dataset.n, speed: +(act.dataset.speed || 1) });
   if (act.dataset.act === 'nobots') socket.emit('host:removeBots');
   if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
@@ -289,6 +290,8 @@ function gamePicker(label) {
   return `<div class="lobby-head">
       <div>
         <h1>${label}</h1>
+        <div class="night-row">🎉 <b>Game night</b> — a playlist chosen by your phones, with a grand champion:
+          ${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}</div>
         <div class="settings">
           <label>Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
             ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
@@ -439,7 +442,7 @@ function render() {
 
   const inGame = phase !== 'lobby' && phase !== 'gameover';
   // Per-game look: colour scheme (CSS) + background scene; lobby/gameover use the default.
-  const themeId = inGame ? g.gameId : 'lobby';
+  const themeId = inGame && g.gameId !== 'night' ? g.gameId : 'lobby';
   if (document.body.dataset.theme !== themeId) {
     document.body.dataset.theme = themeId;
     scene.setTheme(themeId);
@@ -479,7 +482,7 @@ function render() {
     html = '<h1>🏆 Final scores</h1>' + teamWin + podium(g.standings || []) +
       (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
         ${av(a.name, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
-      gamePicker('Play again?');
+      (state.night ? window.Rumpus.nightTable(state.night, true) : gamePicker('Play again?'));
   } else if (games[g.gameId]) {
     html = games[g.gameId].host(state);
     if (g.multiplier > 1 && !/× POINTS/.test(html)) {
