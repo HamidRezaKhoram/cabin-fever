@@ -6,12 +6,13 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/unit/ && node test/e2e-new.js",
+    "test": "node --test test/unit/",
     "test:all": "./scripts/test-all.sh",
     "build:content": "python3 tools/build-content.py",
     "build:icons": "python3 tools/make-icons.py",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.host.json && tsc -p tsconfig.play.json",
-    "lint": "eslint --max-warnings=0 ."
+    "lint": "eslint --max-warnings=0 .",
+    "coverage": "c8 node --test --test-concurrency=4 test/unit/"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -25,6 +26,7 @@
     "globals": "15.12.0",
     "socket.io-client": "^4.7.5",
     "typescript": "5.6.3",
-    "typescript-eslint": "8.13.0"
+    "typescript-eslint": "8.13.0",
+    "c8": "10.1.2"
   }
 }

@@ -240,10 +240,20 @@ def looncall() -> Canvas:              # a singing loon on the lake, notes float
         c.disc(nx, ny + 3, 1.2, 'Y'); c.rect(nx + 1, ny - 1, 1, 4, 'Y'); c.set(nx + 2, ny - 1, 'Y'); c.set(nx + 3, ny, 'Y')
     c.outline(); return c
 
+def lantern() -> Canvas:               # a paper boat with a glowing lantern on dusk water
+    c = Canvas(30, 24)
+    c.rect(0, 18, 30, 6, 'U')                                    # water
+    for x in range(2, 28, 5): c.set(x, 20, 'A'); c.set(x + 2, 22, 'A')  # ripples
+    c.tri([(4, 13), (26, 13), (21, 18)], 'W'); c.tri([(4, 13), (9, 18), (21, 18)], 'X')   # paper hull
+    c.tri([(14, 2), (14, 13), (22, 13)], 'H')                    # sail
+    c.rect(13, 2, 1, 11, 'B')                                    # mast
+    c.disc(8, 8, 3.2, 'Y'); c.rect(7, 4, 3, 1, 'B'); c.set(8, 8, 'O')  # lantern
+    c.outline(); return c
+
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
-    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'crush': crush,
+    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'lantern': lantern, 'crush': crush,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

@@ -36,9 +36,11 @@ async function check(name, fn) {
     allPages.push(page);
     page.on('pageerror', (e) => errors.push(`${who}: ${e.message}`));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(`${who} console: ${m.text()}`); });
+    // Client code coverage (Chrome's V8 block coverage), merged across every page at the end.
+    return page.coverage.startJSCoverage({ resetOnNavigation: false }).catch(() => {});
   };
   const tv = await browser.newPage({ viewport: { width: 1400, height: 850 } });
-  watch(tv, 'tv');
+  await watch(tv, 'tv');
   const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
   let code;
   const phones = [];
@@ -192,7 +194,7 @@ async function check(name, fn) {
       // in software, so a 2.6× full-screen canvas measures the test machine, not our 30 fps clock.
       const ctx = await browser.newContext({ ...devices['Pixel 7'], ...(i === 0 ? { deviceScaleFactor: 1 } : {}) });
       const p = await ctx.newPage();
-      watch(p, n);
+      await watch(p, n);
       await p.goto(`${BASE}/play?code=${code}&debug=1`);
       assert.strictEqual(await p.inputValue('#code-input'), code);
       if (i === 0) {
@@ -459,10 +461,105 @@ async function check(name, fn) {
     await tv.waitForSelector('.game-pick');
   });
 
+  await check('Lantern Lake on real phones: dragging on the circle steers that phone\'s boat on the TV canvas', async () => {
+    await tv.click('[data-game-id="lantern"]');
+    await tv.waitForSelector('canvas.ll-lake');
+    await phones[0].waitForSelector('.ll-pad');
+    await tv.waitForFunction(() => Rumpus.frame && Rumpus.frame.boats && Rumpus.frame.boats[0], null, { timeout: 10000 });
+    const x0 = await tv.evaluate(() => Rumpus.frame.boats[0][0]);
+    const box = await phones[0].locator('.ll-pad').boundingBox();
+    // Hold a finger to the right edge of the circle for a second.
+    await phones[0].mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await phones[0].mouse.down();
+    await phones[0].mouse.move(box.x + box.width * 0.95, box.y + box.height / 2, { steps: 4 });
+    await tv.waitForFunction((x) => Rumpus.frame.boats[0][0] > x + 15, x0, { timeout: 4000 });
+    await phones[0].mouse.up();
+    const lit = await tv.evaluate(() => { const c = document.querySelector('canvas.ll-lake'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4 * 97) if (d[i] + d[i + 1] + d[i + 2] > 60) n++; return n; });
+    assert.ok(lit > 50, 'the lake is drawn');
+    await shot(tv, '31-lantern');
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+  });
+
+  // Every screen the bots ever reached (test/ui/snapshots, refreshed when a game changes), pushed
+  // through the real TV and phone page code exactly like a server update.
+  await check('every recorded screen of every game renders on the TV and on a phone', async () => {
+    const fs = require('fs');
+    const dir = process.env.SNAP_DIR || '/tests/snapshots';
+    const games = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.json')) : [];
+    const offered = (await (await fetch(BASE + '/api/admin/rules')).json()).games.map((g) => g.id);
+    const missing = offered.filter((id) => !games.includes(`${id}.json`));
+    assert.deepStrictEqual(missing, [], 'every game has recorded screens (run BOT_GAMES=<id> ./scripts/test-all.sh)');
+    const snapTv = await browser.newPage({ viewport: { width: 1400, height: 850 } });
+    await watch(snapTv, 'snapshot-tv');
+    await snapTv.goto(`${BASE}/host`);
+    const pctx = await browser.newContext({ ...devices['Pixel 7'] });
+    const snapPhone = await pctx.newPage();
+    await watch(snapPhone, 'snapshot-phone');
+    await snapPhone.goto(`${BASE}/play`);
+    let n = 0;
+    const failures = [];
+    for (const f of games) {
+      const snaps = JSON.parse(fs.readFileSync(`${dir}/${f}`, 'utf8'));
+      for (const sn of snaps) {
+        const page = sn.kind === 'host' ? snapTv : snapPhone;
+        const err = await page.evaluate(([kind, st]) => {
+          try {
+            // The pages' top-level `socket` / `me` live in the global lexical scope of classic scripts.
+            const pageSocket = new Function('return socket')();
+            if (kind === 'player') new Function('v', 'me = v')({ playerId: st.you.playerId });
+            pageSocket.listeners('room:stateUpdate').forEach((fn) => fn(st));
+            const impl = Rumpus.games[st.gameState && st.gameState.gameId];
+            if (impl && st.phase !== 'gameover') {
+              Rumpus.setState(st);
+              const html = kind === 'host' ? impl.host(st) : impl.player(st);
+              if (typeof html !== 'string' || !html.trim()) return 'rendered nothing';
+            }
+            return null;
+          } catch (e) { return String(e && e.stack || e).slice(0, 300); }
+        }, [sn.kind, sn.state]);
+        n++;
+        if (err) failures.push(`${f} ${sn.kind} ${sn.state.phase}: ${err}`);
+      }
+    }
+    assert.deepStrictEqual(failures, []);
+    assert.ok(n >= offered.length * 4, `rendered ${n} screens`);
+    console.log(`    (${n} recorded screens from ${games.length} games)`);
+  });
+
   await check('no page errors anywhere', async () => {
     assert.deepStrictEqual(errors, []);
   });
 
+  // ---- client coverage: which bytes of public/*.js ran on any TV or phone page
+  /** @type {Map<string, { src: string, hit: Uint8Array }>} */
+  const files = new Map();
+  for (const pg of allPages) {
+    const entries = await pg.coverage.stopJSCoverage().catch(() => []);
+    for (const e of entries) {
+      const m = /^https?:\/\/[^/]+\/([\w-]+\.js)(\?|$)/.exec(e.url);
+      if (!m || m[1] === 'socket.io.js') continue;
+      const f = files.get(m[1]) || { src: e.source || '', hit: new Uint8Array((e.source || '').length) };
+      const mark = new Uint8Array(f.src.length);
+      const ranges = e.functions.flatMap((fn) => fn.ranges).sort((a, b) => a.startOffset - b.startOffset || b.endOffset - a.endOffset);
+      for (const r of ranges) mark.fill(r.count > 0 ? 1 : 0, r.startOffset, Math.min(r.endOffset, mark.length));
+      for (let i = 0; i < mark.length; i++) if (mark[i]) f.hit[i] = 1;
+      files.set(m[1], f);
+    }
+  }
+  let tot = 0, cov = 0;
+  const rows = [];
+  for (const [name, f] of [...files].sort()) {
+    let t = 0, c = 0;
+    for (let i = 0; i < f.src.length; i++) if (!/\s/.test(f.src[i])) { t++; if (f.hit[i]) c++; }
+    tot += t; cov += c;
+    rows.push(`  ${name.padEnd(22)} ${((100 * c) / Math.max(1, t)).toFixed(1).padStart(5)}%`);
+  }
+  const pct = (100 * cov) / Math.max(1, tot);
+  console.log(`\nClient code coverage (browser tests):\n${rows.join('\n')}\n  ${'all'.padEnd(22)} ${pct.toFixed(1).padStart(5)}%`);
+  const CLIENT_MIN = Number(process.env.CLIENT_COVERAGE_MIN || 80);
   await browser.close();
+  if (pct < CLIENT_MIN) { console.error(`✖ client coverage ${pct.toFixed(1)}% is below ${CLIENT_MIN}%`); process.exit(1); }
   console.log(`\nUI: ${passed} checks passed`);
 })().catch((e) => { console.error(e); process.exit(1); });

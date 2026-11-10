@@ -75,6 +75,7 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
   }
 
   // Avatar <img> for a nickname, looked up in the latest room state.
+  /** @type {{ players?: any[] } | null} latest room state (avatars by nickname) */
   let lastState = null;
   function setState(s) { lastState = s; }
   // A player's picture: their own drawing if they made one, else their pixel animal.
@@ -90,6 +91,12 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     if (!lastState) return '';
     const p = (lastState.players || []).find((x) => x.nickname === nickname);
     return p ? playerImg(p, cls) : '';
+  }
+
+  /** Picture URL for a player by nickname (canvas games draw avatars themselves). @param {string} nickname */
+  function avUrl(nickname) {
+    const p = lastState && (lastState.players || []).find((/** @type {any} */ x) => x.nickname === nickname);
+    return p ? playerUrl(p) : '';
   }
 
   function scoredList(list) {
@@ -209,5 +216,5 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     };
   })();
 
-  return { time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
+  return { avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })())));

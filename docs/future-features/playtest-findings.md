@@ -62,3 +62,4 @@ Re-run after each fix: `node test/playtest.js` (inside the node container) and c
 
 Tooling: `worstIdleAt` in the report names the stretch; a static test forces every game timer to be scaled.
 | Loon Call (new) | 33 s idle (caller sat out their call) | 22 s, 27 actions/min | The caller echoes their own call with everyone. |
+| Lantern Lake (new) | — | 2.5 min, worst idle 10 s | Continuous steering; phones' arrows/scores push 2×/s. |

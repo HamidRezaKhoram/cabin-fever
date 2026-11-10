@@ -14,6 +14,7 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const { Server } = require('socket.io');
 const fs = require('fs');
 const QRCode = require('qrcode');
@@ -41,7 +42,7 @@ const AVATAR_COUNT = 17; // must match public/sprites.js
 const GAMES = {};
 for (const mod of [
   'quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely',
-  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'crush', 'cah',
+  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'lantern', 'crush', 'cah',
 ]) {
   const G = require(`./games/${mod}`);
   GAMES[G.meta.id] = G;
@@ -73,8 +74,20 @@ function lanAddresses() {
   return out;
 }
 
+// Debug only (RUMPUS_DEBUG=1): the exact payloads the TV and each phone (bots included) would get
+// right now. The bots test records these as screen snapshots; the browser test renders them all.
+if (DEBUG) {
+  app.get('/api/debug/views', (/** @type {any} */ req, /** @type {any} */ res) => {
+    const room = rooms.get(String(req.query.room || '').toUpperCase());
+    if (!room) return res.status(404).json({ error: 'no room' });
+    res.json({ host: hostPayload(room), players: [...room.players.values()].map((p) => playerPayload(room, p)) });
+  });
+}
+
 app.get('/api/info', (req, res) => {
-  res.json({ publicUrl: PUBLIC_URL || null, lan: lanAddresses().map((ip) => `http://${ip}:${PORT}`) });
+  res.json({ publicUrl: PUBLIC_URL || null, lan: lanAddresses().map((ip) => `http://${ip}:${PORT}`),
+    // The secure twin (for phone tilt sensors, which browsers only allow on https).
+    https: httpsPort ? lanAddresses().map((ip) => `https://${ip}:${httpsPort}`) : [], httpsPort: httpsPort || null });
 });
 
 app.get('/qr.svg', async (req, res) => {
@@ -308,7 +321,17 @@ function broadcast(room) {
     if (key !== room.dbgKey) dlog(`[room ${room.code}] phase ${room.dbgKey || '-'} → ${key}${g && g.endsAt ? ` (timer ${Math.round((g.endsAt - Date.now()) / 100) / 10}s)` : ''}`);
     room.dbgKey = key;
   }
-  const base = {
+  const base = baseState(room);
+  if (room.hostSocket && room.hostSocket.connected) room.hostSocket.emit('room:stateUpdate', hostPayload(room, base));
+  for (const p of room.players.values()) {
+    if (!p.connected || !p.socket.connected) continue;
+    p.socket.emit('room:stateUpdate', playerPayload(room, p, base));
+  }
+}
+
+/** The part of the state every screen shares. @param {Room} room */
+function baseState(room) {
+  return {
     code: room.code,
     phase: roomPhase(room),
     players: playersSummary(room),
@@ -320,22 +343,21 @@ function broadcast(room) {
     teamScores: teamScores(room),
     night: nightSummary(room),
   };
-  if (room.hostSocket && room.hostSocket.connected) {
-    room.hostSocket.emit('room:stateUpdate', {
-      ...base,
-      gameState: room.game ? room.game.hostGameState() : {},
-      canSkip: !!(room.game && room.game.timerFn),
-    });
-  }
-  for (const p of room.players.values()) {
-    if (!p.connected || !p.socket.connected) continue;
-    const view = room.game ? room.game.playerView(p.id) : { gameState: {}, you: {} };
-    p.socket.emit('room:stateUpdate', {
-      ...base,
-      gameState: view.gameState,
-      you: { playerId: p.id, nickname: p.nickname, paceVotes: ['ready', 'hurry', 'skipq'].filter((k) => room.pace[k].has(p.id)), ...view.you },
-    });
-  }
+}
+
+/** What the TV gets. @param {Room} room @param {ReturnType<typeof baseState>} [base] */
+function hostPayload(room, base = baseState(room)) {
+  return { ...base, gameState: room.game ? room.game.hostGameState() : {}, canSkip: !!(room.game && room.game.timerFn) };
+}
+
+/** What one phone gets — only its own private view. @param {Room} room @param {Player} p @param {ReturnType<typeof baseState>} [base] */
+function playerPayload(room, p, base = baseState(room)) {
+  const view = room.game ? room.game.playerView(p.id) : { gameState: {}, you: {} };
+  return {
+    ...base,
+    gameState: view.gameState,
+    you: { playerId: p.id, nickname: p.nickname, paceVotes: /** @type {('ready' | 'hurry' | 'skipq')[]} */ (['ready', 'hurry', 'skipq']).filter((k) => room.pace[k].has(p.id)), ...view.you },
+  };
 }
 
 /** @param {Room} room @param {any} GameClass */
@@ -343,6 +365,8 @@ function startGame(room, GameClass) {
   if (room.game) room.game.destroy();
   for (const p of room.players.values()) p.score = 0;
   const game = new GameClass(room, () => broadcast(room));
+  // Real-time frames (positions at 30 Hz) go to the TV only and may be dropped when it's busy.
+  game.frame = (/** @type {Record<string, any>} */ data) => { if (room.hostSocket && room.hostSocket.connected) room.hostSocket.volatile.emit('room:frame', data); };
   room.game = game;
   console.log(`[room ${room.code}] starting game: ${GameClass.meta.id}`);
   game.start();
@@ -819,6 +843,35 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+// --- optional https twin -------------------------------------------------------------
+// Phone motion sensors (Lantern Lake) only work on https. With RUMPUS_HTTPS_PORT set we make a
+// self-signed certificate once (offline, openssl) and serve the same app + sockets on that port.
+// Phones see a certificate warning the first time; everything else keeps using plain http.
+const HTTPS_PORT = process.env.RUMPUS_HTTPS_PORT;
+let httpsPort = 0;
+function startHttps() {
+  if (!HTTPS_PORT) return;
+  const dir = path.join(process.env.RUMPUS_DATA_DIR || path.join(__dirname, 'data'), 'certs');
+  const key = path.join(dir, 'key.pem'), cert = path.join(dir, 'cert.pem');
+  try {
+    if (!fs.existsSync(key) || !fs.existsSync(cert)) {
+      fs.mkdirSync(dir, { recursive: true });
+      const san = ['DNS:localhost', 'IP:127.0.0.1', ...lanAddresses().map((ip) => `IP:${ip}`)].join(',');
+      require('child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '3650',
+        '-subj', '/CN=Cottage party game (self-signed)', '-addext', `subjectAltName=${san}`, '-keyout', key, '-out', cert], { stdio: 'ignore' });
+    }
+    const secure = https.createServer({ key: fs.readFileSync(key), cert: fs.readFileSync(cert) }, app);
+    io.attach(secure);
+    secure.listen(Number(HTTPS_PORT), () => {
+      httpsPort = /** @type {import('net').AddressInfo} */ (secure.address()).port;
+      console.log(`  https (tilt controls): port ${httpsPort}`);
+    });
+  } catch (e) {
+    console.warn('[https] not available:', e instanceof Error ? e.message : e);
+  }
+}
+startHttps();
 
 server.listen(PORT, () => {
   const port = /** @type {import('net').AddressInfo} */ (server.address()).port;
