@@ -105,6 +105,8 @@ gameView.addEventListener('click', (e) => {
     socket.emit('player:avatar', { avatar: +av.dataset.avatar });
     return;
   }
+  const tb = hit(e.target, '[data-team]');
+  if (tb) { socket.emit('player:team', { team: tb.dataset.team }); return; }
   if (hit(e.target, '[data-lobby-draw]')) {
     lobbyDraw.hidden = false;
     if (!lobbyPad) lobbyPad = window.Rumpus.drawPad(document.getElementById('lobby-pad'));
@@ -286,7 +288,13 @@ function render() {
       <p>Watch the TV — the host is picking a game.</p>
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
       <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
-      <button class="ghost-btn" data-lobby-draw>✏️ Draw my own picture</button>`;
+      <button class="ghost-btn" data-lobby-draw>✏️ Draw my own picture</button>
+      ${state.settings && state.settings.teams ? (() => {
+        const mineTeam = (state.players.find((p) => p.id === me.playerId) || {}).team;
+        const other = mineTeam === 'red' ? 'blue' : 'red';
+        return `<p class="team-badge team-${mineTeam}">You're on ${mineTeam === 'red' ? '🔴 RED' : '🔵 BLUE'}</p>
+          <button class="ghost-btn" data-team="${other}">Switch to ${other === 'red' ? '🔴 Red' : '🔵 Blue'}</button>`;
+      })() : ''}`;
   } else if (state.phase === 'gameover') {
     const top = g.standings && g.standings[0];
     const rank = (g.standings || []).findIndex((s) => s.nickname === you.nickname);

@@ -36,6 +36,7 @@ function allowedVotes(game) {
   if (!game || game.phase === 'gameover') return [];
   const phase = game.phase;
   if (isReveal(phase)) return game.timerFn ? ['ready'] : [];
+  if (game.noPaceVotes) return []; // real-time minigames: no skipping/hurrying mid-play
   const out = [];
   if (game.timerFn) out.push('hurry');
   if (typeof game.skipQuestion === 'function' && (game.skippablePhases || []).includes(phase)) out.push('skipq');

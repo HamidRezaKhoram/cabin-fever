@@ -35,7 +35,7 @@ step "4/5 build image + start server"
 "$CT" build -q -t homejack:test . >/dev/null
 "$CT" rm -f homejack-test >/dev/null 2>&1 || true
 "$CT" run -d --name homejack-test --network host -e PORT=$PORT \
-  -e RUMPUS_DEBUG=1 -e RUMPUS_ANSWER_MS=20000 -e RUMPUS_VOTE_MS=8000 -e RUMPUS_RESULTS_MS=2000 -e RUMPUS_REVEAL_MS=2000 \
+  -e RUMPUS_DEBUG=1 -e RUMPUS_ANSWER_MS=20000 -e RUMPUS_VOTE_MS=8000 -e RUMPUS_RESULTS_MS=5000 -e RUMPUS_REVEAL_MS=2000 \
   homejack:test >/dev/null
 trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
 for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done

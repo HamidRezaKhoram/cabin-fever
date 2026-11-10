@@ -9,6 +9,8 @@ interface RoomSettings {
   rounds: number | null;
   timerScale: 0.6 | 1 | 1.5 | 2 | number;
   spicy: boolean;
+  /** Red vs Blue team mode. */
+  teams: boolean;
 }
 
 interface Player {
@@ -19,6 +21,7 @@ interface Player {
   score: number;
   connected: boolean;
   avatar: number;
+  team?: 'red' | 'blue' | null;
   avatarImage?: string | null;
   avatarVer?: number;
   dropTimer?: NodeJS.Timeout | null;
@@ -66,6 +69,7 @@ interface GameLike {
   skipSeq?: number;
   subject?: string;
   skippablePhases?: string[];
+  noPaceVotes?: boolean;
   start(): void;
   destroy(): void;
   skip(): void;

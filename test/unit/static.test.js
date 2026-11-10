@@ -102,3 +102,18 @@ test('every page loads the shared clock after common.js', () => {
     assert.ok(html.indexOf('/clock.js') > html.indexOf('/common.js') && html.indexOf('/common.js') > 0, p);
   }
 });
+
+test('every game has its own background scene and colour scheme', () => {
+  const bg = read('public/bg.js');
+  const css = read('public/style.css');
+  for (const id of GAME_IDS) {
+    assert.ok(new RegExp(`\\b${id}:\\s*\\{ sky:`).test(bg), `bg.js THEMES missing ${id}`);
+    assert.ok(css.includes(`body[data-theme="${id}"]`), `style.css colour scheme missing ${id}`);
+  }
+});
+
+test('every game background has its own content scene (not just a palette)', () => {
+  const bg = read('public/bg.js');
+  const stat = bg.slice(bg.indexOf('const STATIC = {'), bg.indexOf('const ANIM = {'));
+  for (const id of GAME_IDS) assert.ok(new RegExp(`\\n    ${id}\\(g\\)`).test(stat), `no scene motif for ${id}`);
+});
