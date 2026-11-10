@@ -428,18 +428,31 @@
     return null;
   }
 
-  function playCustom(cue, list) {
+  /** @param {string} cue @param {string[]} list @param {string} [then] */
+  function playCustom(cue, list, then) {
+    const once = !!(CATALOG[cue] && CATALOG[cue][0].once); // victory: play once, then move on
     decks.forEach((d) => fadeOut(d, 0.6));
     currentCue = cue;
     customCue = cue;
     if (!customAudio) {
       customAudio = new Audio();
-      customAudio.addEventListener('ended', () => { if (customCue) playCustom(customCue, customFor(customCue)); });
+      customAudio.addEventListener('ended', () => {
+        if (!customCue) return;
+        if (customAudio.dataset.once === '1') {
+          const follow = pendingCue || customAudio.dataset.then || 'menu';
+          pendingCue = null;
+          customCue = null;
+          currentCue = null;
+          play(follow);
+        } else playCustom(customCue, customFor(customCue));
+      });
     }
     const src = list[Math.floor(Math.random() * list.length)];
     customAudio.src = src;
     customAudio.volume = musicVol;
-    customAudio.loop = list.length === 1;
+    customAudio.loop = !once && list.length === 1;
+    customAudio.dataset.once = once ? '1' : '';
+    customAudio.dataset.then = then || '';
     customAudio.play().catch(() => {});
     listeners.forEach((fn) => fn({ cue, name: decodeURIComponent(src.split('/').pop()).replace(/\.\w+$/, '') }));
   }
@@ -447,8 +460,10 @@
   function play(cue, opts = {}) {
     if (!enabled) { pendingCue = cue; return; }
     if (cue === currentCue && (customCue === cue || decks.some((d) => !d.stopping))) return;
+    // While a custom one-shot (victory) is playing, queue the next cue instead of cutting it off.
+    if (customAudio && customCue && customAudio.dataset.once === '1' && !customAudio.paused) { pendingCue = cue; return; }
     const custom = customFor(cue);
-    if (custom) { playCustom(cue, custom); return; }
+    if (custom) { playCustom(cue, custom, opts.then); return; }
     if (customAudio) { customAudio.pause(); customCue = null; }
     const playingOnce = decks.some((d) => !d.stopping && d.tr.once);
     if (playingOnce && !CATALOG[cue][0].once) { pendingCue = cue; return; } // let the jingle finish

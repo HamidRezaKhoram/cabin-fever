@@ -11,8 +11,8 @@ folder. Scenarios without files keep using the chiptunes, so you can mix.
 | `intro/` | Short sting when a game starts |
 | `game/` | While answering (any game) — or `game/<id>/` for one game: `quiplash`, `fibbage`, `trivia`, `closest`, `majority`, `mostlikely`, `imposter`, `twotruths`, `telephone`, `cah` |
 | `category/` | Trivia category pick |
-| `vote/` | Voting / picking |
-| `reveal/` | Reveals and results |
+| `vote/` | Accusation votes (Odd One Out, Most Likely To) |
+| `reveal/` | The Doodle Telephone chain showcase |
 | `round2/` | (chiptunes speed up automatically in round 2) |
 | `final/` | The final ×3 question — make it the most hype |
 | `victory/` | Winner fanfare |
