@@ -10,9 +10,10 @@
     "test:all": "./scripts/test-all.sh",
     "build:content": "python3 tools/build-content.py",
     "build:icons": "python3 tools/make-icons.py",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.host.json && tsc -p tsconfig.play.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.host.json && tsc -p tsconfig.play.json && tsc -p tsconfig.web.json",
     "lint": "eslint --max-warnings=0 .",
-    "coverage": "c8 node --test --test-concurrency=4 test/unit/"
+    "coverage": "c8 node --test --test-concurrency=4 test/unit/",
+    "build:pages": "node tools/build-pages.js"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -25,8 +26,10 @@
     "@types/node": "20.17.6",
     "@types/qrcode": "1.5.5",
     "c8": "10.1.2",
+    "esbuild": "0.24.0",
     "eslint": "9.14.0",
     "globals": "15.12.0",
+    "peerjs": "1.5.4",
     "socket.io-client": "^4.7.5",
     "typescript": "5.6.3",
     "typescript-eslint": "8.13.0"

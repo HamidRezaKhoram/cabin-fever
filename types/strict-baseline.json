@@ -10,5 +10,9 @@
   "tsconfig.play.json": {
     "noImplicitAny": 0,
     "strictNullChecks": 0
+  },
+  "tsconfig.web.json": {
+    "noImplicitAny": 0,
+    "strictNullChecks": 0
   }
 }

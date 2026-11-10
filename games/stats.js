@@ -42,7 +42,7 @@ function save() {
       fs.renameSync(FILE + '.tmp', FILE);
     } catch (e) { /* best effort: stats are a nice-to-have */ }
   }, 1000);
-  timer.unref();
+  if (timer.unref) timer.unref(); // (browsers have no unref)
 }
 
 /** @param {string} name @returns {PlayerStats} */

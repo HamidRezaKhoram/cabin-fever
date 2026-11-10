@@ -27,11 +27,12 @@ const COMMON = {
 };
 
 module.exports = [
-  { ignores: ['node_modules/**', 'test/ui/.shots/**', 'test/.music-fixture/**', 'public/socket.io/**', 'content-src/**'] },
+  { ignores: ['node_modules/**', 'test/ui/.shots/**', 'test/.music-fixture/**', 'public/socket.io/**', 'content-src/**', 'dist/**'] },
   js.configs.recommended,
   // Type-aware: server + games (+ the bot CLI) through tsconfig.json.
   {
     files: ['server.js', 'core/**/*.js', 'games/**/*.js', 'tools/**/*.js'],
+    ignores: ['tools/build-pages.js'],
     languageOptions: {
       sourceType: 'commonjs', globals: globals.node,
       parser: tseslint.parser,
@@ -51,6 +52,24 @@ module.exports = [
     },
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: { ...COMMON, ...TYPED },
+  },
+  // The GitHub Pages build: browser code that bundles the game server (tsconfig.web.json).
+  {
+    files: ['web/**/*.js', 'tools/build-pages.js'],
+    ignores: ['web/sw-template.js'],
+    languageOptions: {
+      sourceType: 'commonjs', globals: { ...globals.browser, ...globals.node },
+      parser: tseslint.parser,
+      parserOptions: { project: './tsconfig.web.json', tsconfigRootDir: __dirname },
+    },
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    rules: { ...COMMON, ...TYPED },
+  },
+  // The Pages service worker template (the build fills in the file lists).
+  {
+    files: ['web/sw-template.js'],
+    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __FILES__: 'readonly', __MEDIA__: 'readonly' } },
+    rules: COMMON,
   },
   // The service worker runs in its own scope (no DOM, no page tsconfig).
   {

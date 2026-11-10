@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14121f">
+  <title>Cabin Fever — party games</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; min-height: 100vh; align-items: center; justify-content: center; text-align: center; }
+    .landing { max-width: 640px; padding: 24px; }
+    .landing h1 { font-size: clamp(28px, 6vw, 56px); color: var(--accent2); }
+    .landing .choices { display: grid; gap: 18px; margin: 28px 0; }
+    .landing a.big { display: block; padding: 22px; font-family: var(--pixel); font-size: clamp(14px, 3vw, 22px); background: var(--panel); color: var(--accent); text-decoration: none; box-shadow: 0 0 0 4px var(--edge), 0 6px 0 4px var(--edge); }
+    .landing p { line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main class="landing">
+    <h1>CABIN FEVER</h1>
+    <p>Party games for one big screen and everyone's phones. Nothing to install: the TV's browser hosts the game, phones join with a code.</p>
+    <div class="choices">
+      <a class="big" href="host.html">📺 Host on this screen</a>
+      <a class="big" href="play.html">📱 Join with my phone</a>
+    </div>
+    <p class="hint">Open the host on a TV or laptop, then scan its QR code with your phone. Phones connect straight to the host's browser; nothing about your game is stored anywhere else.</p>
+  </main>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+</body>
+</html>

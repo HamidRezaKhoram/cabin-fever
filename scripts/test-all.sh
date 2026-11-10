@@ -14,16 +14,16 @@ step() { printf '\n\033[1;33m== %s ==\033[0m\n' "$*"; }
 
 if [ "${UI_ONLY:-0}" != 1 ]; then
 git -C "$ROOT" config core.hooksPath .githooks 2>/dev/null || true
-step "1/5 content pools are up to date"
+step "1/6 content pools are up to date"
 python3 tools/build-content.py >/dev/null
 python3 tools/make-icons.py >/dev/null
 git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated files changed — review and commit them:"; git status --short games/data/pools public/sprites.js; }
 
-step "2/5 type checks (tsc --checkJs on JS, mypy --strict on Python)"
+step "2/6 type checks (tsc --checkJs on JS, mypy --strict on Python)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
   pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/*.py'
 
-step "3/5 unit + integration tests (node --test, with coverage ≥ 80%)"
+step "3/6 unit + integration tests (node --test, with coverage ≥ 80%)"
 # Bots play only the games changed or added since the last commit (BOT_GAMES=all to play every
 # game; CI does). A game counts as changed when its module games/<id>.js changed.
 if [ -z "${BOT_GAMES:-}" ]; then
@@ -43,7 +43,7 @@ mkdir -p "$ROOT/test/ui/snapshots"
 fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
 
-step "4/5 build image + start server"
+step "4/6 build image + start server"
 "$CT" build -q -t homejack:test . >/dev/null
 "$CT" rm -f homejack-test >/dev/null 2>&1 || true
 # A 1-second test track in music/menu/ so the browser test can check the menu music never stops.
@@ -69,10 +69,16 @@ trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
 for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
 echo "test server music: $(curl -s "http://localhost:$PORT/api/music")"
 
-step "5/5 browser tests (TV + 3 phones)"
+step "5/6 browser tests (TV + 3 phones)"
 mkdir -p "$ROOT/test/ui/.shots"
 "$CT" run --rm --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots \
   -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v homejack-pw:/pw "$PW_IMG" sh -c '
   cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/run.js /pw/run.js && node /pw/run.js'
+
+step "6/6 GitHub Pages build (the TV's browser hosts the room; tested with no server)"
+"$CT" run --rm -v "$ROOT":/src:ro,Z -v "$ROOT/dist":/out:Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
+  cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null && node tools/build-pages.js /out'
+"$CT" run --rm --network host -e DIST=/dist -v "$ROOT/dist":/dist:Z -v "$ROOT/test/ui":/tests:ro,Z -v homejack-pw:/pw "$PW_IMG" sh -c '
+  cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/pages.js /pw/pages.js && node /pw/pages.js'
 
 printf '\n\033[1;32mALL TESTS PASSED\033[0m\n'

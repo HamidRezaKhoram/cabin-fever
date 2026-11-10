@@ -50,6 +50,15 @@
     if (!enabled) return;
     if (voice) { voice.pause(); voice = null; }
     const fr = R.i18n && R.i18n.lang() === 'fr';
+    // The browser build has no server voice: use the browser's own right away.
+    if (/** @type {any} */ (window).CABIN && 'speechSynthesis' in window) {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = fr ? 'fr-FR' : 'en-US';
+      speechSynthesis.speak(u);
+      if (R.music && R.music.duck) R.music.duck(Math.min(8000, 800 + t.length * 70), 0.45);
+      return;
+    }
     const a = new Audio('/api/tts?text=' + encodeURIComponent(t) + (fr ? '&lang=fr' : ''));
     voice = a;
     if (R.music && R.music.duck) R.music.duck(Math.min(8000, 800 + t.length * 70), 0.45);
