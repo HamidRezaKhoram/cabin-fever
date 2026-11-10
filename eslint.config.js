@@ -43,6 +43,7 @@ module.exports = [
   // Type-aware: browser pages (TV and phone share files, so both projects are listed).
   {
     files: ['public/**/*.js'],
+    ignores: ['public/sw.js'],
     languageOptions: {
       sourceType: 'script', globals: { ...globals.browser, io: 'readonly' },
       parser: tseslint.parser,
@@ -50,6 +51,12 @@ module.exports = [
     },
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: { ...COMMON, ...TYPED },
+  },
+  // The service worker runs in its own scope (no DOM, no page tsconfig).
+  {
+    files: ['public/sw.js'],
+    languageOptions: { sourceType: 'script', globals: globals.serviceworker },
+    rules: COMMON,
   },
   // Tests and config: plain rules (not in a tsconfig project).
   {

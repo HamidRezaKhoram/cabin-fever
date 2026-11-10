@@ -653,3 +653,7 @@ body.host.in-game.sidebar-peek #sidebar { display: flex; position: fixed; top: 5
 .admin-items li.off span { opacity: 0.45; text-decoration: line-through; }
 .admin-items button { font-size: 12px; padding: 6px 8px; min-height: 0; flex: none; }
 #add-form { display: grid; gap: 8px; }
+
+/* ---------- colour-blind friendly palette (Okabe–Ito): right = blue, wrong/danger = vermillion ---------- */
+body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: #e69f00; }
+/* Team red/blue stay as they are: red vs blue reads clearly for red-green colour blindness. */

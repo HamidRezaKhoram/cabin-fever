@@ -21,7 +21,7 @@ git diff --quiet -- games/data/pools public/sprites.js || { echo "Generated file
 
 step "2/5 type checks (tsc --checkJs on JS, mypy --strict on Python)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
-  pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/build-content.py tools/make-icons.py tools/fetch-wikidata.py tools/music-manifest.py tools/fetch-trivia-api.py'
+  pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/*.py'
 
 step "3/5 unit + integration tests (node --test)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '

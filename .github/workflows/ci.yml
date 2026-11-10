@@ -1,0 +1,16 @@
+# CI: the same full suite we run locally (content, mypy, tsc + eslint + strict ratchet,
+# unit/integration, e2e, browser tests with a real TV + 3 phones) on every push and PR.
+name: test
+on: [push, pull_request]
+jobs:
+  test-all:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Full test suite (podman containers, like the dev machine)
+        run: ./scripts/test-all.sh
+      - name: Keep browser screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: ui-shots, path: test/ui/.shots/ }

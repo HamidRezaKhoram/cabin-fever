@@ -26,6 +26,14 @@ document.getElementById('text-size').addEventListener('click', () => {
   store('rumpus.textSize', SIZES[sizeIx]);
   applySize();
 });
+// Colour-blind friendly palette (Okabe–Ito), remembered on this phone.
+const cbBtn = /** @type {HTMLElement} */ (document.getElementById('cb-btn'));
+const applyCb = (/** @type {boolean} */ on) => { document.body.classList.toggle('cb', on); cbBtn.setAttribute('aria-pressed', String(on)); };
+applyCb(store('rumpus.cb') === true);
+cbBtn.addEventListener('click', () => { const on = !document.body.classList.contains('cb'); store('rumpus.cb', on); applyCb(on); });
+// Installable app (PWA): offline-friendly reloads on the phone.
+// (Browsers only allow service workers on https or localhost; on a plain-http LAN this quietly does nothing.)
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 const avatarPick = document.getElementById('avatar-pick');
 
 window.Rumpus.background(document.getElementById('bg'), { fps: 4 });
