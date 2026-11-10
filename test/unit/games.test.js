@@ -103,7 +103,14 @@ test('Punchline: a missing answer forfeits the matchup', async () => {
     h.emit('host:startGame', { gameId: 'quiplash' });
     await h.phase('answering');
     for (const p of ps.slice(0, 2)) { await until(() => p.state.gameState.promptNumber === 1, 'p'); p.submit({ text: 'only one' }); }
-    const r = await h.phase('results', 6000); // Cat never answered → forfeit, no voting needed
+    // Cat never answered → Cat's matchups are forfeits (straight to results, no vote).
+    // Matchups where both players answered still get voted on, so skip through those.
+    const r = await until(() => {
+      const st = h.state;
+      if (st.phase === 'results' && st.gameState.result.sides.some((sd) => sd.text.includes('forfeit'))) return st;
+      if (st.phase === 'voting' || st.phase === 'results') h.emit('host:skip');
+      return null;
+    }, 'a forfeit result', 15000);
     assert.ok(r.gameState.result.sides.some((sd) => sd.text.includes('forfeit')));
   } finally { await s2.stop(); }
 });

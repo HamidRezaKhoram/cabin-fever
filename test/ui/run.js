@@ -61,10 +61,10 @@ async function check(name, fn) {
     assert.ok(st.samples > 60);
   });
 
-  await check('game picker shows unique art for all 10 games', async () => {
+  await check('game picker shows unique art for all 11 games', async () => {
     const arts = await tv.$$eval('.game-pick .game-art img', (els) => els.map((e) => [e.src, e.width, e.height]));
-    assert.strictEqual(arts.length, 10);
-    assert.strictEqual(new Set(arts.map((a) => a[0])).size, 10);
+    assert.strictEqual(arts.length, 11);
+    assert.strictEqual(new Set(arts.map((a) => a[0])).size, 11);
     assert.ok(new Set(arts.map((a) => `${a[1]}x${a[2]}`)).size >= 4, 'art comes in different sizes');
     await shot(tv, '02-lobby');
   });
@@ -149,10 +149,9 @@ async function check(name, fn) {
     }
     await tv.waitForSelector('.versus .vs-card');
     await shot(tv, '05-versus');
-    for (const p of phones) {
-      const b = await p.$('[data-send]');
-      if (b) await b.click();
-    }
+    // Wait until the voter's phone actually shows the vote buttons, then vote.
+    const voter = await Promise.any(phones.map((p) => p.waitForSelector('[data-send]', { timeout: 15000 }).then(() => p)));
+    await voter.click('[data-send]');
     await tv.waitForSelector('.vs-bar', { timeout: 15000 });
     await shot(tv, '06-results');
   });
@@ -214,6 +213,44 @@ async function check(name, fn) {
     await phones[0].waitForSelector('.describe-img');
     const src = await phones[0].getAttribute('.describe-img', 'src');
     assert.match(src, /^data:image\/jpeg;base64,/);
+  });
+
+  await check('in a game the TV switches to that game\'s look, hides join clutter, tucks the sidebar away after 10 s', async () => {
+    assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'telephone');
+    assert.strictEqual(await tv.isVisible('.join-hint'), false);
+    await tv.waitForFunction(() => document.body.classList.contains('sidebar-min'), null, { timeout: 15000 });
+  });
+
+  await check('Minigame Mayhem on real phones: tapping registers on the TV', async () => {
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+    assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'lobby');
+    await tv.click('[data-game-id="minigames"]');
+    // Play whatever minigame comes first by reacting to each phone's screen.
+    await phones[0].waitForSelector('[data-mg], .number-form', { timeout: 20000 });
+    const kind = await phones[0].evaluate(() => { const b = document.querySelector('[data-mg]'); return b ? b.dataset.mg : 'number'; });
+    for (const p of phones) {
+      if (kind === 'tap') { for (let i = 0; i < 10; i++) await p.click('[data-mg="tap"]'); }
+      else if (kind === 'roast') { const b = await p.$('[data-mg="roast"]'); const box = await b.boundingBox(); await p.mouse.move(box.x + 20, box.y + 20); await p.mouse.down(); await p.waitForTimeout(400); await p.mouse.up(); }
+      else if (kind === 'number') { await p.fill('.number-form input', '20'); await p.click('.number-form button'); }
+      else { await p.waitForSelector('[data-mg="draw"].go', { timeout: 10000 }); await p.click('[data-mg="draw"]'); }
+    }
+    await tv.waitForFunction(() => /WINS|TIE/.test(document.getElementById('phase-view').textContent), null, { timeout: 25000 });
+    assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'minigames');
+    await shot(tv, '08-minigame-result');
+  });
+
+  await check('someone (re)joining mid-game brings the sidebar back', async () => {
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+    await tv.click('[data-game-id="closest"]');
+    await tv.waitForFunction(() => document.body.classList.contains('in-game'));
+    await phones[2].evaluate(() => Rumpus.debugSocket.disconnect());
+    await tv.waitForFunction(() => document.body.classList.contains('sidebar-min'), null, { timeout: 15000 });
+    await phones[2].reload(); // reconnects with the saved seat token
+    await tv.waitForFunction(() => !document.body.classList.contains('sidebar-min'), null, { timeout: 10000 });
   });
 
   await check('TV reload resumes the same room', async () => {

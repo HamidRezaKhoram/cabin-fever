@@ -207,10 +207,22 @@ def cah() -> Canvas:                             # fanned black & white cards wi
     c.disc(20, 5, 3.5, 'O'); c.tri([(17, 4), (23, 4), (20, -1)], 'O'); c.disc(20, 6, 1.8, 'Y')  # flame
     c.outline(); return c
 
+def minigames() -> Canvas:              # red vs blue tug-of-war over the lake
+    c = Canvas(34, 24)
+    c.rect(0, 15, 34, 9, 'U')                                   # lake
+    for x in range(0, 34, 4): c.set(x + 1, 17, 'A')
+    c.rect(0, 11, 9, 5, 'F'); c.rect(25, 11, 9, 5, 'F')          # two shores
+    c.line(6, 7, 28, 7, 'B'); c.line(6, 8, 28, 8, 'B')            # rope
+    c.rect(16, 4, 2, 4, 'W'); c.tri([(18, 4), (22, 5), (18, 6)], 'Y')  # centre flag
+    for cx, col in ((4, 'R'), (30, 'U')):                        # the two pullers
+        c.disc(cx, 4, 2.5, col); c.rect(cx - 2, 6, 5, 5, col)
+        c.set(cx - 1, 3, 'W'); c.set(cx + 1, 3, 'W')
+    c.outline(); return c
+
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
-    'twotruths': twotruths, 'telephone': telephone, 'cah': cah,
+    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

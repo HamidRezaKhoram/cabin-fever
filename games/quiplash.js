@@ -44,7 +44,14 @@ class QuiplashGame extends BaseGame {
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
-    const ids = shuffle(this.playerIds());
+    let ids = shuffle(this.playerIds());
+    // Team mode: alternate red/blue around the circle so neighbours (= matchups) are rivals.
+    if (this.room.settings && this.room.settings.teams) {
+      const team = (/** @type {string} */ id) => (this.room.players.get(id) || {}).team;
+      const red = ids.filter((id) => team(id) === 'red'), blue = ids.filter((id) => team(id) !== 'red');
+      ids = [];
+      while (red.length || blue.length) { if (red.length) ids.push(red.shift()); if (blue.length) ids.push(blue.shift()); }
+    }
     const n = ids.length;
     const drawn = library.draw('punchline', n, { spicy: this.spicy() });
     // Prompt k is answered by players k and k+1 (mod n): everyone gets 2 prompts.

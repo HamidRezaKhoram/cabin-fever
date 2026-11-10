@@ -17,8 +17,152 @@
     return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
   }
 
-  function paintStatic(g, r) {
-    const bands = ['#0d0b1e', '#120f2a', '#181437', '#1f1a45', '#272052', '#31275e', '#3d2f66'];
+  /**
+   * Per-game scenes: same lake/cottage/pines, different time of day and palette.
+   * @typedef {{ sky: string[], hills: string, pines: string, lake: string[], orb: string, orbShade: string,
+   *             stars: boolean, fly: string, glow: string, window: string, name?: string }} Theme
+   * @type {Record<string, Theme>}
+   */
+  const THEMES = {
+    lobby:      { sky: ['#0d0b1e', '#120f2a', '#181437', '#1f1a45', '#272052', '#31275e', '#3d2f66'], hills: '#1a1735', pines: '#0f1a1f', lake: ['#141233', '#171538', '#1b183e', '#1f1b45'], orb: '#fff6d5', orbShade: '#e8dcae', stars: true, fly: '#d4ff6b', glow: '255,246,213', window: '#ffcf5a' },
+    quiplash:   { sky: ['#14051f', '#200a33', '#2e0f4a', '#3f1460', '#561a73', '#6f2181', '#8a2a8a'], hills: '#2a0d3a', pines: '#12051c', lake: ['#1c0830', '#230b3b', '#2b0e47', '#331152'], orb: '#ffd6f5', orbShade: '#f0a8dd', stars: true, fly: '#ff7bd5', glow: '255,140,220', window: '#ff9be0' },
+    fibbage:    { sky: ['#2b0f0a', '#4a1a0e', '#6e2a12', '#943d16', '#b8561c', '#d97324', '#f2953a'], hills: '#3d160c', pines: '#1f0b06', lake: ['#3a170d', '#4a1f12', '#5a2717', '#6a2f1c'], orb: '#ffe0a3', orbShade: '#f2c070', stars: false, fly: '#ffd27a', glow: '255,214,150', window: '#ffe08a' },
+    trivia:     { sky: ['#071a3a', '#0b2550', '#103268', '#164180', '#1e5198', '#2a63ae', '#3a78c2'], hills: '#0c2242', pines: '#06132a', lake: ['#0b2148', '#0e2853', '#11305f', '#14386b'], orb: '#e6f2ff', orbShade: '#b8d6f5', stars: true, fly: '#7fd4ff', glow: '200,230,255', window: '#9be0ff' },
+    closest:    { sky: ['#06170f', '#0a2416', '#0f321d', '#154226', '#1c5330', '#25663b', '#2f7a47'], hills: '#0d2a19', pines: '#04110a', lake: ['#0a2418', '#0d2c1d', '#113422', '#143d27'], orb: '#f2ffe0', orbShade: '#cfe8a8', stars: true, fly: '#e6ff6b', glow: '220,255,180', window: '#e6ff8a' },
+    majority:   { sky: ['#5fb2ff', '#6fbcff', '#81c6ff', '#95cfff', '#aad8ff', '#bfe2ff', '#d4ebff'], hills: '#5f9e5a', pines: '#2f6a3a', lake: ['#3d8fd6', '#3585cc', '#2d7bc2', '#2671b8'], orb: '#fff3a3', orbShade: '#ffe066', stars: false, fly: '#ffffff', glow: '255,255,255', window: '#fff6c8' },
+    mostlikely: { sky: ['#2a0a2a', '#4a1236', '#701a42', '#99254b', '#c23a52', '#e0595a', '#f58066'], hills: '#3a0e2c', pines: '#1c0614', lake: ['#3a0f2e', '#481437', '#561a40', '#641f49'], orb: '#ffe0d0', orbShade: '#ffb8a0', stars: false, fly: '#ffb0c8', glow: '255,190,200', window: '#ffc0a8' },
+    imposter:   { sky: ['#0a120d', '#0f1a13', '#152319', '#1b2d20', '#223828', '#2b4431', '#35503b'], hills: '#16241b', pines: '#070d09', lake: ['#0f1a14', '#121f18', '#16251c', '#1a2b20'], orb: '#d8f0d0', orbShade: '#a8c8a0', stars: false, fly: '#ff4a4a', glow: '200,230,190', window: '#ff5050' },
+    twotruths:  { sky: ['#050816', '#081026', '#0c1836', '#102046', '#152a58', '#1b356a', '#22417c'], hills: '#0b1430', pines: '#03060f', lake: ['#08102a', '#0a1432', '#0c183a', '#0e1c42'], orb: '#f0f4ff', orbShade: '#c0ccf0', stars: true, fly: '#b0c8ff', glow: '220,230,255', window: '#ffd27a' },
+    telephone:  { sky: ['#3a1a05', '#5a2a08', '#7e3d0c', '#a35411', '#c76d18', '#e68a24', '#ffaa3a'], hills: '#4a2a12', pines: '#2a1406', lake: ['#5a2e0e', '#6a3812', '#7a4216', '#8a4c1a'], orb: '#fff0b0', orbShade: '#ffd870', stars: false, fly: '#fff3a0', glow: '255,230,160', window: '#fff0a0' },
+    cah:        { sky: ['#0a0303', '#160505', '#220808', '#2e0a0a', '#3c0d0d', '#4b1010', '#5a1414'], hills: '#1a0606', pines: '#050101', lake: ['#160404', '#1c0606', '#220808', '#280a0a'], orb: '#ffd0c0', orbShade: '#e09080', stars: true, fly: '#ff6040', glow: '255,160,140', window: '#ff8050' },
+    minigames:  { sky: ['#0a6fb0', '#1580c0', '#2391cf', '#35a2dc', '#4ab3e6', '#62c3ee', '#7dd2f4'], hills: '#2f8f5a', pines: '#14603a', lake: ['#1a78c8', '#176ebc', '#1464b0', '#115aa4'], orb: '#fff4a0', orbShade: '#ffe060', stars: false, fly: '#ffffff', glow: '255,255,220', window: '#fff6c8' },
+  };
+
+
+  // ------------------------------------------------------------------ game scenes
+  // Original pixel motifs that show what each game is about. STATIC parts are
+  // painted once into the background layer; ANIM parts are drawn every frame.
+  /** @param {CanvasRenderingContext2D} g */
+  const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
+  /** @param {CanvasRenderingContext2D} g */
+  const D = (g, cx, cy, r, c) => { g.fillStyle = c; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) g.fillRect(Math.round(cx + x), Math.round(cy + y), 1, 1); };
+  /** @param {CanvasRenderingContext2D} g */
+  const sheepAt = (g, x, y, s = 1) => {
+    R(g, x - 3 * s, y + 2 * s, 1, 2 * s, '#2b2d42'); R(g, x + 2 * s, y + 2 * s, 1, 2 * s, '#2b2d42');
+    D(g, x - 2 * s, y, 2 * s, '#f4f1e8'); D(g, x + 1 * s, y, 2 * s, '#f4f1e8'); D(g, x, y - 1 * s, 2 * s, '#ffffff');
+    R(g, x + 3 * s, y - 2 * s, 2 * s, 3 * s, '#2b2d42'); R(g, x + 4 * s, y - 1 * s, 1, 1, '#ffffff');
+  };
+  /** @type {Record<string, (g: CanvasRenderingContext2D) => void>} */
+  const STATIC = {
+    quiplash(g) { // comedy-club stage: curtains, valance, stage floor, mic stand
+      for (let x = 0; x < 46; x++) R(g, x, 0, 1, H, x % 6 < 3 ? '#8a0f24' : '#6a0a1a');
+      for (let x = W - 46; x < W; x++) R(g, x, 0, 1, H, x % 6 < 3 ? '#8a0f24' : '#6a0a1a');
+      for (let x = 0; x < W; x++) R(g, x, 0, 1, 10 + (x % 12 < 6 ? 3 : 0), '#a01530');
+      R(g, 0, 140, W, 40, '#5a3418'); for (let x = 0; x < W; x += 20) R(g, x, 140, 1, 40, '#3e220f');
+      R(g, 0, 140, W, 2, '#ffcf5a');
+      R(g, 159, 104, 2, 36, '#8e8fa3'); R(g, 152, 138, 16, 2, '#8e8fa3'); D(g, 160, 101, 4, '#cfd2dc');
+    },
+    fibbage(g) { // drama masks — one smiling, one frowning (who's lying?)
+      for (const [cx, sad] of /** @type {[number, boolean][]} */ ([[70, false], [110, true]])) {
+        D(g, cx, 34, 13, '#f4f1e8');
+        R(g, cx - 7, 29, 4, 3, '#2b0f0a'); R(g, cx + 3, 29, 4, 3, '#2b0f0a');
+        for (let i = -5; i <= 5; i++) R(g, cx + i, 40 + (sad ? -Math.round((25 - i * i) / 8) : Math.round((25 - i * i) / 8)), 1, 2, '#2b0f0a');
+      }
+      R(g, 88, 44, 4, 18, '#d97324');
+    },
+    trivia(g) { // quiz-show studio: light rig + giant question mark
+      R(g, 0, 6, W, 3, '#1d2b5c');
+      const q = ['.####.', '##..##', '....##', '...##.', '..##..', '..##..', '......', '..##..'];
+      q.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') R(g, 142 + x * 6, 22 + y * 6, 6, 6, '#ffd23f'); }));
+    },
+    closest(g) { // target board on the dock + measuring ticks along the shore
+      for (const [r, c] of [[16, '#f4f1e8'], [13, '#e83f5b'], [10, '#f4f1e8'], [7, '#e83f5b'], [4, '#f4f1e8'], [2, '#4caf50']]) D(g, 70, 92, r, c);
+      R(g, 69, 108, 3, 6, '#5a3b22');
+      for (let x = 0; x < W; x += 8) R(g, x, 113, 1, x % 32 === 0 ? 5 : 2, '#f4f1e8');
+    },
+    majority(g) { // the flock on the hills
+      [[30, 100, 1], [52, 104, 1], [84, 98, 1], [118, 102, 1], [150, 97, 1], [96, 106, 1]].forEach(([x, y, s]) => sheepAt(g, x, y, s));
+      sheepAt(g, 300, 104, 1);
+    },
+    mostlikely(g) { // audience silhouettes along the bottom
+      for (let x = 4; x < W; x += 14) { D(g, x + 5, 160, 5, '#1c0614'); R(g, x, 166, 11, 14, '#1c0614'); }
+    },
+    imposter(g) { // twisted dead tree in the foreground
+      R(g, 28, 70, 5, 50, '#070d09'); R(g, 18, 80, 12, 3, '#070d09'); R(g, 32, 74, 14, 3, '#070d09'); R(g, 14, 76, 3, 6, '#070d09');
+    },
+    twotruths(g) { // check, check, cross as constellations
+      const pts = [[40, 30], [44, 34], [52, 24], [80, 30], [84, 34], [92, 24]];
+      pts.forEach(([x, y]) => D(g, x, y, 1, '#b0c8ff'));
+      R(g, 118, 22, 1, 1, '#ff6b7f'); for (let i = 0; i < 10; i++) { R(g, 118 + i, 22 + i, 2, 2, '#ff6b7f'); R(g, 127 - i, 22 + i, 2, 2, '#ff6b7f'); }
+    },
+    telephone(g) { // painter's easel with a doodle on the dock
+      R(g, 60, 70, 3, 44, '#6a4a2a'); R(g, 84, 70, 3, 44, '#6a4a2a'); R(g, 72, 66, 3, 48, '#6a4a2a');
+      R(g, 56, 72, 36, 28, '#f4f1e8');
+      for (let x = 0; x < 28; x++) R(g, 60 + x, 86 + Math.round(Math.sin(x / 3) * 5), 2, 2, '#1e88e5');
+      D(g, 66, 80, 3, '#e83f5b'); D(g, 84, 94, 2, '#4caf50');
+    },
+    cah(g) { // giant tilted cards: black prompt card + white answer card
+      R(g, 40, 30, 34, 46, '#111111'); R(g, 44, 36, 22, 2, '#f4f1e8'); R(g, 44, 42, 16, 2, '#f4f1e8'); R(g, 44, 48, 20, 2, '#f4f1e8');
+      R(g, 62, 44, 34, 46, '#f4f1e8'); R(g, 66, 50, 22, 2, '#111111'); R(g, 66, 56, 18, 2, '#111111');
+    },
+    minigames(g) { // finish line buoys + flag on the far shore
+      for (let y = 118; y < 178; y += 10) { D(g, 286, y, 2, '#ff9f1c'); }
+      R(g, 290, 92, 2, 22, '#f4f1e8');
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 12; x++) R(g, 292 + x, 92 + y, 1, 1, (x + y) % 2 ? '#111' : '#fff');
+    },
+  };
+  /** @type {Record<string, (g: CanvasRenderingContext2D, t: number) => void>} */
+  const ANIM = {
+    quiplash(g, t) { // two sweeping spotlights
+      for (const [x0, ph] of [[90, 0], [230, 2]]) {
+        const tx = 160 + Math.sin(t / 12 + ph) * 60;
+        g.fillStyle = 'rgba(255,240,180,0.10)';
+        g.beginPath(); g.moveTo(x0, 12); g.lineTo(tx - 22, 140); g.lineTo(tx + 22, 140); g.closePath(); g.fill();
+      }
+    },
+    trivia(g, t) { for (let x = 6; x < W; x += 12) R(g, x, 9, 4, 3, (Math.floor(t / 2) + x / 12) % 3 < 1 ? '#ffd23f' : '#5a4a10'); },
+    mostlikely(g, t) { // spotlights hunting for "who"
+      const tx = 160 + Math.sin(t / 9) * 120;
+      g.fillStyle = 'rgba(255,220,200,0.14)';
+      g.beginPath(); g.moveTo(160, 0); g.lineTo(tx - 16, 170); g.lineTo(tx + 16, 170); g.closePath(); g.fill();
+    },
+    imposter(g, t) { // fog drifting + red eyes blinking in the trees
+      g.fillStyle = 'rgba(200,230,200,0.08)';
+      for (let i = 0; i < 4; i++) g.fillRect(Math.round(((t * (0.6 + i * 0.2)) + i * 90) % (W + 120)) - 120, 92 + i * 8, 120, 5);
+      for (const [x, y, p] of [[60, 98, 0], [130, 95, 3], [250, 100, 7]]) if (Math.sin(t / 7 + p) > -0.6) { R(g, x, y, 2, 1, '#ff3030'); R(g, x + 4, y, 2, 1, '#ff3030'); }
+    },
+    twotruths(g, t) { // polygraph trace across the sky
+      for (let x = 0; x < W; x++) {
+        const k = x + t * 2;
+        const y = 70 + Math.round(Math.sin(k / 9) * 3 + (k % 97 < 6 ? (k % 97) * 3 - 9 : 0));
+        R(g, x, y, 1, 1, 'rgba(255,107,127,0.7)');
+      }
+    },
+    telephone(g, t) { // paper planes gliding past
+      for (let i = 0; i < 2; i++) {
+        const x = (t * 1.5 + i * 170) % (W + 40) - 20, y = 30 + i * 22 + Math.sin(t / 8 + i) * 4;
+        g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 10, y - 3); g.lineTo(x - 7, y + 3); g.closePath(); g.fill();
+      }
+    },
+    cah(g, t) { // flickering neon sign
+      const on = Math.sin(t * 1.7) > -0.8;
+      const c = on ? '#ff3b6b' : '#5a1020';
+      const sign = ['#.###.#.#', '#.#.#.###', '#.###..#.', '#.#.#.###', '#.###.#.#'];
+      sign.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') R(g, 236 + x * 3, 40 + y * 3, 3, 3, c); }));
+    },
+    minigames(g, t) { // red vs blue canoes racing
+      for (const [y, col, sp] of /** @type {[number, string, number][]} */ ([[132, '#e83f5b', 1.1], [152, '#1e88e5', 1.0]])) {
+        const x = (t * sp * 1.6) % (W + 60) - 40, bob = Math.round(Math.sin(t / 4 + y) * 1);
+        R(g, x, y + bob, 26, 3, col); R(g, x + 2, y + 3 + bob, 22, 2, col);
+        D(g, x + 9, y - 3 + bob, 2, '#f1c27d'); D(g, x + 17, y - 3 + bob, 2, '#f1c27d');
+        R(g, x + 20, y - 6 + bob, 1, 10, '#8a5a3b');
+      }
+    },
+  };
+
+  /** @param {CanvasRenderingContext2D} g @param {() => number} r @param {Theme} th */
+  function paintStatic(g, r, th) {
+    const bands = th.sky;
     const bh = Math.ceil(HORIZON / bands.length);
     bands.forEach((c, i) => { g.fillStyle = c; g.fillRect(0, i * bh, W, bh); });
     for (let i = 1; i < bands.length; i++) {
@@ -30,16 +174,16 @@
       g.fillStyle = col;
       for (let y = -rad; y <= rad; y++) for (let x = -rad; x <= rad; x++) if (x * x + y * y <= rad * rad) g.fillRect(cx + x, cy + y, 1, 1);
     };
-    disc(262, 28, 11, '#fff6d5');
-    [[-4, -3, 2], [3, 2, 3], [-2, 5, 1], [5, -5, 1]].forEach(([x, y, rr]) => disc(262 + x, 28 + y, rr, '#e8dcae'));
+    disc(262, 28, 11, th.orb);
+    [[-4, -3, 2], [3, 2, 3], [-2, 5, 1], [5, -5, 1]].forEach(([x, y, rr]) => disc(262 + x, 28 + y, rr, th.orbShade));
     // hills
-    g.fillStyle = '#1a1735';
+    g.fillStyle = th.hills;
     for (let x = 0; x < W; x++) {
       const hy = HORIZON - 14 - Math.round(8 * Math.sin(x / 37) + 5 * Math.sin(x / 13 + 1) + 3 * Math.sin(x / 5));
       g.fillRect(x, hy, 1, HORIZON - hy);
     }
     // pines
-    g.fillStyle = '#0f1a1f';
+    g.fillStyle = th.pines;
     for (let x = -6; x < W + 6; x += 5 + ((r() * 7) | 0)) {
       if (x > 196 && x < 252) continue;
       const h = 14 + ((r() * 18) | 0);
@@ -61,11 +205,12 @@
     g.fillRect(cx + 8, HORIZON, 30, 2);
     g.fillRect(cx + 36, HORIZON, 2, 4);
     // lake
-    const lake = ['#141233', '#171538', '#1b183e', '#1f1b45'];
+    const lake = th.lake;
     for (let y = HORIZON; y < H; y++) {
       g.fillStyle = lake[Math.min(lake.length - 1, ((y - HORIZON) / 18) | 0)];
       g.fillRect(0, y, W, 1);
     }
+    if (STATIC[th.name]) STATIC[th.name](g);
   }
 
   function start(canvas) {
@@ -74,7 +219,10 @@
     const r = rand(42);
     const layer = document.createElement('canvas');
     layer.width = W; layer.height = H;
-    paintStatic(layer.getContext('2d'), rand(7));
+    for (const [k, v] of Object.entries(THEMES)) v.name = k;
+    let th = THEMES.lobby;
+    const repaint = () => paintStatic(/** @type {CanvasRenderingContext2D} */ (layer.getContext('2d')), rand(7), th);
+    repaint();
 
     const stars = Array.from({ length: 90 }, () => ({ x: (r() * W) | 0, y: (r() * (HORIZON - 30)) | 0, p: r() * 6.28, b: r() }));
     const flies = Array.from({ length: 14 }, () => ({ x: r() * W, y: HORIZON - 30 + r() * 26, vx: (r() - 0.5) * 0.12, vy: (r() - 0.5) * 0.08, p: r() * 6.28 }));
@@ -83,7 +231,7 @@
     function draw(frame) {
       const t = frame * TICKS_PER_FRAME;
       g.drawImage(layer, 0, 0);
-      for (const s of stars) {
+      for (const s of th.stars ? stars : []) {
         const tw = Math.sin(t / 6 + s.p) * 0.5 + 0.5;
         if (tw < 0.25 && s.b < 0.6) continue;
         g.fillStyle = tw > 0.85 && s.b > 0.7 ? '#ffffff' : '#a9a3d9';
@@ -98,7 +246,7 @@
         if (shooting.l > 45) shooting = null;
       }
       // lit windows flicker
-      g.fillStyle = Math.sin(t / 10) > -0.95 ? '#ffcf5a' : '#c9962e';
+      g.fillStyle = Math.sin(t / 10) > -0.95 ? th.window : '#7a5a2e';
       g.fillRect(211, HORIZON - 11, 6, 5); g.fillRect(228, HORIZON - 11, 6, 5);
       // chimney smoke
       g.fillStyle = 'rgba(200,200,220,0.25)';
@@ -111,7 +259,7 @@
       for (let y = HORIZON + 2; y < H; y += 2) {
         const wob = Math.round(Math.sin((y + t) / 3) * 2);
         const w = 4 + (Math.round(y * 7 + t) % 5);
-        g.fillStyle = 'rgba(255,246,213,0.35)';
+        g.fillStyle = `rgba(${th.glow},0.35)`;
         g.fillRect(262 - (w >> 1) + wob, y, w, 1);
         if (y < HORIZON + 22) {
           g.fillStyle = 'rgba(255,207,90,0.35)';
@@ -131,18 +279,28 @@
         if (f.y < HORIZON - 40) f.vy = Math.abs(f.vy); if (f.y > HORIZON + 4) f.vy = -Math.abs(f.vy);
         if (Math.sin(t / 4 + f.p * 3) > 0.2) {
           const x = Math.round(f.x), y = Math.round(f.y);
-          g.fillStyle = '#d4ff6b';
+          g.fillStyle = th.fly;
           g.fillRect(x, y, 1, 1);
-          g.fillStyle = 'rgba(212,255,107,0.25)';
+          g.fillStyle = 'rgba(255,255,255,0.18)';
           g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3);
         }
       }
+      if (ANIM[th.name]) ANIM[th.name](g, t);
     }
 
     draw(0);
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return { stop() {} };
-    return { stop: window.Rumpus.clock.add(draw) };
+    /** Switch scene palette (game id or 'lobby'). @param {string} name */
+    const setTheme = (name) => {
+      const next = THEMES[name] || THEMES.lobby;
+      if (next === th) return;
+      th = next;
+      repaint();
+      draw(0);
+    };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return { stop() {}, setTheme };
+    return { stop: window.Rumpus.clock.add(draw), setTheme };
   }
 
   window.Rumpus.background = start;
+  window.Rumpus.bgThemes = Object.keys(THEMES);
 })();

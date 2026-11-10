@@ -82,6 +82,99 @@
     },
   });
 
+  // ---------------------------------------------------------------- Minigame Mayhem
+  const teamName = (t) => (t === 'red' ? '🔴 RED' : t === 'blue' ? '🔵 BLUE' : '');
+  register('minigames', {
+    host(s) {
+      const g = s.gameState;
+      const tag = `<p class="round-tag">Minigame ${g.round} of ${g.totalRounds}</p>`;
+      if (s.phase === 'mg-intro') {
+        return `${tag}<h1 class="prompt mg-title">${esc(g.miniName)}</h1><p class="big-sub mg-rule">${esc(g.rule)}</p>`;
+      }
+      if (s.phase === 'mg-result') {
+        const r = g.result;
+        const head = r.winnerTeam ? (r.winnerTeam === 'tie' ? 'TIE!' : `${teamName(r.winnerTeam)} WINS!`) : `${esc((r.rows[0] || {}).nickname || '')} WINS!`;
+        return `${tag}<h1 class="prompt">${esc(g.miniName)}: ${head}</h1>
+          ${r.answer != null ? `<p class="big-answer">${g.mini === 'fireflies' ? r.answer + ' fireflies' : 'Target: 3.0 s'}</p>` : ''}
+          <ol class="answers results">${r.rows.map((row) => `<li class="${row.gained ? 'winner' : ''} ${row.team ? 'team-' + row.team : ''}">
+            ${av(row.nickname)} ${esc(row.nickname)} — ${esc(row.burnt ? 'BURNT 🔥' : row.value)}${typeof row.value === 'number' && row.unit ? ' ' + row.unit : ''}
+            ${row.gained ? `<span class="votes">+${row.gained}</span>` : ''}</li>`).join('')}</ol>`;
+      }
+      // mg-play
+      if (g.mini === 'tug') {
+        if (g.tug) {
+          const diff = g.tug.red - g.tug.blue;
+          const pos = Math.max(-1, Math.min(1, diff / g.tug.goal)); // -1..1 (red pulls left)
+          return `${tag}<h1 class="prompt">TAP! TAP! TAP!</h1>
+            <div class="tug"><div class="tug-team red">🔴 ${g.tug.red}</div>
+              <div class="tug-lake"><div class="tug-rope"><div class="tug-flag" style="left:${50 - pos * 45}%"></div></div></div>
+              <div class="tug-team blue">${g.tug.blue} 🔵</div></div>`;
+        }
+        const max = Math.max(1, ...g.taps.map((t) => t.taps));
+        return `${tag}<h1 class="prompt">TAP RACE!</h1><div class="bars">${g.taps.map((t) => `
+          <div class="bar-row"><span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
+          <span class="bar" style="width:${(t.taps / max) * 100}%;animation:none"></span><span class="bar-n">${t.taps}</span></div>`).join('')}</div>`;
+      }
+      if (g.mini === 'quickdraw') {
+        return g.sub === 'go' ? `<div class="qd go">GO!</div>` : `<div class="qd wait">WAIT…</div>`;
+      }
+      if (g.mini === 'fireflies') {
+        if (g.sub === 'show') {
+          return `<div class="fly-field">${g.flies.map((f) => `<i style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
+        }
+        return `${tag}<h1 class="prompt">How many fireflies?</h1><p class="big-sub">Guess on your phones! ${T}</p>${count(g.doneCount, g.totalPlayers, 'guesses in')}`;
+      }
+      return `${tag}<h1 class="prompt">🔥 ROAST! 🍡</h1><p class="big-sub">Hold the button and let go at exactly 3 seconds… ${T}</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      const badge = you.team ? `<p class="team-badge team-${you.team}">${teamName(you.team)}</p>` : '';
+      if (s.phase === 'mg-intro') return `${badge}<h1>${esc(g.miniName)}</h1><p class="prompt">${esc(g.rule)}</p><p>Get ready…</p>`;
+      if (s.phase === 'mg-result') return `<h1>${you.gained ? `+${you.gained}! 🎉` : 'Next one! 💪'}</h1>`;
+      if (g.mini === 'tug') return `${badge}<button class="mg-big tap" data-mg="tap">TAP!</button><p class="mg-count">0</p>`;
+      if (g.mini === 'quickdraw') {
+        if (you.early) return `<h1>SPLASH! 💦</h1><p>Too early!</p>`;
+        if (you.done) return waiting('Tapped');
+        return `<button class="mg-big ${g.sub === 'go' ? 'go' : 'wait'}" data-mg="draw">${g.sub === 'go' ? 'GO!' : 'WAIT…'}</button>`;
+      }
+      if (g.mini === 'fireflies') {
+        if (g.sub === 'show') return watchTv('<p>Count the fireflies!</p>');
+        if (you.done) return waiting('Guess locked');
+        return `<h2>How many fireflies?</h2><form class="number-form"><input name="number" inputmode="numeric" autocomplete="off" required><button type="submit">Lock it in</button></form>`;
+      }
+      if (you.done) return waiting('Roasted');
+      return `<button class="mg-big roast" data-mg="roast">HOLD TO ROAST</button><p class="mg-count">Let go at 3.0 s</p>`;
+    },
+    bind(root, api) {
+      const btn = /** @type {HTMLElement | null} */ (root.querySelector('[data-mg]'));
+      if (!btn) return;
+      const kind = btn.dataset.mg;
+      if (kind === 'tap') {
+        let pending = 0, total = 0;
+        const label = /** @type {HTMLElement} */ (root.querySelector('.mg-count'));
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); pending++; total++; label.textContent = String(total); if (navigator.vibrate) navigator.vibrate(8); });
+        const t = setInterval(() => { if (pending) { api.send({ tap: pending }); pending = 0; } }, 150);
+        api.onCleanup(() => clearInterval(t));
+      } else if (kind === 'draw') {
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); api.send({ tap: 1 }); });
+      } else if (kind === 'roast') {
+        let t0 = 0;
+        const label = /** @type {HTMLElement} */ (root.querySelector('.mg-count'));
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); t0 = performance.now(); btn.classList.add('holding'); });
+        const release = () => {
+          if (!t0) return;
+          const ms = Math.round(performance.now() - t0);
+          t0 = 0;
+          btn.classList.remove('holding');
+          label.textContent = (ms / 1000).toFixed(2) + ' s';
+          api.send({ hold: ms });
+        };
+        btn.addEventListener('pointerup', release);
+        btn.addEventListener('pointercancel', release);
+      }
+    },
+  });
+
   // ---------------------------------------------------------------- Most Likely To
   register('mostlikely', {
     host(s) {

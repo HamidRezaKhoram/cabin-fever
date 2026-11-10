@@ -35,7 +35,7 @@ const AVATAR_COUNT = 17; // must match public/sprites.js
 const GAMES = {};
 for (const mod of [
   'quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely',
-  'imposter', 'twotruths', 'telephone', 'cah',
+  'imposter', 'twotruths', 'telephone', 'minigames', 'cah',
 ]) {
   const G = require(`./games/${mod}`);
   GAMES[G.meta.id] = G;
@@ -157,8 +157,34 @@ function playersSummary(room) {
     score: p.score,
     connected: p.connected,
     avatar: p.avatar,
+    team: room.settings.teams ? p.team || null : null,
     drawn: p.avatarVer || 0, // >0 = player drew their own picture (served at /avatar/:code/:id)
   }));
+}
+
+// --- teams -------------------------------------------------------------------
+/** @param {Room} room */
+function teamSizes(room) {
+  const n = { red: 0, blue: 0 };
+  for (const p of room.players.values()) if (p.team === 'red' || p.team === 'blue') n[p.team]++;
+  return n;
+}
+/** Put a player on the smaller team (ties: red). @param {Room} room @param {Player} p */
+function assignTeam(room, p) {
+  const n = teamSizes(room);
+  p.team = n.red <= n.blue ? 'red' : 'blue';
+}
+/** Re-deal everyone: snake draft by score so teams are balanced. @param {Room} room */
+function balanceTeams(room) {
+  const ps = [...room.players.values()].sort((a, b) => b.score - a.score || (crypto.randomInt(3) - 1));
+  ps.forEach((p, i) => { p.team = [0, 3].includes(i % 4) ? 'red' : 'blue'; });
+}
+/** @param {Room} room */
+function teamScores(room) {
+  if (!room.settings.teams) return null;
+  const s = { red: 0, blue: 0 };
+  for (const p of room.players.values()) if (p.team === 'red' || p.team === 'blue') s[p.team] += p.score;
+  return s;
 }
 
 // --- pace votes (hurry / ready / skip question) ------------------------------
@@ -203,6 +229,7 @@ function broadcast(room) {
     hostConnected: !!(room.hostSocket && room.hostSocket.connected),
     maxPlayers: MAX_PLAYERS,
     pace: paceState(room),
+    teamScores: teamScores(room),
   };
   if (room.hostSocket && room.hostSocket.connected) {
     room.hostSocket.emit('room:stateUpdate', {
@@ -317,7 +344,7 @@ io.on('connection', (socket) => {
       players: new Map(),
       game: null,
       closed: false,
-      settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false' },
+      settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false', teams: false },
       pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set() },
     };
     rooms.set(code, room);
@@ -347,6 +374,13 @@ io.on('connection', (socket) => {
     const scale = Number(msg.timerScale);
     if ([0.6, 1, 1.5, 2].includes(scale)) room.settings.timerScale = scale;
     if (typeof msg.spicy === 'boolean') room.settings.spicy = msg.spicy;
+    if (typeof msg.teams === 'boolean' && msg.teams !== room.settings.teams) {
+      const ph = roomPhase(room);
+      if (ph === 'lobby' || ph === 'gameover') {
+        room.settings.teams = msg.teams;
+        if (msg.teams) balanceTeams(room);
+      }
+    }
     broadcast(room);
   });
 
@@ -424,6 +458,7 @@ io.on('connection', (socket) => {
     }
     const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar };
     if (validDrawing(msg.drawing)) { p.avatarImage = msg.drawing; p.avatarVer = 1; }
+    if (room.settings.teams) assignTeam(room, p);
     room.players.set(p.id, p);
     console.log(`[room ${room.code}] player joined: ${nickname}`);
     attachPlayer(room, p, socket);
@@ -455,6 +490,19 @@ io.on('connection', (socket) => {
       else if (kind === 'hurry') { if (flow.hurry(game)) tellHost('hurry'); }
       else if (kind === 'skipq') { tellHost('skipped'); game.skipQuestion(); }
     }
+    broadcast(room);
+  });
+
+  // Switch team (lobby / between games only).
+  socket.on('player:team', (msg) => {
+    const room = socket.data.room;
+    if (!room || socket.data.role !== 'player' || room.closed || !room.settings.teams) return;
+    const ph = roomPhase(room);
+    if (ph !== 'lobby' && ph !== 'gameover') return;
+    const p = room.players.get(socket.data.playerId);
+    const team = msg && msg.team;
+    if (!p || (team !== 'red' && team !== 'blue')) return;
+    p.team = team;
     broadcast(room);
   });
 

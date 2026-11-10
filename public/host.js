@@ -26,7 +26,17 @@ let wiping = false;
 let pendingHtml = null;
 let lastAwards = [];
 
-window.Rumpus.background(document.getElementById('bg'), { fps: 12 });
+const scene = window.Rumpus.background(document.getElementById('bg'), { fps: 12 });
+let sidebarTimer = null;
+let sidebarPlayers = 0;
+/** Show the player sidebar, then tuck it away after 10 s while a game is running. */
+function peekSidebar() {
+  document.body.classList.remove('sidebar-min');
+  clearTimeout(sidebarTimer);
+  sidebarTimer = setTimeout(() => {
+    if (state && !['lobby', 'gameover'].includes(state.phase)) document.body.classList.add('sidebar-min');
+  }, 10000);
+}
 
 // --- press start (unlocks audio) -----------------------------------------------
 overlay.addEventListener('click', async () => {
@@ -57,6 +67,7 @@ const RULES = {
   twotruths: ['Write 2 truths and 1 lie about you', 'Spot everyone else\'s lie', 'Points for each person you fool'],
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
+  minigames: ['Quick real-time challenges on your phone', 'Tap, react, count, roast — rules shown each time', 'Turn on Teams for Red vs Blue!'],
 };
 function showIntro(gameId) {
   const meta = (state.availableGames || []).find((g) => g.id === gameId);
@@ -170,6 +181,7 @@ document.addEventListener('change', (e) => {
   if (t.id === 'set-rounds') socket.emit('host:settings', { rounds: t.value === '' ? null : +t.value });
   else if (t.id === 'set-timer') socket.emit('host:settings', { timerScale: +t.value });
   else if (t.id === 'set-spicy') socket.emit('host:settings', { spicy: t.checked });
+  else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
 });
 fsBtn.addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -240,7 +252,7 @@ const T = '<span class="timer"></span>';
 // Each game's art is drawn at 4× its own pixel size, on its own colour theme.
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
-  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f',
 };
 const art = (id) => {
   const u = sprites.iconUrl(id);
@@ -257,8 +269,10 @@ function gamePicker(label) {
   const count = state.players.length;
   const st = state.settings || {};
   const opt = (v, cur, text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
-  const crew = state.players.map((p) =>
-    `<figure>${playerImg(p, 'avatar big bob')}${esc(p.nickname)}</figure>`).join('');
+  const fig = (p) => `<figure class="${p.team ? 'team-' + p.team : ''}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}</figure>`;
+  const crew = st.teams
+    ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((p) => p.team === t).map(fig).join('')}</div>`).join('')
+    : state.players.map(fig).join('');
   return `<div class="lobby-head">
       <div>
         <h1>${label}</h1>
@@ -270,6 +284,7 @@ function gamePicker(label) {
           <label>Timers <select id="set-timer">${opt(0.6, st.timerScale, 'Fast')}${opt(1, st.timerScale, 'Normal')}
             ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
+          <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
           <span class="hint">${count}/${state.maxPlayers || 12} players</span>
         </div>
         <div class="lobby-crew">${crew || '<p class="hint">Waiting for players…</p>'}</div>
@@ -379,9 +394,16 @@ function legacyHost(phase, g) {
 function renderSidebar(phase) {
   const sorted = state.players.slice();
   if (phase !== 'lobby') sorted.sort((a, b) => b.score - a.score);
+  const ts = state.teamScores;
+  const teamBar = document.getElementById('team-bar');
+  if (ts) {
+    const total = Math.max(1, ts.red + ts.blue);
+    teamBar.hidden = false;
+    morph(teamBar, `<div class="tb red" style="flex:${Math.max(0.15, ts.red / total)}">🔴 ${ts.red}</div><div class="tb blue" style="flex:${Math.max(0.15, ts.blue / total)}">${ts.blue} 🔵</div>`);
+  } else teamBar.hidden = true;
   morph(playerList, sorted.map((p, i) => {
     const cls = [!p.connected && 'offline', i === 0 && p.score > 0 && phase !== 'lobby' && 'leader'].filter(Boolean).join(' ');
-    return `<li data-id="${esc(p.id)}" class="${cls}">${playerImg(p)}` +
+    return `<li data-id="${esc(p.id)}" class="${cls}${p.team ? ' team-' + p.team : ''}">${playerImg(p)}` +
       `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}</span>` +
       `<span class="pscore">${p.score}</span><button class="kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}">✕</button></li>`;
   }).join(''));
@@ -419,6 +441,22 @@ function render() {
   lastPlayerCount = state.players.length;
 
   const inGame = phase !== 'lobby' && phase !== 'gameover';
+  // Per-game look: colour scheme (CSS) + background scene; lobby/gameover use the default.
+  const themeId = inGame ? g.gameId : 'lobby';
+  if (document.body.dataset.theme !== themeId) {
+    document.body.dataset.theme = themeId;
+    scene.setTheme(themeId);
+  }
+  // In a game: hide the join clutter, and tuck the sidebar away after 10 s
+  // (it pops back for 10 s whenever someone new joins).
+  const wasInGame = document.body.classList.contains('in-game');
+  document.body.classList.toggle('in-game', inGame);
+  if (inGame && !wasInGame) peekSidebar();
+  if (!inGame) { clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-min'); }
+  // Someone arrived (new join or a reconnect) → show the sidebar for 10 s.
+  const connectedNow = state.players.filter((p) => p.connected).length;
+  if (inGame && connectedNow > sidebarPlayers) peekSidebar();
+  sidebarPlayers = connectedNow;
   controls.hidden = !inGame;
   const pc = state.pace || { counts: {}, need: 0 };
   const paceTxt = ['skipq', 'hurry', 'ready'].filter((k) => pc.counts[k]).map((k) =>
@@ -439,7 +477,9 @@ function render() {
     html = gamePicker('Choose a game');
   } else if (phase === 'gameover') {
     const awards = lastAwards;
-    html = '<h1>🏆 Final scores</h1>' + podium(g.standings || []) +
+    const ts2 = state.teamScores;
+    const teamWin = ts2 ? `<p class="team-win ${ts2.red === ts2.blue ? '' : ts2.red > ts2.blue ? 'red' : 'blue'}">${ts2.red === ts2.blue ? 'TEAMS TIED!' : (ts2.red > ts2.blue ? '🔴 RED' : '🔵 BLUE') + ' TEAM WINS!'} <small>${ts2.red} – ${ts2.blue}</small></p>` : '';
+    html = '<h1>🏆 Final scores</h1>' + teamWin + podium(g.standings || []) +
       (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
         ${av(a.name, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
       gamePicker('Play again?');

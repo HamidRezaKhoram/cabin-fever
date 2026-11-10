@@ -191,6 +191,7 @@
     twotruths:  { mode: 'minor', bpm: 108, lead: 'melodic', drums: 'bossa', arp: 'eighths', bass: 'walk', root: 59, swing: 0.12 },
     telephone:  { mode: 'lydian', bpm: 92, lead: 'sparse', drums: 'halftime', arp: 'updown', bass: 'root', root: 60, swing: 0.15 },
     cah:        { mode: 'minor', bpm: 136, lead: 'staccato', drums: 'drive', arp: 'up', bass: 'eighth', root: 57 },
+    minigames:  { mode: 'major', bpm: 152, lead: 'bouncy', drums: 'drive', arp: 'up', bass: 'eighth', root: 62 },
   };
 
   const CATALOG = {}; // cue -> [spec]
