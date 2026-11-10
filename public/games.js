@@ -401,6 +401,14 @@
   const exposedHtml = (list) => (list && list.length
     ? `<p class="crush-exposed">🕵️ Exposed: ${list.map((x) => `${av(x.nickname)} ${esc(x.nickname)} is the <b>${esc(x.agenda)}</b>`).join(' · ')}</p>` : '');
   register('crush', {
+    /** @param {any} s */
+    narrate(s) {
+      const g = s.gameState;
+      if (s.phase === 'cr-mingle') return g.evening === 1 ? 'Welcome to the singles weekend. Slip a note to someone special.' : `Evening ${g.evening}. The dock lights are on.`;
+      if (s.phase === 'cr-pick') return 'Who will you ask out tonight?';
+      if (s.phase === 'cr-reveal') { const p = (g.pairs || []).find((/** @type {{ mutual: boolean }} */ x) => x.mutual); return p ? `It's a date: ${p.a} and ${p.b}!` : 'Nobody matched tonight. Ouch.'; }
+      return null;
+    },
     host(s) {
       const g = s.gameState;
       const tag = `<p class="round-tag">Evening ${g.evening} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
@@ -582,6 +590,13 @@
   };
 
   register('looncall', {
+    /** @param {any} s */
+    narrate(s) {
+      const r = s.gameState.result;
+      if (s.phase !== 'lc-result' || !r) return null;
+      const top = r.rows.find((/** @type {{ grade: string | null }} */ x) => x.grade === 'Nailed it!');
+      return r.sync ? `In sync ${r.sync} times! Beautiful choir.` : top ? `${top.nickname} nailed it!` : 'The loons are… still learning.';
+    },
     host(s) {
       const g = s.gameState;
       lcSched = g.sched || null;
@@ -759,6 +774,13 @@
   };
 
   register('lantern', {
+    /** @param {any} s */
+    narrate(s) {
+      const g = s.gameState;
+      if (s.phase === 'll-intro') return `${g.sceneName}! ${g.rule}`;
+      if (s.phase === 'll-result' && g.result && g.result.rows[0]) return g.result.haul !== null ? `The raft caught ${g.result.haul} lanterns!` : `${g.result.rows[0].nickname} glides to the top!`;
+      return null;
+    },
     host(s) {
       const g = s.gameState;
       llNames = (g.boats || []).map((/** @type {{ nickname: string }} */ b) => b.nickname);
@@ -976,6 +998,157 @@
         const fix = /** @type {HTMLInputElement | null} */ (root.querySelector('#st-fix'));
         api.send({ card: /** @type {HTMLElement} */ (b).dataset.stCard, fix: !!(fix && fix.checked) });
       }));
+    },
+    /** The narrator tells the story of the storm. @param {any} s */
+    narrate(s) {
+      const g = s.gameState;
+      if (s.phase === 'st-roles') return 'A storm is rolling in over the lake. Check your secret role — and trust no one.';
+      if (s.phase === 'st-talk') return `${g.choreNames[g.choreIndex]}. ${g.event.name}: ${g.event.desc} ${g.leader}, choose ${g.crewSize} for your crew.`;
+      if (s.phase === 'st-votes') return g.votes && g.votes.approved ? 'The crew heads out into the wind.' : g.storm >= 3 ? 'Too much arguing. The storm is here.' : 'Voted down! The storm creeps closer.';
+      if (s.phase === 'st-reveal') return g.reveal ? (g.reveal.ok ? 'The chore is done!' : 'Sabotage! Someone ruined it.') : null;
+      if (s.phase === 'st-accuse') return g.winner === 'cottage' ? 'The cottage is ready. But who were the raccoons?' : 'The raccoons win! Now — who were they?';
+      if (s.phase === 'st-final') return 'The masks come off.';
+      return null;
+    },
+  });
+
+  // ---------------------------------------------------------------- Campfire Wizards (spell duel)
+  /** @typedef {{ nickname: string, hearts: number, sparks: number, ghost: boolean, frosted: boolean, bounty: boolean, picked: boolean }} WzWizard */
+  /** @typedef {{ kind: string, from: string | null, to: string | null, amount: number }} WzBeat */
+  /** @type {{ wizards: WzWizard[], beats: WzBeat[], start: number, key: string, stepMs: number }} */
+  const wzView = { wizards: [], beats: [], start: 0, key: '', stepMs: 1200 };
+  const WZ_COL = /** @type {Record<string, string>} */ ({ bolt: '#ff8a3d', frost: '#7fd8ff', meteor: '#ff5e3a', shield: '#6fa8ff', mirror: '#e8eeff', mend: '#7ed957', charge: '#ffd23f', haunt: '#b39ddb', bless: '#ff9ecb', ember: '#ff6b3d', reflect: '#ffffff', blocked: '#6fa8ff', ko: '#8e8fa3' });
+  /** Seat positions around the fire (world 320×180). @param {number} i @param {number} n */
+  const wzSeat = (i, n) => { const a = -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2; return [160 + Math.cos(a) * 118, 92 + Math.sin(a) * 62]; };
+
+  function wzDraw(/** @type {HTMLCanvasElement} */ cv, /** @type {number} */ tick) {
+    const g = cv.getContext('2d');
+    if (!g) return;
+    const S = 3;
+    const R = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h, /** @type {string} */ c) => { g.fillStyle = c; g.fillRect(Math.round(x) * S, Math.round(y) * S, Math.max(1, Math.round(w)) * S, Math.max(1, Math.round(h)) * S); };
+    // Night clearing + the campfire, flickering on the 30 fps clock.
+    R(0, 0, 320, 180, '#120d1c'); R(0, 120, 320, 60, '#1b2416');
+    for (let r = 60; r > 0; r -= 6) R(160 - r, 92 - r / 2, r * 2, r, `rgba(255,140,60,${(0.05 * (60 - r) / 60).toFixed(3)})`);
+    R(146, 100, 28, 4, '#5d3a22'); R(150, 96, 20, 4, '#4a2d1a');
+    for (let k = 0; k < 7; k++) {
+      const h = 10 + ((tick * 3 + k * 7) % 9), x = 151 + k * 3;
+      R(x, 98 - h, 3, h, k % 2 ? '#ff8a3d' : '#ffd23f');
+    }
+    for (let k = 0; k < 5; k++) { const y = 80 - ((tick * 1.5 + k * 17) % 50); R(156 + Math.sin(tick / 6 + k) * 6, y, 1, 1, '#ffd23f'); }
+    const n = wzView.wizards.length;
+    /** @type {Record<string, number[]>} */
+    const pos = {};
+    wzView.wizards.forEach((w, i) => { pos[w.nickname] = wzSeat(i, n); });
+    // Which beat is playing?
+    const t = Date.now() - wzView.start;
+    const step = wzView.stepMs;
+    const bi = wzView.beats.length ? Math.floor(t / step) : -1;
+    const frac = (t % step) / step;
+    // Wizards
+    wzView.wizards.forEach((w, i) => {
+      const [x, y] = wzSeat(i, n);
+      const bob = Math.round(Math.sin((tick + i * 11) / 8) * (w.ghost ? 2 : 1));
+      g.globalAlpha = w.ghost ? 0.45 : 1;
+      const im = llImg(w.nickname);
+      if (im.complete && im.naturalWidth) { g.imageSmoothingEnabled = false; g.drawImage(im, Math.round(x - 8) * S, Math.round(y - 14 + bob) * S, 16 * S, 16 * S); }
+      R(x - 6, y + 3 + bob, 12, 2, w.ghost ? '#b39ddb' : '#6b4c8a'); // robe hem
+      g.globalAlpha = 1;
+      for (let h = 0; h < 5; h++) R(x - 9 + h * 4, y + 7, 3, 2, h < w.hearts ? '#ff5e6b' : '#3a2a3a');
+      for (let s = 0; s < w.sparks; s++) R(x - 9 + s * 4, y + 10, 2, 2, '#ffd23f');
+      if (w.bounty) { R(x - 2, y - 20 + bob, 4, 3, '#ffd23f'); R(x - 3, y - 21 + bob, 1, 2, '#ffd23f'); R(x + 2, y - 21 + bob, 1, 2, '#ffd23f'); }
+      if (w.frosted) R(x - 8, y - 14 + bob, 16, 1, '#7fd8ff');
+    });
+    // The current beat's effect.
+    const b = bi >= 0 && bi < wzView.beats.length ? wzView.beats[bi] : null;
+    if (b) {
+      const c = WZ_COL[b.kind] || '#fff';
+      const A = b.from ? pos[b.from] : null, B = b.to ? pos[b.to] : null;
+      if ((b.kind === 'bolt' || b.kind === 'frost' || b.kind === 'haunt' || b.kind === 'bless' || b.kind === 'mend' || b.kind === 'reflect') && A && B) {
+        const p = Math.min(1, frac * 1.6);
+        const x = A[0] + (B[0] - A[0]) * p, y = A[1] - 6 + (B[1] - A[1]) * p - Math.sin(p * Math.PI) * 14;
+        for (let k = 0; k < 5; k++) R(x - (B[0] - A[0]) * 0.03 * k, y - (B[1] - A[1]) * 0.03 * k, 3 - k * 0.5, 3 - k * 0.5, c);
+        if (p >= 1) for (let k = 0; k < 8; k++) R(B[0] + Math.cos(k + tick) * frac * 12, B[1] - 6 + Math.sin(k + tick) * frac * 8, 1, 1, c);
+      } else if (b.kind === 'meteor' && A) {
+        for (const w of wzView.wizards) { if (w.nickname === b.from || w.ghost) continue; const P = pos[w.nickname]; const y = P[1] - 60 + frac * 60; R(P[0] - 2 + (1 - frac) * 20, y - 6, 5, 5, c); R(P[0] + (1 - frac) * 24, y - 10, 2, 2, '#ffd23f'); }
+      } else if ((b.kind === 'shield' || b.kind === 'blocked') && (b.kind === 'shield' ? A : B)) {
+        const P = /** @type {number[]} */ (b.kind === 'shield' ? A : B); const r = 12 + Math.sin(tick / 2) * 1;
+        for (let k = 0; k < 24; k++) R(P[0] + Math.cos(k * 0.26) * r, P[1] - 6 + Math.sin(k * 0.26) * r, 1, 1, c);
+      } else if (b.kind === 'mirror' && A) {
+        R(A[0] - 10, A[1] - 16, 2, 14, c); if (tick % 4 < 2) R(A[0] - 9, A[1] - 15, 1, 3, '#fff');
+      } else if (b.kind === 'charge' && A) {
+        for (let k = 0; k < 6; k++) R(A[0] + Math.cos(k * 1.05 + tick / 3) * 10, A[1] - 6 + Math.sin(k * 1.05 + tick / 3) * 10, 2, 2, c);
+      } else if (b.kind === 'ember' && B) {
+        for (let k = 0; k < 4; k++) R(B[0] - 6 + k * 4, B[1] - 30 + ((frac * 30 + k * 7) % 30), 1, 2, c);
+      } else if (b.kind === 'ko' && B) {
+        for (let k = 0; k < 10; k++) R(B[0] + Math.cos(k) * frac * 18, B[1] - 6 + Math.sin(k) * frac * 10, 2, 2, c);
+      }
+    }
+  }
+  window.Rumpus.clock.add((tick) => {
+    const cv = /** @type {HTMLCanvasElement | null} */ (document.querySelector('canvas.wz-fire'));
+    if (cv) wzDraw(cv, tick);
+  });
+  /** A beat in words (TV log + narrator). @param {WzBeat} b */
+  const wzLine = (b) => ({
+    bolt: `🔥 ${b.from}'s firebolt hits ${b.to} (−${b.amount})`, frost: `❄️ ${b.from} freezes ${b.to} (−${b.amount})`, meteor: `☄️ ${b.from}'s meteor hits ${b.to}`,
+    shield: `🛡 ${b.from} raises a shield`, blocked: `🛡 ${b.to}'s shield holds!`, mirror: `🪞 ${b.from} holds up a mirror to ${b.to}`, reflect: `🪞 ${b.from}'s mirror bounces it back at ${b.to}!`,
+    mend: `💚 ${b.from} mends ${b.to} (+${b.amount})`, charge: `✨ ${b.from} charges up`, haunt: `👻 ${b.from} haunts ${b.to}`, bless: `👻 ${b.from} blesses ${b.to}`,
+    ember: `🌋 Embers singe ${b.to}`, ko: `💥 ${b.to} is knocked out — and rises as a ghost!`,
+  }[b.kind] || '');
+  /** Phone: the spell you tapped, waiting for a target. */
+  let wzSpell = '';
+  let wzSpellKey = '';
+
+  register('wizards', {
+    host(s) {
+      const g = s.gameState;
+      const key = `${g.round}|${s.phase}`;
+      if (key !== wzView.key) { wzView.key = key; wzView.start = Date.now(); }
+      wzView.wizards = g.wizards || []; wzView.beats = g.beats || []; wzView.stepMs = g.stepMs || 1200;
+      const tag = `<p class="round-tag">Round ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+      const ev = `<p class="wz-event"><b>${esc(g.event.name)}</b> — ${esc(g.event.desc)}</p>`;
+      if (s.phase === 'wz-final') {
+        return `<h1>🏆 The tournament is over</h1><ol class="answers">${(g.finalRows || []).map((/** @type {{ nickname: string, place: number, gained: number, ghost: boolean }} */ r) => `<li class="${r.place === 1 ? 'winner' : ''}">${av(r.nickname)} ${esc(r.nickname)}${r.ghost ? ' 👻' : ' 🧙'} <span class="votes">+${r.gained}</span></li>`).join('')}</ol>`;
+      }
+      const sub = s.phase === 'wz-pick' ? `<p class="big-sub">Choose your spell on your phone ${T} · ${g.pickedCount}/${g.totalPlayers}</p>` : '';
+      const log = s.phase === 'wz-reveal' ? `<ol class="wz-log">${wzView.beats.map((b, i) => `<li style="animation-delay:${(i * wzView.stepMs) / 1000}s">${esc(wzLine(b))}</li>`).join('')}</ol>` : '';
+      return `${tag}${ev}<canvas class="wz-fire" width="960" height="540"></canvas>${sub}${log}`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      if (s.phase === 'wz-final') { const r = (g.finalRows || []).find((/** @type {{ nickname: string }} */ x) => x.nickname === you.nickname); return `<h1>${r && r.place === 1 ? '🏆 Champion wizard!' : `You placed #${r ? r.place : '?'}`}</h1><p>+${r ? r.gained : 0} points</p>`; }
+      const stats = `<p class="wz-stats">${you.ghost ? '👻 Ghost' : `❤️ ${you.hearts} · ✨ ${you.sparks}${you.frosted ? ' · ❄️ frosted (+1 cost)' : ''}`}${you.bounty ? ' · 👑 bounty on you!' : ''}</p>`;
+      if (s.phase === 'wz-reveal') return `${stats}${watchTv('<p>The spells go off…</p>')}`;
+      if (you.picked) return `${stats}${waiting('Spell ready', 'Everyone casts together…')}`;
+      const key = `${g.round}`;
+      if (key !== wzSpellKey) { wzSpell = ''; wzSpellKey = key; }
+      const chosen = (you.spells || []).find((/** @type {{ id: string }} */ x) => x.id === wzSpell);
+      if (chosen && chosen.target !== 'none') {
+        const list = chosen.target === 'any' ? you.any : you.others;
+        return `${stats}<h2>${esc(chosen.name)} — on whom?</h2><div class="vote-list">${list.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ spell: chosen.id, target: t.id }, `${av(t.nickname)} ${esc(t.nickname)}${t.id === you.playerId ? ' (you)' : ''}`)).join('')}</div>
+          <button type="button" class="ghost-btn" data-wz-spell="">← another spell</button>`;
+      }
+      return `${stats}<p class="hint">${esc(g.event.name)}: ${esc(g.event.desc)}</p><div class="vote-list wz-spells">${(you.spells || []).map((/** @type {{ id: string, name: string, cost: number, desc: string, ok: boolean, target: string }} */ sp) =>
+        sp.target === 'none'
+          ? `<button class="vote-btn" data-send="${esc(JSON.stringify({ spell: sp.id }))}" ${sp.ok ? '' : 'disabled'}><b>${esc(sp.name)}</b> ✨${sp.cost}<br><small>${esc(sp.desc)}</small></button>`
+          : `<button type="button" class="vote-btn" data-wz-spell="${esc(sp.id)}" ${sp.ok ? '' : 'disabled'}><b>${esc(sp.name)}</b> ✨${sp.cost}<br><small>${esc(sp.desc)}</small></button>`).join('')}</div>`;
+    },
+    bind(root, api) {
+      root.querySelectorAll('[data-wz-spell]').forEach((b) => b.addEventListener('click', () => {
+        wzSpell = /** @type {HTMLElement} */ (b).dataset.wzSpell || '';
+        api.rerender();
+      }));
+    },
+    /** Rocco calls the big moments. @param {any} s */
+    narrate(s) {
+      const g = s.gameState;
+      if (s.phase === 'wz-pick') return g.round === 1 ? 'Wizards, to the fire! Choose your spells.' : `${g.event.name}! ${g.event.desc}`;
+      if (s.phase === 'wz-reveal') {
+        const big = (g.beats || []).filter((/** @type {WzBeat} */ b) => ['ko', 'reflect', 'meteor', 'blocked'].includes(b.kind)).slice(0, 2);
+        return big.length ? big.map((/** @type {WzBeat} */ b) => wzLine(b).replace(/^\S+\s/, '').replace(/\(.*?\)/g, '')).join('. ') : 'The spells fly!';
+      }
+      if (s.phase === 'wz-final') { const w = (g.finalRows || [])[0]; return w ? `${w.nickname} is the champion wizard!` : null; }
+      return null;
     },
   });
 

@@ -43,7 +43,7 @@ const AVATAR_COUNT = 17; // must match public/sprites.js
 const GAMES = {};
 for (const mod of [
   'quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely',
-  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'lantern', 'storm', 'crush', 'cah',
+  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'lantern', 'storm', 'wizards', 'crush', 'cah',
 ]) {
   const G = require(`./games/${mod}`);
   GAMES[G.meta.id] = G;

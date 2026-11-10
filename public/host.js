@@ -74,6 +74,7 @@ const RULES = {
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
   storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win. Three ruined: Raccoons win'],
+  wizards: ['Every round, everyone secretly picks a spell and a target', 'All spells go off together — shields first, then mirrors, bolts, heals', 'Knocked out? Haunt or bless the living as a ghost'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
   lantern: ['Tilt your phone to glide (or drag on the circle)', 'Catch fireflies, hog the moonbeam', 'Then steer one raft together'],
   looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
@@ -292,7 +293,7 @@ const T = '<span class="timer"></span>';
 // Each game's art is drawn at 4× its own pixel size, on its own colour theme.
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
-  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e', wizards: '#1d1430',
 };
 const art = (id) => {
   const u = sprites.iconUrl(id);
@@ -558,6 +559,10 @@ function render() {
       music.setIntensity(g.multiplier === 2 ? 2 : 1);
       music.play(cueFor(state));
       narratePrompt(g);
+      // Games with their own narration (spell duels, hidden roles, the dock reveal…) give Rocco a line.
+      const impl = window.Rumpus.games[g.gameId];
+      const line = impl && impl.narrate ? impl.narrate(state) : null;
+      if (line) setTimeout(() => window.Rumpus.host.say(line), 400);
       if (isRevealPhase(phase)) {
         window.Rumpus.host.cheer();
         if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();
