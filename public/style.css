@@ -310,7 +310,7 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .role small { color: var(--dim); font-family: var(--body); font-size: 20px; }
 .lie-label { color: var(--danger); }
 .chain { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
-.chain-entry { background: var(--panel); padding: 12px; width: 260px; display: flex; flex-direction: column; gap: 6px; opacity: 0; animation: pop-in 0.5s steps(15) forwards; }
+.chain-entry { background: var(--panel); padding: 12px; width: 260px; display: flex; flex-direction: column; gap: 6px; animation: pop-in 0.5s steps(15) both; }
 .chain-entry img { width: 100%; background: #fff; }
 .chain-text { font-size: 30px; color: var(--accent); margin: 0; min-height: 2.4em; }
 .blank-drawing { aspect-ratio: 1; background: #fff; color: #999; display: grid; place-items: center; }
