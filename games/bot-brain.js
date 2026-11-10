@@ -80,7 +80,11 @@ function decide(view, rnd = Math.random) {
     // Cottage Crush: notes, replies, then a date
     case 'cr-mingle': {
       const t = g.targets || [];
-      return you.notesLeft > 0 && t.length ? write({ to: pick(t, rnd).id, text: pick(you.cards && you.cards.length ? you.cards : LINES, rnd) }) : null;
+      if (!(you.notesLeft > 0 && t.length)) return null;
+      // Mostly tap a ready-made opener card (a tap, not writing); sometimes write your own.
+      const own = !(you.cards && you.cards.length) || rnd() < 0.25;
+      const payload = { to: pick(t, rnd).id, text: own ? pick(LINES, rnd) : pick(you.cards, rnd) };
+      return own ? write(payload) : tap(payload);
     }
     case 'cr-reply': {
       const open = (you.inbox || []).filter((/** @type {{ reply: string | null }} */ n) => !n.reply);

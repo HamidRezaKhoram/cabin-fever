@@ -26,7 +26,7 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
 5. **Original games only.** Games may share genre mechanics with party games, but never copy a
    specific commercial game's name, art, text or look. Display names stay original
    (Punchline, Fib Finder, Card Chaos, …).
-6. **Content rules: quality over quantity** (user's call) — only genuinely fun, well-written items;
+6. **Content rules: quality over quantity** (user's call; details in docs/design/content-guidelines.md) — only genuinely fun, well-written items;
    a few hundred great ones beat thousands of bland ones. **No repeats** across
    ≥10 games (enforced by `games/library.js` + `data/history.json`), and an **18+ mix** (~30% of
    draws when the 🌶 toggle is on; adult items flagged `a: true`). Boring/generic/everyday
@@ -39,6 +39,30 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
    leagues, TV, states or charts — `LOCAL_RE` in build-content.py + a content test enforce it.
 8. Commit/push only when asked (or when the user has asked for it in the current task).
    End commit messages with the attribution line the session tells you to use.
+
+## Party-game design rules (research — read docs/design/ before designing)
+
+Full research + checklist: `docs/design/party-game-design.md`; content: `docs/design/content-guidelines.md`;
+testing tools: `docs/design/testing-and-bots.md`. The short version:
+- **Private phone, public TV.** Phones = private info and decisions; TV = the shared moment. **The
+  staged reveal is the product**; players are the content (prompts provoke, they don't replace).
+- **Pacing targets (bot playtest):** worst idle ≤ 25 s (tap games) / ≤ 45 s (writing/drawing),
+  ≥ 3 decisions per player per minute, a payoff every ~40 s, 3–8 min per game.
+- **Never leave anyone waiting with nothing to do** — add likes, side bets, favourites, picks;
+  end phases as soon as everyone's done; name who the room is waiting for; split big groups.
+- **Stakes rise** (×1 → ×2 → ×3), **comebacks exist**, wagers are optional/once-per-game, and **a
+  score never goes below zero**. Ties share the better placing.
+- **Benign violations only**; low floor, high ceiling; room-controlled pace votes; original art/text.
+- Every new game or mechanic: teach `games/bot-brain.js`, run `test/playtest.js` at 4 and 6 players,
+  compare with the targets, and record the result in `docs/future-features/playtest-findings.md`.
+
+## Content rules (keep it fun)
+
+- Quality over quantity; **specific beats generic**; make prompts about the people in the room.
+- **International**: no single-country sports/TV/states/charts (`LOCAL_RE` + content test).
+- Trivia splits the room (IRT ~40–70%); telemetry retires skipped / too-easy / too-hard items.
+- ~30% 18+ when on (house-rule tunable), cheeky not crude; no repeats; sources + licences recorded;
+  only stable, fact-checked facts with clearly wrong distractors; write French in French.
 
 ## Types (enforced)
 

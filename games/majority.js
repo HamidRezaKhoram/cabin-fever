@@ -45,6 +45,8 @@ const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '7000', 10);
 // Second decision per round: "how many others will match you?" — exact call pays.
 const BET_PTS = 150;
 const BET_ZERO_PTS = 50; // calling "nobody" is easy to force with a weird answer, so it pays less
+// Once every answer is in, bets get a short window (playtest: fast players waited out the full timer).
+const BET_WINDOW_MS = parseInt(process.env.RUMPUS_MR_BET_WINDOW_MS || '8000', 10);
 
 // "The Bananas!" -> "banana"
 function normalize(s) {
@@ -92,8 +94,9 @@ class MajorityGame extends BaseGame {
       if (!text || !normalize(text)) return;
       this.answers.set(id, text);
     }
-    if (this.allIn(this.answers) && this.allIn(this.bets)) this.reveal();
-    else this.push();
+    if (this.allIn(this.answers) && this.allIn(this.bets)) return this.reveal();
+    if (this.allIn(this.answers) && this.endsAt && this.endsAt - Date.now() > BET_WINDOW_MS) this.setTimer(BET_WINDOW_MS, () => this.reveal(), false);
+    this.push();
   }
 
   reveal() {

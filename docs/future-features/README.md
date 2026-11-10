@@ -5,11 +5,12 @@ an implementation plan that fits this codebase, the tests it needs, and a rough 
 
 | Doc | What | Size |
 |---|---|---|
-| [teams-and-minigames.md](teams-and-minigames.md) | Team mode for existing games + **Minigame Mayhem** (quick physical phone minigames, red vs blue) — *requested, next up* | L |
-| [dating-game.md](dating-game.md) | **Cottage Crush** — an original speed-dating party game with secret agendas | L |
-| [playtest-findings.md](playtest-findings.md) | Bot playtest of all 10 games: where the dead air is, and the per-game fix list | M |
-| [content-research.md](content-research.md) | Real-source content (Wikidata CC0, Wikipedia DYK, word norms) + question-quality research — *requested, queued* | L |
-| [backlog.md](backlog.md) | Everything else worth doing (audience mode, narrator voice, stats, accessibility, …) | — |
+| [teams-and-minigames.md](teams-and-minigames.md) | Team mode + **Minigame Mayhem** — ✅ shipped | L |
+| [dating-game.md](dating-game.md) | **Cottage Crush** speed-dating game — ✅ shipped (a few agendas still open) | L |
+| [playtest-findings.md](playtest-findings.md) | Bot playtests: dead air per game and the fix list — ✅ fix list done | M |
+| [content-research.md](content-research.md) | Real-source content + question-quality research — mostly done | L |
+| [backlog.md](backlog.md) | Everything else — nearly all ✅ shipped | — |
 
-Rules from CLAUDE.md apply to all of these: original names/art/text, ≥1000 content items per
-game that needs them, 30 fps animation, typed code, tests in the same change.
+Design research and rules now live in `docs/design/` (party-game design, content guidelines,
+testing tools). Rules from CLAUDE.md apply: original names/art/text, quality over quantity,
+30 fps animation, typed code, tests in the same change.
