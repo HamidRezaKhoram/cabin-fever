@@ -13,8 +13,11 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
 1. **Run the full test suite before and after every change** — `./scripts/test-all.sh`.
    Don't call work done until it passes. New features ship with new tests in the same change.
    If a test fails, report it honestly with the output; never weaken a test to make it pass.
-2. **Offline only at runtime.** No CDN links, web fonts, remote APIs or downloads from the
+2. **Offline only at runtime (Docker).** No CDN links, web fonts, remote APIs or downloads from the
    browser or server. Fonts/libs are vendored (`public/fonts`, npm deps baked into the image).
+   The **GitHub Pages build** is the one exception: it needs internet to load and for PeerJS to
+   introduce phones to the TV (the free broker; game traffic then goes TV↔phone directly). Never
+   host anyone's game for them — each TV's browser is the server. Keep both ways working.
 3. **Animations run at a fixed 30 fps.** Canvas/JS animation goes through the shared clock
    (`Rumpus.clock` in `public/clock.js`) — never a raw `requestAnimationFrame` loop or a bare
    `setInterval` for animation. CSS animations/transitions use `steps(N)` where
@@ -144,7 +147,12 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 ## Layout
 
 ```
-server.js              Express + Socket.IO: rooms, reconnect tokens, settings, avatars, reactions, APIs
+server.js              Express + Socket.IO + HTTP APIs (Docker); feeds sockets to core/rooms.js
+core/rooms.js          Room server core (transport-agnostic): rooms, tokens, settings, bots, every socket event
+core/admin.js          House rules + content editor API (server routes and the browser build share it)
+web/                   GitHub Pages build sources: shims (fs/path/crypto), net.js (PeerJS / tab sockets),
+                       host-entry.js (TV runs the server in the page), client-entry.js (phones), sw-template.js
+tools/build-pages.js   Builds dist/ for Pages (esbuild bundles, relative paths, content-hashed service worker)
 games/base.js          BaseGame: scaled timers, skip, final-round ×2, spicy(), views
 games/library.js       Content pools: draw(pool, n, {spicy}), no-repeat history, custom content
 games/*.js             One module per game (quiplash=Campfire Quips, fibbage=Fish Tales, cah=Rainy Day Cards, …)
@@ -189,6 +197,9 @@ new features and update it when something ships.
 
 ## Common tasks
 
+- Play in a browser (no install): https://hamidrezakhoram.github.io/homejack/ — `.github/workflows/pages.yml`
+  deploys on every push to main. Build locally: `node tools/build-pages.js dist` (node container).
+  `?net=local` uses tab-to-tab connections (tests, one-computer play) instead of PeerJS.
 - Run locally: `docker compose up -d --build` → TV `http://<lan-ip>:8012/host`. The https twin
   (`RUMPUS_HTTPS_PORT`, default 8443 in compose, self-signed cert in `data/certs/`) exists for phone
   tilt sensors (Lantern Lake); everything else stays on plain http.

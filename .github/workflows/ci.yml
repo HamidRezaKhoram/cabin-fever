@@ -1,11 +1,51 @@
-# CI: the same full suite we run locally (content, mypy, tsc + eslint + strict ratchet,
-# unit/integration, browser tests with a real TV + 3 phones) on every push and PR.
+# CI on every push and PR:
+#  - lint:      TypeScript type checks (strict) + type-aware ESLint + the strict ratchet
+#  - coverage:  unit/integration tests under c8 (≥ 80% lines/branches/functions), report attached
+#  - test-all:  the same full suite we run locally (content, mypy, browser tests, Pages build)
 name: test
 on: [push, pull_request]
 jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Type checks (tsc --checkJs, strict, all four projects)
+        run: npm run -s typecheck
+      - name: ESLint (type-aware)
+        run: npm run -s lint
+      - name: Strict ratchet (counts may only go down)
+        run: node tools/strict-ratchet.js
+
+  coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Unit + integration tests with coverage (thresholds in .c8rc.json)
+        env: { BOT_GAMES: all }
+        run: npx c8 node --test --test-concurrency=4 --test-timeout=240000 test/unit/
+      - name: Coverage summary
+        if: always()
+        run: |
+          node -e '
+            const s = require("./coverage/coverage-summary.json").total;
+            const row = (k) => `| ${k} | ${s[k].pct}% | ${s[k].covered}/${s[k].total} |`;
+            console.log(["### Server + game code coverage", "| | % | covered |", "|---|---|---|", ...["lines", "branches", "functions", "statements"].map(row)].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: coverage, path: coverage/ }
+
   test-all:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Full test suite (podman containers, like the dev machine)

@@ -1,8 +1,15 @@
-# Rumpus
+# Cabin Fever
 
-Self-hosted Jackbox-style party game platform: one shared TV screen and
-everyone else plays from their phone. Runs entirely on your own LAN — no
-account, no cloud service, no per-player app install.
+Party games for one shared TV screen, with everyone playing from their phone
+(a fork of Rumpus). Two ways to play:
+
+- **In the browser, nothing to install:** open https://hamidrezakhoram.github.io/homejack/
+  on the TV/laptop and pick *Host on this screen*; phones scan its QR code. The TV's
+  browser hosts the room itself and phones connect straight to it (WebRTC via PeerJS —
+  the free PeerJS broker only introduces them). Needs internet to load and connect. Game
+  files are cached in the browser; after an update only changed files are downloaded.
+- **Self-hosted with Docker (fully offline):** see *Running it* below — best for a place
+  without internet; runs entirely on your own LAN, no account, no cloud service.
 
 - **`/host`** — put this on the TV. Shows the room code and drives the shared screen.
 - **`/play`** — everyone else opens this on their phone, enters the room code, and plays.
