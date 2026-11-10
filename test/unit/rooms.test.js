@@ -212,7 +212,7 @@ test('reactions reach the TV with the sender avatar; junk and spam are dropped',
   await until(() => h.reactions.length >= 1, 'reaction');
   await sleep(200);
   assert.strictEqual(h.reactions.length, 1);
-  assert.deepStrictEqual({ ...h.reactions[0], playerId: undefined }, { playerId: undefined, nickname: 'Ann', avatar: 5, drawn: 0, look: null, emoji: '🔥' });
+  assert.deepStrictEqual({ ...h.reactions[0], playerId: undefined }, { playerId: undefined, nickname: 'Ann', avatar: 5, look: null, emoji: '🔥' });
   await sleep(650);
   a.sock.emit('player:react', { emoji: '<script>' });
   await sleep(150);

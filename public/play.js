@@ -63,11 +63,11 @@ document.querySelector('.avatar-mode').addEventListener('click', (e) => {
 setAvatarMode(avatarMode);
 
 // Edit your character from the lobby.
-const lobbyDraw = document.getElementById('lobby-draw');
+const lobbyMaker = document.getElementById('lobby-maker');
 let lobbyMakerReady = false;
-document.getElementById('lobby-draw-save').addEventListener('click', () => {
+document.getElementById('lobby-maker-save').addEventListener('click', () => {
   socket.emit('player:look', { look: myLook });
-  lobbyDraw.hidden = true;
+  lobbyMaker.hidden = true;
 });
 avatarPick.addEventListener('click', (e) => {
   const b = hit(e.target, '[data-avatar]');
@@ -120,10 +120,10 @@ gameView.addEventListener('click', (e) => {
   }
   const tb = hit(e.target, '[data-team]');
   if (tb) { socket.emit('player:team', { team: tb.dataset.team }); return; }
-  if (hit(e.target, '[data-lobby-draw]')) {
-    lobbyDraw.hidden = false;
-    if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-pad'), myLook, (l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
-    lobbyDraw.scrollIntoView({ behavior: 'smooth' });
+  if (hit(e.target, '[data-lobby-maker]')) {
+    lobbyMaker.hidden = false;
+    if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-maker-box'), myLook, (l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
+    lobbyMaker.scrollIntoView({ behavior: 'smooth' });
     return;
   }
   const b = hit(e.target, '[data-send]');
@@ -217,20 +217,6 @@ function meAvatar(cls) {
 // The original four games' phone screens.
 function legacyPlayer(phase, g, you) {
   switch (phase) {
-    case 'answering':
-      if (you.submitted) return waiting('Got it');
-      return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.prompt)}</h2>
-        <form class="text-form"><input name="text" maxlength="120" autocomplete="off" placeholder="Your answer…" required>
-        <button type="submit">Send it</button></form>`;
-    case 'voting':
-      if (you.voted) return waiting('Vote cast');
-      return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Pick your favorite:</p><div class="vote-list">` +
-        g.answers.map((a) => `<button class="vote-btn" data-send='{"choice":${a.index}}'>${esc(a.text)}</button>`).join('') + '</div>';
-    case 'results': {
-      const w = (g.winners && g.winners[0]) || null;
-      return '<h1>Results</h1>' + (w ? `<p class="prompt">"${esc(w.text)}" — ${esc(w.nickname)} wins the round!</p>`
-        : '<p>No votes this round. Tough crowd.</p>');
-    }
     case 'trivia-category':
       if (!you.isChooser) return `<h1>Category round!</h1><p>${esc(g.chooser)} is picking the next category… 🤔</p>`;
       return `<h1>You're in last place 😅</h1><p>So YOU pick the next category:</p><div class="vote-list">` +
@@ -300,7 +286,7 @@ function render() {
       <p>Watch the TV — the host is picking a game.</p>
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
       <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
-      <button class="ghost-btn" data-lobby-draw>🧑 Edit my character</button>
+      <button class="ghost-btn" data-lobby-maker>🧑 Edit my character</button>
       ${state.settings && state.settings.teams ? (() => {
         const mineTeam = (state.players.find((p) => p.id === me.playerId) || {}).team;
         const other = mineTeam === 'red' ? 'blue' : 'red';
@@ -340,7 +326,7 @@ function render() {
     if (first && !('ontouchstart' in window)) /** @type {HTMLInputElement} */ (first).focus();
   }
   countdown(g.endsAt, '#phone-timer');
-  if (state.phase !== 'lobby') lobbyDraw.hidden = true;
+  if (state.phase !== 'lobby') lobbyMaker.hidden = true;
   renderPace();
 }
 

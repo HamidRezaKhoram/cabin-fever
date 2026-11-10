@@ -54,10 +54,21 @@ async function check(name, fn) {
     assert.ok(await tv.evaluate(() => Rumpus.music.trackCount) >= 50);
   });
 
+  await check('menu music never stops: loops, moves on, and the watchdog revives it', async () => {
+    // test-all mounts a 1-second track in music/title + music/menu, so loops and track changes happen fast.
+    await tv.waitForFunction(() => Rumpus.music.status().plays >= 5, null, { timeout: 15000 }).catch(async () => {
+      const info = await tv.evaluate(() => ({ st: Rumpus.music.status(), cats: Rumpus.music.customCategories(), enabled: Rumpus.music.isEnabled() }));
+      throw new Error('menu music status: ' + JSON.stringify(info));
+    });
+    assert.strictEqual((await tv.evaluate(() => Rumpus.music.status())).playing, true);
+    await tv.evaluate(() => Rumpus.music.debugStop && Rumpus.music.debugStop());
+    await tv.waitForFunction(() => Rumpus.music.status().playing, null, { timeout: 8000 });
+  });
+
   await check('TV animates at a steady 30 fps (shared clock)', async () => {
     await tv.waitForTimeout(3000);
     const st = await tv.evaluate(() => Rumpus.clock.stats());
-    assert.ok(st.fps > 27 && st.fps < 33, `fps ${st.fps.toFixed(1)}`);
+    assert.ok(st.medianFps > 27 && st.medianFps < 33 && st.fps < 33, `fps median ${st.medianFps.toFixed(1)} / avg ${st.fps.toFixed(1)}`);
     assert.ok(st.samples > 60);
   });
 
@@ -108,7 +119,8 @@ async function check(name, fn) {
         await p.evaluate(() => Rumpus.clock.resetStats()); // measure idle pacing, not the editor clicks above
         await p.waitForTimeout(3000);
         const st = await p.evaluate(() => Rumpus.clock.stats());
-        assert.ok(st.fps > 27 && st.fps < 33, `phone fps ${st.fps.toFixed(1)}`);
+        // Median frame interval = steady pacing (robust to a stray GC pause on the CPU-only test box).
+        assert.ok(st.medianFps > 27 && st.medianFps < 33 && st.fps < 33, `phone fps median ${st.medianFps.toFixed(1)} / avg ${st.fps.toFixed(1)}`);
       }
       const overflow = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       assert.strictEqual(overflow, false, `${n} has horizontal scroll`);

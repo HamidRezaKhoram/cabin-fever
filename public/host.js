@@ -98,10 +98,9 @@ setInterval(() => {
 for (const kind of ['music', 'sfx']) {
   const el = /** @type {HTMLInputElement} */ (document.getElementById('vol-' + kind));
   el.value = String(Math.round(music.volumes()[kind] * 100));
-  el.addEventListener('input', () => {
-    music.setVolume(kind, Number(el.value) / 100);
-    if (kind === 'sfx') sfx.pop();
-  });
+  el.addEventListener('input', () => music.setVolume(kind, Number(el.value) / 100));
+  // Preview the effects volume once, when the slider is released (not on every step).
+  if (kind === 'sfx') el.addEventListener('change', () => sfx.pop());
 }
 
 // Work out the address phones should use. If the TV opened us via localhost,
@@ -144,7 +143,7 @@ socket.on('host:replaced', () => {
 });
 socket.on('room:stateUpdate', (msg) => { state = msg; window.Rumpus.setState(msg); render(); });
 socket.on('room:reaction', (r) => {
-  fx.reaction(esc(r.emoji), playerUrl({ id: r.playerId, avatar: r.avatar, drawn: r.drawn, look: r.look }), esc(r.nickname));
+  fx.reaction(esc(r.emoji), playerUrl({ id: r.playerId, avatar: r.avatar, look: r.look }), esc(r.nickname));
   sfx.pop();
 });
 socket.on('disconnect', () => document.body.classList.add('offline'));
@@ -327,22 +326,6 @@ const voterIcons = (names) => names && names.length
 function legacyHost(phase, g) {
   const roundTag = g.round ? `<p class="round-tag">Question ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>` : '';
   switch (phase) {
-    case 'answering':
-      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
-        <p class="big-sub">Answer on your phones! ${T}</p><p class="count">${g.submittedCount} / ${g.totalPlayers} answers in</p>`;
-    case 'voting':
-      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
-        <p class="big-sub">Vote for the funniest! ${T}</p>
-        <ol class="answers">${g.answers.map((a) => `<li>${esc(a.text)}</li>`).join('')}</ol>
-        <p class="count">${g.votedCount} / ${g.totalPlayers} votes in</p>`;
-    case 'results': {
-      const winnerIdx = new Set((g.winners || []).map((w) => w.index));
-      return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1><ol class="answers results">` +
-        g.results.map((r) => `<li class="${winnerIdx.has(r.index) ? 'winner' : ''}">
-          ${esc(r.text)} <span class="byline">— ${av(r.nickname)} ${esc(r.nickname)}</span>
-          <span class="votes">${r.votes} vote${r.votes === 1 ? '' : 's'}${r.gained ? ' · +' + r.gained : ''}</span>
-          ${voterIcons(r.voters)}${r.sweep ? '<span class="sweep">SWEEP! +250</span>' : ''}</li>`).join('') + '</ol>';
-    }
     case 'trivia-category':
       return `<p class="round-tag">Category round</p>
         <h1>${av(g.chooser, 'avatar big bob')} ${esc(g.chooser)} is in last place…</h1>

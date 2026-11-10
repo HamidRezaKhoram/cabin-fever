@@ -167,3 +167,61 @@ test('character maker: older saved looks migrate to the current parts', () => {
   assert.strictEqual(n.top, 4, 'old shirt colour carries over');
   assert.ok(m.PRESETS.length >= 6 && m.PRESETS.every((pr) => m.PARTS.every((p) => pr[p] < m.NAMES[p].length)), 'presets are valid');
 });
+
+test('volume changes are smooth and the output is limited (no harsh clipping)', () => {
+  const music = read('public/music.js');
+  assert.match(music, /createDynamicsCompressor\(\)/, 'master limiter');
+  assert.match(music, /linearRampToValueAtTime\(to, t \+ 0\.08\)/, 'slider changes ramp smoothly');
+  assert.match(music, /Math\.min\(2, Math\.max\(0\.25, TARGET_RMS \/ rms\)\)/, 'loudness boost capped at 2x');
+  const host = read('public/host.js');
+  assert.ok(!/addEventListener\('input', \(\) => \{[^}]*sfx\.pop/.test(host), 'no beep on every slider step');
+  assert.match(host, /addEventListener\('change', \(\) => sfx\.pop\(\)\)/);
+});
+
+test('the old "draw your own picture" feature is gone everywhere', () => {
+  for (const f of ['server.js', 'public/play.js', 'public/play.html', 'public/common.js', 'public/host.js']) {
+    const src = read(f);
+    assert.ok(!/drawAvatar|avatarVer|validDrawing|Draw yourself|Draw my own|\/avatar\//.test(src), `${f} still has drawn-avatar code`);
+  }
+});
+
+// ---- dead-code guards: leftovers from removed features must not linger -------------
+test('no dead CSS: every class/id in style.css is used by a page or script', () => {
+  const css = read('public/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const src = fs.readdirSync(path.join(ROOT, 'public')).filter((f) => /\.(js|html)$/.test(f)).map((f) => read('public/' + f)).join('\n');
+  // Built dynamically in code: podium steps `p${i + 1}` and team classes 'team-' + team.
+  const dynamic = { p1: /\bp\$\{i \+ 1\}/, p2: /\bp\$\{i \+ 1\}/, p3: /\bp\$\{i \+ 1\}/, 'team-red': /'team-' \+|team-\$\{/, 'team-blue': /'team-' \+|team-\$\{/ };
+  const names = new Set();
+  for (const m of css.matchAll(/([^{}]+)\{/g)) {
+    const sel = m[1].trim();
+    if (sel.startsWith('@') || /^(from|to|[\d.]+%)(\s*,\s*(from|to|[\d.]+%))*$/.test(sel)) continue;
+    for (const n of sel.replace(/\[[^\]]*\]/g, '').replace(/:[\w-]+(\([^)]*\))?/g, '').matchAll(/[.#]([a-zA-Z][\w-]*)/g)) names.add(n[1]);
+  }
+  const dead = [...names].filter((n) => !src.includes(n) && !(dynamic[n] && dynamic[n].test(src)));
+  assert.deepStrictEqual(dead, [], 'unused CSS selectors (remove them)');
+});
+
+test('no dead screens: legacy TV/phone renderers only handle phases of games without their own renderer', () => {
+  const registered = new Set([...read('public/games.js').matchAll(/register\('(\w+)'/g)].map((m) => m[1]));
+  const phasesOf = {};
+  for (const id of GAME_IDS) phasesOf[id] = new Set([...read(`games/${id}.js`).matchAll(/phase (?:=|===|!==) '([\w-]+)'/g)].map((m) => m[1]));
+  for (const [file, fn] of [['public/host.js', 'legacyHost'], ['public/play.js', 'legacyPlayer']]) {
+    const body = read(file).split(`function ${fn}(`)[1].split('\n}\n')[0];
+    for (const [, phase] of body.matchAll(/case '([\w-]+)':/g)) {
+      const owners = GAME_IDS.filter((id) => phasesOf[id].has(phase));
+      assert.ok(owners.length, `${file}: case '${phase}' — no game produces this phase`);
+      assert.ok(owners.some((id) => !registered.has(id)), `${file}: case '${phase}' is dead — ${owners.join(', ')} render through games.js`);
+    }
+  }
+});
+
+test('removed features stay removed', () => {
+  const REMOVED = [
+    [/drawAvatar|avatarVer|validDrawing|Draw yourself|Draw my own|\/avatar\//, 'draw-your-own profile picture'],
+    [/sidebar-min/, 'old auto-collapsing sidebar'],
+    [/data-step=/, 'old arrow-based character editor'],
+    [/opentriviaqa-numeric\.json'\)?\s*\n\s*if otqa\.exists\(\):(?!.*False)/, 'OpenTriviaQA numeric questions'],
+  ];
+  const files = ['server.js', 'public/play.js', 'public/play.html', 'public/host.js', 'public/host.html', 'public/common.js', 'public/avatar-maker.js', 'public/style.css'];
+  for (const [re, what] of REMOVED) for (const f of files) assert.ok(!re.test(read(f)), `${f} still contains ${what}`);
+});

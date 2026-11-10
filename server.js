@@ -101,30 +101,6 @@ function musicCategories() {
 }
 app.get('/api/music', (req, res) => res.json(musicCategories()));
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
-// Players' hand-drawn profile pictures.
-app.get('/avatar/:code/:id', (req, res) => {
-  const room = rooms.get(String(req.params.code).toUpperCase());
-  const p = room && room.players.get(req.params.id);
-  if (!p || !p.avatarImage) return res.status(404).end();
-  const m = /^data:(image\/(?:png|jpeg));base64,(.*)$/.exec(p.avatarImage);
-  res.type(m[1]).set('Cache-Control', 'max-age=86400').send(Buffer.from(m[2], 'base64'));
-});
-// Debug-only: full room dump (no tokens). Enable with RUMPUS_DEBUG=1.
-app.get('/api/debug', (req, res) => {
-  if (!DEBUG) return res.status(404).json({ error: 'start the server with RUMPUS_DEBUG=1' });
-  const out = [...rooms.values()].map((r) => ({
-    code: r.code, hostConnected: !!(r.hostSocket && r.hostSocket.connected), settings: r.settings,
-    phase: roomPhase(r),
-    pace: { key: r.pace.key, ready: r.pace.ready.size, hurry: r.pace.hurry.size, skipq: r.pace.skipq.size },
-    players: [...r.players.values()].map((p) => ({ id: p.id, nickname: p.nickname, score: p.score, connected: p.connected, avatar: p.avatar, drawn: p.avatarVer || 0 })),
-    game: r.game && {
-      id: r.game.constructor.meta.id, phase: r.game.phase, round: r.game.round, totalRounds: r.game.totalRounds,
-      multiplier: typeof r.game.mult === 'function' ? r.game.mult() : 1, matchIndex: r.game.matchIndex,
-      timerMsLeft: r.game.endsAt ? r.game.endsAt - Date.now() : null, hasTimer: !!r.game.timerFn, skipSeq: r.game.skipSeq || 0,
-    },
-  }));
-  res.json({ uptimeSec: Math.round(process.uptime()), memoryMB: Math.round(process.memoryUsage().rss / 1048576), rooms: out, library: library.stats() });
-});
 app.get('/api/content-stats', (req, res) => res.json(library.stats()));
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -160,7 +136,6 @@ function playersSummary(room) {
     avatar: p.avatar,
     team: room.settings.teams ? p.team || null : null,
     look: p.look || null, // character-maker look (rendered on clients)
-    drawn: p.avatarVer || 0, // >0 = player drew their own picture (served at /avatar/:code/:id)
   }));
 }
 
@@ -190,11 +165,6 @@ function teamScores(room) {
 }
 
 // --- pace votes (hurry / ready / skip question) ------------------------------
-const MAX_DRAWING = 80 * 1024;
-function validDrawing(s) {
-  return typeof s === 'string' && s.length < MAX_DRAWING && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(s);
-}
-
 function paceKey(game) {
   if (!game) return 'lobby';
   return [game.phase, game.round, game.matchIndex, game.revealIndex, game.skipSeq, game.subject].join('|');
@@ -459,7 +429,6 @@ io.on('connection', (socket) => {
       avatar = free.length ? free[crypto.randomInt(free.length)] : crypto.randomInt(AVATAR_COUNT);
     }
     const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar };
-    if (validDrawing(msg.drawing)) { p.avatarImage = msg.drawing; p.avatarVer = 1; }
     const look = cleanLook(msg.look);
     if (look) p.look = look;
     if (room.settings.teams) assignTeam(room, p);
@@ -521,18 +490,7 @@ io.on('connection', (socket) => {
     const p = room.players.get(socket.data.playerId);
     if (!p) return;
     if (msg && msg.look === null) p.look = null;
-    else { const look = cleanLook(msg && msg.look); if (!look) return; p.look = look; p.avatarImage = null; p.avatarVer = 0; }
-    broadcast(room);
-  });
-
-  socket.on('player:drawAvatar', (msg) => {
-    const room = socket.data.room;
-    if (!room || socket.data.role !== 'player' || room.closed) return;
-    const p = room.players.get(socket.data.playerId);
-    if (!p) return;
-    if (msg && msg.image === null) { p.avatarImage = null; p.avatarVer = 0; }
-    else if (validDrawing(msg && msg.image)) { p.avatarImage = msg.image; p.avatarVer = (p.avatarVer || 0) + 1; }
-    else return;
+    else { const look = cleanLook(msg && msg.look); if (!look) return; p.look = look; }
     broadcast(room);
   });
 
@@ -559,7 +517,7 @@ io.on('connection', (socket) => {
     if (p.lastReact && now - p.lastReact < 600) return;
     p.lastReact = now;
     if (room.hostSocket && room.hostSocket.connected) {
-      room.hostSocket.emit('room:reaction', { playerId: p.id, nickname: p.nickname, avatar: p.avatar, drawn: p.avatarVer || 0, look: p.look || null, emoji });
+      room.hostSocket.emit('room:reaction', { playerId: p.id, nickname: p.nickname, avatar: p.avatar, look: p.look || null, emoji });
     }
   });
 
