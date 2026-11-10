@@ -16,6 +16,7 @@
   const HAIR_COLOR = ['#2b1d14', '#5a3a22', '#8a5a2b', '#d9a441', '#f2e2a0', '#b0322e', '#e8e8e8', '#e86fb0', '#7a5cff', '#140c08', '#c4622d', '#7a6450', '#3a7bd5'];
   const TOP = ['#e83f5b', '#1e88e5', '#4caf50', '#ffb02e', '#9c6ade', '#2b2d42', '#f4f1e8', '#ff8fb3', '#00a6a6'];
   const BG = ['', '#5ee0a0', '#4fc3f7', '#ffd23f', '#ff8fb3', '#9c6ade', '#ff7a45', '#2b2d42'];
+  /** @type {Record<string, string[]>} option names per part */
   const NAMES = {
     faceShape: ['Round', 'Oval', 'Square', 'Heart', 'Long'],
     skin: ['Light', 'Fair', 'Tan', 'Medium', 'Brown', 'Deep', 'Porcelain', 'Olive', 'Bronze', 'Ebony'],
@@ -34,10 +35,12 @@
     top: ['Red', 'Blue', 'Green', 'Orange', 'Purple', 'Navy', 'White', 'Pink', 'Teal'],
     bg: ['None', 'Mint', 'Sky', 'Sun', 'Bubblegum', 'Grape', 'Sunset', 'Night'],
   };
+  /** @type {Record<string, string>} */
   const LABELS = {
     faceShape: 'Face shape', skin: 'Skin', eyes: 'Eyes', mouth: 'Mouth', makeup: 'Makeup', hair: 'Hair',
     hairColor: 'Hair colour', facial: 'Facial hair', glasses: 'Glasses', hat: 'Hat', earrings: 'Earrings', top: 'Top', bg: 'Backdrop',
   };
+  /** @type {Record<string, string[]>} */
   const SWATCH = { skin: SKIN, hairColor: HAIR_COLOR, top: TOP, bg: BG };
   /** Display order (light → deep skin; similar hair styles together). Parts not listed show in index order. */
   /** Seasonal hat for a date: Christmas, Halloween, Easter, Canada Day, graduation. @param {Date} d @returns {number} */
@@ -98,7 +101,7 @@
     return l;
   }
 
-  /** Head rows: y → [x0, x1] per face shape. */
+  /** Head rows: y → [x0, x1] per face shape. @type {Record<number, number[]>[]} */
   const SHAPES = [
     { 4: [5, 10], 5: [4, 11], 6: [4, 11], 7: [4, 11], 8: [4, 11], 9: [4, 11], 10: [4, 11], 11: [4, 11], 12: [5, 10] }, // round
     { 4: [5, 10], 5: [4, 11], 6: [4, 11], 7: [4, 11], 8: [4, 11], 9: [4, 11], 10: [4, 11], 11: [5, 10], 12: [6, 9] }, // oval
@@ -111,8 +114,8 @@
   function build(raw) {
     const look = norm(raw);
     const g = Array.from({ length: 16 }, () => Array(16).fill(''));
-    const set = (x, y, c) => { if (x >= 0 && x < 16 && y >= 0 && y < 16) g[y][x] = c; };
-    const rect = (x, y, w, h, c) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) set(i, j, c); };
+    const set = (/** @type {number} */ x, /** @type {number} */ y, /** @type {string} */ c) => { if (x >= 0 && x < 16 && y >= 0 && y < 16) g[y][x] = c; };
+    const rect = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h, /** @type {string} */ c) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) set(i, j, c); };
     const skin = SKIN[look.skin], hc = HAIR_COLOR[look.hairColor], top = TOP[look.top];
     const shape = SHAPES[look.faceShape];
     const rows = Object.keys(shape).map(Number);
@@ -122,6 +125,7 @@
     const covered = look.hat === 7; // the hijab covers all hair
     const hair = covered ? -1 : look.hair;
     const [tx0, tx1] = shape[topY];
+    /** @param {number} cx @param {number} cy @param {number} rx @param {number} ry @param {string} c @param {string} [tex] a second colour dithered in every third pixel */
     const disc = (cx, cy, rx, ry, c, tex) => {
       for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
         if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) set(x, y, tex && (x + y) % 3 === 0 ? tex : c);
@@ -296,7 +300,7 @@
   /** Darken a #rrggbb colour by factor f (0..1). @param {string} hex @param {number} f */
   function shade(hex, f) {
     const n = parseInt(hex.slice(1), 16);
-    const c = (s) => Math.round(((n >> s) & 255) * f).toString(16).padStart(2, '0');
+    const c = (/** @type {number} */ s) => Math.round(((n >> s) & 255) * f).toString(16).padStart(2, '0');
     return '#' + c(16) + c(8) + c(0);
   }
 
@@ -333,8 +337,8 @@
     /** @type {Record<string, number>[]} */
     const undo = [];
     let tab = 'face';
-    const optionHtml = (p) => {
-      const idx = ORDER[p] || NAMES[p].map((_, i) => i);
+    const optionHtml = (/** @type {string} */ p) => {
+      const idx = ORDER[p] || NAMES[p].map((_, /** @type {number} */ i) => i);
       const items = idx.map((i) => { const name = NAMES[p][i];
         const on = cur[p] === i;
         if (SWATCH[p]) {
@@ -366,7 +370,7 @@
       const b = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('button') : null);
       if (!b || !el.contains(b)) return;
       if (b.dataset.tab) { tab = b.dataset.tab; render(); return; }
-      if (b.dataset.undo) { if (undo.length) cur = undo.pop(); }
+      if (b.dataset.undo) { const prev = undo.pop(); if (prev) cur = prev; }
       else if (b.dataset.random) { undo.push(cur); cur = random(); }
       else if (b.dataset.preset) { undo.push(cur); cur = norm(PRESETS[Number(b.dataset.preset)]); }
       else if (b.dataset.part) { undo.push(cur); cur = { ...cur, [b.dataset.part]: Number(b.dataset.val) }; }

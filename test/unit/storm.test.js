@@ -59,8 +59,9 @@ test('a chore: leader picks a valid crew, the vote is secret then shown, cottage
       const leader = ps.find((p) => p.nickname === g.leader);
       await until(() => leader.state.phase === 'st-talk' && leader.state.you.candidates.length, 'leader screen');
       const rac = ps.find((p) => sideOf(p) === 'raccoon');
-      // Always put the raccoon on the crew, plus fill with others.
-      const crew = [rac.id, ...leader.state.you.candidates.map((c) => c.id).filter((id) => id !== rac.id)].slice(0, g.crewSize);
+      // Put the raccoon on the crew when allowed (Bear Sighting can bar last chore's crew), fill with others.
+      const allowed = leader.state.you.candidates.map((c) => c.id);
+      const crew = [...(allowed.includes(rac.id) ? [rac.id] : []), ...allowed.filter((id) => id !== rac.id)].slice(0, g.crewSize);
       const other = ps.find((p) => p !== leader);
       other.submit({ crew }); // not the leader → ignored
       leader.submit({ crew: crew.slice(0, g.crewSize - 1) }); // wrong size → ignored
@@ -80,7 +81,7 @@ test('a chore: leader picks a valid crew, the vote is secret then shown, cottage
       for (const p of ps) if (crew.includes(p.id)) p.submit({ card: 'sabotage' }); // cottagers' sabotage becomes help
       const rev = await until(() => h.state.phase === 'st-reveal' && h.state, 'reveal');
       const r = rev.gameState.reveal;
-      assert.strictEqual(r.cards.filter((c) => c === 'sabotage').length, 1, 'only the raccoon could sabotage');
+      assert.strictEqual(r.cards.filter((c) => c === 'sabotage').length, crew.includes(rac.id) ? 1 : 0, 'only the raccoon could sabotage');
       if (!r.ok) ruined++;
     }
     await until(() => h.state.phase === 'st-accuse', 'accuse', 8000);
