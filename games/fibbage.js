@@ -17,6 +17,7 @@
 
 const crypto = require('crypto');
 const { QUESTIONS } = require('./data/fibbage-questions');
+const library = require('./library');
 
 const BLUFF_MS = parseInt(process.env.RUMPUS_FIB_BLUFF_MS || '45000', 10);
 const CHOOSE_MS = parseInt(process.env.RUMPUS_FIB_CHOOSE_MS || '30000', 10);
@@ -45,7 +46,7 @@ class FibbageGame {
     this.push = push;
     this.phase = 'fib-bluff';
     this.round = 0;
-    this.totalRounds = Math.min(TOTAL_ROUNDS, QUESTIONS.length);
+    this.totalRounds = Math.min((room.settings && room.settings.rounds) || TOTAL_ROUNDS, QUESTIONS.length);
     this.deck = shuffle(QUESTIONS.map((q, i) => i));
     this.prompt = null;
     this.answer = null;
@@ -71,10 +72,36 @@ class FibbageGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
+    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
+    this.timerFn = fn;
     this.timer = setTimeout(() => {
+      this.timerFn = null;
       if (!this.destroyed) fn();
     }, ms);
+  }
+
+  isFinal() {
+    return this.totalRounds > 1 && this.round === this.totalRounds;
+  }
+
+  mult() {
+    return this.isFinal() ? 2 : 1;
+  }
+
+  spicy() {
+    return !(this.room.settings && this.room.settings.spicy === false);
+  }
+
+  // Host pressed "skip": run the pending phase transition now.
+  skip() {
+    if (!this.timerFn || this.destroyed) return;
+    const fn = this.timerFn;
+    clearTimeout(this.timer);
+    this.timer = null;
+    this.timerFn = null;
+    fn();
   }
 
   nextRound() {
@@ -83,8 +110,7 @@ class FibbageGame {
       return;
     }
     this.round += 1;
-    if (this.deck.length === 0) this.deck = shuffle(QUESTIONS.map((q, i) => i));
-    const q = QUESTIONS[this.deck.pop()];
+    const q = library.drawOne('fibbage', { spicy: this.spicy() }) || QUESTIONS[this.round % QUESTIONS.length];
     this.prompt = q.q;
     this.answer = q.answer;
     this.bluffs = new Map();
@@ -168,7 +194,8 @@ class FibbageGame {
 
     for (const [playerId, n] of gained.entries()) {
       const p = this.room.players.get(playerId);
-      if (p) p.score += n;
+      if (p) p.score += n * this.mult();
+      gained.set(playerId, n * this.mult());
     }
 
     const nick = (id) => {
@@ -228,6 +255,7 @@ class FibbageGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
     };
     switch (this.phase) {
       case 'fib-bluff':
@@ -260,6 +288,7 @@ class FibbageGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
     };
     switch (this.phase) {
       case 'fib-bluff':
@@ -301,7 +330,7 @@ class FibbageGame {
 
 FibbageGame.meta = {
   id: 'fibbage',
-  name: 'Fibbage',
+  name: 'Fib Finder',
   blurb: 'Bluffing trivia — invent a fake answer, then spot the real one hidden among everyone\'s lies.',
   minPlayers: 2,
 };

@@ -1,0 +1,218 @@
+# Closest Guess — question | answer | unit (optional). Well-established facts only.
+How many keys are on a standard piano? | 88
+In what year was the first iPhone released? | 2007
+How many bones are in the adult human body? | 206
+How tall is Mount Everest, in metres? | 8849 | m
+How many member states are in the United Nations? | 193
+What is the boiling point of water at sea level, in °F? | 212 | °F
+How many minutes are in a week? | 10080
+In what year did the Berlin Wall fall? | 1989
+How many hearts does an octopus have? | 3
+Average distance from Earth to the Moon, in km? | 384400 | km
+In what year did humans first land on the Moon? | 1969
+How many teeth does a full adult set have (including wisdom teeth)? | 32
+Speed of light, in km per second (roughly)? | 299792 | km/s
+In what year did Canada become a country (Confederation)? | 1867
+How many Earth days does it take Mars to orbit the Sun? | 687
+How tall is the CN Tower, in metres? | 553 | m
+How many time zones does Russia span? | 11
+In what year did the Titanic sink? | 1912
+How many elements are on the periodic table? | 118
+How many seconds are in a day? | 86400
+How many dots are on a standard six-sided die (all faces)? | 21
+How long is a marathon, in kilometres? | 42.195 | km
+How many symphonies did Beethoven complete? | 9
+How many squares are on a chessboard? | 64
+How many players per side are on the ice in hockey (including the goalie)? | 6
+How many countries are in Africa? | 54
+How many litres are in one US gallon? | 3.785 | L
+How many moons does Mars have? | 2
+What is normal human body temperature, in °C? | 37 | °C
+In what year did the first Star Wars movie come out? | 1977
+How many strings does a standard violin have? | 4
+How many provinces does Canada have? | 10
+How many sides does a stop sign have? | 8
+How many territories does Canada have? | 3
+How many Great Lakes are there? | 5
+How many cards are in a standard deck (no jokers)? | 52
+How many players are on a soccer team on the field (one side)? | 11
+How many players are on a baseball team on the field (one side)? | 9
+How many players are on a basketball team on the court (one side)? | 5
+How many feet are in a mile? | 5280
+How many metres are in a mile (roughly)? | 1609 | m
+How many centimetres are in an inch? | 2.54 | cm
+How many grams are in a pound (roughly)? | 454 | g
+How many ounces are in a pound? | 16
+How many days are in a leap year? | 366
+How many hours are in a week? | 168
+How many years are in a millennium? | 1000
+How many sides does a hexagon have? | 6
+How many degrees are in a circle? | 360
+How many degrees are in a triangle's angles combined? | 180
+At what temperature in °C does water freeze? | 0 | °C
+At what temperature are °C and °F equal? | -40
+How many legs does a spider have? | 8
+How many legs does an insect have? | 6
+How many arms does an octopus have? | 8
+How many chambers does a human heart have? | 4
+How many lungs does a human have? | 2
+How many planets are in our solar system? | 8
+In what year did World War I begin? | 1914
+In what year did World War II end? | 1945
+In what year did Columbus first reach the Americas? | 1492
+In what year was the Magna Carta signed? | 1215
+In what year did the French Revolution begin? | 1789
+In what year was the US Declaration of Independence signed? | 1776
+In what year did the Chernobyl disaster happen? | 1986
+In what year did the 9/11 attacks occur? | 2001
+In what year did the first Harry Potter book come out? | 1997
+In what year was Google founded? | 1998
+In what year was Facebook launched? | 2004
+In what year was YouTube founded? | 2005
+In what year did the Toronto Raptors win their first NBA championship? | 2019
+In what year did Canada adopt the maple leaf flag? | 1965
+In what year did Newfoundland join Canada? | 1949
+In what year did Nunavut become a territory? | 1999
+In what year did the first Tim Hortons open? | 1964
+In what year did the Montreal Olympics take place? | 1976
+In what year did Vancouver host the Winter Olympics? | 2010
+In what year did the Wright brothers make their first powered flight? | 1903
+In what year did the Beatles release their first album in the UK? | 1963
+In what year did Nelson Mandela become President of South Africa? | 1994
+How tall is the Eiffel Tower, in metres (to the tip)? | 330 | m
+How tall is the Burj Khalifa, in metres? | 828 | m
+How tall is the Statue of Liberty from base to torch, in metres (statue only)? | 46 | m
+How tall is Niagara's Horseshoe Falls, in metres (roughly)? | 57 | m
+How long is the Great Wall of China (all branches), in km (roughly)? | 21196 | km
+How long is the Nile River, in km (roughly)? | 6650 | km
+How deep is the Mariana Trench at its deepest, in metres (roughly)? | 10935 | m
+What is the population of Canada, in millions (2024, roughly)? | 41 | million
+What is the world population, in billions (2024, roughly)? | 8.1 | billion
+How many countries are in the European Union (2024)? | 27
+How many US states are there? | 50
+How many stars are on the US flag? | 50
+How many stripes are on the US flag? | 13
+How many points does a maple leaf have on the Canadian flag? | 11
+How many squares does a Rubik's Cube have on its surface? | 54
+How many pieces does each player start with in chess? | 16
+How many tiles are in a standard English Scrabble set? | 100
+How many properties (streets) are on a classic Monopoly board? | 22
+How much money does each player start with in classic Monopoly, in dollars? | 1500 | $
+How many squares are on a Monopoly board? | 40
+How many dominoes are in a standard double-six set? | 28
+How many holes are on a standard golf course? | 18
+How many pins are in ten-pin bowling? | 10
+What is a perfect score in ten-pin bowling? | 300
+What is the maximum break in snooker? | 147
+How many points is a touchdown worth in American football? | 6
+How long is an NHL hockey period, in minutes? | 20 | minutes
+How long is a soccer match (regulation), in minutes? | 90 | minutes
+How many rings are on the Olympic flag? | 5
+How many hurdles are in a 110 m hurdles race? | 10
+How many players are on a volleyball team on the court (one side)? | 6
+How many minutes is an NBA quarter? | 12 | minutes
+How many Stanley Cups have the Montreal Canadiens won? | 24
+How many teeth does an adult dog have? | 42
+How many eyes does a honeybee have? | 5
+How long is a giraffe's tongue, in cm (roughly)? | 50 | cm
+How fast can a cheetah run, in km/h (top speed, roughly)? | 110 | km/h
+How much does an adult moose bull weigh, in kg (roughly)? | 500 | kg
+How long is a blue whale, in metres (roughly, max)? | 30 | m
+How many species of bears are there in the world? | 8
+How many teeth does a great white shark have at any one time (roughly)? | 300
+How long do giant tortoises live, in years (commonly over)? | 100 | years
+How many babies (joeys) does a kangaroo usually have at once? | 1
+How long is a day on Venus, in Earth days (sidereal, roughly)? | 243 | days
+How many moons does Jupiter have (confirmed, 2023)? | 95
+How many Earth years does Saturn take to orbit the Sun (roughly)? | 29 | years
+What is the temperature at the Sun's surface, in °C (roughly)? | 5500 | °C
+How many Earths could fit inside the Sun (roughly, in thousands)? | 1300 | thousand
+How many hours are in a year (non-leap)? | 8760
+How many weeks are in a year (to one decimal)? | 52.1
+How many days does it take the Moon to orbit Earth (roughly)? | 27 | days
+How many astronauts have walked on the Moon? | 12
+In what year did Yuri Gagarin become the first human in space? | 1961
+In what year was Pluto reclassified as a dwarf planet? | 2006
+How many bones are in a human hand (each)? | 27
+How many muscles does it take to smile (commonly cited)? | 17
+How many litres of blood does an average adult have (roughly)? | 5 | L
+How many times does the human heart beat per minute at rest (typical)? | 70
+How many taste buds does the human tongue have (roughly)? | 10000
+How long are human intestines in total, in metres (roughly)? | 7.5 | m
+How many hairs are on the average human head (roughly, in thousands)? | 100 | thousand
+How many hours a day does a koala sleep (roughly)? | 20 | hours
+How many hours a day does a cat sleep (roughly)? | 15 | hours
+How many eggs does a hen lay per year (roughly)? | 300
+How many languages are spoken in the world (roughly)? | 7000
+How many letters are in the English alphabet? | 26
+How many letters are in the Hawaiian alphabet? | 13
+How many characters can a classic text message hold? | 160
+How many emojis are in the Unicode standard (roughly, 2023)? | 3600
+How many pixels wide is a 1080p screen? | 1920
+How many bits are in a byte? | 8
+How many megabytes in a gigabyte (binary)? | 1024
+In what year was the World Wide Web proposed? | 1989
+In what year was the first email sent? | 1971
+How many keys are on a standard full-size computer keyboard (roughly)? | 104
+How many Harry Potter books are in the main series? | 7
+How many Lord of the Rings books are in the main trilogy? | 3
+How many James Bond films did Sean Connery star in (official Eon films)? | 6
+How long is the movie Titanic (1997), in minutes (roughly)? | 195 | minutes
+How many Oscars did Titanic (1997) win? | 11
+How many episodes of Friends were made? | 236
+How many Beatles were there? | 4
+How many strings does a standard guitar have? | 6
+How many strings does a standard bass guitar have? | 4
+How many keys does a standard harmonica have? | 10
+How many valves does a standard trumpet have? | 3
+How many lines are in a sonnet? | 14
+How many lines are in a haiku? | 3
+How many syllables are in a haiku? | 17
+How many players are on a curling team? | 4
+How many stones does each curling team throw per end? | 8
+How many teams are in the NHL (2024)? | 32
+How many Canadian teams are in the NHL (2024)? | 7
+How many teams are in the NFL? | 32
+How many teams are in the NBA? | 30
+How many teams play in the CFL? | 9
+How many points is a field goal in the CFL? | 3
+How many downs does a team get in Canadian football? | 3
+How many kilometres long is the Trans-Canada Highway (roughly)? | 7821 | km
+How many lakes does Canada have (roughly, in thousands, larger than 3 km²)? | 31 | thousand
+How long is Canada's coastline, in km (roughly)? | 243000 | km
+How tall is Mount Logan, Canada's highest peak, in metres? | 5959 | m
+How many Tim Hortons locations are in Canada (roughly, 2023)? | 3900
+In what year was the loonie introduced? | 1987
+In what year was the toonie introduced? | 1996
+In what year did Canada stop making the penny? | 2012
+How many official languages does Canada have? | 2
+How many provinces border the United States? | 8
+How many seats are in Canada's House of Commons (2025)? | 343
+How many countries border Canada? | 1
+How many countries does Russia border (land)? | 14
+How many countries are there in the world (UN members + 2 observers)? | 195
+How many islands make up the Philippines (roughly)? | 7641
+How many islands make up Indonesia (roughly, in thousands)? | 17 | thousand
+How many official languages does Switzerland have? | 4
+How many states does Australia have? | 6
+How many people live in Toronto proper (roughly, in millions)? | 2.8 | million
+How many people live in Tokyo's greater area (roughly, in millions)? | 37 | million
+How many windows does the Empire State Building have (roughly)? | 6500
+How tall is the Empire State Building to its tip, in metres? | 443 | m
+How many rooms are in Buckingham Palace? | 775
+How many people can the Roman Colosseum hold (estimated, in thousands)? | 50 | thousand
+How many years did it take to build the Great Pyramid (estimated)? | 20 | years
+In what year did the Statue of Liberty get dedicated? | 1886
+In what year did the Eiffel Tower open? | 1889
+In what year did the Golden Gate Bridge open? | 1937
+In what year did the CN Tower open? | 1976
+In what year did the Panama Canal open? | 1914
+How long is the Panama Canal, in km (roughly)? | 82 | km
+How long is the Channel Tunnel, in km (roughly)? | 50 | km
+How many calories are in a Big Mac (roughly)? | 550 | kcal
+How many calories are in a medium banana (roughly)? | 105 | kcal
+How many teaspoons of sugar are in a 355 mL can of cola (roughly)? | 10
+How many litres of maple sap does it take to make 1 litre of maple syrup (roughly)? | 40 | L
+What percentage of the world's maple syrup does Canada produce (roughly)? | 70 | %
+How many seeds does a strawberry have on the outside (roughly)? | 200
+How many kernels are on an average ear of corn (roughly)? | 800

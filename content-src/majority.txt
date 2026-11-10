@@ -1,0 +1,397 @@
+# Majority Rules — "Name a…" style. Lines after "## adult" are 18+.
+Name a fruit that is yellow
+Name something you bring to the beach
+Name a famous wizard
+Name an animal you might see at a cottage
+Name a pizza topping
+Name something people are afraid of
+Name a breakfast food
+Name a board game
+Name a superhero
+Name something that is cold
+Name a colour of the rainbow
+Name a sport played with a ball
+Name something you do on a rainy day
+Name a vegetable kids hate
+Name a planet
+Name something you roast over a campfire
+Name a musical instrument
+Name a dog breed
+Name something in a junk drawer
+Name a holiday
+Name a candy bar
+Name a kitchen appliance
+Name something that has wheels
+Name a type of weather
+Name an ice cream flavour
+Name something you find in a forest
+Name a country in Europe
+Name a word that rhymes with "cat"
+Name something people lose all the time
+Name a reason you'd be late for work
+Name something you put on a hot dog
+Name a famous scientist
+Name a Disney movie
+Name a fast food chain
+Name a famous painter
+Name something you do before bed
+Name a cereal brand
+Name a soda
+Name something you'd find in a purse
+Name something that's sticky
+Name a thing people collect
+Name a famous ship
+Name a dance move
+Name an animal with stripes
+Name an animal that hops
+Name something with a lot of buttons
+Name a bird that can't fly
+Name something people put off doing
+Name a popular baby name
+Name a famous castle
+Name a cheese
+Name a type of pasta
+Name a reason people go to the hospital
+Name a fairy tale
+Name something you'd find on a farm
+Name a chore people hate
+Name a famous duo
+Name a hairstyle
+Name a hat
+Name something that floats
+Name something you'd see at a circus
+Name a dessert
+Name a type of shoe
+Name a thing that's round
+Name a Canadian city
+Name a US state
+Name a famous mountain
+Name an ocean animal
+Name a camping item
+Name something that buzzes
+Name a sound a cow makes, other than moo
+Name something you'd find in the bathroom
+Name a type of tree
+Name a flower
+Name a famous detective
+Name a thing you plug in
+Name a fear people have about flying
+Name something that's always too expensive
+Name a kids' TV show
+Name a job that requires a uniform
+Name a famous athlete
+Name a card game
+Name a reason to call your mom
+Name an excuse for not doing homework
+Name a smell people love
+Name a smell people hate
+Name something people do when they're nervous
+Name something you'd take to a desert island
+Name something you can't live without
+Name a type of sandwich
+Name a reason to throw a party
+Name a famous villain
+Name a cartoon dog
+Name a cartoon cat
+Name a type of bread
+Name a nut
+Name a thing that's orange
+Name a thing that's green
+Name a thing that's purple
+Name a thing that's tiny
+Name a thing that's huge
+Name something you shouldn't do in a library
+Name something you'd hear at a wedding
+Name something you'd find at a garage sale
+Name a road trip snack
+Name something you'd pack for a weekend at the cottage
+Name a winter sport
+Name a summer activity
+Name a fall activity
+Name something you'd see on a lake
+Name a thing that glows
+Name a famous landmark
+Name a famous bridge
+Name a spice
+Name something you dip in sauce
+Name a sauce
+Name a breakfast cereal mascot
+Name a superhero weakness
+Name a car brand
+Name something you find in a toolbox
+Name something people do on their phone
+Name a social media app
+Name a video game
+Name a thing that rings
+Name a reason to cancel plans
+Name a part of a car
+Name a famous queen
+Name a famous king
+Name something you do at a sleepover
+Name a farm animal
+Name an insect
+Name a reptile
+Name something that's slimy
+Name a thing people put on their fridge
+Name a famous horse
+Name a famous dinosaur
+Name a famous movie monster
+Name a thing that goes "pop"
+Name a thing that's sharp
+Name a gift people re-gift
+Name something you'd find under a couch cushion
+Name a thing that's always in a hotel room
+Name an Olympic sport
+Name a reason to go to the dentist
+Name something people do on New Year's Eve
+Name a Halloween costume
+Name a Christmas song
+Name a thing you'd find in a stocking
+Name a Thanksgiving food
+Name a thing you'd see at the zoo
+Name a famous bear
+Name a type of boat
+Name a thing you do at the beach
+Name a sea creature with tentacles
+Name a famous mouse
+Name a rodent
+Name something people do on a first date
+Name a thing at a playground
+Name something you'd find in a classroom
+Name a school subject
+Name something a teacher says
+Name something your mom always says
+Name something your dad always says
+Name a thing that's hard to open
+Name a common allergy
+Name a famous band
+Name a famous singer
+Name a song everyone knows
+Name a musical
+Name a Shakespeare play
+Name a book everyone read in school
+Name a thing that makes you sneeze
+Name a reason to wake up in the middle of the night
+Name a famous clown
+Name a sport you watch on TV
+Name a hockey team
+Name a thing in a first-aid kit
+Name a type of soup
+Name something you'd find in a garage
+Name a type of fish
+Name a fishing lure or bait
+Name something people do in the shower
+Name a thing in your wallet
+Name a reason people move
+Name something you'd buy at a gas station
+Name a thing you'd see on a highway
+Name a road sign
+Name something that's always broken
+Name a breakfast drink
+Name something that comes in a pair
+Name something people are addicted to
+Name a famous chef
+Name a TV talent show
+Name a famous robot
+Name a famous alien
+Name a famous ghost
+Name a word that rhymes with "moose"
+Name a word that rhymes with "lake"
+Name a word that means "big"
+Name a word that means "happy"
+Name a thing people do at a cottage
+Name a thing that ruins a picnic
+Name a thing that keeps you up at night
+Name something you need for a campfire
+## adult
+Name something people do when they're drunk
+Name a place people hook up
+Name a sex position
+Name something you'd find in a sex shop
+Name a reason to break up with someone
+Name a cocktail
+Name a beer brand
+Name a drinking game
+Name a hangover cure
+Name something you'd find at a bachelor party
+Name something you'd find at a bachelorette party
+Name a thing people lie about on dating apps
+Name a dating app
+Name a body part people get pierced
+Name something people do on a nude beach
+Name a kinky thing to do in bed
+Name a reason to call in "sick"
+Name a word for being drunk
+Name a slang term for breasts
+Name a slang term for a butt
+Name something people say during sex
+Name a romantic movie people watch to get in the mood
+Name a place you shouldn't have sex but people do
+Name a type of underwear
+Name something that ruins the mood
+Name a famous sex symbol
+Name a thing people hide from their parents
+Name a reason to go to a clinic
+Name something people do on a walk of shame
+Name a sign someone is cheating
+Name something you shouldn't say during sex
+Name a food people use in the bedroom
+Name a costume people wear in the bedroom
+Name a thing in a stripper's purse
+Name a song people strip to
+Name a thing you'd do in Vegas
+Name something people regret the morning after
+Name a type of liquor
+Name a shot people order at a bar
+Name a reason people get kicked out of a bar
+Name a thing you'd do in a hot tub
+Name a way to say "have sex" without saying it
+Name a thing a bartender hates
+Name something you'd find in a frat house
+Name a pickup line
+Name a thing people drunk-text
+Name something embarrassing to buy at a pharmacy
+Name a thing that's better naked
+Name a famous Playboy model
+Name a thing people do at a strip club
+Name something you'd find in a hotel minibar
+Name a thing you shouldn't do on a first date
+Name a thing that's sexy about a lumberjack
+Name a thing that's sexy about a firefighter
+Name a uniform people find sexy
+Name a sex toy
+Name a thing people do in a hot tub after dark
+Name something people bring to an orgy
+Name a reason to fake an orgasm
+Name a reason people skinny dip
+Name a thing you'd say to get out of a bad date
+Name something people do on a booty call
+Name a place people get frisky on vacation
+Name a thing on a bachelor party itinerary
+Name a famous strip
+Name a thing that's worse with a hangover
+Name a body part people find sexy
+Name a reason a date goes badly
+Name something you'd never want your mom to find in your room
+Name a wine
+Name a drink with an umbrella in it
+Name a thing people do at a frat party
+Name a party drug people talk about
+Name a famous drunk movie character
+Name a famous playboy
+Name a lingerie item
+Name a word for vomiting after drinking
+Name an excuse for not wanting sex
+Name a romantic getaway spot
+Name a thing that makes a bed squeak
+Name a sound you hear through thin cottage walls
+Name a thing a cop says when pulling over a drunk driver
+Name a famous party city
+Name a bad tattoo spot
+Name something on a "naughty" list
+Name a holiday people drink the most on
+Name a beer-drinking country
+Name a thing you'd do in a dark movie theatre
+Name a reason people get naked
+Name something you'd find in a drunk person's pockets
+Name a bad decision people make at 2 a.m.
+Name an adult-only vacation spot
+Name a thing people put on their dating profile photos
+Name a red flag on a first date
+Name a type of kiss
+Name a slang term for a penis
+Name a slang term for a vagina
+Name a famous adult film title parody
+Name a thing a stripper hears every night
+Name a thing that gets people in the mood
+Name a sexy accent
+Name a thing at a swingers' party
+Name a thing that's "for her pleasure"
+Name a reason to have a quickie
+Name a thing you'd do on your honeymoon
+Name a pick-up spot
+Name a cocktail with a dirty name
+Name something people do in the back seat
+Name a thing people moan
+Name something you'd scream in bed
+Name a bar snack
+Name a game people play when drunk at a cottage
+Name a reason someone's pants are off
+Name a reason for a sex injury
+Name something found in a hotel room after a wild night
+Name a thing you'd never do sober
+Name something people do in a Vegas hotel
+Name an awkward thing to say after sex
+Name a reason to go home with someone
+Name a famous nudist place
+Name a part of the body that's ticklish
+Name a sexy food
+Name a reason to call a sex hotline
+Name a thing you'd find in a nightstand
+Name a thing you'd find on a porn set
+Name a job title in the adult film industry
+Name a thing that's "only for adults"
+Name a thing to do at a cottage after the kids go to bed
+Name a way to cure a hangover that doesn't work
+Name a type of drinking glass
+Name something you'd find in a beer fridge
+Name a dirty dance move
+Name a lie people tell the morning after
+Name something you'd find in a dorm room
+Name a reason people go to a sex shop
+Name a slang term for having sex
+Name a slang word for a hookup
+Name a sexy name for a cat
+Name a thing you'd do in a sauna
+Name a reason to lock the bedroom door
+Name a thing in a love hotel
+Name a lingerie colour
+Name a sexy song
+Name a famous TV sex scene
+Name something people do on a "spring break"
+Name a thing you shouldn't do drunk at a wedding
+Name something people do when they think nobody is looking
+Name a reason someone would call their ex
+Name a thing you'd find in a drunk tank
+Name something people take off first
+Name an embarrassing reason to go to the ER
+Name a place people hide their porn
+Name a thing that's "dirty"
+Name a booze you'd bring camping
+Name a reason a hot tub is gross
+Name a thing on a sex tape
+Name a slang term for being horny
+Name something to never Google at work
+Name a thing people do on a Tinder date
+Name a thing you'd do at a toga party
+Name a famous adult magazine
+Name an innuendo-sounding food
+Name something people moan about other than sex
+Name a famous movie orgy scene
+Name a reason a condom breaks
+Name a thing in a bachelor's apartment
+Name a party game that involves kissing
+Name a reason someone would be "tied up" tonight
+Name an awkward place to get a sunburn
+Name a thing people do at a cottage they'd never do at home
+Name a thing you'd find in a stripper's locker
+Name an excuse for being out all night
+Name a sound effect from an adult movie
+Name a sexy profession
+Name a thing on a walk-of-shame outfit
+Name a romantic thing to do in a canoe
+Name a reason the canoe tipped
+Name a type of thong
+Name a famous lover in history
+Name a thing that "goes in"
+Name a thing that "comes out"
+Name a sexy nickname
+Name something people role-play
+Name a fetish
+Name a thing people get spanked with
+Name a reason to have a safe word
+Name something kept in a "toy box"
+Name a thing you'd do in a strip poker game
+Name a garment people lose first in strip poker
+Name a famous hookup movie
+Name something people do to sober up

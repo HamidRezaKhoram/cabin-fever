@@ -1,0 +1,177 @@
+/*
+ * Shared plumbing for Rumpus game modules: timers (scaled by host settings),
+ * skip support, standings, content-pack loading. AGPLv3 — see LICENSE.
+ */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function pick(arr) {
+  return arr[crypto.randomInt(arr.length)];
+}
+
+// Merge a built-in list with an optional content/<name>.json array, so people
+// can add their own prompts without rebuilding the image (mount ./content).
+function loadContent(name, builtin) {
+  const file = path.join(CONTENT_DIR, `${name}.json`);
+  try {
+    const extra = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (Array.isArray(extra) && extra.length) {
+      const mode = process.env.RUMPUS_CONTENT_MODE === 'replace' ? 'replace' : 'append';
+      return mode === 'replace' ? extra : builtin.concat(extra);
+    }
+  } catch (e) {
+    if (e.code !== 'ENOENT') console.warn(`[content] could not load ${file}: ${e.message}`);
+  }
+  return builtin;
+}
+
+function cleanText(v, max = 120) {
+  return typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '';
+}
+
+class BaseGame {
+  constructor(room, push) {
+    this.room = room;
+    this.push = push;
+    this.settings = room.settings || {};
+    this.phase = 'starting';
+    this.round = 0;
+    this.timer = null;
+    this.timerFn = null;
+    this.endsAt = null;
+    this.destroyed = false;
+  }
+
+  rounds(def) {
+    return this.settings.rounds || def;
+  }
+
+  destroy() {
+    this.destroyed = true;
+    this.clearTimer();
+  }
+
+  clearTimer() {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    this.timerFn = null;
+    this.endsAt = null;
+  }
+
+  // Phase timers scale with the host's "timer speed"; reveal/results pauses
+  // pass scale=false so they stay snappy.
+  setTimer(ms, fn, scale = true) {
+    this.clearTimer();
+    const real = Math.round(scale ? ms * (this.settings.timerScale || 1) : ms);
+    this.endsAt = Date.now() + real;
+    this.timerFn = fn;
+    // Small grace so phones that auto-submit at 0s still make it in.
+    this.timer = setTimeout(() => {
+      if (this.destroyed) return;
+      this.timer = null;
+      this.timerFn = null;
+      fn();
+    }, real + (scale ? 1200 : 0));
+  }
+
+  // Host pressed "skip": fire the pending timer right now.
+  skip() {
+    if (!this.timerFn || this.destroyed) return;
+    const fn = this.timerFn;
+    this.clearTimer();
+    fn();
+  }
+
+  player(id) {
+    return this.room.players.get(id);
+  }
+
+  nick(id) {
+    const p = this.room.players.get(id);
+    return p ? p.nickname : '(left)';
+  }
+
+  // Final round of a multi-round game is worth double.
+  isFinal() {
+    return this.doubleFinal !== false && this.totalRounds > 1 && this.round === this.totalRounds;
+  }
+
+  mult() {
+    return this.isFinal() ? 2 : 1;
+  }
+
+  // Returns the points actually awarded (after the final-round multiplier).
+  award(id, pts) {
+    const p = this.room.players.get(id);
+    const real = pts * this.mult();
+    if (p) p.score += real;
+    return real;
+  }
+
+  spicy() {
+    return this.settings.spicy !== false;
+  }
+
+  playerIds() {
+    return [...this.room.players.keys()];
+  }
+
+  // True once every *currently present* player has an entry in `set` (a Map/Set
+  // keyed by playerId), optionally excluding some ids.
+  allIn(set, exclude = []) {
+    const ex = new Set(exclude);
+    return this.playerIds().every((id) => ex.has(id) || set.has(id));
+  }
+
+  standings() {
+    return [...this.room.players.values()]
+      .map((p) => ({ nickname: p.nickname, score: p.score }))
+      .sort((a, b) => b.score - a.score);
+  }
+
+  gameOver() {
+    this.phase = 'gameover';
+    this.clearTimer();
+    this.push();
+  }
+
+  base() {
+    return {
+      gameId: this.constructor.meta.id,
+      round: this.round,
+      totalRounds: this.totalRounds,
+      endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
+    };
+  }
+
+  // Subclasses implement: start(), handleSubmit(id, payload), onPlayerLeft(id),
+  // hostView() -> object, playerOnly(id) -> { gameState, you }.
+  hostGameState() {
+    if (this.phase === 'gameover') return { ...this.base(), standings: this.standings() };
+    return { ...this.base(), ...this.hostView() };
+  }
+
+  playerView(id) {
+    if (this.phase === 'gameover') {
+      return { gameState: { ...this.base(), standings: this.standings() }, you: {} };
+    }
+    const v = this.playerOnly(id) || {};
+    return { gameState: { ...this.base(), ...(v.gameState || {}) }, you: v.you || {} };
+  }
+}
+
+module.exports = { BaseGame, shuffle, pick, loadContent, cleanText };

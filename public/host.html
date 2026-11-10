@@ -7,24 +7,52 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="host">
+  <canvas id="bg"></canvas>
+
   <header id="topbar">
     <div class="brand">RUMPUS</div>
     <div id="room-code" class="room-code">····</div>
     <div class="join-hint">join at <span id="join-url">this-server/play</span></div>
+    <img id="qr" class="qr-small" alt="">
+    <div class="top-actions">
+      <div id="controls" hidden></div>
+      <div class="vol">
+        <label title="Music volume">🎵 <input type="range" id="vol-music" min="0" max="100"></label>
+        <label title="Sound effects volume">🔔 <input type="range" id="vol-sfx" min="0" max="100"></label>
+      </div>
+      <button id="fs-btn" class="icon-btn" title="Fullscreen">⛶</button>
+    </div>
   </header>
 
   <main id="stage">
+    <div id="timerbar" hidden><i></i></div>
     <div id="phase-view" class="phase-view">
       <h1>Connecting…</h1>
     </div>
   </main>
 
   <aside id="sidebar">
-    <h2>Players</h2>
+    <h2>PLAYERS</h2>
     <ul id="player-list"></ul>
   </aside>
 
+  <div id="start-overlay">
+    <div>
+      <div class="logo">RUMPUS</div>
+      <div class="press">PRESS START<br><small>click anywhere · turns on music</small><br><small id="track-count"></small></div>
+    </div>
+  </div>
+  <div id="now-playing" class="now-playing"></div>
+  <div id="offline-banner">Lost connection to the server — reconnecting…</div>
+
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/common.js"></script>
+  <script src="/sprites.js"></script>
+  <script src="/bg.js"></script>
+  <script src="/music.js"></script>
+  <script src="/fx.js"></script>
+  <script src="/games.js"></script>
   <script src="/host.js"></script>
+  <script>document.getElementById('track-count').textContent = Rumpus.music.trackCount + ' original chiptunes loaded';</script>
 </body>
 </html>

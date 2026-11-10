@@ -5,6 +5,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const library = require('./library');
 
 const PROMPTS = [
   'Worst thing to say on a first date',
@@ -45,7 +46,7 @@ class QuiplashGame {
     this.push = push;
     this.phase = 'answering';
     this.round = 0;
-    this.totalRounds = TOTAL_ROUNDS;
+    this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
     this.deck = shuffle(PROMPTS.slice());
     this.prompt = null;
     this.answers = []; // { playerId, text }
@@ -68,10 +69,36 @@ class QuiplashGame {
 
   setTimer(ms, fn) {
     if (this.timer) clearTimeout(this.timer);
+    const scale = (this.room.settings && this.room.settings.timerScale) || 1;
+    ms = Math.round(ms * scale);
     this.endsAt = Date.now() + ms;
+    this.timerFn = fn;
     this.timer = setTimeout(() => {
+      this.timerFn = null;
       if (!this.destroyed) fn();
     }, ms);
+  }
+
+  isFinal() {
+    return this.totalRounds > 1 && this.round === this.totalRounds;
+  }
+
+  mult() {
+    return this.isFinal() ? 2 : 1;
+  }
+
+  spicy() {
+    return !(this.room.settings && this.room.settings.spicy === false);
+  }
+
+  // Host pressed "skip": run the pending phase transition now.
+  skip() {
+    if (!this.timerFn || this.destroyed) return;
+    const fn = this.timerFn;
+    clearTimeout(this.timer);
+    this.timer = null;
+    this.timerFn = null;
+    fn();
   }
 
   nextRound() {
@@ -80,8 +107,8 @@ class QuiplashGame {
       return;
     }
     this.round += 1;
-    if (this.deck.length === 0) this.deck = shuffle(PROMPTS.slice());
-    this.prompt = this.deck.pop();
+    const item = library.drawOne('punchline', { spicy: this.spicy() });
+    this.prompt = item ? item.text : PROMPTS[this.round % PROMPTS.length];
     this.answers = [];
     this.votes = new Map();
     this.results = null;
@@ -137,14 +164,23 @@ class QuiplashGame {
     const tally = this.answers.map(() => 0);
     for (const idx of this.votes.values()) tally[idx] += 1;
 
+    // SWEEP: every vote cast went to one answer (needs 2+ voters).
+    const sweepIdx = this.votes.size >= 2 ? tally.findIndex((n) => n === this.votes.size) : -1;
     const results = this.answers.map((a, i) => {
       const p = this.room.players.get(a.playerId);
-      if (p) p.score += tally[i] * POINTS_PER_VOTE;
+      const pts = (tally[i] * POINTS_PER_VOTE + (i === sweepIdx ? 250 : 0)) * this.mult();
+      if (p) p.score += pts;
       return {
         index: i,
         text: a.text,
         nickname: p ? p.nickname : '(left the game)',
         votes: tally[i],
+        gained: pts,
+        sweep: i === sweepIdx,
+        voters: [...this.votes].filter(([, c]) => c === i).map(([v]) => {
+          const vp = this.room.players.get(v);
+          return vp ? vp.nickname : '?';
+        }),
       };
     });
     results.sort((x, y) => y.votes - x.votes);
@@ -195,6 +231,7 @@ class QuiplashGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
     };
     switch (this.phase) {
       case 'answering':
@@ -232,6 +269,7 @@ class QuiplashGame {
       round: this.round,
       totalRounds: this.totalRounds,
       endsAt: this.endsAt,
+      doublePoints: this.isFinal(),
     };
     switch (this.phase) {
       case 'answering':
@@ -273,7 +311,7 @@ class QuiplashGame {
 
 QuiplashGame.meta = {
   id: 'quiplash',
-  name: 'Quiplash',
+  name: 'Punchline',
   blurb: 'Answer a silly prompt, then vote for the best answer.',
   minPlayers: 2,
 };
