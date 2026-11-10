@@ -34,7 +34,7 @@ shipped in this round directly attack the idle numbers below once real players u
    ("Ben is lying about something…"). Add a bonus for guessing *which truth* surprised people most.
 3. **Fib Finder (53 s).** ✅ Done: likes (+50 each) after you've guessed. Was: fast liars wait for slow ones: add **"likes"** (tap lies you find funny
    during the choose phase, +50 each) so everyone has something to do; hurry vote helps.
-4. **Majority Rules (46 s, 1.9 actions/min).** Only one action per round. Add a second tap:
+4. **Majority Rules (46 s, 1.9 actions/min).** ✅ Done: "how many will match you?" bet (+150 exact, +50 for "nobody"). Was: Only one action per round. Add a second tap:
    **"How many will match you?"** wager (0–N) for bonus points — doubles the decisions.
 5. **Punchline (44 s).** Authors sit out their own matchup. Let authors place a **side bet**
    ("I'll win by a landslide" ×2 / "I'll lose" ×0.5) and give 3-player games a final

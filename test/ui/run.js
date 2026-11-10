@@ -246,6 +246,8 @@ async function check(name, fn) {
     await phones[1].click('.text-form button');
     await phones[2].fill('.text-form input', 'Bananas');
     await phones[2].click('.text-form button');
+    // Second tap: bet how many others will match you.
+    for (const p of phones) { await p.waitForSelector('.bet-btn'); await p.click('.bet-btn >> nth=1'); }
     await tv.waitForSelector('ol.suspense li');
     await shot(tv, '07-majority');
   });

@@ -286,14 +286,21 @@ test('Closest Guess: junk numbers are rejected and the timer still ends the roun
 });
 
 // ------------------------------------------------------------------ Majority Rules
-test('Majority Rules: matching answers group up; 3 of a kind score 300 each, loners 0', async () => {
+test('Majority Rules: matching answers group up (300 each for 3), then exact match bets pay', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'majority' });
   await h.phase('mr-answer');
   by.Ann.submit({ text: 'The Boxes' }); by.Ben.submit({ text: 'box' }); by.Cat.submit({ text: 'BOXES!!' }); by.Dan.submit({ text: 'lamp' });
+  await until(() => h.state.gameState.submittedCount === 4, 'answers in');
+  assert.strictEqual(h.state.phase, 'mr-answer', 'reveal waits for the bets');
+  by.Ann.submit({ bet: 9 }); // out of range: ignored
+  await sleep(100);
+  assert.strictEqual(by.Ann.state.you.bet, null);
+  by.Ann.submit({ bet: 2 }); by.Ben.submit({ bet: 1 }); by.Cat.submit({ bet: 3 }); by.Dan.submit({ bet: 0 });
   const rev = await h.phase('mr-reveal');
   assert.strictEqual(rev.gameState.result.groups[0].count, 3);
-  assert.deepStrictEqual([score('Ann'), score('Ben'), score('Cat'), score('Dan')], [300, 300, 300, 0]);
+  // Matching: 300 each for the trio. Bets: Ann called 2 exactly (+150), Dan called "nobody" (+50).
+  assert.deepStrictEqual([score('Ann'), score('Ben'), score('Cat'), score('Dan')], [450, 300, 300, 50]);
 });
 
 // ------------------------------------------------------------------ Most Likely To

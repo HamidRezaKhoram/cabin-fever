@@ -55,7 +55,10 @@ const rnd = (a, b) => a + Math.random() * (b - a);
           case 'trivia-category': if (you.isChooser) payload = { choice: 0 }; break;
           case 'trivia-question': if (!you.answered) payload = { choice: Math.floor(Math.random() * g.choices.length) }; break;
           case 'cg-guess': if (!you.submitted) payload = { number: Math.round(rnd(1, 2000)) }; break;
-          case 'mr-answer': if (!you.submitted) payload = { text: ['beer', 'beer', 'wine', 'chips'][Math.floor(Math.random() * 4)] }; break;
+          case 'mr-answer':
+            if (!you.submitted) payload = { text: ['beer', 'beer', 'wine', 'chips'][Math.floor(Math.random() * 4)] };
+            else if (you.bet == null) payload = { bet: Math.floor(Math.random() * (g.maxBet + 1)) };
+            break;
           case 'ml-vote': if (!you.voted && g.targets) payload = { target: g.targets[Math.floor(Math.random() * g.targets.length)].id }; break;
           case 'imp-clue': if (!you.submitted) payload = { text: 'clue' }; break;
           case 'imp-vote': if (!you.voted && g.clues && g.clues.length) payload = { target: g.clues[0].id }; break;
