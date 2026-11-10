@@ -64,3 +64,4 @@ Tooling: `worstIdleAt` in the report names the stretch; a static test forces eve
 | Loon Call (new) | 33 s idle (caller sat out their call) | 22 s, 27 actions/min | The caller echoes their own call with everyone. |
 | Lantern Lake (new) | — | 2.5 min, worst idle 10 s | Continuous steering; phones' arrows/scores push 2×/s. |
 | Storm Watch (new) | — | bots: 2–3 min, 4 actions/min, worst idle 31–35 s (the talk phase) | Real play ≈ 10–12 min: talk 60 s × 5 chores. |
+| Campfire Wizards (new) | 28–30 s idle (1.2 s per spell) | 21 s (4p), 24 s (6p), 32 s (8p) | 0.9 s per spell, reveal capped at ~8 steps, 12 s picks. |

@@ -108,6 +108,23 @@ function decide(view, rnd = Math.random) {
       const fav = t.find((/** @type {{ nickname: string }} */ x) => fans.includes(x.nickname)); // date someone who wrote to you, usually
       return t.length ? tap({ pick: rnd() < 0.1 ? null : (fav && rnd() < 0.7 ? fav : pick(t, rnd)).id }) : null;
     }
+    // Campfire Wizards: a sensible spell — shield when hurt, meteor when rich, else bolt (often the bounty).
+    case 'wz-pick': {
+      if (you.picked || !(you.spells || []).length) return null;
+      const ok = you.spells.filter((/** @type {{ ok: boolean }} */ s) => s.ok);
+      const by = (/** @type {string} */ id) => ok.find((/** @type {{ id: string }} */ s) => s.id === id);
+      const others = you.others || [];
+      const bountyT = (g.wizards || []).find((/** @type {{ bounty: boolean, nickname: string }} */ w) => w.bounty && w.nickname !== you.nickname);
+      const foe = (bountyT && others.find((/** @type {{ nickname: string }} */ o) => o.nickname === bountyT.nickname)) || (others.length ? pick(others, rnd) : null);
+      if (you.ghost) return foe ? tap({ spell: rnd() < 0.5 ? 'haunt' : 'bless', target: foe.id }) : null;
+      if (you.hearts <= 2 && by('shield') && rnd() < 0.5) return tap({ spell: 'shield' });
+      if (by('meteor') && rnd() < 0.5) return tap({ spell: 'meteor' });
+      if (you.hearts <= 3 && by('mend') && rnd() < 0.3) return tap({ spell: 'mend', target: you.playerId });
+      if (foe && by('bolt') && rnd() < 0.7) return tap({ spell: 'bolt', target: foe.id });
+      if (foe && by('frost') && rnd() < 0.3) return tap({ spell: 'frost', target: foe.id });
+      if (foe && by('mirror') && rnd() < 0.2) return tap({ spell: 'mirror', target: foe.id });
+      return tap({ spell: 'charge' });
+    }
     // Storm Watch: ready, lead (yourself + random others), vote, help/sabotage, accuse.
     case 'st-roles': return you.ready ? null : tap({ ready: true });
     case 'st-talk': {

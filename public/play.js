@@ -395,5 +395,7 @@ paceBar.addEventListener('click', (e) => {
 
 function bind(g) {
   const impl = games[g.gameId];
-  if (impl && impl.bind) impl.bind(gameView, { send, state, onCleanup: (fn) => cleanups.push(fn) });
+  // rerender(): a renderer changed local UI state (e.g. picked a spell, now picks a target).
+  const rerender = () => { lastHtml = null; render(); };
+  if (impl && impl.bind) impl.bind(gameView, { send, state, rerender, onCleanup: (/** @type {() => void} */ fn) => cleanups.push(fn) });
 }

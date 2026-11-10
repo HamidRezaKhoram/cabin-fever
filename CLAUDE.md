@@ -53,6 +53,8 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - **Stakes rise** (×1 → ×2 → ×3), **comebacks exist**, wagers are optional/once-per-game, and **a
   score never goes below zero**. Ties share the better placing.
 - **Benign violations only**; low floor, high ceiling; room-controlled pace votes; original art/text.
+- **Narrator:** games can give Rocco lines with a `narrate(state)` hook in their `public/games.js`
+  renderer (called on every phase change; never talk over a rhythm song). The snapshot test calls it.
 - Every new game or mechanic: teach `games/bot-brain.js`, run `test/playtest.js` at 4 and 6 players,
   compare with the targets, and record the result in `docs/future-features/playtest-findings.md`.
 

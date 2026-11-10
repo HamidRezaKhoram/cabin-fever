@@ -534,6 +534,7 @@ body[data-theme="mostlikely"] { --accent: #ff9bb5; --accent2: #ffe0a0; --panel: 
 body[data-theme="imposter"]   { --accent: #ff5050; --accent2: #b8f0a0; --panel: #152319; --panel2: #223828; }
 body[data-theme="twotruths"]  { --accent: #b0c8ff; --accent2: #ffd27a; --panel: #0c1836; --panel2: #152a58; }
 body[data-theme="crush"]      { --accent: #ff8fb3; --accent2: #ffe6f0; --panel: #3d1248; --panel2: #53185c; }
+body[data-theme="wizards"]    { --accent: #ffb74d; --accent2: #fff3e0; --panel: #241634; --panel2: #34204a; }
 body[data-theme="storm"]      { --accent: #9fb7ff; --accent2: #e8eeff; --panel: #141a2e; --panel2: #1e2742; }
 body[data-theme="lantern"]    { --accent: #ffb74d; --accent2: #fff3e0; --panel: #13284a; --panel2: #1b3c6a; }
 body[data-theme="looncall"]   { --accent: #7fe3d0; --accent2: #e6fff9; --panel: #0f2a3d; --panel2: #163a52; }
@@ -771,3 +772,12 @@ body.mode-storm #phase-view::before { content: ''; position: absolute; inset: 2.
 .storm-pick .vote-btn[aria-pressed="true"] { background: var(--accent); color: var(--edge); }
 .storm-yesno { grid-template-columns: 1fr 1fr; }
 .vote-btn.bad { background: #8a2430; }
+
+/* ---------- Campfire Wizards (spell duel) ---------- */
+.wz-fire { width: min(100%, 120vh); aspect-ratio: 16 / 9; image-rendering: pixelated; display: block; margin: 1vh auto; box-shadow: 0 0 0 6px var(--edge), 0 0 0 12px var(--panel); }
+.wz-event { font-size: 3.2vh; margin: 0.4vh 0; }
+.wz-event b { color: var(--accent); font-family: 'Press Start 2P', monospace; font-size: 2.4vh; }
+.wz-log { list-style: none; padding: 0; margin: 1vh auto; max-width: 120vh; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6vh 2.4vh; font-size: 3vh; }
+.wz-log li { animation: pop-in 0.4s steps(12) both; }
+.wz-stats { font-size: 1.3em; text-align: center; }
+.wz-spells .vote-btn small { opacity: 0.8; }
