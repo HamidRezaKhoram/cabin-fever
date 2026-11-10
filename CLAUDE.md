@@ -1,4 +1,4 @@
-# CLAUDE.md — HomeJack (Rumpus fork)
+# CLAUDE.md — Cabin Fever (Rumpus fork)
 
 Self-hosted, **offline** Jackbox-style party game for the owner's cottage. The TV opens `/host`,
 phones open `/play`. No internet at the cottage — everything must work fully offline.
@@ -25,14 +25,14 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
    never draw or name existing copyrighted characters/brands as sprites.
 5. **Original games only.** Games may share genre mechanics with party games, but never copy a
    specific commercial game's name, art, text or look. Display names stay original
-   (Punchline, Fib Finder, Card Chaos, …).
+   (Campfire Quips, Fish Tales, Rainy Day Cards, …).
 6. **Content rules: quality over quantity** (user's call; details in docs/design/content-guidelines.md) — only genuinely fun, well-written items;
    a few hundred great ones beat thousands of bland ones. **No repeats** across
    ≥10 games (enforced by `games/library.js` + `data/history.json`), and an **18+ mix** (~30% of
    draws when the 🌶 toggle is on; adult items flagged `a: true`). Boring/generic/everyday
    prompts are filtered out (see filters in `tools/build-content.py`). Only add content that's
    original or under an open license, and record the source in `CREDITS.md`.
-7. **Licensing:** code is AGPL-3.0. Card Chaos uses Cards Against Humanity official packs
+7. **Licensing:** code is AGPL-3.0. Rainy Day Cards uses Cards Against Humanity official packs
    (CC BY-NC-SA 4.0) → the project is **non-commercial**. Open Trivia DB / OpenTriviaQA are
    CC BY-SA 4.0; The Trivia API is CC BY-NC 4.0. Keep `CREDITS.md` accurate.
    Trivia must work for an **international** group: no US-only (or any one country's) sports
@@ -114,7 +114,7 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 ## Game-flow rules (games/flow.js)
 
 - **Escalating stakes** for every multi-question game: first half ×1, second half ×2, final
-  question ×3 (`flow.stage`). Punchline: round 1 ×1, later rounds ×2, last matchup ×3.
+  question ×3 (`flow.stage`). Campfire Quips: round 1 ×1, later rounds ×2, last matchup ×3.
   TV shows ROUND 2 / FINAL QUESTION title cards; badges show the current multiplier.
 - **Pace votes from phones** (majority of connected players): `skipq` replaces the current
   question (only games listing `skippablePhases`; never player-written games), `hurry` cuts the
@@ -149,7 +149,7 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 server.js              Express + Socket.IO: rooms, reconnect tokens, settings, avatars, reactions, APIs
 games/base.js          BaseGame: scaled timers, skip, final-round ×2, spicy(), views
 games/library.js       Content pools: draw(pool, n, {spicy}), no-repeat history, custom content
-games/*.js             One module per game (quiplash=Punchline, fibbage=Fib Finder, cah=Card Chaos, …)
+games/*.js             One module per game (quiplash=Campfire Quips, fibbage=Fish Tales, cah=Rainy Day Cards, …)
 games/data/pools/*.json  Built question pools (generated — don't hand-edit)
 content-src/           Source text for pools (hand-written) + vendor/ downloads (OpenTDB, CAH)
 tools/build-content.py Builds pools: merges, filters boring items, flags 18+, dedupes

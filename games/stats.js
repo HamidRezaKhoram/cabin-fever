@@ -113,7 +113,7 @@ function achievements(r) {
   add(r.games >= 10, '🦉', 'Night owl', 'Played 10 games');
   add(r.games >= 50, '🛶', 'Cottage regular', 'Played 50 games');
   add(r.fooled >= 10, '🤥', 'Master liar', 'Fooled people 10 times');
-  add(r.shutouts >= 3, '💯', 'Crowd killer', '3 Punchline shutouts');
+  add(r.shutouts >= 3, '💯', 'Crowd killer', '3 Campfire Quips shutouts');
   add(r.favs >= 5, '🎨', 'Fan favourite', '5 favourite steps / doodles');
   add(r.nightWins >= 1, '👑', 'Champion of the night', 'Won a game night');
   add(Object.keys(r.perGame).length >= 8, '🧭', 'Explorer', 'Played 8 different games');

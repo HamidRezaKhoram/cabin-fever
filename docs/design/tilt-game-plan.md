@@ -9,8 +9,8 @@ Status: ✅ **shipped** (Nov 10 2026) — `games/lantern.js`. Playtest: 2.5 min,
   leaning their whole body, bumping each other, and **everyone steering one thing together**.
 - **The catch — browsers:** `deviceorientation` only fires on **secure (https) pages**, and iOS 13+
   also needs `DeviceOrientationEvent.requestPermission()` from a tap (MDN; WebKit bugs; A-Frame
-  docs). HomeJack is plain http on the LAN → tilt would silently do nothing.
-  → HomeJack gets an **optional https port with a self-signed certificate** (generated once,
+  docs). Cabin Fever is plain http on the LAN → tilt would silently do nothing.
+  → Cabin Fever gets an **optional https port with a self-signed certificate** (generated once,
   offline). The phone gets a one-tap "Use tilt" switch to the secure link (one certificate
   warning the first time), and **touch steering is always available** as a fallback, so nobody is
   locked out.

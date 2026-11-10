@@ -41,12 +41,12 @@ function decide(view, rnd = Math.random) {
   const tap = (/** @type {Record<string, any>} */ payload) => ({ payload, kind: /** @type {'tap'} */ ('tap') });
   const write = (/** @type {Record<string, any>} */ payload) => ({ payload, kind: /** @type {'write'} */ ('write') });
   switch (view.phase) {
-    // Punchline
+    // Campfire Quips
     case 'answering': return !you.submitted && g.prompt ? write({ text: pick(LINES, rnd) }) : null;
     case 'voting':
       if (you.isAuthor) return !you.bet && rnd() < 0.6 ? tap({ bet: rnd() < 0.7 ? 'win' : 'landslide' }) : null;
       return !you.voted ? tap({ choice: rnd() < 0.5 ? 0 : 1 }) : null;
-    // Fib Finder: lie, guess, then like a lie
+    // Fish Tales: lie, guess, then like a lie
     case 'fib-bluff': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
     case 'fib-choose':
       if (!you.picked && g.options && g.options.length) return tap({ choice: pick(g.options, rnd).index });
@@ -57,20 +57,20 @@ function decide(view, rnd = Math.random) {
     case 'trivia-question':
       return !you.answered && g.choices ? tap({ choice: Math.floor(rnd() * g.choices.length), double: !!you.canDouble && rnd() < 0.15 }) : null;
     case 'cg-guess': return !you.submitted ? tap({ number: Math.round(rnd() * 2000), double: !!you.canDouble && rnd() < 0.15 }) : null;
-    // Majority Rules: answer, then bet
+    // Campfire Consensus: answer, then bet
     case 'mr-answer':
       if (!you.submitted) return write({ text: pick(WORDS.slice(0, 4), rnd) });
       if (you.bet == null && g.maxBet != null) return tap({ bet: Math.floor(rnd() * (g.maxBet + 1)) });
       return null;
     case 'ml-vote': return !you.voted && g.targets && g.targets.length ? tap({ target: pick(g.targets, rnd).id }) : null;
-    // Odd One Out
+    // Odd Duck Out
     case 'imp-clue': return !you.submitted ? write({ text: pick(WORDS, rnd) }) : null;
     case 'imp-vote': return !you.voted && g.clues && g.clues.length ? tap({ target: pick(g.clues, rnd).id }) : null;
     case 'imp-guess': return you.isImposter && g.options && g.options.length ? tap({ choice: Math.floor(rnd() * g.options.length) }) : null;
-    // Two Truths
+    // Porch Confessions
     case 'tt-write': return !you.submitted ? write({ truths: ['I once ate a whole pie', 'I can juggle'], lie: 'I have met a moose' }) : null;
     case 'tt-guess': return !you.isSubject && !you.guessed ? tap({ choice: Math.floor(rnd() * 3) }) : null;
-    // Doodle Telephone
+    // Message in a Bottle
     case 'tel-write': case 'tel-describe': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
     case 'tel-draw': return !you.submitted ? { payload: { image: PNG }, kind: 'draw' } : null;
     case 'tel-reveal': {
@@ -79,7 +79,7 @@ function decide(view, rnd = Math.random) {
       return ok.length ? tap({ fav: pick(ok, rnd) }) : null;
     }
     case 'tel-vote': return !you.voted && g.drawings && g.drawings.length ? tap({ key: pick(g.drawings, rnd).key }) : null;
-    // Card Chaos (the czar also picks next round's prompt)
+    // Rainy Day Cards (the czar also picks next round's prompt)
     case 'cah-submit':
       if (you.isCzar) return you.nextOptions && you.nextPick == null ? tap({ nextBlack: Math.floor(rnd() * you.nextOptions.length) }) : null;
       return !you.submitted && you.hand && you.hand.length ? tap({ cardIndex: Math.floor(rnd() * you.hand.length) }) : null;
@@ -163,7 +163,7 @@ function decide(view, rnd = Math.random) {
     }
     // Game night: vote on what's next
     case 'night-vote': return !you.voted && g.options && g.options.length ? tap({ choice: Math.floor(rnd() * g.options.length) }) : null;
-    // Minigame Mayhem
+    // Cottage Olympics
     case 'mg-play':
       if (g.mini === 'tug') return { payload: { tap: 3 + Math.floor(rnd() * 4) }, kind: 'mash' };
       if (g.mini === 'quickdraw') return !you.done && !you.early && g.sub === 'go' ? { payload: { tap: true }, kind: 'react' } : null;

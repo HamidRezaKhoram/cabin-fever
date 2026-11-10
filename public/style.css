@@ -238,7 +238,7 @@ body.offline #offline-banner { display: block; }
 /* Press start overlay (TV) — needed so the browser lets audio play */
 #start-overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(10, 8, 20, 0.7); cursor: pointer; }
 #start-overlay .press { font-family: var(--pixel); font-size: clamp(16px, 3vw, 34px); color: var(--accent); text-shadow: 4px 4px 0 var(--edge); animation: blink 1s steps(30) infinite; text-align: center; line-height: 1.8; }
-#start-overlay .logo { font-family: var(--pixel); font-size: clamp(28px, 7vw, 90px); color: var(--accent2); text-shadow: 6px 6px 0 var(--edge), -2px -2px 0 var(--purple); margin-bottom: 30px; }
+#start-overlay .logo { font-family: var(--pixel); font-size: clamp(28px, 4.4vw, 76px); line-height: 1.2; overflow-wrap: anywhere; color: var(--accent2); text-shadow: 6px 6px 0 var(--edge), -2px -2px 0 var(--purple); margin-bottom: 30px; }
 #start-overlay[hidden] { display: none; }
 #start-overlay { grid-auto-flow: column; gap: 6vw; align-content: center; justify-content: center; }
 .start-join { display: flex; flex-direction: column; align-items: center; gap: 1.2vh; }

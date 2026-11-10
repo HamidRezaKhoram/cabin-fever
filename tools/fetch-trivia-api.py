@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Download an international trivia bank from The Trivia API (the-trivia-api.com),
-licensed CC BY-NC 4.0 (HomeJack is non-commercial; credited in CREDITS.md).
+licensed CC BY-NC 4.0 (Cabin Fever is non-commercial; credited in CREDITS.md).
 
 Every question there is tagged with `regions` (empty = globally relevant) and
 `isNiche`; tools/build-content.py keeps only global, non-niche questions.
@@ -20,7 +20,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'content-src' / 'vendor' / 'the-trivia-api.json'
 URL = 'https://the-trivia-api.com/v2/questions?limit=50&difficulties={}'
-UA = 'HomeJack/1.0 (offline party game, personal non-commercial use; content builder)'
+UA = 'Cabin Fever/1.0 (offline party game, personal non-commercial use; content builder)'
 
 
 def fetch(difficulty: str) -> list[dict[str, Any]]:

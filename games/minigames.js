@@ -1,5 +1,5 @@
 /*
- * "Minigame Mayhem" — a series of short real-time phone challenges.
+ * "Cottage Olympics" — a series of short real-time phone challenges.
  * Team mode (Red vs Blue) when teams are on, otherwise every player for themselves.
  * The server is the referee: tap rates are capped and reaction times are measured on
  * the server clock (it's a local network, so latency is a few ms).
@@ -276,7 +276,7 @@ class MinigamesGame extends BaseGame {
 
 MinigamesGame.meta = {
   id: 'minigames',
-  name: 'Minigame Mayhem',
+  name: 'Cottage Olympics',
   blurb: 'Quick real-time phone challenges — tap, react, count, roast. Best with Teams on!',
   minPlayers: 2,
 };

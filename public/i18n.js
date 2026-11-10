@@ -69,7 +69,12 @@
     '🏆 Final scores': '🏆 Scores finaux', '🏆 Grand champion of the night': '🏆 Grand champion de la soirée',
     'Press End to go back to the menu.': 'Appuie sur Fin pour revenir au menu.', 'Check your phone 🤫': 'Regarde ton téléphone 🤫',
     'Check your phones!': 'Regardez vos téléphones !', 'Everyone else, play your worst card!': 'Les autres, jouez votre pire carte !',
-    'Vote for the best doodle!': 'Votez pour le meilleur dessin !', 'Two Truths & a Lie': 'Deux vérités, un mensonge',
+    'Vote for the best doodle!': 'Votez pour le meilleur dessin !', 'Porch Confessions': 'Confessions sur la galerie',
+    'Campfire Quips': 'Répliques au coin du feu', 'Fish Tales': 'Histoires de pêche', 'Lakeside Quiz': 'Quiz au bord du lac',
+    'Closest Cast': 'Le lancer le plus proche', 'Campfire Consensus': 'Consensus au coin du feu', 'Cabin Superlatives': 'Les superlatifs du chalet',
+    'Odd Duck Out': 'Le vilain petit canard', 'Message in a Bottle': 'Bouteille à la mer', 'Cottage Olympics': 'Olympiades du chalet',
+    'Rainy Day Cards': 'Cartes de jour de pluie', 'Loon Call': 'Le chant du huard', 'Lantern Lake': 'Le lac aux lanternes',
+    'Storm Watch': 'Alerte tempête', 'Campfire Wizards': 'Sorciers du feu de camp', 'Cottage Crush': 'Béguin au chalet',
     'Sweat it out while everyone votes…': 'Transpire pendant que tout le monde vote…', 'No votes. Cowards.': 'Aucun vote. Bande de peureux.',
     'SHUTOUT!': 'BLANCHISSAGE !', 'BULLSEYE!': 'EN PLEIN DANS LE MILLE !', 'Game night': 'Soirée de jeux', 'Remove bots': 'Retirer les robots',
     // rules + blurbs

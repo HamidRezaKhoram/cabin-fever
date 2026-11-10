@@ -97,7 +97,7 @@ test('music manifest: every bundled track is measured, up to date, high quality 
 
 test('sourced content: Wikidata facts are present and every non-original item names its source', () => {
   const closest = load('closest');
-  assert.ok(closest.filter((q) => /^Wikidata Q\d+ \(CC0\)$/.test(q.src || '')).length >= 150, 'Wikidata facts in Closest Guess');
+  assert.ok(closest.filter((q) => /^Wikidata Q\d+ \(CC0\)$/.test(q.src || '')).length >= 150, 'Wikidata facts in Closest Cast');
   for (const n of ['trivia', 'fibbage', 'closest', 'cah-black', 'cah-white']) {
     const sourced = load(n).filter((q) => q.src);
     assert.ok(sourced.length > 0, `${n} has sourced items`);

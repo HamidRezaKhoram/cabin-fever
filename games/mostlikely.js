@@ -1,5 +1,5 @@
 /*
- * "Most Likely To" — everyone votes which player best fits the prompt.
+ * "Cabin Superlatives" — everyone votes which player best fits the prompt.
  * You score by voting with the crowd. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -149,7 +149,7 @@ class MostLikelyGame extends BaseGame {
 
 MostLikelyGame.meta = {
   id: 'mostlikely',
-  name: 'Most Likely To',
+  name: 'Cabin Superlatives',
   blurb: 'Vote which friend fits the prompt. Score by agreeing with the crowd.',
   minPlayers: 3,
 };

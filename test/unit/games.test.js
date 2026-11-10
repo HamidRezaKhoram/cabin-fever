@@ -38,7 +38,7 @@ async function room(names, settings) {
   return { h, ps, by, score };
 }
 
-// ------------------------------------------------------------------ Punchline
+// ------------------------------------------------------------------ Campfire Quips
 async function answerAll(players) {
   // Each player answers both of their prompts.
   for (let k = 0; k < 2; k++) {
@@ -49,7 +49,7 @@ async function answerAll(players) {
   }
 }
 
-test('Punchline: everyone gets 2 prompts, each prompt goes to exactly 2 rivals', async () => {
+test('Campfire Quips: everyone gets 2 prompts, each prompt goes to exactly 2 rivals', async () => {
   const { h, ps } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'quiplash' });
   await h.phase('answering');
@@ -71,7 +71,7 @@ test('Punchline: everyone gets 2 prompts, each prompt goes to exactly 2 rivals',
   await h.phase('voting');
 });
 
-test('Punchline: authors cannot vote on their own matchup; votes 100 each; SHUTOUT +250', async () => {
+test('Campfire Quips: authors cannot vote on their own matchup; votes 100 each; SHUTOUT +250', async () => {
   const { h, ps, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'quiplash' });
   await h.phase('answering');
@@ -94,7 +94,7 @@ test('Punchline: authors cannot vote on their own matchup; votes 100 each; SHUTO
   assert.strictEqual(r.gameState.result.sides[0].gained, 0);
 });
 
-test('Punchline: authors place side bets while the room votes (landslide +250, a lost bet never goes below 0)', async () => {
+test('Campfire Quips: authors place side bets while the room votes (landslide +250, a lost bet never goes below 0)', async () => {
   const { h, ps, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'quiplash' });
   await h.phase('answering');
@@ -120,7 +120,7 @@ test('Punchline: authors place side bets while the room votes (landslide +250, a
   assert.strictEqual(score(s0.nickname), 0, 'a lost bet never takes you below zero');
 });
 
-test('Punchline: a missing answer forfeits the matchup', async () => {
+test('Campfire Quips: a missing answer forfeits the matchup', async () => {
   const s2 = await startServer({ RUMPUS_CONTENT_DIR: contentDir(POOLS), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_ANSWER_MS: '600' });
   try {
     const h = await makeHost(s2);
@@ -141,7 +141,7 @@ test('Punchline: a missing answer forfeits the matchup', async () => {
   } finally { await s2.stop(); }
 });
 
-test('Punchline: final round is worth double and flagged', async () => {
+test('Campfire Quips: final round is worth double and flagged', async () => {
   const { h, ps } = await room(['Ann', 'Ben', 'Cat'], { rounds: 2 });
   h.emit('host:startGame', { gameId: 'quiplash' });
   for (const round of [1, 2]) {
@@ -163,7 +163,7 @@ test('Punchline: final round is worth double and flagged', async () => {
   await h.phase('gameover');
 });
 
-test('Punchline needs 3 players', async () => {
+test('Campfire Quips needs 3 players', async () => {
   const { h } = await room(['Ann', 'Ben']);
   h.emit('host:startGame', { gameId: 'quiplash' });
   await sleep(200);
@@ -262,8 +262,8 @@ test('Trivia: category rounds every 3–5 questions; last place picks; questions
   } finally { await s2.stop(); }
 });
 
-// ------------------------------------------------------------------ Fib Finder
-test('Fib Finder: lies matching the truth are bounced; truth 1000, each fooled 500, likes +50', async () => {
+// ------------------------------------------------------------------ Fish Tales
+test('Fish Tales: lies matching the truth are bounced; truth 1000, each fooled 500, likes +50', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'fibbage' });
   await h.phase('fib-bluff');
@@ -290,8 +290,8 @@ test('Fib Finder: lies matching the truth are bounced; truth 1000, each fooled 5
   assert.strictEqual(rev.gameState.result.options.find((o) => o.text === 'Lie B').likes, 1);
 });
 
-// ------------------------------------------------------------------ Card Chaos
-test('Card Chaos: 7-card hands, czar sits out and picks, winner +500; czar chooses the next prompt', async () => {
+// ------------------------------------------------------------------ Rainy Day Cards
+test('Rainy Day Cards: 7-card hands, czar sits out and picks, winner +500; czar chooses the next prompt', async () => {
   const { h, ps, score } = await room(['Ann', 'Ben', 'Cat'], { rounds: 3 });
   h.emit('host:startGame', { gameId: 'cah' });
   await h.phase('cah-submit');
@@ -320,8 +320,8 @@ test('Card Chaos: 7-card hands, czar sits out and picks, winner +500; czar choos
   assert.notStrictEqual(h.state.gameState.czarNickname, czar.nickname, 'czar rotates');
 });
 
-// ------------------------------------------------------------------ Closest Guess
-test('Closest Guess: bullseye 300+200, ties share a rank, far guesses get nothing', async () => {
+// ------------------------------------------------------------------ Closest Cast
+test('Closest Cast: bullseye 300+200, ties share a rank, far guesses get nothing', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'closest' });
   await h.phase('cg-guess');
@@ -332,7 +332,7 @@ test('Closest Guess: bullseye 300+200, ties share a rank, far guesses get nothin
   assert.strictEqual(rev.gameState.result.list.find((e) => e.nickname === 'Dan').guess, 1000);
 });
 
-test('Closest Guess: Double Down doubles a placing guess; a miss costs 200 (never below 0)', async () => {
+test('Closest Cast: Double Down doubles a placing guess; a miss costs 200 (never below 0)', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'closest' });
   await h.phase('cg-guess');
@@ -345,7 +345,7 @@ test('Closest Guess: Double Down doubles a placing guess; a miss costs 200 (neve
   assert.ok(rev.gameState.result.list.find((e) => e.nickname === 'Ann').double);
 });
 
-test('Closest Guess: junk numbers are rejected and the timer still ends the round', async () => {
+test('Closest Cast: junk numbers are rejected and the timer still ends the round', async () => {
   const s2 = await startServer({ RUMPUS_CONTENT_DIR: contentDir(POOLS), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_CG_GUESS_MS: '400' });
   try {
     const h = await makeHost(s2);
@@ -360,8 +360,8 @@ test('Closest Guess: junk numbers are rejected and the timer still ends the roun
   } finally { await s2.stop(); }
 });
 
-// ------------------------------------------------------------------ Majority Rules
-test('Majority Rules: matching answers group up (300 each for 3), then exact match bets pay', async () => {
+// ------------------------------------------------------------------ Campfire Consensus
+test('Campfire Consensus: matching answers group up (300 each for 3), then exact match bets pay', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'majority' });
   await h.phase('mr-answer');
@@ -378,8 +378,8 @@ test('Majority Rules: matching answers group up (300 each for 3), then exact mat
   assert.deepStrictEqual([score('Ann'), score('Ben'), score('Cat'), score('Dan')], [450, 300, 300, 50]);
 });
 
-// ------------------------------------------------------------------ Most Likely To
-test('Most Likely To: voting with the crowd scores 100; self-votes allowed', async () => {
+// ------------------------------------------------------------------ Cabin Superlatives
+test('Cabin Superlatives: voting with the crowd scores 100; self-votes allowed', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'mostlikely' });
   await h.phase('ml-vote');
@@ -390,7 +390,7 @@ test('Most Likely To: voting with the crowd scores 100; self-votes allowed', asy
   assert.deepStrictEqual([score('Ann'), score('Ben'), score('Cat'), score('Dan')], [100, 100, 100, 0]);
 });
 
-// ------------------------------------------------------------------ Odd One Out
+// ------------------------------------------------------------------ Odd Duck Out
 async function imposterRound(names) {
   const r = await room(names);
   r.h.emit('host:startGame', { gameId: 'imposter' });
@@ -400,7 +400,7 @@ async function imposterRound(names) {
   return { ...r, imp, civs: r.ps.filter((p) => p !== imp) };
 }
 
-test('Odd One Out: one imposter who never sees the word; catch + wrong guess = caught', async () => {
+test('Odd Duck Out: one imposter who never sees the word; catch + wrong guess = caught', async () => {
   const { h, ps, imp, civs, score } = await imposterRound(['Ann', 'Ben', 'Cat', 'Dan']);
   assert.strictEqual(ps.filter((p) => p.state.you.isImposter).length, 1);
   assert.strictEqual(imp.state.you.word, null);
@@ -426,7 +426,7 @@ test('Odd One Out: one imposter who never sees the word; catch + wrong guess = c
   assert.strictEqual(score(imp.nickname), 0);
 });
 
-test('Odd One Out: a caught imposter who names the word steals the round', async () => {
+test('Odd Duck Out: a caught imposter who names the word steals the round', async () => {
   const { h, ps, imp, civs } = await imposterRound(['Ann', 'Ben', 'Cat', 'Dan']);
   const word = civs[0].state.you.word;
   for (const p of ps) p.submit({ text: 'clue' });
@@ -439,7 +439,7 @@ test('Odd One Out: a caught imposter who names the word steals the round', async
   assert.strictEqual(rev.gameState.result.outcome, 'stole');
 });
 
-test('Odd One Out: a tied vote lets the imposter escape (+300)', async () => {
+test('Odd Duck Out: a tied vote lets the imposter escape (+300)', async () => {
   const { h, ps, imp, civs, score } = await imposterRound(['Ann', 'Ben', 'Cat', 'Dan']);
   for (const p of ps) p.submit({ text: 'clue' });
   await h.phase('imp-vote');
@@ -450,15 +450,15 @@ test('Odd One Out: a tied vote lets the imposter escape (+300)', async () => {
   assert.strictEqual(score(imp.nickname), 300);
 });
 
-test('Odd One Out: if the imposter leaves mid-round, a fresh round starts', async () => {
+test('Odd Duck Out: if the imposter leaves mid-round, a fresh round starts', async () => {
   const { h, imp } = await imposterRound(['Ann', 'Ben', 'Cat', 'Dan']);
   imp.sock.emit('player:leave');
   await until(() => h.state.players.length === 3 && h.state.phase === 'imp-clue', 'restarted');
   assert.strictEqual(h.state.gameState.round, 1);
 });
 
-// ------------------------------------------------------------------ Two Truths & a Lie
-test('Two Truths: incomplete sets rejected; subject cannot guess; 75 per person fooled', async () => {
+// ------------------------------------------------------------------ Porch Confessions
+test('Porch Confessions: incomplete sets rejected; subject cannot guess; 75 per person fooled', async () => {
   const { h, ps, score } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'twotruths' });
   await h.phase('tt-write');
@@ -480,8 +480,8 @@ test('Two Truths: incomplete sets rejected; subject cannot guess; 75 per person 
   assert.strictEqual(score(subject.nickname), 75);
 });
 
-// ------------------------------------------------------------------ Doodle Telephone
-test('Doodle Telephone: chains pass to the right people, bad images rejected, no self-votes', async () => {
+// ------------------------------------------------------------------ Message in a Bottle
+test('Message in a Bottle: chains pass to the right people, bad images rejected, no self-votes', async () => {
   const { h, ps, by, score } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'telephone' });
   await h.phase('tel-write');
@@ -532,7 +532,7 @@ test('Doodle Telephone: chains pass to the right people, bad images rejected, no
   assert.strictEqual(ps.reduce((n, p) => n + score(p.nickname), 0), 600 + 50, "3 doodle votes × 200 + one favourite × 50");
 });
 
-test('Doodle Telephone: the host skip ends a step and fills missing drawings with blanks', async () => {
+test('Message in a Bottle: the host skip ends a step and fills missing drawings with blanks', async () => {
   const { h, ps, by } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'telephone' });
   await h.phase('tel-write');
@@ -550,7 +550,7 @@ test('Doodle Telephone: the host skip ends a step and fills missing drawings wit
   assert.strictEqual(h.state.gameState.chain.entries.length, 3, 'the chain is complete even with skipped drawings');
 });
 
-test('Doodle Telephone with 6 players: two groups of 3, chains stay inside their group', async () => {
+test('Message in a Bottle with 6 players: two groups of 3, chains stay inside their group', async () => {
   const { h, ps } = await room(['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay']);
   h.emit('host:startGame', { gameId: 'telephone' });
   await h.phase('tel-write');

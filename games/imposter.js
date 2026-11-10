@@ -1,5 +1,5 @@
 /*
- * "Odd One Out" — social deduction. Everyone gets the same secret word except
+ * "Odd Duck Out" — social deduction. Everyone gets the same secret word except
  * one imposter, who only knows the category. Give a one-word clue, then vote
  * out the imposter. If caught, the imposter can still steal by guessing the
  * word. AGPLv3 — see LICENSE.
@@ -239,7 +239,7 @@ class ImposterGame extends BaseGame {
 
 ImposterGame.meta = {
   id: 'imposter',
-  name: 'Odd One Out',
+  name: 'Odd Duck Out',
   blurb: 'Everyone knows the secret word — except the imposter. Give clues, find the faker.',
   minPlayers: 3,
 };

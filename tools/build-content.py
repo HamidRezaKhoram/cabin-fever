@@ -212,19 +212,19 @@ if cah:
             cah_white.append({'text': clean(cah['white'][i]), 'a': not family, 'src': SRC_LABEL['cah']})
     cah_black = dedupe(cah_black, lambda x: x['text'])
     cah_white = dedupe(cah_white, lambda x: x['text'])
-    # Our original Punchline prompts double as Card Chaos prompt cards ("…: ____.").
+    # Our original Campfire Quips prompts double as Rainy Day Cards prompt cards ("…: ____.").
     pf, pa = read_txt('punchline.txt')
     extra = [{'text': f'{t}: ____.', 'pick': 1, 'a': False} for t in pf] + [{'text': f'{t}: ____.', 'pick': 1, 'a': True} for t in pa]
     write('cah-black', dedupe([b for b in cah_black if b['pick'] == 1] + extra, lambda x: x['text']), 1000)
     write('cah-white', cah_white, 1000)
 
-# ----------------------------------------------------------------- Punchline
+# ----------------------------------------------------------------- Campfire Quips
 fam, adult = read_txt('punchline.txt')
 punch = [{'text': t, 'a': False} for t in fam] + [{'text': t, 'a': True} for t in adult]
 punch += [{'text': b['text'], 'a': b['a'] or bool(ADULT_RE.search(b['text'])), 'src': SRC_LABEL['cah']} for b in cah_black if b['pick'] == 1]
 write('punchline', dedupe(punch + french('punchline.txt'), lambda x: x['text']))
 
-# ----------------------------------------------------------------- Trivia + Fib Finder (OpenTDB split) + adult
+# ----------------------------------------------------------------- Trivia + Fish Tales (OpenTDB split) + adult
 def short_answer(a: str) -> bool:
     return len(a) <= 26 and len(a.split()) <= 4 and not re.fullmatch(r'[-\d.,%]+', a)
 
@@ -302,7 +302,7 @@ except Exception:
 
 write('trivia', dedupe(trivia, lambda x: x['q']))
 
-# ----------------------------------------------------------------- Closest Guess
+# ----------------------------------------------------------------- Closest Cast
 ELEMENTS = ('Hydrogen Helium Lithium Beryllium Boron Carbon Nitrogen Oxygen Fluorine Neon Sodium Magnesium Aluminium Silicon '
             'Phosphorus Sulfur Chlorine Argon Potassium Calcium Scandium Titanium Vanadium Chromium Manganese Iron Cobalt Nickel '
             'Copper Zinc Gallium Germanium Arsenic Selenium Bromine Krypton Rubidium Strontium Yttrium Zirconium Niobium Molybdenum '
@@ -391,7 +391,7 @@ OBVIOUS = re.compile(r"atomic number|legs does (a|an) (spider|insect)|arms does 
 closest = [c for c in closest if not OBVIOUS.search(c['q'])]
 write('closest', dedupe(closest, lambda x: x['q']))
 
-# ----------------------------------------------------------------- Majority Rules
+# ----------------------------------------------------------------- Campfire Consensus
 fam, adult = read_txt('majority.txt')
 def plain(t: str) -> bool:
     return len(t.split()) <= 6 and not TWIST_RE.search(t)
@@ -402,7 +402,7 @@ for tpl, fills in T.items():
         maj.append({'text': fill(tpl, f), 'a': False})
 write('majority', dedupe(maj + french('majority.txt'), lambda x: x['text']))
 
-# ----------------------------------------------------------------- Most Likely To
+# ----------------------------------------------------------------- Cabin Superlatives
 fam, adult = read_txt('mostlikely.txt')
 ml: list[Item] = [{'text': f'Who is most likely to {t}?', 'a': False} for t in fam]
 ml += [{'text': f'Who is most likely to {t}?', 'a': True} for t in adult]
@@ -422,7 +422,7 @@ for tpl, fills in json.loads((SRC / 'mostlikely-templates.json').read_text(encod
     ml += [{'text': fill(tpl, f), 'a': False} for f in fills]
 write('mostlikely', dedupe(ml + french('mostlikely.txt'), lambda x: x['text']))
 
-# ----------------------------------------------------------------- Odd One Out
+# ----------------------------------------------------------------- Odd Duck Out
 fam, adult = read_txt('imposter.txt')
 cats: list[Item] = []
 for lines, is_adult in ((fam, False), (adult, True)):
@@ -437,7 +437,7 @@ for lines, is_adult in ((fam, False), (adult, True)):
 imp = [{'category': c['category'], 'word': w, 'words': c['words'], 'a': c['a']} for c in cats for w in c['words']]
 write('imposter', imp)
 
-# ----------------------------------------------------------------- Doodle Telephone
+# ----------------------------------------------------------------- Message in a Bottle
 fam, adult = read_txt('telephone.txt')
 tel = [{'text': t, 'a': False} for t in fam] + [{'text': t, 'a': True} for t in adult]
 G = json.loads((SRC / 'telephone-words.json').read_text(encoding='utf-8'))

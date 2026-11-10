@@ -54,6 +54,9 @@ async function check(name, fn) {
     assert.match(big.text, /^[A-Z]{4}$/);
     assert.ok(big.qr >= big.vh * 0.4, `QR is big on the title screen (${big.qr}px of ${big.vh}px)`);
     assert.ok(big.code >= big.vh * 0.09, `room code is huge (${big.code}px)`);
+    // The logo fits on screen (regression: the longer name overflowed and was cut off at the left).
+    const logo = await tv.evaluate(() => { const r = document.querySelector('#start-overlay .logo').getBoundingClientRect(); return { l: r.left, r: r.right, w: innerWidth }; });
+    assert.ok(logo.l >= 0 && logo.r <= logo.w, `logo inside the screen (${Math.round(logo.l)}..${Math.round(logo.r)} of ${logo.w})`);
     await shot(tv, '01-press-start');
     await tv.click('#start-overlay');
     await tv.waitForFunction(() => /^[A-Z]{4}$/.test(document.getElementById('room-code').textContent));
@@ -269,7 +272,7 @@ async function check(name, fn) {
     await tv.waitForSelector('.game-pick');
   });
 
-  await check('Punchline: title card, 2 prompts each, head-to-head vote, results', async () => {
+  await check('Campfire Quips: title card, 2 prompts each, head-to-head vote, results', async () => {
     await tv.click('[data-game-id="quiplash"]');
     await tv.waitForSelector('.intro-card');
     await shot(tv, '04-intro-card');
@@ -335,7 +338,7 @@ async function check(name, fn) {
     assert.strictEqual(await tv.$$eval('#player-list li', (l) => l.length), 3);
   });
 
-  await check('Doodle Telephone: drawing on a phone canvas reaches the TV', async () => {
+  await check('Message in a Bottle: drawing on a phone canvas reaches the TV', async () => {
     tv.once('dialog', (d) => d.accept());
     await tv.click('[data-act="end"]');
     await tv.waitForSelector('.game-pick');
@@ -385,7 +388,7 @@ async function check(name, fn) {
     assert.strictEqual(await tv.isVisible('#sidebar'), false);
   });
 
-  await check('Minigame Mayhem on real phones: tapping registers on the TV', async () => {
+  await check('Cottage Olympics on real phones: tapping registers on the TV', async () => {
     tv.once('dialog', (d) => d.accept());
     await tv.click('[data-act="end"]');
     await tv.waitForSelector('.game-pick');
