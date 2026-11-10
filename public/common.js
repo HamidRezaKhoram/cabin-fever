@@ -43,6 +43,7 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     tick: () => tone(1200, 0.05, 'square', 0.05),
     reveal: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'triangle', 0.12, i * 0.09)); },
     win: () => { [523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, 'square', 0.07, i * 0.12)); },
+    thunder: () => { tone(55, 1.2, 'sawtooth', 0.12); tone(40, 1.6, 'sine', 0.15, 0.05); },
   };
   // Prefer the music engine's sfx bus (volume slider) when it's loaded (TV).
   const sfx = new Proxy({}, {

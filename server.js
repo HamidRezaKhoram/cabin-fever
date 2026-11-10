@@ -33,16 +33,17 @@ const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
 const PLAYER_GRACE_MS = parseInt(process.env.PLAYER_GRACE_MS || '120000', 10);
 const HOST_GRACE_MS = parseInt(process.env.HOST_GRACE_MS || '300000', 10);
 const DEBUG = process.env.RUMPUS_DEBUG === '1';
-const dlog = (...a) => { if (DEBUG) console.log('[debug]', new Date().toISOString().slice(11, 23), ...a); };
+const dlog = (/** @type {unknown[]} */ ...a) => { if (DEBUG) console.log('[debug]', new Date().toISOString().slice(11, 23), ...a); };
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
 const MUSIC_DIR = process.env.RUMPUS_MUSIC_DIR || path.join(__dirname, 'music');
 const AVATAR_COUNT = 17; // must match public/sprites.js
 
 // Order here = order on the TV's game picker.
+/** @type {Record<string, any>} game classes by id (BaseGame subclasses and two legacy games) */
 const GAMES = {};
 for (const mod of [
   'quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely',
-  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'lantern', 'crush', 'cah',
+  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'lantern', 'storm', 'crush', 'cah',
 ]) {
   const G = require(`./games/${mod}`);
   GAMES[G.meta.id] = G;
@@ -92,7 +93,7 @@ app.get('/api/info', (req, res) => {
 
 app.get('/qr.svg', async (req, res) => {
   const data = String(req.query.data || '').slice(0, 300);
-  if (!/^https?:\/\//.test(data)) return res.status(400).end();
+  if (!/^https?:\/\//.test(data)) { res.status(400).end(); return; }
   try {
     const svg = await QRCode.toString(data, { type: 'svg', margin: 1, color: { dark: '#14121f', light: '#ffffff' } });
     res.type('image/svg+xml').set('Cache-Control', 'max-age=3600').send(svg);
@@ -105,8 +106,11 @@ app.get('/qr.svg', async (req, res) => {
 // music/<scenario>/*.mp3 (e.g. music/final, music/game/quiplash); files in music/ itself = "any".
 const AUDIO_RE = /\.(mp3|ogg|m4a|wav|opus)$/i;
 function musicCategories() {
+  /** @type {Record<string, string[]>} */
   const out = {};
+  /** @param {string} dir @param {string} rel @param {number} depth */
   const walk = (dir, rel, depth) => {
+    /** @type {import('fs').Dirent[]} */
     let entries = [];
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
     for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
@@ -249,10 +253,12 @@ function makeRoomCode() {
 
 const token = () => crypto.randomBytes(16).toString('hex');
 
+/** @param {Room} room */
 function roomPhase(room) {
   return room.game ? room.game.phase : 'lobby';
 }
 
+/** @param {Room} room */
 function playersSummary(room) {
   return [...room.players.values()].map((p) => ({
     id: p.id,
@@ -292,11 +298,13 @@ function teamScores(room) {
 }
 
 // --- pace votes (hurry / ready / skip question) ------------------------------
+/** @param {any} game */
 function paceKey(game) {
   if (!game) return 'lobby';
   return [game.phase, game.round, game.matchIndex, game.revealIndex, game.skipSeq, game.subject].join('|');
 }
 
+/** @param {Room} room */
 function paceState(room) {
   const key = paceKey(room.game);
   if (room.pace.key !== key) room.pace = { key, ready: new Set(), hurry: new Set(), skipq: new Set() };
@@ -311,6 +319,7 @@ function paceState(room) {
 // Push a full state update to the host and to every player. The host gets the
 // shared-screen view; each player gets a personalized view that never exposes
 // other players' in-progress input.
+/** @param {Room} room */
 function broadcast(room) {
   if (room.closed) return;
   recordStats(room);
@@ -431,15 +440,16 @@ function nightSummary(room) {
   };
 }
 
+/** @param {Room} room */
 function closeRoom(room) {
   if (room.closed) return;
   room.closed = true;
-  clearTimeout(room.closeTimer);
+  if (room.closeTimer) clearTimeout(room.closeTimer);
   endNight(room);
   if (room.game) room.game.destroy();
   room.game = null;
   for (const p of room.players.values()) {
-    clearTimeout(p.dropTimer);
+    if (p.dropTimer) clearTimeout(p.dropTimer);
     if (p.socket.connected) {
       p.socket.emit('room:stateUpdate', { code: room.code, phase: 'closed', players: [], gameState: {} });
       p.socket.disconnect(true);
@@ -480,7 +490,7 @@ function addBot(room, speed) {
 /** @param {Room} room @param {Player} p @param {number} speed */
 function botTick(room, p, speed) {
   if (p.botTimer || !room.game || !room.players.has(p.id)) return;
-  const view = () => ({ phase: room.game.phase, ...room.game.playerView(p.id) });
+  const view = () => (room.game ? { phase: room.game.phase, ...room.game.playerView(p.id) } : { phase: 'lobby' });
   const first = botBrain.decide(view());
   if (!first) return;
   p.botTimer = setTimeout(() => {
@@ -494,10 +504,11 @@ function botTick(room, p, speed) {
   }, botBrain.thinkMs(first.kind) / speed);
 }
 
+/** @param {Room} room @param {string} playerId */
 function removePlayer(room, playerId) {
   const p = room.players.get(playerId);
   if (!p) return;
-  clearTimeout(p.dropTimer);
+  if (p.dropTimer) clearTimeout(p.dropTimer);
   if (p.botTimer) clearTimeout(p.botTimer);
   room.players.delete(playerId);
   if (room.game) room.game.onPlayerLeft(playerId);
@@ -505,12 +516,13 @@ function removePlayer(room, playerId) {
   broadcast(room);
 }
 
+/** @param {Room} room @param {import('socket.io').Socket} socket */
 function attachHost(room, socket) {
   if (room.hostSocket && room.hostSocket !== socket && room.hostSocket.connected) {
     room.hostSocket.data.room = null; // old tab loses control quietly
     room.hostSocket.emit('host:replaced');
   }
-  clearTimeout(room.closeTimer);
+  if (room.closeTimer) clearTimeout(room.closeTimer);
   room.closeTimer = null;
   room.hostSocket = socket;
   socket.data.role = 'host';
@@ -519,12 +531,13 @@ function attachHost(room, socket) {
   broadcast(room);
 }
 
+/** @param {Room} room @param {Player} p @param {import('socket.io').Socket} socket */
 function attachPlayer(room, p, socket) {
   if (p.socket && p.socket !== socket) {
     p.socket.data.room = null; // stale tab: ignore its disconnect
     if (p.socket.connected) p.socket.disconnect(true);
   }
-  clearTimeout(p.dropTimer);
+  if (p.dropTimer) clearTimeout(p.dropTimer);
   p.dropTimer = null;
   p.socket = socket;
   p.connected = true;
@@ -540,6 +553,7 @@ function attachPlayer(room, p, socket) {
   broadcast(room);
 }
 
+/** @param {import('socket.io').Socket} socket */
 function hostRoom(socket) {
   const room = socket.data.room;
   if (!room || socket.data.role !== 'host' || room.closed) return null;
@@ -568,6 +582,7 @@ io.on('connection', (socket) => {
     if (socket.data.room) return;
     const code = makeRoomCode();
     if (!code) return void socket.emit('host:roomCreated', { code: null });
+    /** @type {Room} */
     const room = {
       code,
       hostToken: token(),
@@ -713,6 +728,7 @@ io.on('connection', (socket) => {
       const free = [...Array(AVATAR_COUNT).keys()].filter((i) => !used.has(i));
       avatar = free.length ? free[crypto.randomInt(free.length)] : crypto.randomInt(AVATAR_COUNT);
     }
+    /** @type {Player} */
     const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar };
     const look = cleanLook(msg.look);
     if (look) p.look = look;
@@ -743,7 +759,7 @@ io.on('connection', (socket) => {
     if (room.pace[kind].size >= pace.need) {
       room.pace[kind].clear();
       const game = room.game;
-      const tellHost = (type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
+      const tellHost = (/** @type {string} */ type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
       if (kind === 'ready') { tellHost('ready'); game.skip(); }
       else if (kind === 'hurry') { if (flow.hurry(game)) tellHost('hurry'); }
       else if (kind === 'skipq') {

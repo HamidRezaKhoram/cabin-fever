@@ -14,10 +14,18 @@ const GUESS_MS = parseInt(process.env.RUMPUS_TT_GUESS_MS || '25000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '7000', 10);
 
 class TwoTruthsGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
-    this.sets = new Map(); // id -> { statements: [3], lieIndex }
+    /** @type {Map<string, { statements: string[], lieIndex: number }>} */
+    this.sets = new Map();
+    /** @type {string[]} */
     this.queue = [];
+    this.subject = '';
+    /** @type {Map<string, number>} */
+    this.guesses = new Map();
+    /** @type {{ lieIndex: number, right: string[], fooled: string[], subjectGained: number, picks: string[][] } | null} */
+    this.result = null;
     this.totalRounds = 0;
     this.doubleFinal = false;
   }
@@ -28,12 +36,13 @@ class TwoTruthsGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase === 'tt-write') {
       if (this.sets.has(id)) return;
-      const truths = Array.isArray(payload.truths) ? payload.truths.map((t) => cleanText(t, 100)) : [];
+      const truths = Array.isArray(payload.truths) ? payload.truths.map((/** @type {unknown} */ t) => cleanText(t, 100)) : [];
       const lie = cleanText(payload.lie, 100);
-      if (truths.length !== 2 || truths.some((t) => !t) || !lie) return;
+      if (truths.length !== 2 || truths.some((/** @type {string} */ t) => !t) || !lie) return;
       const statements = shuffle([
         { text: truths[0], lie: false },
         { text: truths[1], lie: false },
@@ -67,7 +76,7 @@ class TwoTruthsGame extends BaseGame {
     // Skip anyone who left mid-game.
     while (this.queue.length && !this.room.players.has(this.queue[0])) this.queue.shift();
     if (!this.queue.length) return this.gameOver();
-    this.subject = this.queue.shift();
+    this.subject = this.queue.shift() || '';
     this.round += 1;
     this.guesses = new Map();
     this.result = null;
@@ -79,7 +88,10 @@ class TwoTruthsGame extends BaseGame {
   reveal() {
     if (this.phase !== 'tt-guess') return;
     const set = this.sets.get(this.subject);
+    if (!set) return this.nextSubject();
+    /** @type {string[]} */
     const right = [];
+    /** @type {string[]} */
     const fooled = [];
     for (const [id, c] of this.guesses) {
       if (c === set.lieIndex) { right.push(id); this.award(id, 100); } else fooled.push(id);
@@ -99,6 +111,7 @@ class TwoTruthsGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id */
   onPlayerLeft(id) {
     if (this.phase === 'tt-write') {
       if (this.room.players.size && this.allIn(this.sets)) this.beginGuessing();
@@ -127,6 +140,7 @@ class TwoTruthsGame extends BaseGame {
     return { ...this.current(), result: this.result };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'tt-write') return { gameState: {}, you: { submitted: this.sets.has(id) } };
     const isSubject = id === this.subject;
@@ -136,7 +150,7 @@ class TwoTruthsGame extends BaseGame {
     const mine = this.guesses.get(id);
     return {
       gameState: { ...this.current(), result: this.result },
-      you: { isSubject, correct: mine != null && mine === this.result.lieIndex, guessed: mine != null },
+      you: { isSubject, correct: mine != null && !!this.result && mine === this.result.lieIndex, guessed: mine != null },
     };
   }
 }

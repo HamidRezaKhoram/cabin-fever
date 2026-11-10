@@ -32,9 +32,33 @@ const GUESS_MS = parseInt(process.env.RUMPUS_IMP_GUESS_MS || '20000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '9000', 10);
 
 class ImposterGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(3);
+    this.category = '';
+    this.word = '';
+    /** @type {string[]} */
+    this.options = [];
+    this.imposter = '';
+    /** @type {string[]} */
+    this.order = [];
+    /** @type {Map<string, string>} */
+    this.clues = new Map();
+    /** @type {Map<string, string>} voter → suspect */
+    this.votes = new Map();
+    /** @type {string | null} */
+    this.guess = null;
+    /** @type {Record<string, any> | null} */
+    this.result = null;
+    this.caught = false;
+    /** @type {string | null} */
+    this.accused = null;
+    /** @type {{ nickname: string, votes: number }[]} */
+    this.voteCounts = [];
+    this.poolName = 'imposter';
+    /** @type {PoolItem | null} */
+    this.item = null;
   }
 
   start() { this.nextRound(); }
@@ -46,17 +70,17 @@ class ImposterGame extends BaseGame {
     this.round += 1;
     const item = library.drawOne('imposter', {
       spicy: this.spicy(),
-      filter: (x) => Array.isArray(x.words) && x.words.length >= 4,
+      filter: (/** @type {PoolItem} */ x) => Array.isArray(x.words) && x.words.length >= 4,
     });
     this.poolName = 'imposter';
     this.item = item;
     const fallback = BUILTIN[this.round % BUILTIN.length];
     this.category = item ? item.category : fallback.category;
     this.word = item ? item.word : fallback.words[0];
-    const decoys = shuffle((item ? item.words : fallback.words).filter((w) => w !== this.word)).slice(0, 7);
+    const decoys = shuffle(/** @type {string[]} */ (item ? item.words : fallback.words).filter((w) => w !== this.word)).slice(0, 7);
     this.options = shuffle([this.word, ...decoys]);
     const ids = this.playerIds();
-    this.imposter = ids[crypto.randomInt(ids.length)];
+    this.imposter = ids[crypto.randomInt(ids.length)] || '';
     this.order = shuffle(ids.slice());
     this.clues = new Map();
     this.votes = new Map();
@@ -67,6 +91,7 @@ class ImposterGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase === 'imp-clue') {
       if (this.clues.has(id)) return;
@@ -86,7 +111,7 @@ class ImposterGame extends BaseGame {
       if (id !== this.imposter || this.guess != null) return;
       const c = payload.choice;
       if (!Number.isInteger(c) || c < 0 || c >= this.options.length) return;
-      this.guess = this.options[c];
+      this.guess = this.options[c] || null;
       this.finish();
     }
   }
@@ -100,6 +125,7 @@ class ImposterGame extends BaseGame {
 
   tally() {
     if (this.phase !== 'imp-vote') return;
+    /** @type {Map<string, number>} */
     const counts = new Map();
     for (const t of this.votes.values()) counts.set(t, (counts.get(t) || 0) + 1);
     const max = Math.max(0, ...counts.values());
@@ -122,8 +148,9 @@ class ImposterGame extends BaseGame {
   finish() {
     if (this.phase !== 'imp-vote' && this.phase !== 'imp-guess') return;
     const guessedRight = this.guess === this.word;
+    /** @type {{ nickname: string, gained: number }[]} */
     const gained = [];
-    const add = (id, pts) => { if (pts) gained.push({ nickname: this.nick(id), gained: this.award(id, pts) }); };
+    const add = (/** @type {string} */ id, /** @type {number} */ pts) => { if (pts) gained.push({ nickname: this.nick(id), gained: this.award(id, pts) }); };
     for (const [voter, t] of this.votes) if (voter !== this.imposter && t === this.imposter) add(voter, 100);
     if (!this.caught) add(this.imposter, 300);
     else if (guessedRight) add(this.imposter, 200);
@@ -145,6 +172,7 @@ class ImposterGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id */
   onPlayerLeft(id) {
     if (id === this.imposter && (this.phase === 'imp-clue' || this.phase === 'imp-vote' || this.phase === 'imp-guess')) {
       // Round can't continue without the imposter — reshuffle.
@@ -173,6 +201,7 @@ class ImposterGame extends BaseGame {
     }
     if (this.phase === 'imp-vote') {
       // Suspicion meter: how many votes each suspect has so far (never who cast them).
+      /** @type {Record<string, number>} */
       const tally = {};
       for (const t of this.votes.values()) tally[t] = (tally[t] || 0) + 1;
       const clues = this.clueList().map((c) => ({ ...c, suspicion: tally[c.id] || 0 }));
@@ -184,6 +213,7 @@ class ImposterGame extends BaseGame {
     return { ...common, clues: this.clueList(), result: this.result };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     const isImposter = id === this.imposter;
     const common = { category: this.category };

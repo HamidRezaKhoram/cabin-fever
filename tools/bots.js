@@ -20,7 +20,9 @@ const NAMES = ['Ava Bot', 'Ben Bot', 'Cy Bot', 'Dee Bot', 'Eli Bot', 'Fay Bot', 
 for (let i = 0; i < Math.min(12, +n); i++) {
   const name = NAMES[i];
   const s = io(url, { transports: ['websocket'] });
+  /** @type {any} the latest state this bot phone received */
   let state = null;
+  /** @type {NodeJS.Timeout | null} */
   let timer = null;
   const tick = () => {
     if (timer || !state) return;

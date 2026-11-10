@@ -29,6 +29,7 @@ const STATS_FILE = path.join(DATA_DIR, 'item-stats.json');
  * @type {Record<string, Record<string, { skips?: number, answers?: number, correct?: number }>>} */
 let itemStats = {};
 try { itemStats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8')); } catch (e) { itemStats = {}; }
+/** @type {NodeJS.Timeout | null} */
 let statsTimer = null;
 function saveStats() {
   if (statsTimer) return;
@@ -63,17 +64,22 @@ function retired(pool, id) {
   if (!s) return false;
   if ((s.skips || 0) >= 1) return true;
   if ((s.answers || 0) >= 8) {
-    const rate = (s.correct || 0) / s.answers;
+    const rate = (s.correct || 0) / (s.answers || 1);
     return rate > 0.95 || rate < 0.05;
   }
   return false;
 }
 
+/** @typedef {{ all: PoolItem[], family: PoolItem[], adult: PoolItem[] }} Pool */
+/** @type {Map<string, Pool>} */
 const pools = new Map();
+/** @type {Record<string, string[]>} pool → ids played, oldest first */
 let history = {};
 try { history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch (e) { history = {}; }
-const seenSets = new Map(); // pool -> Set(ids), mirrors history[pool]
+/** @type {Map<string, Set<string>>} pool → ids played (mirrors history[pool]) */
+const seenSets = new Map();
 
+/** @type {NodeJS.Timeout | null} */
 let saveTimer = null;
 let warned = false;
 function saveSoon() {
@@ -93,23 +99,29 @@ function saveSoon() {
   if (saveTimer.unref) saveTimer.unref();
 }
 
+/** @param {unknown} obj */
 function hashId(obj) {
   return crypto.createHash('sha1').update(JSON.stringify(obj)).digest('hex').slice(0, 10);
 }
 
 // Normalize custom content: strings become { text } items.
+/** @param {string} name @param {unknown[]} raw @returns {PoolItem[]} */
 function normalizeCustom(name, raw) {
   return raw.map((x) => {
-    const item = typeof x === 'string' ? { text: x } : { ...x };
+    /** @type {Record<string, any>} */
+    const item = typeof x === 'string' ? { text: x } : { .../** @type {object} */ (x) };
     if (name === 'mostlikely' && item.text && !/\?$/.test(item.text)) item.text = item.text.trim();
     item.a = !!(item.a || item.adult);
     item.id = item.id || 'c' + hashId(item);
-    return item;
+    return /** @type {PoolItem} */ (item);
   });
 }
 
+/** @param {string} name @returns {Pool} */
 function load(name) {
-  if (pools.has(name)) return pools.get(name);
+  const cached = pools.get(name);
+  if (cached) return cached;
+  /** @type {PoolItem[]} */
   let items = [];
   try { items = JSON.parse(fs.readFileSync(path.join(POOL_DIR, `${name}.json`), 'utf8')); } catch (err) {
     const e = /** @type {Error} */ (err);
@@ -126,18 +138,21 @@ function load(name) {
     const e = /** @type {NodeJS.ErrnoException} */ (err);
     if (e.code !== 'ENOENT') console.warn(`[library] content/${name}.json: ${e.message}`);
   }
-  const added = (house.get().custom[name] || []).map((x) => ({ ...x, a: !!x.a }));
+  const added = /** @type {PoolItem[]} */ (house.get().custom[name] || []).map((x) => ({ ...x, a: !!x.a }));
   if (added.length) items = items.concat(added);
   const pool = { all: items, family: items.filter((i) => !i.a), adult: items.filter((i) => i.a) };
   pools.set(name, pool);
   return pool;
 }
 
+/** @param {string} name @returns {Set<string>} */
 function seen(name) {
-  if (!seenSets.has(name)) seenSets.set(name, new Set(history[name] || []));
-  return seenSets.get(name);
+  let s = seenSets.get(name);
+  if (!s) { s = new Set(history[name] || []); seenSets.set(name, s); }
+  return s;
 }
 
+/** @param {string} name @param {PoolItem[]} items */
 function markUsed(name, items) {
   const s = seen(name);
   const list = history[name] || (history[name] = []);
@@ -150,10 +165,11 @@ function markUsed(name, items) {
     s.add(it.id);
     list.push(it.id);
   }
-  while (list.length > HISTORY_CAP) s.delete(list.shift());
+  while (list.length > HISTORY_CAP) s.delete(/** @type {string} */ (list.shift()));
   saveSoon();
 }
 
+/** @param {string} name @param {PoolItem[]} candidates @param {Set<string>} exclude @returns {PoolItem | null} */
 function pickFrom(name, candidates, exclude) {
   const s = seen(name);
   const fresh = candidates.filter((i) => !s.has(i.id) && !exclude.has(i.id));
@@ -161,10 +177,11 @@ function pickFrom(name, candidates, exclude) {
   // Everything has been seen: take the least-recently used.
   const list = history[name] || [];
   const order = new Map(list.map((id, i) => [id, i]));
+  /** @type {{ c: PoolItem, o: number } | null} */
   let best = null;
   for (const c of candidates) {
     if (exclude.has(c.id)) continue;
-    const o = order.has(c.id) ? order.get(c.id) : -1;
+    const o = order.get(c.id) ?? -1;
     if (!best || o < best.o) best = { c, o };
   }
   return best ? best.c : null;
@@ -189,10 +206,12 @@ function draw(name, n = 1, opts = {}) {
   let adult = opts.spicy ? pool.adult.filter(ok) : [];
   // Never let retirement empty a pool: fall back to everything if too few remain.
   if (fam.length + adult.length < n) { fam = pool.family.filter(filt); adult = opts.spicy ? pool.adult.filter(filt) : []; }
+  /** @type {PoolItem[]} */
   const out = [];
+  /** @type {Set<string>} */
   const taken = new Set();
   const s = seen(name);
-  const hasFresh = (list) => list.some((x) => !s.has(x.id) && !taken.has(x.id));
+  const hasFresh = (/** @type {PoolItem[]} */ list) => list.some((x) => !s.has(x.id) && !taken.has(x.id));
   for (let i = 0; i < n; i++) {
     const wantAdult = adult.length && (Math.random() < house.get().spicyShare || !fam.length);
     const [first, second] = wantAdult ? [adult, fam] : [fam, adult];
@@ -210,11 +229,13 @@ function draw(name, n = 1, opts = {}) {
   return out;
 }
 
+/** @param {string} name @param {{ spicy?: boolean, filter?: (x: PoolItem) => boolean, lang?: string }} [opts] */
 function drawOne(name, opts) {
   return draw(name, 1, opts)[0] || null;
 }
 
 function stats() {
+  /** @type {Record<string, { total: number, adult: number, seen: number }>} */
   const out = {};
   for (const name of fs.readdirSync(POOL_DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5))) {
     const p = load(name);

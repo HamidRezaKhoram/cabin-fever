@@ -191,6 +191,7 @@
     twotruths:  { mode: 'minor', bpm: 108, lead: 'melodic', drums: 'bossa', arp: 'eighths', bass: 'walk', root: 59, swing: 0.12 },
     telephone:  { mode: 'lydian', bpm: 92, lead: 'sparse', drums: 'halftime', arp: 'updown', bass: 'root', root: 60, swing: 0.15 },
     cah:        { mode: 'minor', bpm: 136, lead: 'staccato', drums: 'drive', arp: 'up', bass: 'eighth', root: 57 },
+    storm:      { mode: 'harmonic', bpm: 88, lead: 'sparse', drums: 'tense', arp: 'broken', bass: 'root', root: 55 },
     crush:      { mode: 'lydian', bpm: 100, lead: 'melodic', drums: 'bossa', arp: 'updown', bass: 'walk', root: 65, swing: 0.14 },
     minigames:  { mode: 'major', bpm: 152, lead: 'bouncy', drums: 'drive', arp: 'up', bass: 'eighth', root: 62 },
     lantern:    { mode: 'lydian', bpm: 84, lead: 'sparse', drums: 'halftime', arp: 'updown', bass: 'root', root: 62, swing: 0.12 },
@@ -314,10 +315,11 @@
     o.connect(g).connect(dest);
     o.start(t); o.stop(t + dur + 0.02);
   }
-  function noise(dest, t, dur, vol, hp) {
+  /** @param {AudioNode} dest @param {number} t @param {number} dur @param {number} vol @param {number} hp @param {BiquadFilterType} [kind] */
+  function noise(dest, t, dur, vol, hp, kind = 'highpass') {
     const s = ctx.createBufferSource();
     s.buffer = noiseBuf;
-    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
+    const f = ctx.createBiquadFilter(); f.type = kind; f.frequency.value = hp;
     const g = ctx.createGain();
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -679,6 +681,7 @@
     whoosh: () => sfx((t, d) => noise(d, t, 0.25, 0.08, 2500)),
     coin: () => sfx((t, d) => { voice(d, 988, t, 0.07, { wave: 0.5, vol: 0.08 }); voice(d, 1319, t + 0.07, 0.2, { wave: 0.5, vol: 0.08 }); }),
     leader: () => { duck(900); sfx((t, d) => [392, 523, 659, 784].forEach((f, i) => voice(d, f, t + i * 0.06, 0.12, { wave: 0.25, vol: 0.1 }))); },
+    thunder: () => { duck(2500, 0.2); sfx((t, d) => { noise(d, t, 2.2, 0.6, 160, 'lowpass'); noise(d, t + 0.04, 0.35, 0.3, 900, 'lowpass'); voice(d, 55, t, 1.5, { type: 'sine', vol: 0.3, slide: 0.6 }); }); },
     award: () => sfx((t, d) => { voice(d, 784, t, 0.12, { vol: 0.1 }); voice(d, 1175, t + 0.12, 0.3, { vol: 0.1 }); }),
   };
 

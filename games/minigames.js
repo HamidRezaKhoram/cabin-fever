@@ -10,7 +10,7 @@
 const crypto = require('crypto');
 const { BaseGame, shuffle } = require('./base');
 
-const env = (k, d) => parseInt(process.env[k] || String(d), 10);
+const env = (/** @type {string} */ k, /** @type {number} */ d) => parseInt(process.env[k] || String(d), 10);
 const INTRO_MS = env('RUMPUS_MG_INTRO_MS', 3500);
 // Playtest: 6 s result screens were the main dead air between minis.
 const RESULT_MS = env('RUMPUS_MG_RESULT_MS', 4500);
@@ -262,7 +262,7 @@ class MinigamesGame extends BaseGame {
   /** @param {string} id */
   playerOnly(id) {
     const c = this.common();
-    if (this.phase === 'mg-result') return { gameState: { ...c, result: this.result }, you: { gained: (this.result.rows.find((r) => r.nickname === this.nick(id)) || {}).gained || 0 } };
+    if (this.phase === 'mg-result') return { gameState: { ...c, result: this.result }, you: { gained: ((this.result && this.result.rows.find((/** @type {{ nickname: string }} */ r) => r.nickname === this.nick(id))) || { gained: 0 }).gained || 0 } };
     return {
       gameState: c,
       you: {

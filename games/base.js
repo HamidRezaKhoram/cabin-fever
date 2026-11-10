@@ -13,6 +13,7 @@ const flow = require('./flow');
 
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
 
+/** Shuffle in place (crypto-random) and return the same array. @template T @param {T[]} arr @returns {T[]} */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = crypto.randomInt(i + 1);
@@ -21,12 +22,14 @@ function shuffle(arr) {
   return arr;
 }
 
+/** @template T @param {T[]} arr @returns {T} */
 function pick(arr) {
   return arr[crypto.randomInt(arr.length)];
 }
 
 // Merge a built-in list with an optional content/<name>.json array, so people
 // can add their own prompts without rebuilding the image (mount ./content).
+/** @template T @param {string} name @param {T[]} builtin @returns {T[]} */
 function loadContent(name, builtin) {
   const file = path.join(CONTENT_DIR, `${name}.json`);
   try {
@@ -43,6 +46,7 @@ function loadContent(name, builtin) {
 }
 
 /** Player text: trimmed, single-spaced, capped, house-rule banned words masked. */
+/** @param {unknown} v @param {number} [max] */
 function cleanText(v, max = 120) {
   return typeof v === 'string' ? house.mask(v.trim().replace(/\s+/g, ' ').slice(0, max)) : '';
 }
@@ -66,6 +70,7 @@ class BaseGame {
     this.destroyed = false;
   }
 
+  /** @param {number} def */
   rounds(def) {
     return this.settings.rounds || def;
   }
@@ -84,6 +89,7 @@ class BaseGame {
 
   // Phase timers scale with the host's "timer speed"; reveal/results pauses
   // pass scale=false so they stay snappy.
+  /** @param {number} ms @param {() => void} fn @param {boolean} [scale] */
   setTimer(ms, fn, scale = true) {
     this.clearTimer();
     const id = /** @type {any} */ (this.constructor).meta ? /** @type {any} */ (this.constructor).meta.id : '';
@@ -107,10 +113,12 @@ class BaseGame {
     fn();
   }
 
+  /** @param {string} id */
   player(id) {
     return this.room.players.get(id);
   }
 
+  /** @param {string} id */
   nick(id) {
     const p = this.room.players.get(id);
     return p ? p.nickname : '(left)';
@@ -136,6 +144,7 @@ class BaseGame {
   }
 
   // Returns the points actually awarded (after the final-round multiplier).
+  /** @param {string} id @param {number} pts */
   award(id, pts) {
     const p = this.room.players.get(id);
     const real = pts * this.mult();
@@ -153,6 +162,7 @@ class BaseGame {
 
   // True once every *currently present* player has an entry in `set` (a Map/Set
   // keyed by playerId), optionally excluding some ids.
+  /** @param {{ has(id: string): boolean }} set @param {string[]} [exclude] */
   allIn(set, exclude = []) {
     const ex = new Set(exclude);
     return this.playerIds().every((id) => ex.has(id) || set.has(id));
@@ -200,6 +210,7 @@ class BaseGame {
     return { ...this.base(), ...this.hostView() };
   }
 
+  /** @param {string} id */
   playerView(id) {
     if (this.phase === 'gameover') {
       return { gameState: { ...this.base(), standings: this.standings() }, you: {} };

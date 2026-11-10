@@ -844,6 +844,141 @@
     },
   });
 
+  // ---------------------------------------------------------------- Storm Watch (strategy)
+  /** Rain + lightning on the 30 fps clock, behind the Storm Watch board and in its transition. */
+  let stFlashAt = -999;
+  window.Rumpus.clock.add((tick) => {
+    document.querySelectorAll('canvas.storm-rain').forEach((el) => {
+      const cv = /** @type {HTMLCanvasElement} */ (el);
+      const g = cv.getContext('2d');
+      if (!g) return;
+      const W = cv.width, H = cv.height;
+      if (tick % 240 === 0 && Math.random() < 0.6) stFlashAt = tick; // a lightning strike every ~8 s or so
+      const flash = tick - stFlashAt < 4 ? (tick - stFlashAt) % 2 === 0 : false;
+      g.fillStyle = flash ? 'rgba(220,230,255,0.55)' : 'rgba(10,14,28,0.35)';
+      g.fillRect(0, 0, W, H);
+      g.fillStyle = 'rgba(150,180,230,0.55)';
+      for (let i = 0; i < 90; i++) {
+        const x = (i * 97 + tick * 3) % (W + 40) - 20, y = (i * 53 + tick * 11) % H;
+        g.fillRect(x, y, 1, 6);
+      }
+    });
+  });
+  /** The way into Storm Watch: the screen darkens, rain sweeps in, lightning, thunder. */
+  window.Rumpus.stormTransition = () => {
+    const el = document.createElement('div');
+    el.className = 'storm-transition';
+    el.innerHTML = '<canvas class="storm-rain" width="480" height="270"></canvas><div class="storm-bolt"></div><div class="storm-title">STORM WATCH</div>';
+    document.body.appendChild(el);
+    setTimeout(() => { stFlashAt = window.Rumpus.clock.frame(); window.Rumpus.sfx.thunder(); }, 900);
+    setTimeout(() => el.classList.add('out'), 3300);
+    setTimeout(() => el.remove(), 3900);
+  };
+  /** @param {any} g */
+  const stBoard = (g) => `<div class="storm-head">
+      <ol class="storm-chores">${g.choreNames.map((/** @type {string} */ n, /** @type {number} */ i) => `<li class="${g.chores[i] === true ? 'done' : g.chores[i] === false ? 'ruined' : i === g.choreIndex ? 'now' : ''}">
+        <span class="storm-mark">${g.chores[i] === true ? '✔' : g.chores[i] === false ? '✘' : i + 1}</span><span class="storm-chore">${esc(n)}</span></li>`).join('')}</ol>
+      <div class="storm-meter" title="Crews voted down in a row">${[0, 1, 2].map((i) => `<span class="${i < g.storm ? 'on' : ''}">🌩</span>`).join('')}</div>
+      <p class="storm-hidden">🦝 ×${g.raccoons} hiding among you</p>
+    </div>`;
+  /** @param {{ id: string, name: string, desc: string }} e */
+  const stEvent = (e) => `<div class="storm-event"><b>${esc(e.name)}</b><span>${esc(e.desc)}</span></div>`;
+  /** @param {string[]} names */
+  const stCrew = (names) => `<div class="storm-crew">${names.map((n) => `<figure>${av(n, 'avatar big bob')}<figcaption>${esc(n)}</figcaption></figure>`).join('')}</div>`;
+
+  /** Phone: the crew the leader is building (kept across re-renders). @type {Set<string>} */
+  const stPick = new Set();
+  let stPickKey = '';
+
+  register('storm', {
+    host(s) {
+      const g = s.gameState;
+      const board = stBoard(g);
+      const rain = '<canvas class="storm-rain storm-bg" width="480" height="270"></canvas>';
+      let mid = '';
+      if (s.phase === 'st-roles') mid = `<h1>Check your secret role</h1><p class="big-sub">Press and hold the card on your phone — don't let anyone see! ${T}</p>${count(g.readyCount, g.totalPlayers, 'ready')}`;
+      else if (s.phase === 'st-talk') mid = `<p class="round-tag">Chore ${g.choreIndex + 1}: ${esc(g.choreNames[g.choreIndex])}</p>
+          <h1>🏮 ${av(g.leader)} ${esc(g.leader)} picks a crew of ${g.crewSize}</h1>${stEvent(g.event)}<p class="big-sub">Talk it over — who do you trust? ${T}</p>`;
+      else if (s.phase === 'st-vote') mid = `<h1>Send this crew?</h1>${stCrew(g.crew)}${stEvent(g.event)}<p class="big-sub">Vote ✔ or ✘ on your phones ${T}</p>${count(g.votedCount, g.totalPlayers, 'voted')}`;
+      else if (s.phase === 'st-votes') {
+        const v = g.votes;
+        mid = `<h1 class="${v.approved ? 'storm-yes' : 'storm-no'}">${v.approved ? '✔ The crew heads out' : '✘ Voted down'}</h1>
+          ${v.list ? `<div class="storm-votes">${v.list.map((/** @type {{ nickname: string, yes: boolean }} */ x) => `<span class="${x.yes ? 'yes' : 'no'}">${av(x.nickname)} ${x.yes ? '✔' : '✘'}</span>`).join('')}</div>` : `<p class="big-sub">In the dark: ${v.yes} ✔ · ${v.no} ✘</p>`}
+          ${!v.approved ? `<p class="big-sub">The storm creeps closer… (${g.storm}/3)</p>` : ''}${g.winReason ? `<p class="prompt">${esc(g.winReason)}</p>` : ''}`;
+      } else if (s.phase === 'st-crew') mid = `<h1>The crew is at work…</h1>${stCrew(g.crew)}<p class="big-sub">Crew: help or sabotage, secretly ${T}</p>${count(g.playedCount, g.crew.length, 'done')}`;
+      else if (s.phase === 'st-reveal') {
+        const r = g.reveal;
+        mid = `<h1>${esc(g.choreNames[r.index] || 'The chore')}</h1>
+          <div class="storm-cards">${r.cards.map((/** @type {string} */ c, /** @type {number} */ i) => `<div class="storm-card ${c === 'sabotage' ? 'bad' : 'good'}" style="animation-delay:${(i * g.cardMs) / 1000}s">${c === 'sabotage' ? '🦝 SABOTAGE' : '🔨 HELP'}</div>`).join('')}</div>
+          <p class="big-sub storm-result" style="animation-delay:${(r.cards.length * g.cardMs) / 1000}s">${r.ok ? '✔ Done!' : '✘ Ruined!'}${r.fixed ? ' (the Handyman fixed one sabotage)' : ''}${r.needed > 1 ? ' — a Big Chore needs two sabotages' : ''}</p>
+          ${g.winReason ? `<p class="prompt storm-result" style="animation-delay:${(r.cards.length * g.cardMs) / 1000}s">${esc(g.winReason)}</p>` : ''}`;
+      } else if (s.phase === 'st-accuse') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win!' : '🦝 The raccoons win!'}</h1><p class="big-sub">${esc(g.winReason || '')}</p>
+          <p class="prompt">Before the roles flip: who was a raccoon? Accuse on your phone. ${T}</p>${count(g.accusedCount, g.totalPlayers, 'accused')}`;
+      else if (s.phase === 'st-final') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win!' : '🦝 The raccoons win!'}</h1>
+          <div class="storm-roles">${(g.roles || []).map((/** @type {any} */ x, /** @type {number} */ i) => `<div class="storm-role ${x.side}" style="animation-delay:${i * 0.4}s">${av(x.nickname, 'avatar big')}<b>${esc(x.nickname)}</b><span>${esc(x.role)}</span><span class="votes">+${x.gained}</span></div>`).join('')}</div>`;
+      return `${rain}<div class="storm-board">${board}<div class="storm-mid">${mid}</div></div>`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      const allies = you.allies && you.allies.length ? `<p>🦝 Your fellow raccoons: <b>${you.allies.map(esc).join(', ')}</b></p>` : '';
+      const spotted = you.spotted ? `<p>👀 You saw <b>${esc(you.spotted)}</b> sneaking around — a raccoon.</p>` : '';
+      const card = `<button type="button" class="storm-rolecard ${you.role.side}" data-hold>
+          <span class="storm-cover">🃏 Press and hold to see your role</span>
+          <span class="storm-secret"><b>${esc(you.role.name)}</b>${you.role.side === 'raccoon' ? ' 🦝' : ' 🏡'}<small>${esc(you.role.desc)}</small>${allies}${spotted}</span></button>`;
+      const peek = you.peek ? `<p class="storm-peek">${esc(you.peek)}</p>` : '';
+      const snoop = you.canSnoop && you.canSnoop.length ? `<div class="crush-side"><b>🔍 Snoop on one crew card (once per game)</b><div class="crush-pair">${you.canSnoop.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ snoop: t.id }, esc(t.nickname))).join('')}</div></div>` : '';
+      if (s.phase === 'st-roles') return card + (you.ready ? waiting('Ready') : `<div class="vote-list">${sendBtn({ ready: true }, "I've seen my role")}</div>`);
+      if (s.phase === 'st-talk') {
+        if (!you.isLeader) return `<h2>🏮 ${esc(g.leader)} is picking ${g.crewSize} for the crew</h2><p>Talk it over!</p>${peek}${snoop}${card}`;
+        const key = `${g.choreIndex}|${g.leader}|${g.crewSize}`;
+        if (key !== stPickKey) { stPick.clear(); stPickKey = key; }
+        return `<h2>🏮 You lead! Pick ${g.crewSize} for “${esc(g.choreNames[g.choreIndex])}”</h2>
+          <p class="hint">${esc(g.event.name)}: ${esc(g.event.desc)}</p>
+          <div class="vote-list storm-pick">${you.candidates.map((/** @type {{ id: string, nickname: string }} */ c) => `<button type="button" class="vote-btn" data-st-pick="${esc(c.id)}" aria-pressed="${stPick.has(c.id)}">${av(c.nickname)} ${esc(c.nickname)}</button>`).join('')}</div>
+          <button type="button" class="wide" data-st-send ${stPick.size === g.crewSize ? '' : 'disabled'}>Send this crew (${stPick.size}/${g.crewSize})</button>${peek}${snoop}${card}`;
+      }
+      if (s.phase === 'st-vote') return you.voted ? waiting('Vote in') + card : `<h2>Send this crew?</h2><p>${g.crew.map(esc).join(', ')}</p>
+          <div class="vote-list storm-yesno">${sendBtn({ vote: true }, '✔ Yes')}${sendBtn({ vote: false }, '✘ No')}</div>${card}`;
+      if (s.phase === 'st-votes') return watchTv(`<p>${g.votes.approved ? 'The crew heads out.' : 'Voted down!'}</p>`) + peek;
+      if (s.phase === 'st-crew') {
+        if (!you.onCrew) return `<h2>The crew is at work…</h2><p>${g.crew.map(esc).join(', ')}</p>${peek}${card}`;
+        if (you.played) return waiting('Card played');
+        const fix = you.canFix ? '<label class="toggle"><input type="checkbox" id="st-fix"> 🔧 Fix It (cancel one sabotage, once per game)</label>' : '';
+        return `<h2>You're on the crew</h2>${fix}<div class="vote-list storm-yesno">
+            <button type="button" class="vote-btn" data-st-card="help">🔨 Help</button>
+            ${you.canSabotage ? '<button type="button" class="vote-btn bad" data-st-card="sabotage">🦝 Sabotage</button>' : ''}</div>${card}`;
+      }
+      if (s.phase === 'st-reveal') return watchTv(`<p>${g.reveal && g.reveal.ok ? 'Chore done?' : 'Chore ruined?'} Watch the cards flip…</p>`) + peek + snoop;
+      if (s.phase === 'st-accuse') return you.accused ? waiting('Accused') : `<h2>Who was a raccoon?</h2><div class="vote-list">${you.accuseTargets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ accuse: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('')}</div>`;
+      if (s.phase === 'st-final') return `<h1>${you.won ? 'Your side won! 🎉' : 'Your side lost'}</h1><p class="prompt">+${you.gained} points</p>${card}`;
+      return watchTv();
+    },
+    bind(root, api) {
+      // Hold-to-peek role card.
+      root.querySelectorAll('[data-hold]').forEach((b) => {
+        const on = (/** @type {Event} */ e) => { e.preventDefault(); b.classList.add('peek'); };
+        const off = () => b.classList.remove('peek');
+        b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+      });
+      const sendBtnEl = /** @type {HTMLButtonElement | null} */ (root.querySelector('[data-st-send]'));
+      const crewSize = () => (api.state.gameState && api.state.gameState.crewSize) || 0;
+      const refresh = () => {
+        root.querySelectorAll('[data-st-pick]').forEach((b) => b.setAttribute('aria-pressed', String(stPick.has(/** @type {HTMLElement} */ (b).dataset.stPick || ''))));
+        if (sendBtnEl) { sendBtnEl.disabled = stPick.size !== crewSize(); sendBtnEl.textContent = `Send this crew (${stPick.size}/${crewSize()})`; }
+      };
+      root.querySelectorAll('[data-st-pick]').forEach((b) => b.addEventListener('click', () => {
+        const id = /** @type {HTMLElement} */ (b).dataset.stPick || '';
+        if (stPick.has(id)) stPick.delete(id); else if (stPick.size < crewSize()) stPick.add(id);
+        refresh();
+      }));
+      if (sendBtnEl) sendBtnEl.addEventListener('click', () => api.send({ crew: [...stPick] }));
+      root.querySelectorAll('[data-st-card]').forEach((b) => b.addEventListener('click', () => {
+        const fix = /** @type {HTMLInputElement | null} */ (root.querySelector('#st-fix'));
+        api.send({ card: /** @type {HTMLElement} */ (b).dataset.stCard, fix: !!(fix && fix.checked) });
+      }));
+    },
+  });
+
   // ---------------------------------------------------------------- Game night
   /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number }[] }} NightView */
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */

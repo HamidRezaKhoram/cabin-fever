@@ -52,9 +52,19 @@ const DOUBLE_RISK = 200; // lost on a Double Down that doesn't place
 const RANK_POINTS = [300, 200, 100];
 
 class ClosestGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(6);
+    /** @type {{ q: string, answer: number, unit?: string, src?: string }} */
+    this.q = BUILTIN[0];
+    /** @type {Map<string, number>} */
+    this.guesses = new Map();
+    /** @type {{ answer: number, unit: string, list: { nickname: string, guess: number, off: number, rank: number, exact: boolean, gained: number, double: boolean }[] } | null} */
+    this.result = null;
+    this.poolName = 'closest';
+    /** @type {any} */
+    this.item = null;
     /** @type {Set<string>} players who've used their one Double Down this game */
     this.doubled = new Set();
     /** @type {Set<string>} doubling this round */
@@ -68,7 +78,7 @@ class ClosestGame extends BaseGame {
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
-    this.q = library.drawOne('closest', { spicy: this.spicy() }) || BUILTIN[this.round % BUILTIN.length];
+    this.q = /** @type {{ q: string, answer: number, unit?: string, src?: string }} */ (/** @type {unknown} */ (library.drawOne('closest', { spicy: this.spicy() }) || BUILTIN[this.round % BUILTIN.length]));
     this.poolName = 'closest';
     this.item = this.q;
     this.guesses = new Map();
@@ -79,6 +89,7 @@ class ClosestGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase !== 'cg-guess' || this.guesses.has(id)) return;
     const n = typeof payload.number === 'number' ? payload.number : parseFloat(String(payload.number || '').replace(/,/g, ''));
@@ -126,11 +137,12 @@ class ClosestGame extends BaseGame {
     return { question: this.q.q, result: this.result, source: this.q.src || null };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'cg-guess') {
       return { gameState: { question: this.q.q, unit: this.q.unit || '' }, you: { submitted: this.guesses.has(id), canDouble: !this.doubled.has(id) } };
     }
-    const me = this.result.list.find((e) => e.nickname === this.nick(id));
+    const me = this.result ? this.result.list.find((e) => e.nickname === this.nick(id)) : null;
     return { gameState: { question: this.q.q, result: this.result }, you: { mine: me || null } };
   }
 }

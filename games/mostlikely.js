@@ -44,9 +44,19 @@ const VOTE_MS = parseInt(process.env.RUMPUS_ML_VOTE_MS || '25000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '7000', 10);
 
 class MostLikelyGame extends BaseGame {
+  /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(6);
+    this.prompt = '';
+    this.spicyRound = false;
+    /** @type {Map<string, string>} voter → target */
+    this.votes = new Map();
+    /** @type {{ tally: { id: string, nickname: string, votes: number, voters: string[] }[], winners: string[], topIds: string[], gained: { nickname: string, gained: number }[] } | null} */
+    this.result = null;
+    this.poolName = 'mostlikely';
+    /** @type {PoolItem | null} */
+    this.item = null;
   }
 
   start() { this.nextRound(); }
@@ -59,18 +69,19 @@ class MostLikelyGame extends BaseGame {
     const item = library.drawOne('mostlikely', { spicy: this.spicy(), lang: this.room.settings.lang });
     this.poolName = 'mostlikely';
     this.item = item;
-    this.prompt = item ? item.text : BUILTIN[this.round % BUILTIN.length];
+    this.prompt = (item && item.text) || BUILTIN[this.round % BUILTIN.length];
     this.spicyRound = !!(item && item.a);
-    this.votes = new Map(); // voter -> target
+    this.votes = new Map();
     this.result = null;
     this.phase = 'ml-vote';
     this.setTimer(VOTE_MS, () => this.reveal());
     this.push();
   }
 
+  /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase !== 'ml-vote' || this.votes.has(id)) return;
-    const target = payload.target;
+    const target = String(payload.target);
     if (!this.room.players.has(target)) return;
     this.votes.set(id, target);
     if (this.allIn(this.votes)) this.reveal();
@@ -79,11 +90,13 @@ class MostLikelyGame extends BaseGame {
 
   reveal() {
     if (this.phase !== 'ml-vote') return;
+    /** @type {Map<string, number>} */
     const tally = new Map();
     for (const t of this.votes.values()) tally.set(t, (tally.get(t) || 0) + 1);
     const max = Math.max(0, ...tally.values());
     const top = [...tally.entries()].filter(([, n]) => n === max && max > 0).map(([t]) => t);
     const topSet = new Set(top);
+    /** @type {{ nickname: string, gained: number }[]} */
     const gained = [];
     for (const [voter, t] of this.votes) {
       if (topSet.has(t)) {
@@ -103,6 +116,7 @@ class MostLikelyGame extends BaseGame {
     this.push();
   }
 
+  /** @param {string} id */
   onPlayerLeft(id) {
     if (this.phase !== 'ml-vote') return;
     for (const [v, t] of this.votes) if (v === id || t === id) this.votes.delete(v);
@@ -120,6 +134,7 @@ class MostLikelyGame extends BaseGame {
     return { prompt: this.prompt, result: this.result };
   }
 
+  /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'ml-vote') {
       return { gameState: { prompt: this.prompt, targets: this.targets() }, you: { voted: this.votes.has(id) } };
@@ -127,7 +142,7 @@ class MostLikelyGame extends BaseGame {
     const mine = this.votes.get(id);
     return {
       gameState: { prompt: this.prompt, result: this.result },
-      you: { withCrowd: mine != null && this.result.topIds.includes(mine), picked: mine != null },
+      you: { withCrowd: mine != null && !!this.result && this.result.topIds.includes(mine), picked: mine != null },
     };
   }
 }
