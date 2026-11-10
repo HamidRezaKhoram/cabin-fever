@@ -1,6 +1,6 @@
 {
   "all": true,
-  "include": ["server.js", "games/**/*.js"],
+  "include": ["server.js", "core/**/*.js", "games/**/*.js"],
   "exclude": ["games/data/**"],
   "reporter": ["text-summary", "text", "json-summary"],
   "report-dir": "coverage",

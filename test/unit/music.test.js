@@ -10,8 +10,8 @@ require('../../public/music.js');
 const m = window.Rumpus.music;
 const cat = m.catalog();
 
-const GAME_IDS = fs.readFileSync(path.join(__dirname, '../../server.js'), 'utf8')
-  .match(/for \(const mod of \[([^\]]+)\]/)[1].match(/'([a-z]+)'/g).map((s) => s.slice(1, -1));
+const GAME_IDS = [...fs.readFileSync(path.join(__dirname, '../../core/rooms.js'), 'utf8').matchAll(/require\('\.\.\/games\/([a-z]+)'\), ?/g)]
+  .map((m) => m[1]).filter((id) => !['library', 'flow', 'avatar-schema', 'bot-brain', 'night', 'stats', 'house'].includes(id));
 
 test('there are 50+ original tracks', () => {
   assert.ok(m.trackCount >= 50);
