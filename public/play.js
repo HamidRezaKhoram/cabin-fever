@@ -126,10 +126,15 @@ gameView.addEventListener('click', (e) => {
     lobbyMaker.scrollIntoView({ behavior: 'smooth' });
     return;
   }
+  const dd = hit(e.target, '[data-dd]');
+  if (dd) { const on = dd.getAttribute('aria-pressed') !== 'true'; dd.setAttribute('aria-pressed', String(on)); dd.classList.toggle('on', on); return; }
   const b = hit(e.target, '[data-send]');
   if (!b || b.disabled) return;
   for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) x.disabled = true;
-  send(JSON.parse(b.dataset.send));
+  const payload = JSON.parse(b.dataset.send);
+  const ddOn = gameView.querySelector('[data-dd][aria-pressed="true"]');
+  if (ddOn) payload.double = true;
+  send(payload);
 });
 
 // Prefill from QR link (?code=ABCD) and from last time.
@@ -223,7 +228,9 @@ function legacyPlayer(phase, g, you) {
         g.categoryOptions.map((c, i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-question':
       if (you.answered) return waiting('Locked in');
-      return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.question)}</h2><div class="vote-list">` +
+      return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.question)}</h2>
+        ${you.canDouble ? `<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if right · −300 if wrong (once per game)</button>` : ''}
+        <div class="vote-list">` +
         g.choices.map((c, i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-reveal':
       return `<h1>${you.wasCorrect ? 'Nice! ✓' : 'Nope ✗'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>${you.streak > 1 ? `<p class="streak">🔥 ${you.streak} in a row!</p>` : ''}`;

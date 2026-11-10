@@ -164,6 +164,30 @@ test('Trivia: correct answers score with speed bonus, streaks add 100, wrong res
   assert.strictEqual(last.gameState.correct, 1);
 });
 
+test('Trivia: Double Down once per game — ×2 when right, −300 (never below 0) when wrong', async () => {
+  const { h, by, score } = await room(['Ann', 'Ben', 'Cat'], { rounds: 3 });
+  h.emit('host:startGame', { gameId: 'trivia' });
+  await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 1, 'q1');
+  assert.strictEqual(by.Ann.state.you.canDouble, true);
+  by.Ann.submit({ choice: 1, double: true }); by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 0, double: true }); // Cat wrong at 0 points
+  let st = await until(() => h.state.phase === 'trivia-reveal' && h.state, 'reveal 1');
+  const s1 = Object.fromEntries(st.gameState.scored.map((x) => [x.nickname, x]));
+  assert.ok(s1.Ann.double && s1.Ann.gained >= 1000 && s1.Ann.gained <= 2000, `doubled: ${s1.Ann.gained}`);
+  assert.strictEqual(score('Cat'), 0, 'a wrong double down never takes you below zero');
+  await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 2, 'q2');
+  assert.strictEqual(by.Ann.state.you.canDouble, false, 'only once per game');
+  by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 1 }); by.Ann.submit({ choice: 1, double: true }); // Ann's second double is ignored
+  st = await until(() => h.state.phase === 'trivia-reveal' && h.state.gameState.round === 2 && h.state, 'reveal 2');
+  const s2 = Object.fromEntries(st.gameState.scored.map((x) => [x.nickname, x]));
+  assert.ok(!s2.Ann.double, 'second double down ignored');
+  await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 3, 'q3');
+  const before = score('Ben');
+  assert.ok(before > 300);
+  by.Ann.submit({ choice: 1 }); by.Cat.submit({ choice: 1 }); by.Ben.submit({ choice: 0, double: true });
+  await until(() => h.state.phase === 'trivia-reveal' && h.state.gameState.round === 3, 'reveal 3');
+  assert.strictEqual(score('Ben'), before - 300, 'wrong double down costs 300');
+});
+
 test('Trivia: category rounds every 3–5 questions; last place picks; questions match the category', async () => {
   const cats = { History: 'H', 'Entertainment: Film': 'F', Geography: 'G', Sports: 'S' };
   const trivia = [];
