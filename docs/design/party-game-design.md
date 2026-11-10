@@ -93,9 +93,11 @@ How we hit them (patterns that worked in the playtests):
 | Two Truths | 1.2 | 3.3 | 30 s | ✅ good (was 58 s) |
 | Doodle Telephone | 3.9 | 2.3 | 61 s | ◐ drawing takes time by nature; favourites + who's-left row help |
 | Card Chaos | 3.0 | 3.1 | 32 s | ✅ good (czar picks the next prompt) |
-| Minigame Mayhem | 2.4–3.4 | 16–42 | 53–78 s | ◐ intense bursts; idle is the result/intro screens between minis |
-| Cottage Crush | 7.1 | 3.9 | 53 s (68 s at 6p) | ✅ lively; longest game — 4 evenings |
+| Minigame Mayhem | 1.5 | 36 | 17 s | ✅ meets every target (the old 53–78 s was a playtest bug: Quick Draw's wait wasn't scaled); results 4.5 s, firefly guesses lock in early |
+| Cottage Crush | 6.2 | 6.0 | 34 s (42 s at 6p) | ✅ winks + Matchmaker/Gossip side actions fill the wait (was 53/73 s) |
 
 Next ideas if a game still feels slow: Majority — show live "answers in" avatars; Telephone —
-a 45 s draw timer option in house rules; Minigames — shorter result screens; Crush — a
-"wink" action for players with no notes to answer.
+a 45 s draw timer option in house rules; Minigames — 8 minis by default (1.5 min is short).
+
+The playtest prints `worstIdleAt` ("screen where that player last acted → where they next
+could"), so fix the screen it names instead of guessing.

@@ -6,7 +6,7 @@
  * AGPLv3 — see LICENSE.
  *
  * decide(view, rnd) → null (nothing to do) or
- *   { payload, kind: 'tap' | 'write' | 'draw' | 'mash' }   — kind sets the think time.
+ *   { payload, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' }   — kind sets the think time.
  */
 'use strict';
 
@@ -24,10 +24,17 @@ const WORDS = ['beer', 'pizza', 'dog', 'beach', 'campfire', 'canoe', 'moose', 'b
 /** @param {any[]} a @param {() => number} rnd */
 const pick = (a, rnd) => a[Math.floor(rnd() * a.length)];
 
+/** @template T @param {T[]} list @param {() => number} rnd @returns {T[]} */
+function shuffleCopy(list, rnd) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
+}
+
 /**
  * @param {{ phase: string, gameState?: any, you?: any }} view
  * @param {() => number} [rnd]
- * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' } | null}
+ * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' } | null}
  */
 function decide(view, rnd = Math.random) {
   const g = view.gameState || {}, you = view.you || {};
@@ -80,7 +87,10 @@ function decide(view, rnd = Math.random) {
     // Cottage Crush: notes, replies, then a date
     case 'cr-mingle': {
       const t = g.targets || [];
-      if (!(you.notesLeft > 0 && t.length)) return null;
+      // Matchmaker / Gossip side actions (free, any time before the reveal).
+      if (you.canSetup && t.length >= 2) { const [x, y] = shuffleCopy(t, rnd); return tap({ setup: [x.id, y.id] }); }
+      if (you.canPredict && t.length >= 2) { const [x, y] = shuffleCopy(t, rnd); return tap({ predict: [x.id, y.id] }); }
+      if (!(you.notesLeft > 0 && t.length)) return !you.winked && t.length ? tap({ wink: pick(t, rnd).id }) : null;
       // Mostly tap a ready-made opener card (a tap, not writing); sometimes write your own.
       const own = !(you.cards && you.cards.length) || rnd() < 0.25;
       const payload = { to: pick(t, rnd).id, text: own ? pick(LINES, rnd) : pick(you.cards, rnd) };
@@ -88,7 +98,8 @@ function decide(view, rnd = Math.random) {
     }
     case 'cr-reply': {
       const open = (you.inbox || []).filter((/** @type {{ reply: string | null }} */ n) => !n.reply);
-      return open.length ? tap({ reply: open[0].id, text: pick(you.replyCards || ['😍'], rnd) }) : null;
+      if (open.length) return tap({ reply: open[0].id, text: pick(you.replyCards || ['😍'], rnd) });
+      return !you.winked && (g.targets || []).length ? tap({ wink: pick(g.targets, rnd).id }) : null;
     }
     case 'cr-pick': {
       if (you.picked) return null;
@@ -102,8 +113,8 @@ function decide(view, rnd = Math.random) {
     // Minigame Mayhem
     case 'mg-play':
       if (g.mini === 'tug') return { payload: { tap: 3 + Math.floor(rnd() * 4) }, kind: 'mash' };
-      if (g.mini === 'quickdraw') return !you.done && !you.early && g.sub === 'go' ? tap({ tap: true }) : null;
-      if (g.mini === 'fireflies') return !you.done && g.sub === 'guess' ? tap({ number: 5 + Math.floor(rnd() * 30) }) : null;
+      if (g.mini === 'quickdraw') return !you.done && !you.early && g.sub === 'go' ? { payload: { tap: true }, kind: 'react' } : null;
+      if (g.mini === 'fireflies') return !you.done ? tap({ number: 5 + Math.floor(rnd() * 30) }) : null;
       if (g.mini === 'roast') return !you.done ? tap({ hold: 2000 + Math.floor(rnd() * 5000) }) : null;
       return null;
     default: return null;
@@ -113,6 +124,7 @@ function decide(view, rnd = Math.random) {
 /** Human-ish think time in ms for a decision kind (divide by `speed` for fast bots). */
 function thinkMs(kind, rnd = Math.random) {
   if (kind === 'mash') return 250;
+  if (kind === 'react') return 220 + rnd() * 300; // human reaction time
   if (kind === 'write') return 8000 + rnd() * 17000;
   if (kind === 'draw') return 20000 + rnd() * 30000;
   return 2000 + rnd() * 5000;

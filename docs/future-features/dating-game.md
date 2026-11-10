@@ -1,8 +1,10 @@
 # Cottage Crush — a speed-dating party game (design doc)
 
-> ✅ **Shipped** (games/crush.js): 4 evenings, notes/replies/picks, 4 agendas (Heartbreaker,
-> Hopeless Romantic, Wallflower, Player), leader exposed from evening 3. Not built yet: Matchmaker
-> and Gossip agendas, a 3-player Mystery Guest bot, walking-pair animation on the dock.
+> ✅ **Shipped** (games/crush.js): 4 evenings, notes/replies/picks, 6 agendas (Heartbreaker,
+> Hopeless Romantic, Wallflower, Player, Matchmaker — once-per-game setup, +300 if they date;
+> Gossip — hears who writes to whom, one couple bet a night, +200), leader exposed from evening 3;
+> payoffs reveal who was pulling strings on the dock. Not built yet: a 3-player Mystery Guest bot,
+> walking-pair animation on the dock.
 
 ## Research
 
