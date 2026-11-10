@@ -9,7 +9,7 @@
 const LOOK_PARTS = {
   faceShape: 5, skin: 10, eyes: 6, mouth: 4, makeup: 4,
   hair: 28, hairColor: 13, facial: 7,
-  glasses: 4, hat: 13, earrings: 3,
+  glasses: 4, hat: 18, earrings: 3,
   top: 9, bg: 8,
 };
 

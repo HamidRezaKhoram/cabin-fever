@@ -28,7 +28,8 @@
     hairColor: ['Black', 'Brown', 'Auburn', 'Blond', 'Platinum', 'Red', 'Grey', 'Pink', 'Purple', 'Jet black', 'Ginger', 'Ash', 'Blue'],
     facial: ['None', 'Moustache', 'Beard', 'Goatee', 'Full beard', 'Stubble', 'Chinstrap'],
     glasses: ['None', 'Round', 'Square', 'Shades'],
-    hat: ['None', 'Toque', 'Cap', 'Cowboy', 'Crown', 'Party', 'Bow', 'Hijab', 'Turban', 'Headwrap', 'Kufi', 'Durag', 'Bandana'],
+    hat: ['None', 'Toque', 'Cap', 'Cowboy', 'Crown', 'Party', 'Bow', 'Hijab', 'Turban', 'Headwrap', 'Kufi', 'Durag', 'Bandana',
+      'Santa hat', 'Witch hat', 'Bunny ears', 'Maple crown', 'Grad cap'],
     earrings: ['None', 'Studs', 'Hoops'],
     top: ['Red', 'Blue', 'Green', 'Orange', 'Purple', 'Navy', 'White', 'Pink', 'Teal'],
     bg: ['None', 'Mint', 'Sky', 'Sun', 'Bubblegum', 'Grape', 'Sunset', 'Night'],
@@ -39,7 +40,21 @@
   };
   const SWATCH = { skin: SKIN, hairColor: HAIR_COLOR, top: TOP, bg: BG };
   /** Display order (light → deep skin; similar hair styles together). Parts not listed show in index order. */
+  /** Seasonal hat for a date: Christmas, Halloween, Easter, Canada Day, graduation. @param {Date} d @returns {number} */
+  function seasonHat(d) {
+    const m = d.getMonth() + 1, day = d.getDate();
+    if (m === 12) return 13;
+    if (m === 10) return 14;
+    if (m === 3 || m === 4) return 15;
+    if ((m === 6 && day >= 20) || (m === 7 && day <= 10)) return 16;
+    if (m === 5 || m === 6) return 17;
+    return -1;
+  }
+  const SEASON = seasonHat(new Date());
+  const hatOrder = [0, ...(SEASON > 0 ? [SEASON] : []), ...Array.from({ length: 17 }, (_, i) => i + 1).filter((i) => i !== SEASON)];
+  /** @type {Record<string, number[]>} */
   const ORDER = {
+    hat: hatOrder,
     skin: [6, 0, 1, 2, 7, 3, 8, 4, 5, 9],
     hairColor: [9, 0, 1, 2, 11, 10, 5, 3, 4, 6, 7, 8, 12],
     hair: [0, 10, 26, 27, 11, 12, 18, 19, 20, 13, 14, 25, 16, 9, 21, 15, 17, 5, 23, 1, 22, 2, 3, 6, 4, 7, 24, 8],
@@ -239,6 +254,31 @@
       }
       case 10: rect(tx0, hy - 1, w, 2, '#f4f1e8'); for (let x = tx0; x <= tx1; x += 2) set(x, hy - 1, '#c9b98f'); break; // kufi
       case 11: rect(tx0 - 1, hy, w + 2, 2, '#1e1e2e'); rect(tx0, hy - 1, w, 1, '#1e1e2e'); set(tx0 + 1, hy - 1, '#4a4a6a'); rect(ex1 + 1, hy + 2, 1, 4, '#1e1e2e'); set(ex1 + 2, hy + 5, '#1e1e2e'); break; // durag + tail
+      case 13: { // Santa hat: white trim, red cone flopping right, pompom
+        rect(tx0 - 1, hy, w + 2, 1, '#f4f1e8');
+        rect(tx0, hy - 1, w, 1, '#d62839'); rect(tx0 + 1, hy - 2, w - 1, 1, '#d62839'); rect(tx0 + 3, hy - 3, w - 2, 1, '#d62839');
+        set(tx1 + 1, hy - 2, '#d62839'); set(tx1 + 2, hy - 1, '#f4f1e8');
+        break;
+      }
+      case 14: { // witch hat: wide brim, tall cone, purple band
+        rect(tx0 - 2, hy, w + 4, 1, '#2b1d3a');
+        rect(tx0 + 1, hy - 1, w - 2, 1, '#9c6ade');
+        rect(tx0 + 2, hy - 2, w - 4, 1, '#2b1d3a'); rect(7, hy - 3, 2, 1, '#2b1d3a'); set(9, hy - 3, '#2b1d3a'); // tip bends over
+        break;
+      }
+      case 15: // bunny ears on a headband
+        rect(tx0, hy, w, 1, '#f4f1e8');
+        for (const x of [tx0 + 1, tx1 - 2]) { rect(x, hy - 3, 2, 3, '#f4f1e8'); set(x + 1, hy - 2, '#ff8fb3'); }
+        break;
+      case 16: // maple-leaf crown (Canada Day)
+        rect(tx0, hy, w, 1, '#d62839');
+        set(7, hy - 3, '#d62839'); set(8, hy - 3, '#d62839'); rect(6, hy - 2, 4, 1, '#d62839'); set(7, hy - 1, '#d62839'); set(8, hy - 1, '#d62839');
+        set(5, hy - 2, '#d62839'); set(10, hy - 2, '#d62839');
+        break;
+      case 17: // graduation cap with a gold tassel
+        rect(tx0, hy, w, 1, '#1e1e2e'); rect(tx0 - 2, hy - 1, w + 4, 1, '#1e1e2e'); set(7, hy - 2, '#1e1e2e'); set(8, hy - 2, '#1e1e2e');
+        rect(tx1 + 2, hy - 1, 1, 3, '#ffd23f');
+        break;
       case 12: rect(tx0 - 1, hy + 1, w + 2, 1, '#e83f5b'); for (let x = tx0; x <= tx1; x += 2) set(x, hy + 1, '#f4f1e8'); set(ex0 - 2, hy + 2, '#e83f5b'); set(ex0 - 2, hy + 3, '#e83f5b'); break; // bandana
       default: break;
     }
@@ -281,6 +321,7 @@
     const l = {};
     for (const p of PARTS) l[p] = Math.floor(Math.random() * NAMES[p].length);
     for (const [p, keep] of /** @type {[string, number][]} */ ([['facial', 0.3], ['glasses', 0.35], ['hat', 0.4], ['earrings', 0.5], ['makeup', 0.5]])) if (Math.random() > keep) l[p] = 0;
+    if (SEASON > 0 && Math.random() < 0.35) l.hat = SEASON; // in season: more festive randoms
     return l;
   }
 
@@ -339,7 +380,7 @@
   }
 
   window.Rumpus.avatarMaker = {
-    PARTS, NAMES, TABS, PRESETS, ORDER, url, random, editor, norm, build,
+    PARTS, NAMES, TABS, PRESETS, ORDER, url, random, editor, norm, build, seasonHat,
     counts: Object.fromEntries(PARTS.map((p) => [p, NAMES[p].length])),
   };
 })();
