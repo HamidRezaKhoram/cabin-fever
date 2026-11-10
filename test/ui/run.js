@@ -54,6 +54,18 @@ async function check(name, fn) {
     assert.ok(await tv.evaluate(() => Rumpus.music.trackCount) >= 50);
   });
 
+  await check('main menu shows ONE join card: one QR code, the room code once, no duplicate player list', async () => {
+    await tv.waitForSelector('.join-card .qr-big');
+    const seen = await tv.evaluate((c) => {
+      const vis = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length) && getComputedStyle(el).visibility !== 'hidden';
+      const qrs = [...document.querySelectorAll('img')].filter((i) => /qr\.svg/.test(i.src) && vis(i)).length;
+      const codes = [...document.querySelectorAll('body *')].filter((el) => vis(el) && !el.closest('#debug-panel') && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.includes(c))).length;
+      return { qrs, codes, sidebar: vis(document.getElementById('sidebar')) };
+    }, code);
+    assert.deepStrictEqual(seen, { qrs: 1, codes: 1, sidebar: false });
+    await shot(tv, '02a-lobby-empty');
+  });
+
   await check('menu music never stops: loops, moves on, and the watchdog revives it', async () => {
     // test-all mounts a 1-second track in music/title + music/menu, so loops and track changes happen fast.
     await tv.waitForFunction(() => Rumpus.music.status().plays >= 5, null, { timeout: 15000 }).catch(async () => {
@@ -296,7 +308,8 @@ async function check(name, fn) {
 
   await check('in a game the TV switches to that game\'s look and hides the join clutter and the player strip', async () => {
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'telephone');
-    assert.strictEqual(await tv.isVisible('.join-hint'), false);
+    assert.strictEqual(await tv.isVisible('.join-card'), false);
+    assert.strictEqual(await tv.isVisible('#topbar .room-code'), true, 'compact code stays for rejoining');
     assert.strictEqual(await tv.isVisible('#sidebar'), false);
   });
 

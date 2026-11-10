@@ -51,7 +51,7 @@ a { color: var(--accent2); }
 
 .brand { font-size: 14px; color: var(--accent); text-shadow: 2px 2px 0 var(--edge); }
 .brand.small { font-size: 10px; }
-.hint, .join-hint { color: var(--dim); font-size: 20px; }
+.hint { color: var(--dim); font-size: 20px; }
 .error { color: var(--danger); min-height: 1.2em; }
 .round-tag { color: var(--dim); text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
 .prompt { color: var(--accent); }
@@ -59,7 +59,6 @@ a { color: var(--accent2); }
 .timer.urgent { color: var(--danger); animation: blink 0.5s steps(15) infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
 .count { color: var(--dim); font-size: 24px; }
-.accent2 { color: var(--accent2); }
 
 button {
   background: var(--accent);
@@ -119,8 +118,14 @@ body.host {
   background: rgba(36, 31, 61, 0.92);
 }
 .room-code { font-size: 36px; color: var(--accent2); text-shadow: 4px 4px 0 var(--edge); letter-spacing: 0.2em; }
-.qr-small { height: 56px; width: 56px; background: #fff; padding: 2px; }
-.qr-small:not([src]) { display: none; }
+.join-card { display: flex; gap: 22px; align-items: center; background: var(--panel); padding: 16px 20px; box-shadow: 0 0 0 4px var(--edge); }
+.join-text { display: flex; flex-direction: column; gap: 4px; }
+.join-label { color: var(--dim); font-size: 20px; }
+.join-addr { font-size: 26px; color: var(--ink); }
+.join-code { font-family: var(--pixel); font-size: 44px; color: var(--accent2); letter-spacing: 0.15em; text-shadow: 4px 4px 0 var(--edge); }
+.join-count { margin-top: 6px; color: var(--accent); font-size: 22px; }
+body.host:not(.in-game) #topbar .room-code { display: none; }
+body.host.lobby #sidebar { display: none; }
 .top-actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
 #controls { display: flex; gap: 10px; }
 #controls[hidden] { display: none; }
@@ -519,7 +524,7 @@ body[data-theme="telephone"]  { --accent: #ffe066; --accent2: #ffffff; --panel: 
 body[data-theme="cah"]        { --accent: #ffffff; --accent2: #ff6040; --panel: #220808; --panel2: #3c0d0d; }
 body[data-theme="minigames"]  { --accent: #ffe14d; --accent2: #ffffff; --panel: #0d4f7f; --panel2: #1468a5; }
 body.host { transition: grid-template-columns 0.5s steps(15); }
-body.host.in-game .join-hint, body.host.in-game .qr-small, body.host.in-game .brand { display: none; }
+body.host.in-game .brand { display: none; }
 body.host.in-game #topbar { padding: 4px 16px; }
 body.host.in-game .room-code { font-size: max(16px, 2.4vh); letter-spacing: 0.15em; }
 body.host.in-game .phase-view { background: rgba(10, 8, 20, 0.55); }

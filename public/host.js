@@ -5,8 +5,6 @@ const { esc, store, sfx, countdown, games, av, sprites, music, fx, morph, clock,
 const socket = io();
 
 const codeEl = document.getElementById('room-code');
-const joinUrlEl = document.getElementById('join-url');
-const qrEl = /** @type {HTMLImageElement} */ (document.getElementById('qr'));
 const phaseView = document.getElementById('phase-view');
 const playerList = document.getElementById('player-list');
 const controls = document.getElementById('controls');
@@ -117,8 +115,6 @@ function joinUrl(withCode) {
 }
 
 function updateJoinInfo() {
-  joinUrlEl.textContent = joinUrl(false).replace(/^https?:\/\//, '');
-  if (roomCode) qrEl.src = '/qr.svg?data=' + encodeURIComponent(joinUrl(true));
   if (state && (state.phase === 'lobby' || state.phase === 'gameover')) render();
 }
 
@@ -270,11 +266,21 @@ function gamePicker(label) {
   const crew = st.teams
     ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((p) => p.team === t).map(fig).join('')}</div>`).join('')
     : state.players.map(fig).join('');
+  const max = state.maxPlayers || 12;
+  // One join card: QR + room code + address together (nothing else on screen repeats them).
+  const joinCard = roomCode ? `<div class="join-card">
+      <img class="qr-big" src="/qr.svg?data=${encodeURIComponent(joinUrl(true))}" alt="QR code to join">
+      <div class="join-text">
+        <span class="join-label">Scan or go to</span>
+        <span class="join-addr">${esc(joinUrl(false).replace(/^https?:\/\//, ''))}</span>
+        <span class="join-label">Room code</span>
+        <span class="join-code">${esc(roomCode)}</span>
+        <span class="join-count">${count ? `${count}/${max} joined` : 'Nobody here yet'}</span>
+      </div>
+    </div>` : '';
   return `<div class="lobby-head">
       <div>
         <h1>${label}</h1>
-        <p class="big-sub">Phones: go to <strong>${esc(joinUrl(false).replace(/^https?:\/\//, ''))}</strong>
-          · code <strong class="accent2">${esc(roomCode || '')}</strong> · or scan →</p>
         <div class="settings">
           <label>Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
             ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
@@ -282,11 +288,10 @@ function gamePicker(label) {
             ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
-          <span class="hint">${count}/${state.maxPlayers || 12} players</span>
         </div>
-        <div class="lobby-crew">${crew || '<p class="hint">Waiting for players…</p>'}</div>
+        ${crew ? `<div class="lobby-crew">${crew}</div>` : ''}
       </div>
-      ${roomCode ? `<img class="qr-big" src="/qr.svg?data=${encodeURIComponent(joinUrl(true))}" alt="QR code to join">` : ''}
+      ${joinCard}
     </div>
     <div class="game-grid">` +
     (state.availableGames || []).map((gm) => {
@@ -433,6 +438,7 @@ function render() {
   // (it pops back for 10 s whenever someone new joins).
   const wasInGame = document.body.classList.contains('in-game');
   document.body.classList.toggle('in-game', inGame);
+  document.body.classList.toggle('lobby', phase === 'lobby'); // the lobby shows the players itself
   if (!inGame || !wasInGame) { clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
   // Someone joined, left or (re)connected → flash the player strip for 5 s.
   const roster = state.players.map((p) => p.id + (p.connected ? '+' : '-')).sort().join(',');
