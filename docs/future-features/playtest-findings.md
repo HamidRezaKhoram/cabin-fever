@@ -1,5 +1,11 @@
 # Bot playtest findings (test/playtest.js)
 
+> **Latest run (after the fix list):** see the table in `docs/design/party-game-design.md`.
+> Headline: Two Truths idle 58 → 30 s, Telephone 81 → 61 s, Fib Finder 53 → 41 s, Punchline
+> 44 → 39 s; Majority 1.9 → 2.9 actions/min; new games Cottage Crush (3.9/min) and Minigame Mayhem.
+> The table below is the original (first) run.
+
+
 4 bots with human-like think time (2–7 s to tap, 8–25 s to write) played every game with the
 default settings. Real-time equivalents:
 

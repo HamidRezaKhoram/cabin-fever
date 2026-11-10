@@ -29,6 +29,9 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
     RUMPUS_TT_WRITE_MS: T(90000), RUMPUS_TT_GUESS_MS: T(25000),
     RUMPUS_TEL_WRITE_MS: T(45000), RUMPUS_TEL_DRAW_MS: T(60000), RUMPUS_TEL_DESCRIBE_MS: T(40000), RUMPUS_TEL_ENTRY_MS: T(3500), RUMPUS_TEL_VOTE_MS: T(30000),
     RUMPUS_TEL_FAV_MS: T(10000),
+    RUMPUS_MG_INTRO_MS: T(3500), RUMPUS_MG_RESULT_MS: T(6000), RUMPUS_MG_TUG_MS: T(15000), RUMPUS_MG_DRAW_WINDOW: T(4000),
+    RUMPUS_MG_FLY_SHOW_MS: T(5000), RUMPUS_MG_FLY_GUESS_MS: T(10000), RUMPUS_MG_ROAST_MS: T(12000),
+    RUMPUS_CR_MINGLE_MS: T(45000), RUMPUS_CR_REPLY_MS: T(25000), RUMPUS_MR_BET_WINDOW_MS: T(8000), RUMPUS_CR_PICK_MS: T(20000), RUMPUS_CR_REVEAL_STEP_MS: T(1800),
   });
   const rows = [];
   try {
@@ -63,7 +66,7 @@ const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, 
         st.actions++;
       };
       while (h.state.phase !== 'gameover') {
-        if (h.state.phase !== lastPhase) { phases++; if (/reveal|results/.test(h.state.phase)) reveals++; lastPhase = h.state.phase; }
+        if (h.state.phase !== lastPhase) { phases++; if (/reveal|results|result$/.test(h.state.phase)) reveals++; lastPhase = h.state.phase; }
         bots.forEach(act);
         await sleep(15);
         if (Date.now() - t0 > 25 * 60000 / SPEED) break;

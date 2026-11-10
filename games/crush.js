@@ -10,8 +10,9 @@
 const { BaseGame, shuffle, cleanText } = require('./base');
 const library = require('./library');
 
-const MINGLE_MS = parseInt(process.env.RUMPUS_CR_MINGLE_MS || '60000', 10);
-const REPLY_MS = parseInt(process.env.RUMPUS_CR_REPLY_MS || '30000', 10);
+// Playtest-tuned: 60/30 s left fast note-senders idle for over a minute.
+const MINGLE_MS = parseInt(process.env.RUMPUS_CR_MINGLE_MS || '45000', 10);
+const REPLY_MS = parseInt(process.env.RUMPUS_CR_REPLY_MS || '25000', 10);
 const PICK_MS = parseInt(process.env.RUMPUS_CR_PICK_MS || '20000', 10);
 const REVEAL_STEP_MS = parseInt(process.env.RUMPUS_CR_REVEAL_STEP_MS || '1800', 10);
 
