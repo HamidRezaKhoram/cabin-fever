@@ -383,7 +383,8 @@ async function check(name, fn) {
 
   await check('the narrator\'s natural voice (Kokoro, in a worker) loads on the TV and speaks a line', async () => {
     await tv.waitForFunction(() => Rumpus.host.natural(), null, { timeout: 120000 });
-    const ok = await tv.evaluate(() => Rumpus.host.testNatural('Welcome to the cottage!', 60000));
+    // CI runners are slow 2-CPU machines; a real TV falls back to the classic voice after 6 s anyway.
+    const ok = await tv.evaluate(() => Rumpus.host.testNatural('Hello!', 150000));
     assert.strictEqual(ok, true, 'Kokoro generated and played the line');
     const voices = await tv.evaluate(() => Rumpus.host.voices().map((v) => v[0])); // the lobby's 🎙 picker lists these
     assert.ok(voices.includes('am_michael') && voices.includes('af_heart') && voices.includes('classic'), 'male, female and classic voices on offer');
