@@ -10,3 +10,4 @@ test/ui/.shots/
 test/.music-fixture/
 coverage/
 dist/
+vendor/kokoro/

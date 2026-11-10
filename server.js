@@ -114,6 +114,13 @@ app.get('/api/music-info', (req, res) => {
   res.json(out);
 });
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
+// The narrator's natural voice (Kokoro model + runtime, fetched once by tools/fetch-kokoro.js;
+// the Docker image has it in /app/tts). Absent → the TV falls back to espeak / the browser voice.
+const TTS_DIR = process.env.RUMPUS_TTS_DIR || [path.join(__dirname, 'tts'), path.join(__dirname, 'vendor', 'kokoro')].find((d) => fs.existsSync(d)) || path.join(__dirname, 'tts');
+app.use('/tts', express.static(TTS_DIR, {
+  maxAge: '30d',
+  setHeaders: (/** @type {any} */ res, /** @type {string} */ file) => { if (file.endsWith('.mjs')) res.setHeader('Content-Type', 'text/javascript'); },
+}));
 // --- /admin: house rules + content editor (local network, no auth by design) --------
 app.use('/api/admin', express.json({ limit: '64kb' }));
 const admin = require('./core/admin');
