@@ -7,7 +7,7 @@
 
 const { BaseGame, shuffle, cleanText } = require('./base');
 
-const WRITE_MS = parseInt(process.env.RUMPUS_TT_WRITE_MS || '120000', 10);
+const WRITE_MS = parseInt(process.env.RUMPUS_TT_WRITE_MS || '90000', 10); // playtest: 120 s was the game's dead air
 const GUESS_MS = parseInt(process.env.RUMPUS_TT_GUESS_MS || '25000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '7000', 10);
 
@@ -112,7 +112,10 @@ class TwoTruthsGame extends BaseGame {
 
   hostView() {
     if (this.phase === 'tt-write') {
-      return { submittedCount: this.sets.size, totalPlayers: this.room.players.size };
+      return {
+        submittedCount: this.sets.size, totalPlayers: this.room.players.size,
+        waitingOn: [...this.room.players.keys()].filter((id) => !this.sets.has(id)).map((id) => this.nick(id)),
+      };
     }
     if (this.phase === 'tt-guess') {
       return { ...this.current(), guessedCount: this.guesses.size, needed: Math.max(0, this.room.players.size - 1) };

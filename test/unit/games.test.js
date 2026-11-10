@@ -356,6 +356,7 @@ test('Two Truths: incomplete sets rejected; subject cannot guess; 75 per person 
   ps[0].submit({ truths: ['only one'], lie: 'x' });
   await sleep(100);
   assert.strictEqual(ps[0].state.you.submitted, false);
+  assert.strictEqual(h.state.gameState.waitingOn.length, 3, 'TV names who is still writing');
   for (const p of ps) p.submit({ truths: [`${p.nickname} t1`, `${p.nickname} t2`], lie: `${p.nickname} LIE` });
   const first = await h.phase('tt-guess');
   const subject = ps.find((p) => p.nickname === first.gameState.subject);

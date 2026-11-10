@@ -1086,7 +1086,908 @@
 "v": "2912"
 }
 ],
-"river_length": [],
+"river_length": [
+{
+"qid": "Q3392",
+"label": "Nile",
+"v": "6650"
+},
+{
+"qid": "Q3783",
+"label": "Amazon River",
+"v": "6400"
+},
+{
+"qid": "Q1653",
+"label": "Danube",
+"v": "2850"
+},
+{
+"qid": "Q584",
+"label": "Rhine",
+"v": "1232.7"
+},
+{
+"qid": "Q626",
+"label": "Volga",
+"v": "3530"
+},
+{
+"qid": "Q5089",
+"label": "Ganges",
+"v": "2525"
+},
+{
+"qid": "Q1497",
+"label": "Mississippi River",
+"v": "3766"
+},
+{
+"qid": "Q3503",
+"label": "Congo River",
+"v": "4700"
+},
+{
+"qid": "Q5413",
+"label": "Yangtze River",
+"v": "6300"
+},
+{
+"qid": "Q7348",
+"label": "Indus River",
+"v": "3180"
+},
+{
+"qid": "Q3542",
+"label": "Niger River",
+"v": "4180"
+},
+{
+"qid": "Q7355",
+"label": "Yellow River",
+"v": "5464"
+},
+{
+"qid": "Q34589",
+"label": "Euphrates",
+"v": "2800"
+},
+{
+"qid": "Q19686",
+"label": "River Thames",
+"v": "334"
+},
+{
+"qid": "Q1471",
+"label": "Seine",
+"v": "776.67"
+},
+{
+"qid": "Q35591",
+"label": "Tigris",
+"v": "1850"
+},
+{
+"qid": "Q40855",
+"label": "Dnieper",
+"v": "2285"
+},
+{
+"qid": "Q40059",
+"label": "Jordan River",
+"v": "252"
+},
+{
+"qid": "Q1644",
+"label": "Elbe",
+"v": "1094.26"
+},
+{
+"qid": "Q548",
+"label": "Vistula",
+"v": "1047"
+},
+{
+"qid": "Q41179",
+"label": "Mekong River",
+"v": "4350"
+},
+{
+"qid": "Q6862",
+"label": "Amur River",
+"v": "2824"
+},
+{
+"qid": "Q45403",
+"label": "Brahmaputra River",
+"v": "2900"
+},
+{
+"qid": "Q80240",
+"label": "Ural",
+"v": "2428"
+},
+{
+"qid": "Q973",
+"label": "Ob",
+"v": "3650"
+},
+{
+"qid": "Q46841",
+"label": "Lena River",
+"v": "4294"
+},
+{
+"qid": "Q1229",
+"label": "Don",
+"v": "1870"
+},
+{
+"qid": "Q5419",
+"label": "Missouri River",
+"v": "3726"
+},
+{
+"qid": "Q643",
+"label": "Po",
+"v": "652"
+},
+{
+"qid": "Q1469",
+"label": "Loire",
+"v": "1006"
+},
+{
+"qid": "Q602",
+"label": "Rhône",
+"v": "812"
+},
+{
+"qid": "Q552",
+"label": "Oder",
+"v": "854"
+},
+{
+"qid": "Q131210",
+"label": "Dniester",
+"v": "1352"
+},
+{
+"qid": "Q13712",
+"label": "Tiber",
+"v": "405"
+},
+{
+"qid": "Q134750",
+"label": "St. Lawrence River",
+"v": "1197"
+},
+{
+"qid": "Q134750",
+"label": "St. Lawrence River",
+"v": "3058"
+},
+{
+"qid": "Q78707",
+"label": "Yenisei",
+"v": "3487"
+},
+{
+"qid": "Q8493",
+"label": "Amu Darya",
+"v": "2620"
+},
+{
+"qid": "Q14294",
+"label": "Tagus",
+"v": "1007"
+},
+{
+"qid": "Q131792",
+"label": "Orinoco River",
+"v": "2140"
+},
+{
+"qid": "Q132726",
+"label": "Yamuna",
+"v": "1376"
+},
+{
+"qid": "Q1265",
+"label": "Colorado River",
+"v": "2334"
+},
+{
+"qid": "Q645",
+"label": "Neva",
+"v": "74"
+},
+{
+"qid": "Q128102",
+"label": "Irtysh",
+"v": "4248"
+},
+{
+"qid": "Q882739",
+"label": "Blue Nile",
+"v": "1783"
+},
+{
+"qid": "Q41986",
+"label": "Meuse",
+"v": "950"
+},
+{
+"qid": "Q8197",
+"label": "Daugava",
+"v": "1020"
+},
+{
+"qid": "Q483159",
+"label": "Syr Darya",
+"v": "2212"
+},
+{
+"qid": "Q104437",
+"label": "Yukon River",
+"v": "3190"
+},
+{
+"qid": "Q3140",
+"label": "Hudson River",
+"v": "492"
+},
+{
+"qid": "Q10965",
+"label": "Ebro",
+"v": "910"
+},
+{
+"qid": "Q2251",
+"label": "Columbia River",
+"v": "2000"
+},
+{
+"qid": "Q160636",
+"label": "Rio Grande",
+"v": "3051"
+},
+{
+"qid": "Q1670",
+"label": "Main",
+"v": "524"
+},
+{
+"qid": "Q173017",
+"label": "Limpopo River",
+"v": "1750"
+},
+{
+"qid": "Q14299",
+"label": "Douro",
+"v": "897"
+},
+{
+"qid": "Q4915",
+"label": "Ohio River",
+"v": "1579"
+},
+{
+"qid": "Q4814791",
+"label": "White Nile",
+"v": "2620"
+},
+{
+"qid": "Q127892",
+"label": "Paraná River",
+"v": "4880"
+},
+{
+"qid": "Q35827",
+"label": "Río de la Plata",
+"v": "290"
+},
+{
+"qid": "Q1667",
+"label": "Moselle",
+"v": "544"
+},
+{
+"qid": "Q134350",
+"label": "Tisza",
+"v": "966"
+},
+{
+"qid": "Q181475",
+"label": "Orange River",
+"v": "2200"
+},
+{
+"qid": "Q183078",
+"label": "Murray River",
+"v": "2508"
+},
+{
+"qid": "Q131574",
+"label": "Vltava",
+"v": "430"
+},
+{
+"qid": "Q191314",
+"label": "Godavari River",
+"v": "1465"
+},
+{
+"qid": "Q175117",
+"label": "Moskva River",
+"v": "473"
+},
+{
+"qid": "Q18278",
+"label": "Uruguay River",
+"v": "1790"
+},
+{
+"qid": "Q26076",
+"label": "Irrawaddy River",
+"v": "2170"
+},
+{
+"qid": "Q3569",
+"label": "Senegal River",
+"v": "1050"
+},
+{
+"qid": "Q162737",
+"label": "Angara",
+"v": "1779"
+},
+{
+"qid": "Q5077",
+"label": "Garonne",
+"v": "647"
+},
+{
+"qid": "Q160819",
+"label": "Gambia River",
+"v": "1130"
+},
+{
+"qid": "Q14383",
+"label": "Sava",
+"v": "945"
+},
+{
+"qid": "Q79082",
+"label": "Kama",
+"v": "1805"
+},
+{
+"qid": "Q172089",
+"label": "Oka",
+"v": "1500"
+},
+{
+"qid": "Q193499",
+"label": "Krishna River",
+"v": "1400"
+},
+{
+"qid": "Q118771",
+"label": "Rio Negro",
+"v": "2250"
+},
+{
+"qid": "Q179396",
+"label": "Paraguay River",
+"v": "2621"
+},
+{
+"qid": "Q179751",
+"label": "Aras River",
+"v": "1072"
+},
+{
+"qid": "Q118251",
+"label": "Madeira River",
+"v": "1450"
+},
+{
+"qid": "Q156557",
+"label": "Kura River",
+"v": "1360"
+},
+{
+"qid": "Q3411",
+"label": "Mackenzie River",
+"v": "1738"
+},
+{
+"qid": "Q8168",
+"label": "Pechora",
+"v": "1809"
+},
+{
+"qid": "Q14369",
+"label": "Inn",
+"v": "517"
+},
+{
+"qid": "Q14309",
+"label": "Guadalquivir",
+"v": "657"
+},
+{
+"qid": "Q5622",
+"label": "Neman",
+"v": "937"
+},
+{
+"qid": "Q37620",
+"label": "Scheldt",
+"v": "355"
+},
+{
+"qid": "Q188773",
+"label": "Okavango River",
+"v": "1600"
+},
+{
+"qid": "Q191829",
+"label": "Magdalena River",
+"v": "1528"
+},
+{
+"qid": "Q78879",
+"label": "Kolyma",
+"v": "2129"
+},
+{
+"qid": "Q166966",
+"label": "Shatt al-Arab",
+"v": "200"
+},
+{
+"qid": "Q1673",
+"label": "Neckar",
+"v": "362"
+},
+{
+"qid": "Q13696",
+"label": "Adige",
+"v": "410"
+},
+{
+"qid": "Q192415",
+"label": "Volta River",
+"v": "1500"
+},
+{
+"qid": "Q8187",
+"label": "Northern Dvina",
+"v": "744"
+},
+{
+"qid": "Q171649",
+"label": "Ubangi River",
+"v": "1060"
+},
+{
+"qid": "Q118850",
+"label": "Chao Phraya River",
+"v": "372"
+},
+{
+"qid": "Q1684",
+"label": "Spree",
+"v": "382"
+},
+{
+"qid": "Q179444",
+"label": "Potomac River",
+"v": "665"
+},
+{
+"qid": "Q171009",
+"label": "Drava",
+"v": "720"
+},
+{
+"qid": "Q216875",
+"label": "Chenab River",
+"v": "1974"
+},
+{
+"qid": "Q1675",
+"label": "Aare",
+"v": "295"
+},
+{
+"qid": "Q201463",
+"label": "Pearl River",
+"v": "2400"
+},
+{
+"qid": "Q26422",
+"label": "Salween River",
+"v": "2815"
+},
+{
+"qid": "Q142148",
+"label": "São Francisco River",
+"v": "2814"
+},
+{
+"qid": "Q93360",
+"label": "Bío Bío River",
+"v": "380"
+},
+{
+"qid": "Q82776",
+"label": "Terek",
+"v": "623"
+},
+{
+"qid": "Q181482",
+"label": "Darling River",
+"v": "1472"
+},
+{
+"qid": "Q8319",
+"label": "Arkansas River",
+"v": "2364"
+},
+{
+"qid": "Q106588",
+"label": "Isar",
+"v": "291.5"
+},
+{
+"qid": "Q1650",
+"label": "Weser",
+"v": "451"
+},
+{
+"qid": "Q182445",
+"label": "Prut",
+"v": "953"
+},
+{
+"qid": "Q186541",
+"label": "Kasai River",
+"v": "2272"
+},
+{
+"qid": "Q19682",
+"label": "River Severn",
+"v": "354"
+},
+{
+"qid": "Q201823",
+"label": "Warta",
+"v": "808"
+},
+{
+"qid": "Q171675",
+"label": "Sutlej",
+"v": "1500"
+},
+{
+"qid": "Q204806",
+"label": "Benue River",
+"v": "1370"
+},
+{
+"qid": "Q82207",
+"label": "Indigirka",
+"v": "1726"
+},
+{
+"qid": "Q156054",
+"label": "Tocantins River",
+"v": "2450"
+},
+{
+"qid": "Q82308",
+"label": "Kuban",
+"v": "870"
+},
+{
+"qid": "Q191238",
+"label": "Donets",
+"v": "1053"
+},
+{
+"qid": "Q172572",
+"label": "Rubicon",
+"v": "35"
+},
+{
+"qid": "Q55498",
+"label": "Yalu River",
+"v": "813"
+},
+{
+"qid": "Q257785",
+"label": "Kızılırmak River",
+"v": "1355"
+},
+{
+"qid": "Q103148",
+"label": "Lahn",
+"v": "242"
+},
+{
+"qid": "Q143762",
+"label": "Delaware River",
+"v": "579"
+},
+{
+"qid": "Q156237",
+"label": "Western Bug",
+"v": "772"
+},
+{
+"qid": "Q187834",
+"label": "Saône",
+"v": "480"
+},
+{
+"qid": "Q14305",
+"label": "Guadiana",
+"v": "778"
+},
+{
+"qid": "Q193737",
+"label": "Tennessee River",
+"v": "1049"
+},
+{
+"qid": "Q182343",
+"label": "Niagara River",
+"v": "53"
+},
+{
+"qid": "Q1664",
+"label": "Ruhr",
+"v": "217"
+},
+{
+"qid": "Q1682",
+"label": "Havel",
+"v": "325"
+},
+{
+"qid": "Q203409",
+"label": "Rioni",
+"v": "327"
+},
+{
+"qid": "Q192820",
+"label": "River Shannon",
+"v": "368"
+},
+{
+"qid": "Q179251",
+"label": "Morava",
+"v": "388"
+},
+{
+"qid": "Q157042",
+"label": "Pripyat River",
+"v": "748"
+},
+{
+"qid": "Q157042",
+"label": "Pripyat River",
+"v": "775"
+},
+{
+"qid": "Q214874",
+"label": "Jhelum River",
+"v": "774"
+},
+{
+"qid": "Q188940",
+"label": "Southern Bug",
+"v": "806"
+},
+{
+"qid": "Q192567",
+"label": "Ili River",
+"v": "1439"
+},
+{
+"qid": "Q191524",
+"label": "Ishim",
+"v": "2450"
+},
+{
+"qid": "Q186901",
+"label": "Drina",
+"v": "346"
+},
+{
+"qid": "Q55500",
+"label": "Han River",
+"v": "514"
+},
+{
+"qid": "Q8510",
+"label": "Helmand River",
+"v": "1150"
+},
+{
+"qid": "Q75745",
+"label": "Selenga",
+"v": "1024"
+},
+{
+"qid": "Q234004",
+"label": "Narmada",
+"v": "1315"
+},
+{
+"qid": "Q26439",
+"label": "Argun River",
+"v": "1620"
+},
+{
+"qid": "Q2750140",
+"label": "Kagera River",
+"v": "400"
+},
+{
+"qid": "Q189596",
+"label": "Vardar",
+"v": "388"
+},
+{
+"qid": "Q202796",
+"label": "Desna",
+"v": "1130"
+},
+{
+"qid": "Q41983",
+"label": "Marne",
+"v": "514"
+},
+{
+"qid": "Q317899",
+"label": "Ravi River",
+"v": "720"
+},
+{
+"qid": "Q135477",
+"label": "Chari River",
+"v": "1400"
+},
+{
+"qid": "Q209031",
+"label": "Narva",
+"v": "74"
+},
+{
+"qid": "Q14366",
+"label": "Ticino",
+"v": "248"
+},
+{
+"qid": "Q1678",
+"label": "Saale",
+"v": "413"
+},
+{
+"qid": "Q8515",
+"label": "Kabul River",
+"v": "460"
+},
+{
+"qid": "Q204347",
+"label": "Maritsa",
+"v": "490"
+},
+{
+"qid": "Q209891",
+"label": "Sura",
+"v": "841"
+},
+{
+"qid": "Q192157",
+"label": "Belaya",
+"v": "1430"
+},
+{
+"qid": "Q210326",
+"label": "Songhua River",
+"v": "1434"
+},
+{
+"qid": "Q559661",
+"label": "Liao River",
+"v": "1345"
+},
+{
+"qid": "Q19721",
+"label": "River Clyde",
+"v": "176"
+},
+{
+"qid": "Q190777",
+"label": "Neretva",
+"v": "225"
+},
+{
+"qid": "Q208174",
+"label": "Dordogne",
+"v": "483"
+},
+{
+"qid": "Q206850",
+"label": "Red River",
+"v": "1149"
+},
+{
+"qid": "Q192495",
+"label": "Vyatka",
+"v": "1314"
+},
+{
+"qid": "Q200174",
+"label": "Marañón River",
+"v": "1737"
+},
+{
+"qid": "Q63109",
+"label": "Adda",
+"v": "313"
+},
+{
+"qid": "Q273456",
+"label": "Omo River",
+"v": "760"
+},
+{
+"qid": "Q200952",
+"label": "Ucayali River",
+"v": "1460"
+},
+{
+"qid": "Q185405",
+"label": "Amstel",
+"v": "31"
+},
+{
+"qid": "Q1648",
+"label": "Ems",
+"v": "371"
+},
+{
+"qid": "Q188871",
+"label": "Orontes River",
+"v": "571"
+},
+{
+"qid": "Q124653",
+"label": "Tobol",
+"v": "1591"
+},
+{
+"qid": "Q272074",
+"label": "Snake River",
+"v": "1735"
+},
+{
+"qid": "Q19714",
+"label": "River Trent",
+"v": "298"
+},
+{
+"qid": "Q209530",
+"label": "Vaal River",
+"v": "1120"
+}
+],
 "building_height": [
 {
 "qid": "Q12495",
