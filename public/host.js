@@ -14,6 +14,8 @@ const timerbar = document.getElementById('timerbar');
 
 let state = null;
 let roomCode = null;
+// Test tools (bot players) show with /host?debug=1 or /host?bots=1.
+const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.search) || localStorage.getItem('rumpus.debug') === '1'; } catch (e) { return false; } })();
 let baseUrl = location.origin;
 let lastPhaseKey = null;
 let lastPlayerCount = 0;
@@ -170,6 +172,8 @@ document.addEventListener('click', (e) => {
   const act = hit(e.target, '[data-act]');
   if (!act) return;
   if (act.dataset.act === 'skip') socket.emit('host:skip');
+  if (act.dataset.act === 'bots') socket.emit('host:addBots', { count: +act.dataset.n, speed: +(act.dataset.speed || 1) });
+  if (act.dataset.act === 'nobots') socket.emit('host:removeBots');
   if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
   if (act.dataset.act === 'newroom' && confirm('Close this room and make a new one? Everyone will need to rejoin.')) {
     store('rumpus.host', null);
@@ -295,6 +299,8 @@ function gamePicker(label) {
             ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
+          ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
+            <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
         </div>
         ${crew ? `<div class="lobby-crew">${crew}</div>` : ''}
       </div>
