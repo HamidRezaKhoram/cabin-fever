@@ -71,7 +71,9 @@ async function check(name, fn) {
 
   await check('3 phones join via the QR link with chosen avatars; no horizontal scroll', async () => {
     for (const [i, n] of ['Ann', 'Ben', 'Cat'].entries()) {
-      const ctx = await browser.newContext({ ...devices['Pixel 7'] });
+      // Phone 1 measures frame pacing: use 1× pixel density there — headless Chrome rasterises
+      // in software, so a 2.6× full-screen canvas measures the test machine, not our 30 fps clock.
+      const ctx = await browser.newContext({ ...devices['Pixel 7'], ...(i === 0 ? { deviceScaleFactor: 1 } : {}) });
       const p = await ctx.newPage();
       watch(p, n);
       await p.goto(`${BASE}/play?code=${code}&debug=1`);
@@ -79,9 +81,18 @@ async function check(name, fn) {
       if (i === 0) {
         // Default: the character maker. Change a few parts.
         assert.strictEqual(await p.isVisible('#avatar-make .maker-preview'), true, 'character maker is the default');
-        await p.click('#avatar-make [data-part="hat"][data-step="1"]');
-        await p.click('#avatar-make [data-part="glasses"][data-step="1"]');
-        await p.click('#avatar-make [data-random]');
+        await p.click('#avatar-make [data-tab="style"]');
+        await p.click('#avatar-make [data-part="hat"][data-val="1"]');
+        await p.click('#avatar-make [data-part="glasses"][data-val="2"]');
+        await p.click('#avatar-make [data-tab="outfit"]');
+        const bgBefore = await p.evaluate(() => JSON.parse(localStorage.getItem('rumpus.look')).bg);
+        await p.click('#avatar-make [data-part="bg"][data-val="3"]');
+        await p.click('#avatar-make [data-undo]');
+        await p.click('#avatar-make [data-tab="hair"]');
+        await p.click('#avatar-make [data-part="hairColor"][data-val="7"]');
+        const look = await p.evaluate(() => JSON.parse(localStorage.getItem('rumpus.look')));
+        assert.deepStrictEqual([look.hat, look.glasses, look.bg, look.hairColor], [1, 2, bgBefore, 7], 'tiles, undo and swatches work');
+        await shot(p, '00-character-maker');
       } else {
         await p.click('.avatar-mode [data-mode="pick"]');
         await p.click(`#avatar-pick [data-avatar="${i + 2}"]`);
@@ -92,6 +103,7 @@ async function check(name, fn) {
       if (i === 0) {
         // Frame pacing on a phone, measured while only the TV + this phone are open
         // (headless Chrome rasterises in software; more open pages starve the CPU).
+        await p.evaluate(() => Rumpus.clock.resetStats()); // measure idle pacing, not the editor clicks above
         await p.waitForTimeout(3000);
         const st = await p.evaluate(() => Rumpus.clock.stats());
         assert.ok(st.fps > 27 && st.fps < 33, `phone fps ${st.fps.toFixed(1)}`);

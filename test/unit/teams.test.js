@@ -66,6 +66,7 @@ test('Punchline matchups are red vs blue in team mode', async () => {
   await until(() => h.state.players.every((p) => p.team), 'teams');
   h.emit('host:startGame', { gameId: 'quiplash' });
   await h.phase('answering');
+  await until(() => ps.every((p) => p.state.phase === 'answering'), 'phones answering'); // not a stale lobby state
   for (let k = 0; k < 2; k++) for (const p of ps) {
     await until(() => p.state.you.submitted || p.state.gameState.promptNumber === k + 1 || p.state.phase !== 'answering', 'prompt');
     if (p.state.phase === 'answering' && !p.state.you.submitted) p.submit({ text: 'x' + k });
