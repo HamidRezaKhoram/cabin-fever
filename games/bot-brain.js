@@ -6,7 +6,7 @@
  * AGPLv3 — see LICENSE.
  *
  * decide(view, rnd) → null (nothing to do) or
- *   { payload, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' }   — kind sets the think time.
+ *   { payload, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' | 'steer' }   — kind sets the think time.
  */
 'use strict';
 
@@ -34,7 +34,7 @@ function shuffleCopy(list, rnd) {
 /**
  * @param {{ phase: string, gameState?: any, you?: any }} view
  * @param {() => number} [rnd]
- * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' } | null}
+ * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' | 'steer' } | null}
  */
 function decide(view, rnd = Math.random) {
   const g = view.gameState || {}, you = view.you || {};
@@ -108,6 +108,13 @@ function decide(view, rnd = Math.random) {
       const fav = t.find((/** @type {{ nickname: string }} */ x) => fans.includes(x.nickname)); // date someone who wrote to you, usually
       return t.length ? tap({ pick: rnd() < 0.1 ? null : (fav && rnd() < 0.7 ? fav : pick(t, rnd)).id }) : null;
     }
+    // Lantern Lake: steer toward your target (a firefly, the moonbeam, the raft's next lantern).
+    case 'll-intro': case 'll-play': {
+      if (!you.pos || !you.target) return view.phase === 'll-play' ? { payload: { tilt: [rnd() * 2 - 1, rnd() * 2 - 1] }, kind: 'steer' } : null;
+      const dx = you.target[0] - you.pos[0] + (rnd() - 0.5) * 30, dy = you.target[1] - you.pos[1] + (rnd() - 0.5) * 30;
+      const m = Math.hypot(dx, dy) || 1;
+      return { payload: { tilt: [Math.round((dx / m) * 100) / 100, Math.round((dy / m) * 100) / 100] }, kind: 'steer' };
+    }
     // Loon Call: once a bar is over, send the taps a person would have made (±40 ms, the odd miss).
     case 'lc-tune': case 'lc-compose': case 'lc-song': {
       const s = g.sched, now = g.serverNow || 0;
@@ -142,6 +149,7 @@ function decide(view, rnd = Math.random) {
 function thinkMs(kind, rnd = Math.random) {
   if (kind === 'mash') return 250;
   if (kind === 'react') return 220 + rnd() * 300; // human reaction time
+  if (kind === 'steer') return 250 + rnd() * 250; // a person adjusts a few times a second
   if (kind === 'beat') return 10; // rhythm taps carry their own timestamps
   if (kind === 'write') return 8000 + rnd() * 17000;
   if (kind === 'draw') return 20000 + rnd() * 30000;

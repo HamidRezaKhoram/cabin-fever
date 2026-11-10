@@ -193,6 +193,7 @@
     cah:        { mode: 'minor', bpm: 136, lead: 'staccato', drums: 'drive', arp: 'up', bass: 'eighth', root: 57 },
     crush:      { mode: 'lydian', bpm: 100, lead: 'melodic', drums: 'bossa', arp: 'updown', bass: 'walk', root: 65, swing: 0.14 },
     minigames:  { mode: 'major', bpm: 152, lead: 'bouncy', drums: 'drive', arp: 'up', bass: 'eighth', root: 62 },
+    lantern:    { mode: 'lydian', bpm: 84, lead: 'sparse', drums: 'halftime', arp: 'updown', bass: 'root', root: 62, swing: 0.12 },
     looncall:   { mode: 'mixo', bpm: 96, lead: 'sparse', drums: 'pop', arp: 'updown', bass: 'octave', root: 60, swing: 0.1 },
   };
 

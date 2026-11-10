@@ -174,7 +174,11 @@ scripts/test-all.sh    Runs everything
 link/fetch in `public/`), give every button/setting a handler (static test), and drive every page
 (TV, phone, /admin, /highlights) in the browser test — server-side tests alone missed broken links.
 
-Useful flags: `UI_ONLY=1` (just the browser tests), `SKIP_UI=1` (skip them).
+Useful flags: `UI_ONLY=1` (just the browser tests), `SKIP_UI=1` (skip them), `BOT_GAMES=all`
+(bots play every game; by default only games whose `games/<id>.js` changed since HEAD).
+**Coverage ≥ 80%** is enforced for server/game code (c8, `.c8rc.json`) and client code (V8 coverage
+in the browser test). New screens are covered by the recorded snapshots in `test/ui/snapshots/`
+(re-recorded when bots play a changed game — commit them).
 When a test is flaky, fix the race (wait for the right state) — don't add sleeps or retries.
 
 ## Future work
@@ -185,7 +189,9 @@ new features and update it when something ships.
 
 ## Common tasks
 
-- Run locally: `docker compose up -d --build` → TV `http://<lan-ip>:8012/host`.
+- Run locally: `docker compose up -d --build` → TV `http://<lan-ip>:8012/host`. The https twin
+  (`RUMPUS_HTTPS_PORT`, default 8443 in compose, self-signed cert in `data/certs/`) exists for phone
+  tilt sensors (Lantern Lake); everything else stays on plain http.
 - Rebuild content pools after editing `content-src/`: `python3 tools/build-content.py`.
 - Add a game: module in `games/` (extend `BaseGame`, `meta = {id,name,blurb,minPlayers}`),
   register in `server.js` list, renderer in `public/games.js`, icon in `sprites.js`, rules in

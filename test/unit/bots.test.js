@@ -11,10 +11,12 @@ const QUICK = {
   RUMPUS_MG_INTRO_MS: '200', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_TUG_MS: '1500', RUMPUS_MG_ROAST_MS: '3000',
   RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
   RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000', RUMPUS_CR_REVEAL_STEP_MS: '150',
+  RUMPUS_LC_TEMPO: '4', RUMPUS_LC_PHRASES: '2', RUMPUS_LC_LEAD_MS: '300', RUMPUS_LC_RESULT_MS: '200',
+  RUMPUS_LL_INTRO_MS: '300', RUMPUS_LL_PLAY_MS: '2500', RUMPUS_LL_RESULT_MS: '200',
 };
 let srv;
 test.before(async () => {
-  srv = await startServer(QUICK);
+  srv = await startServer({ ...QUICK, ...(process.env.SNAP_DIR ? { RUMPUS_DEBUG: '1' } : {}) });
 });
 test.after(() => srv.stop());
 
@@ -28,17 +30,62 @@ test('host can add and remove bots; bots are flagged and get looks', async () =>
   await until(() => h.state.players.length === 0, 'bots removed');
 });
 
-const GAMES = ['quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely', 'imposter', 'twotruths', 'telephone', 'cah', 'minigames', 'crush'];
 test('bots play every game to the end (fast bots, 4 players)', { timeout: 240000 }, async () => {
   const h = await makeHost(srv);
   h.emit('host:addBots', { count: 4, speed: 20 });
   await until(() => h.state && h.state.players.length === 4, '4 bots');
+  // Which games: BOT_GAMES=all (CI) plays every game the server offers; otherwise test-all passes
+  // the games changed or added since the last commit (BOT_GAMES=a,b), so local runs stay quick.
+  const offered = h.state.availableGames.map((/** @type {{ id: string }} */ g) => g.id);
+  const want = (process.env.BOT_GAMES || 'all').split(',').map((x) => x.trim()).filter(Boolean);
+  const GAMES = want.includes('all') ? offered : offered.filter((/** @type {string} */ id) => want.includes(id));
+  if (!GAMES.length) console.log('# bots: no game modules changed since HEAD — skipping (BOT_GAMES=all to play every game)');
   for (const gameId of GAMES) {
     h.emit('host:startGame', { gameId });
     await until(() => h.state.gameState && h.state.gameState.gameId === gameId && h.state.phase !== 'lobby', `${gameId} started`);
+    const rec = process.env.SNAP_DIR ? recordScreens(h.code, gameId) : null;
     await until(() => h.state.phase === 'gameover', `${gameId} reached gameover with bots (stuck at ${h.state.phase})`, 60000);
+    if (rec) await rec.stop();
   }
 });
+
+/**
+ * Screen snapshots: while bots play, keep every distinct TV and phone screen (the exact payloads
+ * from /api/debug/views). The browser test renders all of them, so every screen of every game is
+ * tested on each run even though bots only replay the games that changed.
+ * @param {string} code @param {string} gameId
+ */
+function recordScreens(code, gameId) {
+  const fs = require('fs'), path = require('path');
+  /** @type {Map<string, any>} */
+  const seen = new Map();
+  const tiny = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const shrink = (/** @type {any} */ v) => JSON.parse(JSON.stringify(v, (_k, x) => (typeof x === 'string' && x.startsWith('data:image/') ? tiny : x)));
+  // A screen's "shape": phase, sub-step, and which fields are set — not the exact words.
+  const shape = (/** @type {any} */ st, /** @type {string} */ who) => [who, st.phase, st.gameState && (st.gameState.sub || st.gameState.scene || st.gameState.mini || ''),
+    Object.entries(st.you || {}).filter(([, v]) => v !== null && v !== false && !(Array.isArray(v) && !v.length)).map(([k]) => k).sort().join(',')].join('|');
+  let stopped = false;
+  const poll = (async () => {
+    while (!stopped) {
+      try {
+        const v = await fetch(`${srv.url}/api/debug/views?room=${code}`).then((r) => r.json());
+        if (v.host && v.host.phase !== 'lobby') {
+          const hk = shape(v.host, 'host'); if (!seen.has(hk)) seen.set(hk, { kind: 'host', state: shrink(v.host) });
+          for (const p of v.players || []) { const pk = shape(p, 'player'); if (!seen.has(pk)) seen.set(pk, { kind: 'player', state: shrink(p) }); }
+        }
+      } catch (e) { /* server busy: next time */ }
+      await new Promise((r) => setTimeout(r, 60));
+    }
+  })();
+  return {
+    async stop() {
+      stopped = true;
+      await poll;
+      fs.mkdirSync(process.env.SNAP_DIR || '.', { recursive: true });
+      fs.writeFileSync(path.join(process.env.SNAP_DIR || '.', `${gameId}.json`), JSON.stringify([...seen.values()]));
+    },
+  };
+}
 
 test('bot brain answers every input screen a phone can show', () => {
   const screens = [
@@ -50,6 +97,8 @@ test('bot brain answers every input screen a phone can show', () => {
     { phase: 'tel-reveal', gameState: { favOpen: true, entries: [{ ok: false }, { ok: true }] }, you: { fav: null, canFav: true } },
     { phase: 'mg-play', gameState: { mini: 'quickdraw', sub: 'go' }, you: { done: false, early: false } },
     { phase: 'night-vote', gameState: { options: [{}, {}, {}] }, you: { voted: false } },
+    { phase: 'll-play', gameState: { scene: 'fireflies' }, you: { pos: [10, 10], target: [100, 50] } },
+    { phase: 'lc-song', gameState: { serverNow: 5000, sched: { barMs: 1000, steps: 8, phrases: [{ steps: [0, 4], echoAt: 3000 }] } }, you: { tapped: [], judged: [] } },
   ];
   for (const s of screens) assert.ok(decide(s), `no decision for ${s.phase}`);
   assert.deepStrictEqual(decide(screens[5]).payload, { fav: 1 }, 'never favourites a step it may not pick');

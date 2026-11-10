@@ -11,8 +11,8 @@ COPY server.js ./
 COPY games ./games
 COPY public ./public
 COPY content ./content
-# Offline narrator voice for the TV (/api/tts).
-RUN apk add --no-cache espeak-ng
+# Offline narrator voice for the TV (/api/tts); openssl makes the https certificate for tilt controls.
+RUN apk add --no-cache espeak-ng openssl
 RUN mkdir -p /app/data /app/music && chown node:node /app/data /app/music
 
 EXPOSE 3000

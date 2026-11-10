@@ -23,12 +23,22 @@ step "2/5 type checks (tsc --checkJs on JS, mypy --strict on Python)"
 "$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-pip:/root/.cache/pip docker.io/library/python:3.12-slim sh -c '
   pip install -q mypy==1.13.0 2>/dev/null; cd /src && mypy --strict --cache-dir=/tmp/mypy tools/*.py'
 
-step "3/5 unit + integration tests (node --test)"
-"$CT" run --rm -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
+step "3/5 unit + integration tests (node --test, with coverage ≥ 80%)"
+# Bots play only the games changed or added since the last commit (BOT_GAMES=all to play every
+# game; CI does). A game counts as changed when its module games/<id>.js changed.
+if [ -z "${BOT_GAMES:-}" ]; then
+  BOT_GAMES=$( { git -C "$ROOT" diff --name-only HEAD 2>/dev/null; git -C "$ROOT" ls-files --others --exclude-standard 2>/dev/null; } \
+    | sed -n 's#^games/\([a-z0-9]*\)\.js$#\1#p' | sort -u | paste -sd, -)
+  BOT_GAMES=${BOT_GAMES:-none}
+fi
+echo "bots will play: $BOT_GAMES"
+mkdir -p "$ROOT/test/ui/snapshots"
+"$CT" run --rm -e BOT_GAMES="$BOT_GAMES" -e SNAP_DIR=/snapshots -v "$ROOT/test/ui/snapshots":/snapshots:Z -v "$ROOT":/src:ro,Z -v homejack-npm:/root/.npm "$NODE_IMG" sh -c '
+  (command -v openssl >/dev/null || apk add --no-cache -q openssl >/dev/null 2>&1 || true) &&
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
   npm run -s typecheck && echo "tsc: 0 errors" && npm run -s lint && echo "eslint: 0 problems" &&
   node tools/strict-ratchet.js &&
-  node --test --test-concurrency=4 test/unit/'
+  npx c8 node --test --test-concurrency=4 --test-timeout=240000 test/unit/'
 
 fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi

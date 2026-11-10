@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Full test suite (podman containers, like the dev machine)
-        run: ./scripts/test-all.sh
+        run: BOT_GAMES=all ./scripts/test-all.sh
       - name: Keep browser screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4

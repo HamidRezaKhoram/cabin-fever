@@ -183,6 +183,9 @@ class BaseGame {
     };
   }
 
+  /** Real-time games stream compact frames to the TV only (set by the server). @param {Record<string, any>} data */
+  frame(data) {}
+
   // ---- implemented by each game -------------------------------------------
   /** @returns {string[]} phases where a majority may vote to skip the question */
   get skippablePhases() { return []; }

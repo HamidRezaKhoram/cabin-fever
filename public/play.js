@@ -150,6 +150,12 @@ gameView.addEventListener('click', (e) => {
 // Prefill from QR link (?code=ABCD) and from last time.
 const params = new URLSearchParams(location.search);
 if (params.get('code')) codeInput.value = params.get('code').toUpperCase().slice(0, 4);
+// ?seat=CODE.TOKEN: the same seat on the other address (http ↔ https for tilt controls).
+const seatParam = /^([A-Z]{4})\.([0-9a-f]{16,64})$/.exec(params.get('seat') || '');
+if (seatParam) {
+  store('rumpus.seat', { code: seatParam[1], token: seatParam[2] });
+  history.replaceState(null, '', '/play');
+}
 nickInput.value = store('rumpus.nick') || '';
 if (codeInput.value && !nickInput.value) setTimeout(() => nickInput.focus(), 50);
 

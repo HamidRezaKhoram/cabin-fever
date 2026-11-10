@@ -534,6 +534,7 @@ body[data-theme="mostlikely"] { --accent: #ff9bb5; --accent2: #ffe0a0; --panel: 
 body[data-theme="imposter"]   { --accent: #ff5050; --accent2: #b8f0a0; --panel: #152319; --panel2: #223828; }
 body[data-theme="twotruths"]  { --accent: #b0c8ff; --accent2: #ffd27a; --panel: #0c1836; --panel2: #152a58; }
 body[data-theme="crush"]      { --accent: #ff8fb3; --accent2: #ffe6f0; --panel: #3d1248; --panel2: #53185c; }
+body[data-theme="lantern"]    { --accent: #ffb74d; --accent2: #fff3e0; --panel: #13284a; --panel2: #1b3c6a; }
 body[data-theme="looncall"]   { --accent: #7fe3d0; --accent2: #e6fff9; --panel: #0f2a3d; --panel2: #163a52; }
 body[data-theme="telephone"]  { --accent: #ffe066; --accent2: #ffffff; --panel: #5a2a08; --panel2: #7e3d0c; }
 body[data-theme="cah"]        { --accent: #ffffff; --accent2: #ff6040; --panel: #220808; --panel2: #3c0d0d; }
@@ -703,3 +704,14 @@ body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: 
 .lc-tap.go { background: #ffd23f; color: #1a1423; }
 .lc-tap.hit { animation: lc-press 0.1s steps(3); }
 @keyframes lc-press { 50% { transform: scale(0.96); } }
+
+/* ---------- Lantern Lake (tilt) ---------- */
+.ll-title { margin-bottom: 0.2em; }
+.ll-lake { width: min(100%, 128vh); aspect-ratio: 16 / 9; image-rendering: pixelated; box-shadow: 0 0 0 6px var(--edge), 0 0 0 12px var(--panel); display: block; margin: 1vh auto; }
+.ll-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 1vh 2.4vh; margin-top: 1vh; }
+.ll-chip { display: inline-flex; align-items: center; gap: 0.4em; border-bottom: 0.6vh solid var(--c); font-size: 3vh; }
+.ll-you { border-left: 8px solid var(--c); padding-left: 8px; }
+.ll-arrow { display: inline-block; color: var(--accent); }
+.ll-pad { position: relative; width: min(78vw, 46vh); aspect-ratio: 1; margin: 12px auto; border-radius: 50%; background: radial-gradient(circle, var(--panel2) 0 60%, var(--panel) 61%); box-shadow: 0 0 0 4px var(--edge); touch-action: none; user-select: none; -webkit-user-select: none; }
+.ll-knob { position: absolute; left: 35%; top: 35%; width: 30%; height: 30%; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px var(--edge), 0 0 24px var(--c); pointer-events: none; }
+.ll-modes { text-align: center; }

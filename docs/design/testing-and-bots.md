@@ -18,6 +18,20 @@ phones, plus /admin and /highlights driven through the real links). Flags: `UI_O
   A static test now requires every `RUMPUS_*_MS/MIN/MAX/WINDOW` timer to be scaled in
   `test/playtest.js`, and the report names where the worst idle happens (`worstIdleAt`).
 
+## Coverage (enforced, ≥ 80%)
+- Server + game code: `c8` around the unit tests (`.c8rc.json`: lines, branches, functions,
+  statements ≥ 80%). Report in `coverage/` (gitignored). Now ≈ 96% lines.
+- Client code: the browser test collects Chrome's V8 coverage on every TV/phone page and fails
+  under 80% (`CLIENT_COVERAGE_MIN`). Now ≈ 90%.
+- **Screen snapshots** (`test/ui/snapshots/<game>.json`): while bots play a game, every distinct
+  TV/phone screen is recorded from `/api/debug/views`; the browser test pushes every snapshot of
+  every game through the real page code. Commit refreshed snapshots with the change.
+
+## Which games the bots play
+`test-all.sh` plays only the games whose module (`games/<id>.js`) changed or was added since the
+last commit — `BOT_GAMES=all ./scripts/test-all.sh` plays every game (CI does), `BOT_GAMES=trivia,crush`
+picks some. Their snapshots are re-recorded as they play.
+
 ## Bots — one brain, three uses
 `games/bot-brain.js` decides what a player sends on any phone screen (every game, every
 mechanic). Teach it every new screen; `test/unit/bots.test.js` makes bots finish every game.

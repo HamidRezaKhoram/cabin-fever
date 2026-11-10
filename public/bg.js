@@ -35,6 +35,7 @@
     twotruths:  { sky: ['#050816', '#081026', '#0c1836', '#102046', '#152a58', '#1b356a', '#22417c'], hills: '#0b1430', pines: '#03060f', lake: ['#08102a', '#0a1432', '#0c183a', '#0e1c42'], orb: '#f0f4ff', orbShade: '#c0ccf0', stars: true, fly: '#b0c8ff', glow: '220,230,255', window: '#ffd27a' },
     telephone:  { sky: ['#3a1a05', '#5a2a08', '#7e3d0c', '#a35411', '#c76d18', '#e68a24', '#ffaa3a'], hills: '#4a2a12', pines: '#2a1406', lake: ['#5a2e0e', '#6a3812', '#7a4216', '#8a4c1a'], orb: '#fff0b0', orbShade: '#ffd870', stars: false, fly: '#fff3a0', glow: '255,230,160', window: '#fff0a0' },
     cah:        { sky: ['#0a0303', '#160505', '#220808', '#2e0a0a', '#3c0d0d', '#4b1010', '#5a1414'], hills: '#1a0606', pines: '#050101', lake: ['#160404', '#1c0606', '#220808', '#280a0a'], orb: '#ffd0c0', orbShade: '#e09080', stars: true, fly: '#ff6040', glow: '255,160,140', window: '#ff8050' },
+    lantern:    { sky: ['#1b1030', '#2a1640', '#3d1f4f', '#57285a', '#7a345e', '#a1455e', '#c9605a'], hills: '#1a1028', pines: '#0d0816', lake: ['#162a4c', '#193055', '#1c365e', '#1f3c67'], orb: '#ffd9a0', orbShade: '#ffb870', stars: true, fly: '#ffd23f', glow: '255,200,120', window: '#ffcf80' },
     looncall:   { sky: ['#0b1630', '#10203f', '#162b4f', '#1d3760', '#264570', '#30537f', '#3d628c'], hills: '#0f1e33', pines: '#08121f', lake: ['#12304d', '#153657', '#183c61', '#1b426b'], orb: '#f4f1e8', orbShade: '#cfd2dc', stars: true, fly: '#7fe3d0', glow: '200,255,240', window: '#ffe9a8' },
     crush:      { sky: ['#1a0820', '#2a0d33', '#3d1248', '#53185c', '#6b1f6c', '#86287a', '#a33486'], hills: '#2a0b2e', pines: '#140516', lake: ['#2a0c33', '#33103d', '#3c1447', '#451851'], orb: '#ffd6e8', orbShade: '#ffa8cc', stars: true, fly: '#ff8fb3', glow: '255,170,210', window: '#ffb0d0' },
     minigames:  { sky: ['#0a6fb0', '#1580c0', '#2391cf', '#35a2dc', '#4ab3e6', '#62c3ee', '#7dd2f4'], hills: '#2f8f5a', pines: '#14603a', lake: ['#1a78c8', '#176ebc', '#1464b0', '#115aa4'], orb: '#fff4a0', orbShade: '#ffe060', stars: false, fly: '#ffffff', glow: '255,255,220', window: '#fff6c8' },
@@ -112,6 +113,11 @@
       for (const x of [164, 186]) { R(g, x, 106, 10, 3, '#e83f5b'); R(g, x, 109, 10, 2, '#b8283f'); R(g, x + 1, 111, 2, 9, '#8a1e30'); R(g, x + 7, 111, 2, 9, '#8a1e30'); }
       for (const [dx, dy] of [[0, 0], [6, 0], [-3, 3], [9, 3], [-3, 6], [9, 6], [0, 9], [6, 9], [3, 12]]) R(g, 178 + dx, 60 + dy, 5, 5, '#ff8fb3');
     },
+    lantern(g) { // paper lantern-boats drifting on the dusk lake
+      for (const [x, y, c] of /** @type {[number, number, string][]} */ ([[70, 140, '#ff8a3d'], [150, 152, '#4fc3f7'], [250, 136, '#ffd23f']])) {
+        R(g, x - 6, y, 12, 2, c); R(g, x - 5, y + 2, 10, 1, '#1a1423'); R(g, x, y - 7, 1, 7, '#8a5a3b'); R(g, x + 1, y - 7, 4, 6, '#f4f1e8'); D(g, x - 3, y - 3, 2, '#ffd23f');
+      }
+    },
     looncall(g) { // a loon floating on the moonlit lake
       R(g, 196, 126, 22, 5, '#1a1423'); R(g, 198, 124, 18, 3, '#2b2d42');
       for (let x = 199; x < 214; x += 3) R(g, x, 125, 1, 1, '#f4f1e8');
@@ -167,6 +173,10 @@
         const y = 110 - ((t * 0.6 + i * 23) % 80), x = 170 + i * 6 + Math.round(Math.sin(t / 9 + i) * 4);
         R(g, x, y, 2, 2, '#ff8fb3'); R(g, x + 3, y, 2, 2, '#ff8fb3'); R(g, x + 1, y + 2, 3, 2, '#ff8fb3');
       }
+    },
+    lantern(g, t) { // lantern glows breathing + fireflies over the water
+      for (const [x, y, p] of [[67, 137, 0], [147, 149, 2], [247, 133, 4]]) { const a = 0.12 + 0.08 * Math.sin(t / 10 + p); g.fillStyle = `rgba(255,200,90,${a.toFixed(2)})`; g.fillRect(x - 6, y - 6, 12, 12); }
+      for (let i = 0; i < 7; i++) { const x = (i * 47 + Math.sin(t / 20 + i) * 12 + 400) % W, y = 100 + Math.sin(t / 13 + i * 2) * 12; if ((Math.floor(t / 3) + i * 5) % 14 < 10) R(g, x, y, 1, 1, '#ffd23f'); }
     },
     looncall(g, t) { // music notes rising from the loon + moon ripples
       for (let i = 0; i < 3; i++) {

@@ -629,6 +629,221 @@
     },
   });
 
+  // ---------------------------------------------------------------- Lantern Lake (tilt)
+  // Boat colours: warm paper-lantern hues, distinct at a glance (and okay for colour-blind eyes).
+  const LL_COLOURS = ['#ff8a3d', '#4fc3f7', '#ffd23f', '#e57399', '#7ed957', '#b39ddb', '#f4f1e8', '#ff5e5e', '#5ed6c3', '#c9a27a', '#9fa8da', '#ffb74d'];
+  /** @type {Map<string, HTMLImageElement>} */
+  const llImgs = new Map();
+  /** @param {string} nick */
+  const llImg = (nick) => {
+    let im = llImgs.get(nick);
+    const url = window.Rumpus.avUrl(nick);
+    if (!im || im.dataset.src !== url) { im = new Image(); im.src = url; im.dataset.src = url; llImgs.set(nick, im); }
+    return im;
+  };
+  /** Effects that outlive a frame: bump rings and catch sparkles. @type {{ x: number, y: number, t: number, kind: string, who: number }[]} */
+  let llFx = [];
+  /** Wake trails per boat. @type {number[][][]} */
+  let llTrails = [];
+  let llLastFrame = -1;
+  /** @type {string[]} */
+  let llNames = [];
+  let llSfxAt = 0;
+
+  /** Draw one frame of the lake. Pixel art: everything is whole-pixel rects at S× scale. */
+  function llDraw(/** @type {HTMLCanvasElement} */ cv, /** @type {number} */ tick) {
+    const f = window.Rumpus.frame;
+    const g = cv.getContext('2d');
+    if (!g) return;
+    const S = 3, W = 320, H = 180;
+    const R = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h, /** @type {string} */ c) => { g.fillStyle = c; g.fillRect(Math.round(x) * S, Math.round(y) * S, Math.max(1, Math.round(w)) * S, Math.max(1, Math.round(h)) * S); };
+    // Water: deep dusk bands with drifting glints.
+    const bands = ['#13284a', '#152d52', '#17325a', '#193762', '#1b3c6a'];
+    bands.forEach((c, i) => R(0, (i * H) / bands.length, W, H / bands.length + 1, c));
+    for (let i = 0; i < 40; i++) {
+      const x = (i * 53 + tick * (0.3 + (i % 3) * 0.1)) % W, y = (i * 37) % H;
+      if ((tick + i * 7) % 60 < 40) R(x, y, 3 + (i % 3), 1, 'rgba(160,200,255,0.18)');
+    }
+    if (!f) return;
+    // A new server frame: remember wakes and new effects.
+    if (f.n !== llLastFrame) {
+      llLastFrame = f.n;
+      (f.boats || []).forEach((/** @type {number[] | null} */ b, /** @type {number} */ i) => {
+        if (!b) return;
+        const tr = llTrails[i] = llTrails[i] || [];
+        if (Math.hypot(b[2], b[3]) > 0.4 && f.n % 3 === 0) tr.push([b[0] - b[2] * 2, b[1] - b[3] * 2, tick]);
+        while (tr.length > 14) tr.shift();
+      });
+      for (const b of f.bumps || []) llFx.push({ x: b[0], y: b[1], t: tick, kind: 'bump', who: -1 });
+      for (const c of f.caught || []) llFx.push({ x: c[0], y: c[1], t: tick, kind: c[3] ? 'gold' : 'fly', who: c[2] });
+      const now = Date.now();
+      if (now - llSfxAt > 120) {
+        if ((f.caught || []).length) { window.Rumpus.sfx.coin(); llSfxAt = now; } else if ((f.bumps || []).length) { window.Rumpus.sfx.pop(); llSfxAt = now; }
+      }
+    }
+    // Moonbeam: a shimmering column of light on the water.
+    if (f.moon) {
+      const [mx, my, mr] = f.moon;
+      for (let y = -mr; y <= mr; y += 2) {
+        const w = Math.sqrt(Math.max(0, mr * mr - y * y)) * 2;
+        const sh = Math.sin((tick + y) / 4) * 2;
+        R(mx - w / 2 + sh, my + y, w, 1, (y / 2) % 2 ? 'rgba(244,241,232,0.30)' : 'rgba(255,240,190,0.20)');
+      }
+    }
+    for (const r of f.rocks || []) { const [x, y, rr] = r; for (let k = -rr; k <= rr; k++) { const w = Math.sqrt(rr * rr - k * k) * 2; R(x - w / 2, y + k, w, 1, k < 0 ? '#7d8597' : '#5c6373'); } R(x - rr / 2, y - rr / 2, rr / 3, 1, '#a9b0bf'); }
+    // Wakes
+    llTrails.forEach((tr) => tr.forEach((p) => { const age = (tick - p[2]) / 30; if (age < 1.2) { const w = 4 + age * 8; R(p[0] - w / 2, p[1], w, 1, `rgba(200,230,255,${0.35 * (1 - age / 1.2)})`); } }));
+    // Fireflies blink and glow.
+    for (const fl of f.flies || []) {
+      const [x, y, gold] = fl;
+      const on = (tick + Math.round(x * 7)) % 24 < 18;
+      R(x - 3, y - 3, 6, 6, gold ? 'rgba(255,210,63,0.22)' : 'rgba(200,255,140,0.16)');
+      R(x - 1, y - 1, 2, 2, on ? (gold ? '#ffd23f' : '#d7ff8a') : '#8aa05a');
+    }
+    for (const l of f.lanterns || []) {
+      const [x, y] = l; const bob = Math.round(Math.sin((tick + x) / 8));
+      R(x - 5, y - 5 + bob, 10, 10, 'rgba(255,140,60,0.20)'); R(x - 2, y - 3 + bob, 4, 5, '#ff7043'); R(x - 1, y - 4 + bob, 2, 1, '#3e2723'); R(x - 1, y - 1 + bob, 2, 1, '#ffd23f');
+    }
+    // Boats: a little paper boat in the player's colour, a lantern glow, their face on board.
+    (f.boats || []).forEach((/** @type {number[] | null} */ b, /** @type {number} */ i) => {
+      if (!b) return;
+      const [x, y] = b; const c = LL_COLOURS[i % LL_COLOURS.length]; const bob = Math.round(Math.sin((tick + i * 9) / 7));
+      R(x - 9, y - 8 + bob, 18, 18, 'rgba(255,200,120,0.10)');
+      R(x - 7, y + 2 + bob, 14, 2, c); R(x - 6, y + 4 + bob, 12, 1, c); R(x - 5, y + 5 + bob, 10, 1, '#1a1423');
+      const im = llImg(llNames[i] || '');
+      if (im.complete && im.naturalWidth) { g.imageSmoothingEnabled = false; g.drawImage(im, Math.round(x - 5) * S, Math.round(y - 9 + bob) * S, 10 * S, 10 * S); }
+      R(x + 6, y - 2 + bob, 2, 2, (tick + i) % 30 < 26 ? '#ffd23f' : '#ffb02e');
+    });
+    if (f.raft) {
+      const [x, y, vx, vy] = f.raft;
+      for (let k = 0; k < 4; k++) R(x - 14, y - 10 + k * 5, 28, 4, k % 2 ? '#8a5a3b' : '#9c6b47');
+      R(x - 14, y - 10, 2, 20, '#5d3a22'); R(x + 12, y - 10, 2, 20, '#5d3a22');
+      llNames.forEach((n, i) => { const im = llImg(n); if (im.complete && im.naturalWidth) g.drawImage(im, Math.round(x - 12 + (i % 4) * 6) * S, Math.round(y - 9 + Math.floor(i / 4) * 7) * S, 7 * S, 7 * S); });
+      // Where the crew is pulling (the average of every phone's tilt).
+      const sp = Math.hypot(vx, vy);
+      if (sp > 0.2) for (let k = 1; k <= 3; k++) R(x + (vx / sp) * (16 + k * 4), y + (vy / sp) * (16 + k * 4), 2, 2, '#ffd23f');
+    }
+    // Effects
+    llFx = llFx.filter((e) => tick - e.t < 24);
+    for (const e of llFx) {
+      const a = (tick - e.t) / 24;
+      if (e.kind === 'bump') { const r = 4 + a * 12; for (let k = 0; k < 8; k++) R(e.x + Math.cos(k * 0.785) * r, e.y + Math.sin(k * 0.785) * r, 1, 1, `rgba(255,255,255,${1 - a})`); }
+      else { for (let k = 0; k < 6; k++) R(e.x + Math.cos(k * 1.05 + a * 3) * a * 10, e.y + Math.sin(k * 1.05 + a * 3) * a * 10 - a * 6, 1, 1, e.kind === 'gold' ? '#ffd23f' : '#d7ff8a'); }
+    }
+  }
+
+  // The 30 fps clock draws the lake whenever its canvas is on screen.
+  window.Rumpus.clock.add((tick) => {
+    const cv = /** @type {HTMLCanvasElement | null} */ (document.querySelector('canvas.ll-lake'));
+    if (cv) llDraw(cv, tick);
+  });
+
+  // ---- phone controller: tilt (secure pages) or touch steering (always works)
+  /** @type {{ mode: 'touch' | 'tilt', zero: number[] | null, vec: number[], sentAt: number, sent: string, https: string[] | null, trail: number }} */
+  const llCtl = { mode: 'touch', zero: null, vec: [0, 0], sentAt: 0, sent: '', https: null, trail: 0 };
+  /** Send the current vector at most 15×/s, and only when it changed. @param {(p: any) => void} send */
+  function llSend(send) {
+    const now = Date.now();
+    const key = llCtl.vec.map((v) => v.toFixed(2)).join();
+    if (key === llCtl.sent) return;
+    // Throttled to 15/s; a trailing send makes sure the last position always arrives (the server keeps it).
+    if (now - llCtl.sentAt < 66) { clearTimeout(llCtl.trail); llCtl.trail = window.setTimeout(() => llSend(send), 70); return; }
+    llCtl.sent = key; llCtl.sentAt = now;
+    send({ tilt: llCtl.vec });
+  }
+  const llSecureLink = () => {
+    const seat = window.Rumpus.store('rumpus.seat');
+    const list = llCtl.https || [];
+    const base = list.find((u) => u.includes('//' + location.hostname + ':')) || list[0];
+    return base && seat ? `${base}/play?seat=${encodeURIComponent(seat.code)}.${encodeURIComponent(seat.token)}` : '';
+  };
+
+  register('lantern', {
+    host(s) {
+      const g = s.gameState;
+      llNames = (g.boats || []).map((/** @type {{ nickname: string }} */ b) => b.nickname);
+      const tag = `<p class="round-tag">Scene ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+      if (s.phase === 'll-result') {
+        const r = g.result;
+        return `${tag}<h1>${esc(r.name)}</h1>${r.haul !== null ? `<p class="big-sub">🏮 The raft caught ${r.haul} lantern${r.haul === 1 ? '' : 's'}!</p>` : ''}
+          <ol class="answers">${r.rows.map((/** @type {any} */ x, /** @type {number} */ i) => `<li class="${i === 0 ? 'winner' : ''}">${av(x.nickname)} ${esc(x.nickname)} <span class="votes">+${x.gained}</span></li>`).join('')}</ol>`;
+      }
+      if (s.phase === 'll-intro') { llTrails = []; llFx = []; window.Rumpus.frame = null; }
+      const strip = (g.boats || []).map((/** @type {{ nickname: string, gained: number }} */ b, /** @type {number} */ i) => `<span class="ll-chip" style="--c:${LL_COLOURS[i % LL_COLOURS.length]}">${av(b.nickname)} ${esc(b.nickname)} <b>${b.gained}</b></span>`).join('');
+      return `${tag}<h1 class="ll-title">${esc(g.sceneName)}</h1><p class="big-sub">${esc(g.rule)} ${s.phase === 'll-play' ? T : ''}</p>
+        <canvas class="ll-lake" width="960" height="540"></canvas>
+        <div class="ll-strip">${strip}</div>`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      if (s.phase === 'll-result') return `<h1>${esc(g.result.name)}</h1><p class="prompt">+${you.result ? you.result.gained : 0} points</p>`;
+      const colour = LL_COLOURS[(you.colour >= 0 ? you.colour : 0) % LL_COLOURS.length];
+      const tiltAvail = window.isSecureContext && 'DeviceOrientationEvent' in window;
+      const link = !tiltAvail ? llSecureLink() : '';
+      let arrow = '';
+      if (you.pos && you.target) {
+        const ang = Math.atan2(you.target[1] - you.pos[1], you.target[0] - you.pos[0]) * 180 / Math.PI;
+        arrow = `<span class="ll-arrow" style="transform:rotate(${Math.round(ang / 15) * 15}deg)">➤</span>`;
+      }
+      return `<p class="round-tag">${esc(g.sceneName)}</p>
+        <p class="ll-you" style="--c:${colour}">⛵ Your boat · <b>${you.gained}</b> pts ${arrow}</p>
+        <div class="ll-pad" data-live style="--c:${colour}"><div class="ll-knob"></div></div>
+        <div class="ll-modes">
+          ${tiltAvail ? `<button class="ghost-btn" data-ll="tilt">${llCtl.mode === 'tilt' ? '📱 Tilt on — tap to re-centre' : '📱 Use tilt instead'}</button>`
+            : link ? `<a class="ghost-btn" href="${esc(link)}">📱 Use tilt (opens the secure link)</a>` : ''}
+          <p class="hint">${llCtl.mode === 'tilt' ? 'Tilt your phone to glide. Hold it flat to stop.' : 'Drag on the circle to steer.'}</p>
+        </div>`;
+    },
+    bind(root, api) {
+      if (llCtl.https === null) {
+        llCtl.https = [];
+        fetch('/api/info').then((r) => r.json()).then((d) => { llCtl.https = d.https || []; }).catch(() => {});
+      }
+      const pad = /** @type {HTMLElement | null} */ (root.querySelector('.ll-pad'));
+      if (!pad) return;
+      const knob = /** @type {HTMLElement} */ (pad.querySelector('.ll-knob'));
+      const show = () => { knob.style.transform = `translate(${Math.round(llCtl.vec[0] * 40)}%, ${Math.round(llCtl.vec[1] * 40)}%)`; };
+      /** @param {PointerEvent} e */
+      const fromPointer = (e) => {
+        const r = pad.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+        const m = Math.hypot(x, y);
+        llCtl.mode = 'touch';
+        llCtl.vec = m > 1 ? [x / m, y / m] : [x, y];
+        show(); llSend(api.send);
+      };
+      pad.addEventListener('pointerdown', (e) => { e.preventDefault(); pad.setPointerCapture(e.pointerId); fromPointer(e); });
+      pad.addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') fromPointer(e); });
+      const stop = () => { if (llCtl.mode === 'touch') { llCtl.vec = [0, 0]; show(); llCtl.sentAt = 0; llSend(api.send); } };
+      pad.addEventListener('pointerup', stop); pad.addEventListener('pointercancel', stop);
+      // Tilt: beta (front/back) and gamma (left/right), relative to how you held it when you turned it on.
+      /** @param {DeviceOrientationEvent} e */
+      const onTilt = (e) => {
+        if (llCtl.mode !== 'tilt' || e.beta === null || e.gamma === null) return;
+        const turn = (screen.orientation && screen.orientation.angle) || 0;
+        let gx = e.gamma, by = e.beta;
+        if (turn === 90) [gx, by] = [e.beta, -e.gamma]; else if (turn === 270 || turn === -90) [gx, by] = [-e.beta, e.gamma];
+        if (!llCtl.zero) llCtl.zero = [gx, by];
+        const x = (gx - llCtl.zero[0]) / 25, y = (by - llCtl.zero[1]) / 25;
+        const m = Math.hypot(x, y);
+        llCtl.vec = m > 1 ? [x / m, y / m] : [x, y];
+        show(); llSend(api.send);
+      };
+      window.addEventListener('deviceorientation', onTilt);
+      api.onCleanup(() => window.removeEventListener('deviceorientation', onTilt));
+      const btn = root.querySelector('[data-ll="tilt"]');
+      if (btn) btn.addEventListener('click', async () => {
+        const DOE = /** @type {any} */ (window.DeviceOrientationEvent);
+        if (DOE && typeof DOE.requestPermission === 'function') {
+          try { if ((await DOE.requestPermission()) !== 'granted') return; } catch (err) { return; }
+        }
+        llCtl.mode = 'tilt'; llCtl.zero = null; // re-centre on the next reading
+        btn.textContent = '📱 Tilt on — tap to re-centre';
+      });
+      show();
+    },
+  });
+
   // ---------------------------------------------------------------- Game night
   /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number }[] }} NightView */
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */

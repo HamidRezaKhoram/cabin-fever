@@ -9,6 +9,7 @@ services:
     network_mode: host
     environment:
       PORT: "8012"
+      RUMPUS_HTTPS_PORT: "8443"        # secure twin for phone tilt controls (self-signed cert in ./data/certs)
       MAX_PLAYERS: "12"
       RUMPUS_SPICY_DEFAULT: "true"   # 18+ prompts on by default (toggle on the TV)
       # PUBLIC_URL: "http://192.168.0.10:8012"   # force the join address if needed
