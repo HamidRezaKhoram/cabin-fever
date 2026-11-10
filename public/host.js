@@ -114,7 +114,14 @@ function joinUrl(withCode) {
   return baseUrl + '/play' + (withCode && roomCode ? '?code=' + roomCode : '');
 }
 
+const startJoin = document.getElementById('start-join');
 function updateJoinInfo() {
+  if (roomCode) {
+    /** @type {HTMLImageElement} */ (document.getElementById('start-qr')).src = '/qr.svg?data=' + encodeURIComponent(joinUrl(true));
+    document.getElementById('start-code').textContent = roomCode;
+    document.getElementById('start-addr').textContent = joinUrl(false).replace(/^https?:\/\//, '');
+    startJoin.hidden = false;
+  }
   if (state && (state.phase === 'lobby' || state.phase === 'gameover')) render();
 }
 

@@ -242,6 +242,14 @@ body.offline #offline-banner { display: block; }
 #start-overlay .press { font-family: var(--pixel); font-size: clamp(16px, 3vw, 34px); color: var(--accent); text-shadow: 4px 4px 0 var(--edge); animation: blink 1s steps(30) infinite; text-align: center; line-height: 1.8; }
 #start-overlay .logo { font-family: var(--pixel); font-size: clamp(28px, 7vw, 90px); color: var(--accent2); text-shadow: 6px 6px 0 var(--edge), -2px -2px 0 var(--purple); margin-bottom: 30px; }
 #start-overlay[hidden] { display: none; }
+#start-overlay { grid-auto-flow: column; gap: 6vw; align-content: center; justify-content: center; }
+.start-join { display: flex; flex-direction: column; align-items: center; gap: 1.2vh; }
+.start-join[hidden] { display: none; }
+.start-qr { width: min(52vh, 38vw); height: min(52vh, 38vw); background: #fff; padding: 1.2vh; box-shadow: 0 0 0 6px var(--edge), 10px 10px 0 6px var(--edge); image-rendering: pixelated; }
+.start-code-label { color: var(--dim); font-size: max(22px, 3vh); }
+.start-code { font-family: var(--pixel); font-size: max(40px, 11vh); color: var(--accent2); letter-spacing: 0.15em; text-shadow: 6px 6px 0 var(--edge); line-height: 1; }
+.start-addr { font-size: max(22px, 3.4vh); color: var(--ink); }
+@media (max-aspect-ratio: 1/1) { #start-overlay { grid-auto-flow: row; } }
 
 /* ---------- FX ---------- */
 canvas.wipe, canvas.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; display: none; image-rendering: pixelated; }

@@ -36,9 +36,16 @@
   </aside>
 
   <div id="start-overlay">
-    <div>
+    <div class="start-main">
       <div class="logo">RUMPUS</div>
       <div class="press">PRESS START<br><small>click anywhere · turns on music</small><br><small id="track-count"></small></div>
+    </div>
+    <!-- Join right away: everyone can scan while the TV is still on the title screen. -->
+    <div id="start-join" class="start-join" hidden>
+      <img id="start-qr" class="start-qr" alt="QR code to join">
+      <div class="start-code-label">Scan to join · room code</div>
+      <div id="start-code" class="start-code"></div>
+      <div id="start-addr" class="start-addr"></div>
     </div>
   </div>
   <div id="now-playing" class="now-playing"></div>
