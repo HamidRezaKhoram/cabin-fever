@@ -94,6 +94,7 @@ How we hit them (patterns that worked in the playtests):
 | Doodle Telephone | 3.9 | 2.3 | 61 s | ◐ drawing takes time by nature; favourites + who's-left row help |
 | Card Chaos | 3.0 | 3.1 | 32 s | ✅ good (czar picks the next prompt) |
 | Minigame Mayhem | 1.5 | 36 | 17 s | ✅ meets every target (the old 53–78 s was a playtest bug: Quick Draw's wait wasn't scaled); results 4.5 s, firefly guesses lock in early |
+| Loon Call (rhythm) | 3.0 | 27 | 22 s | ✅ meets every target (the caller echoes too — was 33 s) |
 | Cottage Crush | 6.2 | 6.0 | 34 s (42 s at 6p) | ✅ winks + Matchmaker/Gossip side actions fill the wait (was 53/73 s) |
 
 Next ideas if a game still feels slow: Majority — show live "answers in" avatars; Telephone —

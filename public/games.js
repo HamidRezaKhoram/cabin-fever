@@ -489,6 +489,146 @@
     },
   });
 
+  // ---------------------------------------------------------------- Loon Call (rhythm)
+  /** @typedef {{ steps: number[], by: string | null, callAt: number, echoAt: number }} LcPhrase */
+  /** @typedef {{ kind: string, name: string, bpm: number, root: number, startAt: number, barMs: number, countIn: number, endAt: number, clicks: number[], phrases: LcPhrase[], caller: string | null, steps: number }} LcSched */
+  /** @type {LcSched | null} the schedule on screen (TV or phone) */
+  let lcSched = null;
+  let lcScheduledAt = 0;
+  // A little melody for the lead loon: the pitch follows the step in the bar.
+  const LC_PITCH = [1, 1.125, 1.25, 1.333, 1.5, 1.333, 1.25, 1.125];
+
+  /** TV: schedule every sound of a schedule on the Web Audio clock (sample-accurate). @param {LcSched} s */
+  function lcScheduleAudio(s) {
+    const m = window.Rumpus.music;
+    if (!m || !m.rhythm || !m.rhythm.ready() || lcScheduledAt === s.startAt) return;
+    lcScheduledAt = s.startAt;
+    const r = m.rhythm;
+    const ctxNow = r.now(), srvNow = window.Rumpus.time.now();
+    const at = (/** @type {number} */ ms) => ctxNow + (ms - srvNow) / 1000;
+    const future = (/** @type {number} */ ms) => ms > srvNow + 20;
+    s.clicks.forEach((c, i) => { if (future(c)) r.click(at(c), i % 4 === 0); });
+    if (!s.phrases.length) return;
+    const step = s.barMs / s.steps;
+    s.phrases.forEach((p) => {
+      for (const [bar, isCall] of /** @type {[number, boolean][]} */ ([[p.callAt, true], [p.echoAt, false]])) {
+        for (let k = 0; k < s.steps; k++) {
+          const t = bar + k * step;
+          if (!future(t)) continue;
+          if (k % 4 === 0) r.kick(at(t));
+          r.hat(at(t));
+          if (k === 0) r.bass(at(t), s.root / 4);
+          if (k === 4) r.bass(at(t), (s.root / 4) * 1.5);
+        }
+        if (isCall) for (const st of p.steps) { const t = bar + st * step; if (future(t)) r.call(at(t), s.root * LC_PITCH[st % 8]); }
+      }
+    });
+  }
+
+  /** Where are we in the schedule right now? @param {LcSched} s @param {number} t */
+  function lcWhere(s, t) {
+    const beatMs = s.barMs / 4;
+    const first = s.startAt + s.countIn * s.barMs;
+    if (!s.phrases.length) { // tune-up / caller's metronome: just the clicks
+      const i = Math.floor((t - s.startAt) / beatMs);
+      // A caller's metronome: the first bar counts in, the second is theirs to fill.
+      const mode = t < s.startAt ? 'ready' : t >= s.endAt ? 'done' : s.kind === 'call' && i < 4 ? 'count' : 'clicks';
+      return { mode, beat: i, bar: Math.floor(i / 4), callNote: false };
+    }
+    if (t < first) return { mode: 'count', beat: Math.floor((t - s.startAt) / beatMs), bar: -1, callNote: false };
+    const k = Math.floor((t - first) / s.barMs);
+    if (k >= s.phrases.length * 2) return { mode: 'done', beat: 0, bar: k, callNote: false };
+    const p = s.phrases[Math.floor(k / 2)];
+    const inBar = (t - first) % s.barMs;
+    const callNote = k % 2 === 0 && p.steps.some((st) => { const d = inBar - (st * s.barMs) / s.steps; return d >= 0 && d < 140; });
+    return { mode: k % 2 === 0 ? 'call' : 'echo', beat: Math.floor(inBar / beatMs), bar: k, callNote };
+  }
+
+  // One 30 fps clock hook drives every live beat meter (TV and phone); it does nothing when none is on screen.
+  window.Rumpus.clock.add(() => {
+    const s = lcSched;
+    if (!s) return;
+    const meters = document.querySelectorAll('[data-lc-meter]');
+    const leads = document.querySelectorAll('[data-lc-lead]');
+    const taps = document.querySelectorAll('[data-lc-label]');
+    if (!meters.length && !leads.length && !taps.length) return;
+    const w = lcWhere(s, window.Rumpus.time.now());
+    const dots = (/** @type {number} */ b) => [0, 1, 2, 3].map((i) => (i === ((b % 4) + 4) % 4 ? '●' : '○')).join(' ');
+    const label = w.mode === 'call' ? `🐦 ${s.caller ? esc(s.caller) : 'CALL'}` : w.mode === 'echo' ? '🎵 ECHO!' : w.mode === 'count' ? `${4 - (((w.beat % 4) + 4) % 4)}…` : w.mode === 'clicks' ? '🥁 TAP!' : w.mode === 'ready' ? 'GET READY' : '';
+    meters.forEach((el) => {
+      const modeCls = w.mode === 'echo' ? 'lc-echo' : w.mode === 'clicks' ? 'lc-clicks' : '';
+      const html = `<span class="lc-mode ${modeCls}">${label}</span><span class="lc-dots">${w.mode === 'done' || w.mode === 'ready' ? '' : dots(w.beat)}</span>`;
+      if (el.innerHTML !== html) el.innerHTML = html;
+    });
+    leads.forEach((el) => el.classList.toggle('singing', w.callNote));
+    taps.forEach((el) => {
+      const own = /** @type {HTMLElement} */ (el).dataset.lcLabel || '';
+      const txt = own || (w.mode === 'echo' || w.mode === 'clicks' ? 'TAP!' : w.mode === 'call' ? 'LISTEN…' : w.mode === 'count' ? 'GET READY' : '…');
+      if (el.textContent !== txt) el.textContent = txt;
+      el.classList.toggle('go', w.mode === 'echo' || w.mode === 'clicks');
+    });
+  });
+
+  /** @param {any} g */
+  const lcStageTag = (g) => `<p class="round-tag">${g.sched ? esc(g.sched.name) : 'Loon Call'} · Song ${Math.max(1, g.round)} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+  const LC_HIT = /** @type {Record<string, string>} */ ({ perfect: 'hit-perfect', good: 'hit-good', miss: 'hit-miss', extra: 'hit-extra' });
+  /** The choir: every player's loon, ringed by their last tap. @param {any[]} choir */
+  const lcChoir = (choir) => `<ul class="lc-choir">${choir.map((c) => `<li class="lc-loon ${c.hit ? LC_HIT[c.hit] : ''} ${c.seq % 2 ? 'bob-a' : c.seq ? 'bob-b' : ''}">
+      ${av(c.nickname, 'avatar big')}<span class="lc-name">${esc(c.nickname)}</span>
+      <span class="lc-tag">${c.hit === 'perfect' ? 'PERFECT' : c.hit === 'good' ? (c.d > 0 ? 'LATE' : c.d < 0 ? 'EARLY' : 'GOOD') : c.hit === 'miss' ? (c.d > 0 ? 'TOO LATE' : 'TOO EARLY') : c.hit === 'extra' ? 'OOPS' : ''}</span></li>`).join('')}</ul>`;
+  const lcLead = () => {
+    const u = window.Rumpus.sprites && window.Rumpus.sprites.iconUrl('looncall');
+    return u ? `<img class="lc-lead" data-lc-lead src="${u}" alt="the lead loon">` : '';
+  };
+
+  register('looncall', {
+    host(s) {
+      const g = s.gameState;
+      lcSched = g.sched || null;
+      if (lcSched) lcScheduleAudio(lcSched);
+      if (s.phase === 'lc-result') {
+        const r = g.result;
+        return `${lcStageTag(g)}<h1>${esc(r.name)}</h1>
+          ${r.kind !== 'call' && r.sync ? `<p class="big-sub lc-sync">🎶 IN SYNC! ×${r.sync}</p>` : ''}
+          <ol class="answers lc-results">${r.rows.map((/** @type {any} */ x) => `<li class="${x.grade === 'Nailed it!' ? 'winner' : ''}">${av(x.nickname)} ${esc(x.nickname)}
+            <span class="lc-grade">${x.caller ? '🎤 caller' : x.grade ? `${esc(x.grade)} · ${x.pct}%${x.lean ? ` · a bit ${x.lean}` : ''}` : '—'}</span>
+            <span class="votes">+${x.gained}</span></li>`).join('')}</ol>`;
+      }
+      const head = s.phase === 'lc-tune'
+        ? '<h1>🎵 Tune up the choir</h1><p class="big-sub">Tap along with the clicks on your phone — this sets each phone\'s timing.</p>'
+        : s.phase === 'lc-compose'
+          ? `<h1>🎤 ${av(g.composer)} ${esc(g.composer)} writes a call</h1><p class="big-sub">Listen to the count-in… then they tap a rhythm. Everyone echoes it next!</p>`
+          : `<p class="big-sub">Listen to the call 🐦 — then echo it 🎵</p>`;
+      const syncFlash = (g.syncs || []).length ? `<p class="lc-sync" data-n="${g.syncs.length}">🎶 IN SYNC ×${g.syncs.length}</p>` : '';
+      return `${lcStageTag(g)}${head}
+        <div class="lc-stage">${lcLead()}<div class="lc-meter" data-live data-lc-meter></div></div>
+        ${lcChoir(g.choir)}${syncFlash}`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      lcSched = g.sched || null;
+      if (s.phase === 'lc-result') {
+        const r = you.result;
+        if (!r) return watchTv();
+        return `<h1>${r.caller ? '🎤 Your call!' : esc(r.grade || 'Done')}</h1>${r.pct !== null ? `<p class="prompt">${r.pct}% on the beat${r.lean ? ` — you were a bit ${r.lean}` : ''}</p>` : ''}<p>+${r.gained} points</p>`;
+      }
+      if (s.phase === 'lc-compose' && !you.isCaller) return watchTv(`<p>${esc(g.composer)} is writing a call — get ready to echo it!</p>`);
+      const sub = s.phase === 'lc-tune' ? 'Tap along with the clicks' : s.phase === 'lc-compose' ? 'Count-in, then tap your own rhythm for one bar!' : you.isCaller ? 'Your call! Echo it with everyone — you also score for every note they get right 🎤' : 'Listen to the call on the TV, then tap it back';
+      return `<p class="hint">${sub}</p><button class="mg-big lc-tap" data-live data-lc-label="" aria-label="Tap on the beat">TAP!</button>`;
+    },
+    bind(root, api) {
+      const btn = /** @type {HTMLElement | null} */ (root.querySelector('.lc-tap'));
+      if (!btn) return;
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        api.send({ tap: window.Rumpus.time.now() });
+        window.Rumpus.sfx.tick();
+        if (navigator.vibrate) navigator.vibrate(12);
+        btn.classList.remove('hit'); void btn.offsetWidth; btn.classList.add('hit');
+      });
+    },
+  });
+
   // ---------------------------------------------------------------- Game night
   /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number }[] }} NightView */
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */

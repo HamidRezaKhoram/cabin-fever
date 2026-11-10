@@ -129,7 +129,8 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     // keep checkboxes and dropdown choices in step with what the server says.
     if (x.nodeName === 'INPUT' && x.checked !== y.hasAttribute('checked') && (x.type === 'checkbox' || x.type === 'radio')) x.checked = y.hasAttribute('checked');
     if (x.nodeName === 'OPTION' && x.selected !== y.hasAttribute('selected') && y.parentNode && y.parentNode.querySelector('option[selected]')) x.selected = y.hasAttribute('selected');
-    if (x.nodeName === 'CANVAS' || x.nodeName === 'TEXTAREA') return;
+    // data-live: the element's contents are driven by the 30 fps clock (beat meters) — leave them alone.
+    if (x.nodeName === 'CANVAS' || x.nodeName === 'TEXTAREA' || /** @type {Element} */ (x).hasAttribute('data-live')) return;
     morphChildren(x, y);
   }
 
@@ -173,5 +174,40 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
   const games = {};
   function register(id, impl) { games[id] = impl; }
 
-  return { esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
+  // Server clock (NTP-style): the ping with the shortest round trip gives the best offset.
+  // Rhythm games timestamp taps with time.now() so Wi-Fi jitter never affects judging.
+  const time = (() => {
+    let offset = 0;
+    /** @type {{ rtt: number, off: number }[]} */
+    let samples = [];
+    let started = false;
+    /** @param {{ emit(ev: string, ack: (srv: unknown) => void): void }} sock */
+    function ping(sock) {
+      const t0 = Date.now();
+      sock.emit('time:ping', (/** @type {unknown} */ srv) => {
+        const t1 = Date.now();
+        if (typeof srv !== 'number') return;
+        samples.push({ rtt: t1 - t0, off: srv - (t0 + t1) / 2 });
+        samples = samples.slice(-10);
+        offset = samples.reduce((a, b) => (b.rtt < a.rtt ? b : a)).off;
+      });
+    }
+    return {
+      /** @param {{ emit(ev: string, ack: (srv: unknown) => void): void, on(ev: string, fn: () => void): void }} sock */
+      sync(sock) {
+        if (started) return;
+        started = true;
+        const burst = () => { for (let i = 0; i < 6; i++) setTimeout(() => ping(sock), i * 120); };
+        burst();
+        sock.on('connect', () => { samples = []; burst(); });
+        const again = () => { ping(sock); setTimeout(again, 15000); };
+        setTimeout(again, 15000);
+      },
+      now: () => Date.now() + offset,
+      offset: () => offset,
+      rtt: () => (samples.length ? Math.min(...samples.map((x) => x.rtt)) : null),
+    };
+  })();
+
+  return { time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })())));

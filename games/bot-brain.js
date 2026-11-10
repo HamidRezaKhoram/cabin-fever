@@ -6,7 +6,7 @@
  * AGPLv3 — see LICENSE.
  *
  * decide(view, rnd) → null (nothing to do) or
- *   { payload, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' }   — kind sets the think time.
+ *   { payload, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' }   — kind sets the think time.
  */
 'use strict';
 
@@ -34,7 +34,7 @@ function shuffleCopy(list, rnd) {
 /**
  * @param {{ phase: string, gameState?: any, you?: any }} view
  * @param {() => number} [rnd]
- * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' } | null}
+ * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' } | null}
  */
 function decide(view, rnd = Math.random) {
   const g = view.gameState || {}, you = view.you || {};
@@ -108,6 +108,23 @@ function decide(view, rnd = Math.random) {
       const fav = t.find((/** @type {{ nickname: string }} */ x) => fans.includes(x.nickname)); // date someone who wrote to you, usually
       return t.length ? tap({ pick: rnd() < 0.1 ? null : (fav && rnd() < 0.7 ? fav : pick(t, rnd)).id }) : null;
     }
+    // Loon Call: once a bar is over, send the taps a person would have made (±40 ms, the odd miss).
+    case 'lc-tune': case 'lc-compose': case 'lc-song': {
+      const s = g.sched, now = g.serverNow || 0;
+      if (!s) return null;
+      const human = (/** @type {number[]} */ ts) => ts.filter(() => rnd() > 0.08).map((t) => Math.round(t + (rnd() + rnd() + rnd() - 1.5) * 50));
+      if (view.phase === 'lc-tune') return now >= s.endAt && !you.taps ? { payload: { taps: human(s.clicks) }, kind: 'beat' } : null;
+      if (view.phase === 'lc-compose') {
+        if (!you.isCaller || you.taps || now < s.endAt) return null;
+        const bar = s.startAt + s.barMs, steps = [0, 2, 3, 4, 6].filter(() => rnd() > 0.3);
+        return { payload: { taps: [0, ...steps].map((st) => bar + (st * s.barMs) / s.steps) }, kind: 'beat' };
+      }
+      const i = s.phrases.findIndex((/** @type {{ echoAt: number }} */ p, /** @type {number} */ k) => now >= p.echoAt + s.barMs && !(you.tapped || []).includes(k) && !(you.judged || []).includes(k));
+      if (i < 0) return null;
+      const p = s.phrases[i];
+      const taps = human(p.steps.map((/** @type {number} */ st) => p.echoAt + (st * s.barMs) / s.steps));
+      return { payload: { taps: taps.length ? taps : [p.echoAt + s.barMs * 0.97] }, kind: 'beat' }; // all missed: one stray tap
+    }
     // Game night: vote on what's next
     case 'night-vote': return !you.voted && g.options && g.options.length ? tap({ choice: Math.floor(rnd() * g.options.length) }) : null;
     // Minigame Mayhem
@@ -125,6 +142,7 @@ function decide(view, rnd = Math.random) {
 function thinkMs(kind, rnd = Math.random) {
   if (kind === 'mash') return 250;
   if (kind === 'react') return 220 + rnd() * 300; // human reaction time
+  if (kind === 'beat') return 10; // rhythm taps carry their own timestamps
   if (kind === 'write') return 8000 + rnd() * 17000;
   if (kind === 'draw') return 20000 + rnd() * 30000;
   return 2000 + rnd() * 5000;
