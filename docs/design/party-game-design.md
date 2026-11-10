@@ -106,6 +106,12 @@ a 45 s draw timer option in house rules; Minigames — 8 minis by default (1.5 m
 The playtest prints `worstIdleAt` ("screen where that player last acted → where they next
 could"), so fix the screen it names instead of guessing.
 
+## Full run-through (Nov 10 2026)
+All 16 games at 4 and 6 players, with an improvement plan per game:
+`docs/future-features/game-improvement-plans.md`. Meeting every target: Lakeside Quiz, Loon Call,
+Lantern Lake, Campfire Quips. Most needed: Campfire Consensus (53–56 s waits), Message in a Bottle
+(59–69 s), then four games that end too quickly (< 2 min).
+
 ## 7. Art direction: cosy and retro (research, Nov 2026)
 Sources: cosy-game art analyses (Stardew-style warm light), lighting guides (warm key light vs cool
 shadow), pixel-art tutorials (hue shifting, limited palettes, dithering used sparingly), and the

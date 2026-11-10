@@ -20,7 +20,9 @@ jobs:
       - run: npm ci
       - name: Cache the narrator voice (Kokoro model)
         uses: actions/cache@v4
-        with: { path: vendor/kokoro, key: kokoro-${{ hashFiles('tools/fetch-kokoro.js', 'package-lock.json') }} }
+        with:
+          path: vendor/kokoro
+          key: kokoro-${{ hashFiles('tools/fetch-kokoro.js', 'package-lock.json') }}
       - name: Fetch the narrator voice (served from the site; the TV caches it on first use)
         run: node tools/fetch-kokoro.js vendor/kokoro
       - name: Build the browser version (tools/build-pages.js)

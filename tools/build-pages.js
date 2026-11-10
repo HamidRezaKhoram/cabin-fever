@@ -86,8 +86,10 @@ async function main() {
   // The narrator's natural voice, if fetched (tools/fetch-kokoro.js). Not precached: the TV loads
   // it on first use and transformers.js keeps it in the browser's cache; phones never download it.
   const voice = path.join(ROOT, 'vendor', 'kokoro');
-  if (fs.existsSync(path.join(voice, 'model', 'config.json'))) fs.cpSync(voice, path.join(OUT, 'tts'), { recursive: true });
+  const hasVoice = fs.existsSync(path.join(voice, 'model', 'config.json'));
+  if (hasVoice) fs.cpSync(voice, path.join(OUT, 'tts'), { recursive: true });
   else console.warn('narrator voice not fetched (node tools/fetch-kokoro.js): the browser voice will be used');
+  write(path.join(OUT, 'api', 'voice'), JSON.stringify({ available: hasVoice }));
 
   // 3. Content pools in one file (preloaded into the browser stand-in for fs).
   /** @type {Record<string, string>} */

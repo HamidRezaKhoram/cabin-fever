@@ -38,8 +38,9 @@
   const pending = new Map();
   const C = /** @type {any} */ (window).CABIN;
   const base = C ? '' : '/';
-  void fetch(base + 'tts/model/config.json', { method: 'HEAD' }).then((r) => {
-    if (!r.ok || typeof Worker === 'undefined') return;
+  // Ask whether this server/build has the model (a missing file would log a 404 on the TV).
+  void fetch(base + 'api/voice').then((r) => r.json()).then((/** @type {{ available?: boolean }} */ v) => {
+    if (!v || !v.available || typeof Worker === 'undefined') return;
     try {
       worker = new Worker(base + 'tts-worker.js', { type: 'module' });
       worker.onmessage = (e) => { const f = pending.get(e.data.id); pending.delete(e.data.id); if (e.data.ready) workerOk = true; if (f) f(e.data); };
