@@ -28,7 +28,7 @@ shipped in this round directly attack the idle numbers below once real players u
 1. **Doodle Telephone (81 s idle, 1 reveal).** ✅ Draw time cut to 60 s; ✅ the TV names who it's
    still waiting on; ✅ reveal entries actually show now (they were invisible — CSS bug).
    ✅ After each chain, everyone taps a favourite step (+50 to its author).
-   Still to do: for 6+ players split into two shorter chains.
+   ✅ 6+ players: two groups with shorter chains.
 2. **Two Truths (58 s).** ✅ Write phase cut to 90 s and the TV names who's still writing. Next step if still slow: split it — write *one*
    statement per mini-phase (truth, truth, lie) with 30 s each, and show a teaser on the TV
    ("Ben is lying about something…"). Add a bonus for guessing *which truth* surprised people most.
@@ -36,7 +36,7 @@ shipped in this round directly attack the idle numbers below once real players u
    during the choose phase, +50 each) so everyone has something to do; hurry vote helps.
 4. **Majority Rules (46 s, 1.9 actions/min).** ✅ Done: "how many will match you?" bet (+150 exact, +50 for "nobody"). Was: Only one action per round. Add a second tap:
    **"How many will match you?"** wager (0–N) for bonus points — doubles the decisions.
-5. **Punchline (44 s).** Authors sit out their own matchup. Let authors place a **side bet**
+5. **Punchline (44 s).** ✅ Authors place a side bet (I'll win / Landslide) while the room votes. Was: Authors sit out their own matchup. Let authors place a **side bet**
    ("I'll win by a landslide" ×2 / "I'll lose" ×0.5) and give 3-player games a final
    **everyone-answers-one-prompt** round so all three vote each time.
 6. **Odd One Out (3 reveals).** ✅ Suspicion meter + clues popping in one by one. Was: Add a mid-round "suspicion meter" on the TV that fills as votes

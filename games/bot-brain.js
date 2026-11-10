@@ -36,7 +36,9 @@ function decide(view, rnd = Math.random) {
   switch (view.phase) {
     // Punchline
     case 'answering': return !you.submitted && g.prompt ? write({ text: pick(LINES, rnd) }) : null;
-    case 'voting': return !you.isAuthor && !you.voted ? tap({ choice: rnd() < 0.5 ? 0 : 1 }) : null;
+    case 'voting':
+      if (you.isAuthor) return !you.bet && rnd() < 0.6 ? tap({ bet: rnd() < 0.7 ? 'win' : 'landslide' }) : null;
+      return !you.voted ? tap({ choice: rnd() < 0.5 ? 0 : 1 }) : null;
     // Fib Finder: lie, guess, then like a lie
     case 'fib-bluff': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
     case 'fib-choose':

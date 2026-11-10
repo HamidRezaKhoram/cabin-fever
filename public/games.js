@@ -58,6 +58,7 @@
             <div class="vs-meta"><b>${sd.pct}%</b> · ${sd.votes} vote${sd.votes === 1 ? '' : 's'} · +${sd.gained}
               <span class="voters">${sd.voters.map((n) => av(n)).join('')}</span></div>
             ${sd.shutout ? '<span class="sweep">SHUTOUT! +250</span>' : ''}
+            ${sd.bet ? `<div class="vs-meta">🎲 ${esc(sd.bet.label)}: ${sd.bet.won ? `won +${sd.bet.pts}` : `lost ${sd.bet.pts}`}</div>` : ''}
           </div>`).join('')}
         </div>`;
     },
@@ -70,7 +71,11 @@
           <p>Someone else has this prompt too — beat them.</p>${textForm('Your funniest answer…', 100)}`;
       }
       if (s.phase === 'voting') {
-        if (you.isAuthor) return `<h1>That's yours! 😬</h1><p>Sweat it out while everyone votes…</p>`;
+        if (you.isAuthor) {
+          if (you.bet) return `<h1>That's yours! 😬</h1><p>Side bet placed: <strong>${you.bet === 'landslide' ? 'Landslide' : "I'll win"}</strong>. Sweat it out…</p>`;
+          return `<h1>That's yours! 😬</h1><p>Place a side bet while everyone votes:</p><div class="vote-list">
+            ${sendBtn({ bet: 'win' }, "🤞 I'll win · +100 / −50")}${sendBtn({ bet: 'landslide' }, '🔥 Landslide (75%+) · +250 / −100')}</div>`;
+        }
         if (you.voted) return waiting('Vote cast');
         return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which is funnier?</p><div class="vote-list">` +
           g.answers.map((a, i) => sendBtn({ choice: i }, esc(a.text))).join('') + '</div>';
