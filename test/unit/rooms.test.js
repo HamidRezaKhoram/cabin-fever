@@ -233,7 +233,7 @@ test('players never see other players\' private data', async () => {
 
 test('character maker: a look is validated, shared with everyone, editable, and clearable', async () => {
   const h = await makeHost(srv);
-  const look = { skin: 2, hair: 3, hairColor: 5, eyes: 1, mouth: 4, facial: 2, glasses: 3, hat: 1, shirt: 7 };
+  const look = { faceShape: 3, skin: 2, hair: 4, hairColor: 5, eyes: 1, mouth: 3, makeup: 2, facial: 0, glasses: 3, hat: 6, earrings: 2, top: 7, bg: 4 };
   const a = await makePlayer(srv, h.code, 'Maker', { look });
   const b = await makePlayer(srv, h.code, 'Cheater', { look: { ...look, hat: 99 } });
   await until(() => h.state.players.length === 2, 'joined');

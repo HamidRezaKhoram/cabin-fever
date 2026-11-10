@@ -81,6 +81,8 @@ async function check(name, fn) {
       if (i === 0) {
         // Default: the character maker. Change a few parts.
         assert.strictEqual(await p.isVisible('#avatar-make .maker-preview'), true, 'character maker is the default');
+        await p.click('#avatar-make [data-preset="0"]');
+        await p.click('#avatar-make [data-part="faceShape"][data-val="3"]');
         await p.click('#avatar-make [data-tab="style"]');
         await p.click('#avatar-make [data-part="hat"][data-val="1"]');
         await p.click('#avatar-make [data-part="glasses"][data-val="2"]');
@@ -91,7 +93,7 @@ async function check(name, fn) {
         await p.click('#avatar-make [data-tab="hair"]');
         await p.click('#avatar-make [data-part="hairColor"][data-val="7"]');
         const look = await p.evaluate(() => JSON.parse(localStorage.getItem('rumpus.look')));
-        assert.deepStrictEqual([look.hat, look.glasses, look.bg, look.hairColor], [1, 2, bgBefore, 7], 'tiles, undo and swatches work');
+        assert.deepStrictEqual([look.faceShape, look.hat, look.glasses, look.bg, look.hairColor], [3, 1, 2, bgBefore, 7], 'presets, tiles, undo and swatches work');
         await shot(p, '00-character-maker');
       } else {
         await p.click('.avatar-mode [data-mode="pick"]');

@@ -429,6 +429,29 @@
     return null;
   }
 
+  // Menu-ish screens share one continuous music stretch (no restart on title → lobby → scoreboard).
+  const MENU_FAMILY = new Set(['title', 'menu', 'scoreboard']);
+  // Loudness normalisation: every custom track is measured once (RMS of the decoded
+  // audio) and played through a gain that brings it to the same target as the others.
+  const TARGET_RMS = 0.1;
+  let normGain = null;
+  let loopsLeft = 0;
+  /** @param {string} src @returns {Promise<number>} */
+  async function loudnessGain(src) {
+    const key = 'rumpus.loud:' + src;
+    try { const v = Number(localStorage.getItem(key)); if (v > 0) return v; } catch (e) { /* ignore */ }
+    const buf = await ctx.decodeAudioData(await (await fetch(src)).arrayBuffer());
+    let sum = 0, n = 0;
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < d.length; i += 31) { const x = d[i]; if (Math.abs(x) > 0.001) { sum += x * x; n++; } } // skip silence
+    }
+    const rms = n ? Math.sqrt(sum / n) : TARGET_RMS;
+    const g = Math.min(3, Math.max(0.25, TARGET_RMS / rms));
+    try { localStorage.setItem(key, String(g)); } catch (e) { /* ignore */ }
+    return g;
+  }
+
   /** @param {string} cue @param {string[]} list @param {string} [then] */
   function playCustom(cue, list, then) {
     const once = !!(CATALOG[cue] && CATALOG[cue][0].once); // victory: play once, then move on
@@ -437,8 +460,13 @@
     customCue = cue;
     if (!customAudio) {
       customAudio = new Audio();
+      customAudio.crossOrigin = 'anonymous';
+      // Route through the same bus as the chiptunes: one volume slider, same ducking.
+      normGain = ctx.createGain();
+      ctx.createMediaElementSource(customAudio).connect(normGain).connect(musicBus);
       customAudio.addEventListener('ended', () => {
         if (!customCue) return;
+        if (loopsLeft > 0 && customAudio.dataset.once !== '1') { loopsLeft--; customAudio.currentTime = 0; customAudio.play().catch(() => {}); return; }
         if (customAudio.dataset.once === '1') {
           const follow = pendingCue || customAudio.dataset.then || 'menu';
           pendingCue = null;
@@ -450,8 +478,11 @@
     }
     const src = list[Math.floor(Math.random() * list.length)];
     customAudio.src = src;
-    customAudio.volume = musicVol;
-    customAudio.loop = !once && list.length === 1;
+    customAudio.volume = 1;
+    customAudio.loop = false;
+    loopsLeft = MENU_FAMILY.has(cue) ? 2 : 0; // menu songs play 3× before moving on
+    normGain.gain.setValueAtTime(1, ctx.currentTime);
+    loudnessGain(src).then((g) => { if (customAudio.src.endsWith(src)) normGain.gain.setTargetAtTime(g, ctx.currentTime, 0.3); }).catch(() => {});
     customAudio.dataset.once = once ? '1' : '';
     customAudio.dataset.then = then || '';
     customAudio.play().catch(() => {});
@@ -461,6 +492,8 @@
   function play(cue, opts = {}) {
     if (!enabled) { pendingCue = cue; return; }
     if (cue === currentCue && (customCue === cue || decks.some((d) => !d.stopping))) return;
+    // Title / lobby / scoreboard: keep the current song going instead of switching.
+    if (MENU_FAMILY.has(cue) && MENU_FAMILY.has(currentCue || '') && (customCue || decks.some((d) => !d.stopping))) { currentCue = cue; if (customCue) customCue = cue; return; }
     // While a custom one-shot (victory) is playing, queue the next cue instead of cutting it off.
     if (customAudio && customCue && customAudio.dataset.once === '1' && !customAudio.paused) { pendingCue = cue; return; }
     const custom = customFor(cue);
@@ -498,7 +531,6 @@
     duckGain.gain.cancelScheduledValues(t);
     duckGain.gain.setTargetAtTime(level, t, 0.04);
     duckGain.gain.setTargetAtTime(1, t + ms / 1000, 0.25);
-    if (customAudio) { customAudio.volume = musicVol * level; setTimeout(() => { customAudio.volume = musicVol; }, ms); }
   }
 
   function setVolume(kind, v) {
@@ -506,7 +538,6 @@
     try { localStorage.setItem('rumpus.vol', JSON.stringify({ music: musicVol, sfx: sfxVol })); } catch (e) { /* ignore */ }
     if (musicBus) musicBus.gain.setTargetAtTime(musicVol * musicVol, ctx.currentTime, 0.05);
     if (sfxBus) sfxBus.gain.setTargetAtTime(sfxVol * sfxVol, ctx.currentTime, 0.05);
-    if (customAudio) customAudio.volume = musicVol;
   }
 
   function sfx(fn) { if (ctx && enabled) fn(ctx.currentTime, sfxBus); }

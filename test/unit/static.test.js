@@ -158,3 +158,12 @@ test('character maker options match the server schema', () => {
   const { LOOK_PARTS } = require('../../games/avatar-schema');
   assert.deepStrictEqual(window.Rumpus.avatarMaker.counts, LOOK_PARTS);
 });
+
+test('character maker: older saved looks migrate to the current parts', () => {
+  const m = window.Rumpus.avatarMaker;
+  const old = { skin: 2, hair: 8, hairColor: 3, eyes: 5, mouth: 5, facial: 1, glasses: 2, hat: 6, shirt: 4, brows: 3 };
+  const n = m.norm(old);
+  for (const p of m.PARTS) assert.ok(Number.isInteger(n[p]) && n[p] >= 0 && n[p] < m.NAMES[p].length, `${p} out of range`);
+  assert.strictEqual(n.top, 4, 'old shirt colour carries over');
+  assert.ok(m.PRESETS.length >= 6 && m.PRESETS.every((pr) => m.PARTS.every((p) => pr[p] < m.NAMES[p].length)), 'presets are valid');
+});
