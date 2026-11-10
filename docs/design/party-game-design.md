@@ -105,3 +105,17 @@ a 45 s draw timer option in house rules; Minigames — 8 minis by default (1.5 m
 
 The playtest prints `worstIdleAt` ("screen where that player last acted → where they next
 could"), so fix the screen it names instead of guessing.
+
+## 7. Art direction: cosy and retro (research, Nov 2026)
+Sources: cosy-game art analyses (Stardew-style warm light), lighting guides (warm key light vs cool
+shadow), pixel-art tutorials (hue shifting, limited palettes, dithering used sparingly), and the
+"Juice it or lose it" game-feel talk (short shakes, squash/stretch, particles).
+- **Warm light inside, cool night outside.** Every scene has a lit cottage (log walls, framed warm
+  windows, a light seam at the door, a porch lantern) whose light spills onto the shore, plus a
+  small campfire with a round dithered glow and its reflection.
+- **Hue-shift, don't just darken.** Moonlit rims on hills and pines are mixed toward the moon's
+  colour (`mix()` in bg.js); roof shadows lean purple.
+- **Dither only gradients and glows** (sky band edges, light spill) — never flat areas.
+- **Juice with restraint:** a 0.3 s screen shake (`fx.shake`) only on big hits (a knockout, a
+  ruined chore), confetti on wins; games opt in with a `moment(state)` hook. Respects
+  prefers-reduced-motion.

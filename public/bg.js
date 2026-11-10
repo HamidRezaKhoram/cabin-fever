@@ -214,6 +214,54 @@
     },
   };
 
+  /** Mix two #rrggbb colours (t = 0 → a, 1 → b): used for hue-shifted highlights/shadows. @param {string} a @param {string} b @param {number} t */
+  function mix(a, b, t) {
+    const p = (/** @type {string} */ c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+    const A = p(a), B = p(b);
+    return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  }
+
+  /** The cottage, lit from inside: log walls, shingles, framed windows, a warm door seam and porch lantern,
+   * and light spilling onto the ground (dithered, so it stays pixel-art). @param {CanvasRenderingContext2D} g @param {Theme} th */
+  function paintCottage(g, th) {
+    const cx = 206, base = HORIZON;
+    const warm = th.window;
+    const wallA = mix('#3b2a24', th.hills, 0.25), wallB = mix('#2c1f1c', th.hills, 0.25);
+    // light spill on the ground in front (checkerboard dither, fading out)
+    for (let y = base - 2; y < base + 6; y++) for (let x = cx - 6; x < cx + 46; x++) {
+      const d = Math.abs(x - (cx + 17)) / 26 + (y - base + 2) / 10;
+      if (d < 1 && (x + y) % 2 === 0) { g.fillStyle = `rgba(255,200,110,${(0.22 * (1 - d)).toFixed(3)})`; g.fillRect(x, y, 1, 1); }
+    }
+    // log walls (alternating warm-dark rows; the moon side gets a cool rim)
+    for (let y = 0; y < 16; y++) { g.fillStyle = y % 3 === 2 ? wallB : wallA; g.fillRect(cx, base - 16 + y, 34, 1); }
+    g.fillStyle = mix(wallA, th.orb, 0.35); g.fillRect(cx + 33, base - 16, 1, 16);
+    // shingled roof: hue-shifted toward purple in shadow, toward the moon on the lit edge
+    const roof = mix('#2a1a2e', th.hills, 0.3), roofDark = mix(roof, '#120a1a', 0.5);
+    for (let i = 0; i < 12; i++) {
+      g.fillStyle = i % 2 ? roof : roofDark; g.fillRect(cx - 3 + i, base - 16 - i, 40 - i * 2, 1);
+      g.fillStyle = mix(roof, th.orb, 0.45); g.fillRect(cx + 36 - i, base - 16 - i, 1, 1);
+    }
+    // chimney (stone)
+    g.fillStyle = '#4a4552'; g.fillRect(cx + 25, base - 30, 4, 10);
+    g.fillStyle = '#5e5868'; g.fillRect(cx + 25, base - 30, 4, 1); g.fillRect(cx + 26, base - 27, 1, 1); g.fillRect(cx + 27, base - 24, 1, 1);
+    // window frames (panes are lit each frame), soft halo around them
+    for (const wx of [cx + 4, cx + 21]) {
+      g.fillStyle = `rgba(255,200,110,0.12)`; g.fillRect(wx - 1, base - 13, 10, 9);
+      g.fillStyle = '#1a1016'; g.fillRect(wx, base - 12, 8, 7);
+    }
+    // door with a warm light seam + porch lantern
+    g.fillStyle = '#5a3b22'; g.fillRect(cx + 14, base - 9, 5, 9);
+    g.fillStyle = '#6e4a2c'; g.fillRect(cx + 14, base - 9, 5, 1);
+    g.fillStyle = warm; g.fillRect(cx + 18, base - 8, 1, 8);
+    g.fillStyle = '#1a1016'; g.fillRect(cx + 20, base - 11, 1, 2);
+    g.fillStyle = warm; g.fillRect(cx + 20, base - 9, 1, 1);
+    // dock
+    g.fillStyle = '#3a2a1a'; g.fillRect(cx + 8, base, 30, 2); g.fillRect(cx + 36, base, 2, 4);
+    g.fillStyle = '#4e3a24'; for (let x = cx + 8; x < cx + 38; x += 4) g.fillRect(x, base, 1, 1);
+    // campfire stones on the shore (the flames flicker each frame)
+    for (const [dx, c] of /** @type {[number, string][]} */ ([[-2, '#5c6373'], [0, '#6b7280'], [2, '#5c6373'], [4, '#4b5260']])) { g.fillStyle = c; g.fillRect(cx - 18 + dx, base - 1, 2, 1); }
+  }
+
   /** @param {CanvasRenderingContext2D} g @param {() => number} r @param {Theme} th */
   function paintStatic(g, r, th) {
     const bands = th.sky;
@@ -235,6 +283,11 @@
     for (let x = 0; x < W; x++) {
       const hy = HORIZON - 14 - Math.round(8 * Math.sin(x / 37) + 5 * Math.sin(x / 13 + 1) + 3 * Math.sin(x / 5));
       g.fillRect(x, hy, 1, HORIZON - hy);
+      // moonlit rim: stronger toward the moon, hue-shifted toward its colour
+      const near = Math.max(0, 1 - Math.abs(x - 262) / 200);
+      g.fillStyle = mix(th.hills, th.orb, 0.18 + 0.32 * near);
+      g.fillRect(x, hy, 1, 1);
+      g.fillStyle = th.hills;
     }
     // pines
     g.fillStyle = th.pines;
@@ -244,26 +297,18 @@
       for (let i = 0; i < h; i++) {
         const w = Math.max(1, Math.round((i / h) * (h / 2.2)) - ((i % 4 === 0) ? 1 : 0));
         g.fillRect(x - w, HORIZON - h + i, w * 2 + 1, 1);
+        if (i % 3 === 0 && w > 0) { g.fillStyle = mix(th.pines, th.orb, 0.22); g.fillRect(x + w, HORIZON - h + i, 1, 1); g.fillStyle = th.pines; }
       }
       g.fillRect(x, HORIZON, 1, 2);
     }
-    // cottage
-    const cx = 206;
-    g.fillStyle = '#1b1426';
-    g.fillRect(cx, HORIZON - 16, 34, 16);
-    for (let i = 0; i < 12; i++) g.fillRect(cx - 3 + i, HORIZON - 16 - i, 40 - i * 2, 1);
-    g.fillRect(cx + 25, HORIZON - 30, 4, 10);
-    g.fillStyle = '#5a3b22';
-    g.fillRect(cx + 14, HORIZON - 9, 5, 9);
-    g.fillStyle = '#3a2a1a';
-    g.fillRect(cx + 8, HORIZON, 30, 2);
-    g.fillRect(cx + 36, HORIZON, 2, 4);
+    // cottage (after the lake so its light spills onto the shore)
     // lake
     const lake = th.lake;
     for (let y = HORIZON; y < H; y++) {
       g.fillStyle = lake[Math.min(lake.length - 1, ((y - HORIZON) / 18) | 0)];
       g.fillRect(0, y, W, 1);
     }
+    paintCottage(g, th);
     if (STATIC[th.name]) STATIC[th.name](g);
   }
 
@@ -302,6 +347,18 @@
       // lit windows flicker
       g.fillStyle = Math.sin(t / 10) > -0.95 ? th.window : '#7a5a2e';
       g.fillRect(211, HORIZON - 11, 6, 5); g.fillRect(228, HORIZON - 11, 6, 5);
+      g.fillStyle = '#1a1016'; g.fillRect(214, HORIZON - 11, 1, 5); g.fillRect(231, HORIZON - 11, 1, 5); g.fillRect(211, HORIZON - 9, 6, 1); g.fillRect(228, HORIZON - 9, 6, 1);
+      // campfire on the shore: flickering flames, sparks, a warm glow and its reflection
+      const fx = 190, fy = HORIZON - 2;
+      // round, dithered glow (a flat rectangle read as a grey box)
+      const pulse = 0.85 + 0.15 * Math.sin(frame / 5);
+      for (let y = -8; y <= 2; y++) for (let x = -10; x <= 10; x++) {
+        const d = Math.hypot(x / 10, y / 7);
+        if (d < 1 && (x + y + frame) % 2 === 0) { g.fillStyle = `rgba(255,150,60,${(0.16 * (1 - d) * pulse).toFixed(3)})`; g.fillRect(fx + x, fy + y, 1, 1); }
+      }
+      for (let k = 0; k < 3; k++) { const h = 2 + ((frame + k * 5) % 4); g.fillStyle = k === 1 ? '#ffd23f' : '#ff8a3d'; g.fillRect(fx - 1 + k, fy - h, 1, h); }
+      if (frame % 20 < 3) { g.fillStyle = '#ffd23f'; g.fillRect(fx + ((frame >> 2) % 3) - 1, fy - 6 - (frame % 20), 1, 1); }
+      for (let y = HORIZON + 1; y < HORIZON + 10; y += 2) { g.fillStyle = 'rgba(255,150,60,0.22)'; g.fillRect(fx - 1 + Math.round(Math.sin((y + t) / 2)), y, 3, 1); }
       // chimney smoke
       g.fillStyle = 'rgba(200,200,220,0.25)';
       for (let i = 0; i < 6; i++) {

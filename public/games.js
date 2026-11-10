@@ -999,6 +999,13 @@
         api.send({ card: /** @type {HTMLElement} */ (b).dataset.stCard, fix: !!(fix && fix.checked) });
       }));
     },
+    /** @param {any} s */
+    moment(s) {
+      const g = s.gameState;
+      if (s.phase === 'st-reveal' && g.reveal) return g.reveal.ok ? null : { shakeAt: g.reveal.cards.length * g.cardMs };
+      if (s.phase === 'st-final' && g.winner === 'cottage') return { confettiAt: 500 };
+      return null;
+    },
     /** The narrator tells the story of the storm. @param {any} s */
     narrate(s) {
       const g = s.gameState;
@@ -1138,6 +1145,14 @@
         wzSpell = /** @type {HTMLElement} */ (b).dataset.wzSpell || '';
         api.rerender();
       }));
+    },
+    /** Shake on the first knockout or meteor, timed to its beat. @param {any} s */
+    moment(s) {
+      const g = s.gameState;
+      if (s.phase === 'wz-final') return { confettiAt: 300 };
+      if (s.phase !== 'wz-reveal') return null;
+      const i = (g.beats || []).findIndex((/** @type {WzBeat} */ b) => b.kind === 'ko' || b.kind === 'meteor');
+      return i >= 0 ? { shakeAt: i * (g.stepMs || 900) + 300 } : null;
     },
     /** Rocco calls the big moments. @param {any} s */
     narrate(s) {

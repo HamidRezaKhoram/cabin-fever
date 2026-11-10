@@ -781,3 +781,7 @@ body.mode-storm #phase-view::before { content: ''; position: absolute; inset: 2.
 .wz-log li { animation: pop-in 0.4s steps(12) both; }
 .wz-stats { font-size: 1.3em; text-align: center; }
 .wz-spells .vote-btn small { opacity: 0.8; }
+
+/* ---------- game feel: a brief shake for big hits (0.3 s → steps(9)) ---------- */
+#phase-view.shake { animation: screen-shake 0.3s steps(9); }
+@keyframes screen-shake { 0%, 100% { transform: none; } 20% { transform: translate(-0.6vh, 0.3vh); } 40% { transform: translate(0.5vh, -0.4vh); } 60% { transform: translate(-0.4vh, -0.2vh); } 80% { transform: translate(0.3vh, 0.3vh); } }

@@ -563,6 +563,10 @@ function render() {
       const impl = window.Rumpus.games[g.gameId];
       const line = impl && impl.narrate ? impl.narrate(state) : null;
       if (line) setTimeout(() => window.Rumpus.host.say(line), 400);
+      // …and big moments: a shake (and confetti) timed to the reveal.
+      const m = impl && impl.moment ? impl.moment(state) : null;
+      if (m && m.shakeAt != null) fx.shake(m.shakeAt);
+      if (m && m.confettiAt != null) setTimeout(() => fx.confetti(120), m.confettiAt);
       if (isRevealPhase(phase)) {
         window.Rumpus.host.cheer();
         if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();

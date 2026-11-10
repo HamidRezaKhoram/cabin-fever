@@ -123,5 +123,17 @@
     setTimeout(() => el.remove(), 2300);
   }
 
-  window.Rumpus.fx = { wipe, isWiping, confetti, reaction, scorePop, banner };
+  // ---- A short screen shake for big hits (a knockout, a sabotage). Brief on purpose: game-feel
+  // research says shake is the most abused effect — 0.3 s, small, and never while reading.
+  /** @param {number} [delay] ms */
+  function shake(delay = 0) {
+    setTimeout(() => {
+      const el = document.getElementById('phase-view');
+      if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+      setTimeout(() => el.classList.remove('shake'), 320);
+    }, delay);
+  }
+
+  window.Rumpus.fx = { wipe, isWiping, confetti, reaction, scorePop, banner, shake };
 })();
