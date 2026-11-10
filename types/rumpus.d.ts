@@ -132,7 +132,7 @@ interface RumpusNS {
   morph(target: Element, html: string): void;
   fit(el: HTMLElement, opts?: { max?: number; min?: number; maxLines?: number }): void;
   fitAll(root: Element): void;
-  register(id: string, impl: { host(s: any): string; player(s: any): string; bind?(root: HTMLElement, api: any): void; narrate?(s: any): string | null }): void;
+  register(id: string, impl: { host(s: any): string; player(s: any): string; bind?(root: HTMLElement, api: any): void; narrate?(s: any): string | null; moment?(s: any): { shakeAt?: number, confettiAt?: number } | null }): void;
   games: Record<string, any>;
   /** The remaining modules (sprites, music, fx, debug, …) are attached at runtime. */
   [module: string]: any;

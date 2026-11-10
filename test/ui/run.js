@@ -518,6 +518,7 @@ async function check(name, fn) {
               Rumpus.setState(st);
               const html = kind === 'host' ? impl.host(st) : impl.player(st);
               if (typeof html !== 'string' || !html.trim()) return 'rendered nothing';
+              if (kind === 'host' && impl.moment) { const m = impl.moment(st); if (m !== null && typeof m !== 'object') return 'moment returned junk'; }
               if (kind === 'host' && impl.narrate) { const line = impl.narrate(st); if (line !== null && (typeof line !== 'string' || !line.trim())) return 'narrator returned junk'; }
             }
             return null;
