@@ -212,7 +212,7 @@ test('Trivia: category rounds every 3–5 questions; last place picks; questions
 });
 
 // ------------------------------------------------------------------ Fib Finder
-test('Fib Finder: lies matching the truth are bounced; truth 1000, each fooled 500', async () => {
+test('Fib Finder: lies matching the truth are bounced; truth 1000, each fooled 500, likes +50', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'fibbage' });
   await h.phase('fib-bluff');
@@ -222,12 +222,21 @@ test('Fib Finder: lies matching the truth are bounced; truth 1000, each fooled 5
   await by.Ann.phase('fib-choose');
   const opt = (p, t) => p.state.gameState.options.find((o) => o.text === t).index;
   assert.ok(!by.Ann.state.gameState.options.some((o) => o.text === 'Lie A'), 'own lie hidden');
+  by.Cat.submit({ like: opt(by.Cat, 'Lie B') }); // must guess before liking
   by.Ann.submit({ choice: opt(by.Ann, 'Truthy') });
   by.Ben.submit({ choice: opt(by.Ben, 'Lie A') });
+  await until(() => by.Ann.state.you.picked && by.Ben.state.you.picked, 'two guesses in');
+  // Likes while waiting: +50 per like to the lie's author; not your own lie, one like per lie each.
+  by.Ann.submit({ like: opt(by.Ann, 'Lie B') });
+  by.Ann.submit({ like: opt(by.Ann, 'Lie B') });
+  by.Ben.submit({ like: opt(by.Ann, 'Lie B') }); // Ben's own lie: ignored
+  await until(() => by.Ann.state.you.liked.length === 1, 'like recorded');
+  assert.strictEqual(h.state.phase, 'fib-choose', 'likes do not end the round');
   by.Cat.submit({ choice: opt(by.Cat, 'Lie A') });
-  await h.phase('fib-reveal');
+  const rev = await h.phase('fib-reveal');
   assert.strictEqual(score('Ann'), 1000 + 2 * 500);
-  assert.strictEqual(score('Ben'), 0);
+  assert.strictEqual(score('Ben'), 50, 'one like on Lie B');
+  assert.strictEqual(rev.gameState.result.options.find((o) => o.text === 'Lie B').likes, 1);
 });
 
 // ------------------------------------------------------------------ Card Chaos
