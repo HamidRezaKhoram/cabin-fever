@@ -10,7 +10,6 @@ Downloaded from the "CC0 - Retro Music" collection; license verified on each tra
 | title | Heckin' Crows | congusbongus | `title/heckin-crows.ogg` | [page](https://opengameart.org/content/heckin-crows) |
 | menu | Exploring Town | Spring Spring | `menu/exploring-town.ogg` | [page](https://opengameart.org/content/exploring-town) |
 | menu | My Street | congusbongus | `menu/my-street.ogg` | [page](https://opengameart.org/content/my-street) |
-| menu | Scheatt | Spring Spring | `menu/scheatt.mp3` | [page](https://opengameart.org/content/scheatt) |
 | menu | Talking Cute (Chiptune) | Pro Sensory | `menu/talking-cute-chiptune.mp3` | [page](https://opengameart.org/content/talking-cute-chiptune) |
 | menu | Rewind | Pro Sensory | `menu/rewind.mp3` | [page](https://opengameart.org/content/rewind) |
 | menu | Lunar Moth | Locomule | `menu/lunar-moth.mp3` | [page](https://opengameart.org/content/lunar-moth) |
@@ -30,12 +29,11 @@ Downloaded from the "CC0 - Retro Music" collection; license verified on each tra
 | game/imposter | Cunning plan (short seamless loop) | congusbongus | `game/imposter/cunning-plan-short-seamless-loop.ogg` | [page](https://opengameart.org/content/cunning-plan-short-seamless-loop) |
 | game/imposter | Spooky Dungeon | You're Perfect Studio | `game/imposter/spooky-dungeon.mp3` | [page](https://opengameart.org/content/spooky-dungeon) |
 | game/imposter | 8-bit Haunted House Theme | Wolfgang_ | `game/imposter/8-bit-haunted-house-theme.mp3` | [page](https://opengameart.org/content/8-bit-haunted-house-theme) |
-| game/telephone | Since 2 A.M. | TAD | `game/telephone/since-2-am.mp3` | [page](https://opengameart.org/content/since-2-am) |
+| game/telephone | Since 2 A.M. | TAD | `game/telephone/since-2-am.ogg` | [page](https://opengameart.org/content/since-2-am) |
 | game/telephone | Ooame | TAD | `game/telephone/ooame.mp3` | [page](https://opengameart.org/content/ooame) |
 | game/telephone | Puppy Playing in The Garden SNES PORT | Spring Spring | `game/telephone/puppy-playing-in-the-garden-snes-port.ogg` | [page](https://opengameart.org/content/puppy-playing-in-the-garden-snes-port) |
 | game/trivia | 1/8th Pulse Flurry | Spring Spring | `game/trivia/18th-pulse-flurry.ogg` | [page](https://opengameart.org/content/18th-pulse-flurry) |
 | game/trivia | Neo Springcore | Spring Spring | `game/trivia/neo-springcore.ogg` | [page](https://opengameart.org/content/neo-springcore) |
-| game/cah | Escape from Metal City | congusbongus | `game/cah/escape-from-metal-city.ogg` | [page](https://opengameart.org/content/escape-from-metal-city) |
 | game/cah | Midnight Drive | congusbongus | `game/cah/midnight-drive.ogg` | [page](https://opengameart.org/content/midnight-drive) |
 | game/fibbage | Chipnese | Spring Spring | `game/fibbage/chipnese.ogg` | [page](https://opengameart.org/content/chipnese) |
 | game/fibbage | CH-AY-NA | Spring Spring | `game/fibbage/ch-ay-na.ogg` | [page](https://opengameart.org/content/ch-ay-na) |
@@ -53,7 +51,7 @@ Downloaded from the "CC0 - Retro Music" collection; license verified on each tra
 | final | Hail the Arbiter | Centurion_of_war | `final/hail-the-arbiter.ogg` | [page](https://opengameart.org/content/hail-the-arbiter) |
 | final | Pushing Yourself [Complete] | Centurion_of_war | `final/pushing-yourself-complete.ogg` | [page](https://opengameart.org/content/pushing-yourself-complete) |
 | final | Stargazer | Centurion_of_war | `final/stargazer.ogg` | [page](https://opengameart.org/content/stargazer) |
-| victory | Victory | celestialghost8 | `victory/victory.mp3` | [page](https://opengameart.org/content/victory) |
+| victory | Victory | celestialghost8 | `victory/victory.ogg` | [page](https://opengameart.org/content/victory) |
 | victory | 8-Bit Victory Loop | Wolfgang_ | `victory/8-bit-victory-loop.ogg` | [page](https://opengameart.org/content/8-bit-victory-loop) |
 | scoreboard | NES "Pomp and Circumstance" (High Score/Gallery) | Haley Halcyon | `scoreboard/nes-pomp-and-circumstance-high-scoregall.ogg` | [page](https://opengameart.org/content/nes-pomp-and-circumstance-high-scoregallery) |
 | scoreboard | Keep your dream alive! (seamless loop) | congusbongus | `scoreboard/keep-your-dream-alive-seamless-loop.ogg` | [page](https://opengameart.org/content/keep-your-dream-alive-seamless-loop) |

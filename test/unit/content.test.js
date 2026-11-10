@@ -73,6 +73,28 @@ test('every bundled music file is credited and sits in a known scenario folder',
   assert.ok(/CC0/.test(credits));
 });
 
+test('music manifest: every bundled track is measured, up to date, high quality and loudness-matched', () => {
+  const MUSIC = path.join(__dirname, '../../music');
+  const man = JSON.parse(fs.readFileSync(path.join(MUSIC, 'manifest.json'), 'utf8'));
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+  const audio = walk(MUSIC).filter((f) => /\.(mp3|ogg|m4a|wav|opus)$/i.test(f)).map((f) => path.relative(MUSIC, f).split(path.sep).join('/'));
+  assert.deepStrictEqual(Object.keys(man).sort(), audio.sort(), 'manifest out of date — run python3 tools/music-manifest.py');
+  for (const rel of audio) {
+    const m = man[rel];
+    assert.strictEqual(fs.statSync(path.join(MUSIC, rel)).size, m.bytes, `${rel} changed since it was measured — rerun tools/music-manifest.py`);
+    // Quality floor: no low-bitrate "compact" copies. Mono needs half the bits of stereo.
+    assert.ok(m.kbps >= (m.channels === 1 ? 96 : 128), `${rel}: ${m.kbps} kbps ${m.channels === 1 ? 'mono' : 'stereo'} is too compressed`);
+    assert.ok(m.rate >= 32000, `${rel}: ${m.rate} Hz sample rate`);
+    assert.ok(m.bytes * 8 / m.duration / 1000 >= (m.channels === 1 ? 64 : 96), `${rel}: averages only ${(m.bytes * 8 / m.duration / 1000).toFixed(0)} kbps`);
+    assert.ok(m.gain >= 0.25 && m.gain <= 4, `${rel}: gain ${m.gain}`);
+    // After the gain the true peak stays under 0 dBFS (no clipping)…
+    assert.ok(m.peak + 20 * Math.log10(m.gain) <= 0, `${rel} would clip`);
+    // …and, unless the peak limits it, the track lands on the shared target loudness.
+    const after = m.lufs + 20 * Math.log10(m.gain);
+    assert.ok(Math.abs(after + 18) < 1 || m.peak + 20 * Math.log10(m.gain) > -1.5 || m.gain === 0.25 || m.gain === 4, `${rel}: ${after.toFixed(1)} LUFS after gain`);
+  }
+});
+
 test('sourced content: Wikidata facts are present and every non-original item names its source', () => {
   const closest = load('closest');
   assert.ok(closest.filter((q) => /^Wikidata Q\d+ \(CC0\)$/.test(q.src || '')).length >= 150, 'Wikidata facts in Closest Guess');

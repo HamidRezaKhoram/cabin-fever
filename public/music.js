@@ -271,8 +271,9 @@
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     // Limiter on the master output: peaks get compressed instead of clipping into harsh distortion.
     const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -10; limiter.knee.value = 10; limiter.ratio.value = 12;
-    limiter.attack.value = 0.003; limiter.release.value = 0.25;
+    // Peak catcher only (tracks are loudness-matched up front), so it never audibly pumps.
+    limiter.threshold.value = -3; limiter.knee.value = 3; limiter.ratio.value = 20;
+    limiter.attack.value = 0.002; limiter.release.value = 0.2;
     limiter.connect(ctx.destination);
     master = ctx.createGain(); master.gain.value = 0.8; master.connect(limiter);
     duckGain = ctx.createGain(); duckGain.gain.value = 1; duckGain.connect(master);
@@ -443,6 +444,8 @@
   let normGain = null;
   let loopsLeft = 0;
   let plays = 0;                 // how many track plays have started (status/tests)
+  let swapToken = 0;
+  const FADE_OUT = 0.35, FADE_IN = 0.5;
   const badTracks = new Set();   // files that failed to load are skipped
   /** @param {string} src @returns {Promise<number>} */
   async function loudnessGain(src) {
@@ -455,7 +458,7 @@
       for (let i = 0; i < d.length; i += 31) { const x = d[i]; if (Math.abs(x) > 0.001) { sum += x * x; n++; } } // skip silence
     }
     const rms = n ? Math.sqrt(sum / n) : TARGET_RMS;
-    const g = Math.min(2, Math.max(0.25, TARGET_RMS / rms)); // capped so quiet files can't be boosted into clipping
+    const g = Math.min(2, Math.max(0.25, TARGET_RMS / rms)); // capped (no peak info here); bundled tracks use the measured manifest
     try { localStorage.setItem(key, String(g)); } catch (e) { /* ignore */ }
     return g;
   }
@@ -494,17 +497,36 @@
     }
     const pool = list.filter((u) => !badTracks.has(u));
     const src = (pool.length ? pool : list)[Math.floor(Math.random() * (pool.length || list.length))];
-    customAudio.src = src;
+    const token = ++swapToken;
+    const wasPlaying = !customAudio.paused && !customAudio.ended && !!customAudio.dataset.src;
     customAudio.dataset.src = src;
-    plays++;
-    customAudio.volume = 1;
-    customAudio.loop = false;
-    loopsLeft = MENU_FAMILY.has(cue) ? 2 : 0; // menu songs play 3× before moving on
-    normGain.gain.setValueAtTime(1, ctx.currentTime);
-    loudnessGain(src).then((g) => { if (customAudio.src.endsWith(src)) normGain.gain.setTargetAtTime(g, ctx.currentTime, 0.3); }).catch(() => {});
     customAudio.dataset.once = once ? '1' : '';
     customAudio.dataset.then = then || '';
-    customAudio.play().catch(() => {});
+    loopsLeft = MENU_FAMILY.has(cue) ? 2 : 0; // menu songs play 3× before moving on
+    plays++;
+    const g = ctx.currentTime;
+    normGain.gain.cancelScheduledValues(g);
+    normGain.gain.setValueAtTime(normGain.gain.value, g);
+    // Fade the old song out (no hard cut), then start the new one silent and fade it in
+    // to its measured level — the level is known before it plays, so nothing jumps.
+    normGain.gain.linearRampToValueAtTime(0, g + (wasPlaying ? FADE_OUT : 0.01));
+    const start = (/** @type {number} */ level) => {
+      if (token !== swapToken) return;
+      const t = ctx.currentTime;
+      normGain.gain.cancelScheduledValues(t);
+      normGain.gain.setValueAtTime(0, t);
+      normGain.gain.linearRampToValueAtTime(level, t + FADE_IN);
+    };
+    setTimeout(() => {
+      if (token !== swapToken) return;
+      customAudio.src = src;
+      customAudio.volume = 1;
+      customAudio.loop = false;
+      customAudio.play().catch(() => {});
+      const known = trackInfo[src] && trackInfo[src].gain;
+      if (known) start(known);
+      else loudnessGain(src).then(start).catch(() => start(1)); // user-added track: measure first, stay silent until then
+    }, wasPlaying ? FADE_OUT * 1000 : 0);
     listeners.forEach((fn) => fn({ cue, name: decodeURIComponent(src.split('/').pop()).replace(/\.\w+$/, '') }));
   }
 
@@ -562,7 +584,10 @@
   }
 
   let catsError = '';
+  /** @type {Record<string, {gain: number, kbps: number}>} */
+  let trackInfo = {};
   async function loadCategories() {
+    try { trackInfo = await (await fetch('/api/music-info', { cache: 'no-store' })).json() || {}; } catch (e) { trackInfo = {}; }
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const r = await fetch('/api/music', { cache: 'no-store' });
@@ -582,6 +607,10 @@
   function status() {
     return { catsError,
       cue: currentCue, custom: !!customCue, plays,
+      src: customAudio ? customAudio.dataset.src || '' : '',
+      time: customAudio ? customAudio.currentTime : 0,
+      level: normGain ? normGain.gain.value : 0,
+      expectedLevel: customAudio && trackInfo[customAudio.dataset.src || ''] ? trackInfo[customAudio.dataset.src || ''].gain : null,
       playing: customCue ? !!customAudio && !customAudio.paused : decks.some((d) => !d.stopping),
     };
   }
