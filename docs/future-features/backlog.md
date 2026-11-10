@@ -2,8 +2,7 @@
 
 **Gameplay**
 - ✅ **Game-night playlist** — shipped: 3/5/7-game nights, phone votes, night points, grand champion.
-- **Persistent stats & achievements** across sessions (data/stats.json): wins per player name,
-  funniest line hall-of-fame, "liar of the year". Exportable highlights page.
+- ✅ **Persistent stats & achievements** — shipped: data/stats.json, 9 achievements, /highlights (tonight, all time, hall of fame).
 - **House rules editor** on the TV (timers per game, rounds, 18+ share slider, banned words).
 - **Wagers / double-down** mechanic for Trivia, Closest, Majority (see playtest-findings.md).
 
@@ -13,7 +12,7 @@
 - Animated pixel host character on the TV that reacts to events.
 - Per-game background scenes (dock at sunset for Punchline, campfire for Odd One Out, …).
 - More avatars + seasonal hats; drawn avatars get a pixelate filter to match the art style.
-- Highlight reel: auto-saves the best answers/drawings of the night as a gallery page.
+- ✅ Highlight reel — shipped with /highlights (best lines, lies, cards and doodles).
 
 **Content**
 - Content editor page on the TV (add/disable prompts without editing files).

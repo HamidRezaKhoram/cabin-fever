@@ -29,6 +29,34 @@ function count(config, flag) {
   }
 }
 
+/** All strict errors as "file: TSxxxx message" (no line numbers) for diffing. @param {string} cwd */
+function errorsIn(cwd) {
+  /** @type {string[]} */
+  const out = [];
+  for (const c of CONFIGS) for (const f of FLAGS) {
+    let text = '';
+    try { execFileSync(tsc, ['-p', c, `--${f}`], { cwd, stdio: 'pipe' }); } catch (e) { text = String(/** @type {{ stdout?: Buffer }} */ (e).stdout || ''); }
+    for (const line of text.split('\n')) {
+      const m = line.match(/^(.+?)\((\d+),\d+\): error (TS\d+: .*)$/);
+      if (m) out.push(`${m[1]}: ${m[3]}  [${c} --${f}, line ${m[2]}]`);
+    }
+  }
+  return out;
+}
+
+// --explain: list the strict errors that are new compared with the last commit.
+if (process.argv.includes('--explain')) {
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ratchet-'));
+  execFileSync('sh', ['-c', `git archive HEAD | tar -x -C "${tmp}" && ln -s "${path.join(ROOT, 'node_modules')}" "${tmp}/node_modules"`], { cwd: ROOT });
+  const key = (/** @type {string} */ e) => e.replace(/\s+\[.*$/, '');
+  const before = new Map();
+  for (const e of errorsIn(tmp)) before.set(key(e), (before.get(key(e)) || 0) + 1);
+  const fresh = errorsIn(ROOT).filter((e) => { const k = key(e); const n = before.get(k) || 0; if (n > 0) { before.set(k, n - 1); return false; } return true; });
+  console.log(fresh.length ? `New strict errors since HEAD (${fresh.length}):\n  ` + fresh.join('\n  ') : 'No new strict errors since HEAD.');
+  process.exit(0);
+}
+
 /** @type {Record<string, Record<string, number>>} */
 const base = fs.existsSync(FILE) ? JSON.parse(fs.readFileSync(FILE, 'utf8')) : {};
 /** @type {Record<string, Record<string, number>>} */

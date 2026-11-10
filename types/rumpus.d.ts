@@ -42,6 +42,8 @@ interface Room {
   hostToken: string;
   hostSocket: any;
   players: Map<string, Player>;
+  /** Tonight's best moments (games/stats.js). */
+  highlights?: { game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }[];
   /** Game night playlist (server.js) or null. */
   night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
   game: GameLike | null;
@@ -72,6 +74,8 @@ interface GameLike {
   revealIndex?: number;
   /** Game night: this game's placings were already added. */
   nightCounted?: boolean;
+  /** All-time stats already recorded for this game over. */
+  statsRecorded?: boolean;
   skipSeq?: number;
   subject?: string;
   skippablePhases?: string[];

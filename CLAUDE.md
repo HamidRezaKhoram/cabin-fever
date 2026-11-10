@@ -54,7 +54,8 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
   useUnknownInCatchVariables, noImplicitReturns. **Ratchet** for the rest: `tools/strict-ratchet.js`
   counts `noImplicitAny` / `strictNullChecks` errors per tsconfig against
   `types/strict-baseline.json` — counts may only go down (it lowers the baseline automatically;
-  commit it). New code must be fully typed.
+  commit it). New code must be fully typed. `node tools/strict-ratchet.js --explain` lists exactly
+  which strict errors are new since HEAD.
 - **Pre-commit hook** (`.githooks/pre-commit`, enabled by test-all via `core.hooksPath`): type check +
   lint + ratchet must pass before any commit. Don't bypass it with `--no-verify`.
 - All of these run in `scripts/test-all.sh`; 0 errors is required.

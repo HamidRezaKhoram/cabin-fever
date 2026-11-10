@@ -7,6 +7,8 @@
  */
 'use strict';
 
+const stats = require('./stats');
+
 const library = require('./library');
 const { BaseGame, shuffle, cleanText } = require('./base');
 
@@ -134,6 +136,12 @@ class QuiplashGame extends BaseGame {
       };
     };
     const sides = [side(0), side(1)];
+    sides.forEach((sd, i) => { if (sd.shutout) stats.feat(this.room, m.authors[i], 'shutouts'); });
+    const best = tally[0] === tally[1] ? -1 : tally[0] > tally[1] ? 0 : 1;
+    if (best >= 0 && sides[best].votes > 0 && m.answers[best] != null) {
+      stats.highlight(this.room, { game: 'Punchline', prompt: m.prompt, text: sides[best].text, by: sides[best].nickname,
+        note: `${sides[best].votes} vote${sides[best].votes === 1 ? '' : 's'}${sides[best].shutout ? ' · SHUTOUT' : ''}` });
+    }
     this.result = {
       prompt: m.prompt,
       sides,

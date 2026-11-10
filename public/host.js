@@ -12,6 +12,7 @@ const fsBtn = document.getElementById('fs-btn');
 const overlay = document.getElementById('start-overlay');
 const timerbar = document.getElementById('timerbar');
 
+/** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
 let roomCode = null;
 // Test tools (bot players) show with /host?debug=1 or /host?bots=1.
@@ -482,6 +483,7 @@ function render() {
     html = '<h1>🏆 Final scores</h1>' + teamWin + podium(g.standings || []) +
       (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
         ${av(a.name, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
+      `<p class="hint">📸 Best moments &amp; hall of fame: <span class="hl-link">${esc(joinUrl(false).replace(/^https?:\/\//, '').replace(/\/play$/, '/highlights'))}</span></p>` +
       (state.night ? window.Rumpus.nightTable(state.night, true) : gamePicker('Play again?'));
   } else if (games[g.gameId]) {
     html = games[g.gameId].host(state);
