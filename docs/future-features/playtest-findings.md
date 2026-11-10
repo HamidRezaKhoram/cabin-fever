@@ -61,3 +61,4 @@ Re-run after each fix: `node test/playtest.js` (inside the node container) and c
 | Cottage Crush | 53 s (73 s at 6p), 3.2–3.9 actions/min | 34 s (42 s at 6p), 6.0 actions/min | One free anonymous **wink** a night (+50 if it becomes a date), Matchmaker + Gossip agendas give two players side actions. |
 
 Tooling: `worstIdleAt` in the report names the stretch; a static test forces every game timer to be scaled.
+| Loon Call (new) | 33 s idle (caller sat out their call) | 22 s, 27 actions/min | The caller echoes their own call with everyone. |

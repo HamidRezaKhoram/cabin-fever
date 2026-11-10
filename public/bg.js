@@ -35,6 +35,7 @@
     twotruths:  { sky: ['#050816', '#081026', '#0c1836', '#102046', '#152a58', '#1b356a', '#22417c'], hills: '#0b1430', pines: '#03060f', lake: ['#08102a', '#0a1432', '#0c183a', '#0e1c42'], orb: '#f0f4ff', orbShade: '#c0ccf0', stars: true, fly: '#b0c8ff', glow: '220,230,255', window: '#ffd27a' },
     telephone:  { sky: ['#3a1a05', '#5a2a08', '#7e3d0c', '#a35411', '#c76d18', '#e68a24', '#ffaa3a'], hills: '#4a2a12', pines: '#2a1406', lake: ['#5a2e0e', '#6a3812', '#7a4216', '#8a4c1a'], orb: '#fff0b0', orbShade: '#ffd870', stars: false, fly: '#fff3a0', glow: '255,230,160', window: '#fff0a0' },
     cah:        { sky: ['#0a0303', '#160505', '#220808', '#2e0a0a', '#3c0d0d', '#4b1010', '#5a1414'], hills: '#1a0606', pines: '#050101', lake: ['#160404', '#1c0606', '#220808', '#280a0a'], orb: '#ffd0c0', orbShade: '#e09080', stars: true, fly: '#ff6040', glow: '255,160,140', window: '#ff8050' },
+    looncall:   { sky: ['#0b1630', '#10203f', '#162b4f', '#1d3760', '#264570', '#30537f', '#3d628c'], hills: '#0f1e33', pines: '#08121f', lake: ['#12304d', '#153657', '#183c61', '#1b426b'], orb: '#f4f1e8', orbShade: '#cfd2dc', stars: true, fly: '#7fe3d0', glow: '200,255,240', window: '#ffe9a8' },
     crush:      { sky: ['#1a0820', '#2a0d33', '#3d1248', '#53185c', '#6b1f6c', '#86287a', '#a33486'], hills: '#2a0b2e', pines: '#140516', lake: ['#2a0c33', '#33103d', '#3c1447', '#451851'], orb: '#ffd6e8', orbShade: '#ffa8cc', stars: true, fly: '#ff8fb3', glow: '255,170,210', window: '#ffb0d0' },
     minigames:  { sky: ['#0a6fb0', '#1580c0', '#2391cf', '#35a2dc', '#4ab3e6', '#62c3ee', '#7dd2f4'], hills: '#2f8f5a', pines: '#14603a', lake: ['#1a78c8', '#176ebc', '#1464b0', '#115aa4'], orb: '#fff4a0', orbShade: '#ffe060', stars: false, fly: '#ffffff', glow: '255,255,220', window: '#fff6c8' },
   };
@@ -111,6 +112,11 @@
       for (const x of [164, 186]) { R(g, x, 106, 10, 3, '#e83f5b'); R(g, x, 109, 10, 2, '#b8283f'); R(g, x + 1, 111, 2, 9, '#8a1e30'); R(g, x + 7, 111, 2, 9, '#8a1e30'); }
       for (const [dx, dy] of [[0, 0], [6, 0], [-3, 3], [9, 3], [-3, 6], [9, 6], [0, 9], [6, 9], [3, 12]]) R(g, 178 + dx, 60 + dy, 5, 5, '#ff8fb3');
     },
+    looncall(g) { // a loon floating on the moonlit lake
+      R(g, 196, 126, 22, 5, '#1a1423'); R(g, 198, 124, 18, 3, '#2b2d42');
+      for (let x = 199; x < 214; x += 3) R(g, x, 125, 1, 1, '#f4f1e8');
+      R(g, 214, 116, 3, 9, '#2b2d42'); R(g, 214, 119, 3, 1, '#f4f1e8'); R(g, 213, 113, 5, 4, '#1a1423'); R(g, 216, 114, 1, 1, '#e83f5b'); R(g, 218, 115, 4, 1, '#6b7a8f');
+    },
     minigames(g) { // finish line buoys + flag on the far shore
       for (let y = 118; y < 178; y += 10) { D(g, 286, y, 2, '#ff9f1c'); }
       R(g, 290, 92, 2, 22, '#f4f1e8');
@@ -161,6 +167,13 @@
         const y = 110 - ((t * 0.6 + i * 23) % 80), x = 170 + i * 6 + Math.round(Math.sin(t / 9 + i) * 4);
         R(g, x, y, 2, 2, '#ff8fb3'); R(g, x + 3, y, 2, 2, '#ff8fb3'); R(g, x + 1, y + 2, 3, 2, '#ff8fb3');
       }
+    },
+    looncall(g, t) { // music notes rising from the loon + moon ripples
+      for (let i = 0; i < 3; i++) {
+        const k = (t * 0.7 + i * 30) % 90, x = 222 + i * 9 + Math.round(Math.sin(t / 8 + i) * 3), y = 112 - k;
+        if (k < 80) { R(g, x, y, 3, 2, '#7fe3d0'); R(g, x + 2, y - 6, 1, 6, '#7fe3d0'); R(g, x + 3, y - 6, 2, 1, '#7fe3d0'); }
+      }
+      for (let i = 0; i < 3; i++) { const w = 10 + ((t * 0.5 + i * 12) % 36); R(g, 207 - w / 2, 133 + i, w, 1, 'rgba(244,241,232,0.18)'); }
     },
     minigames(g, t) { // red vs blue canoes racing
       for (const [y, col, sp] of /** @type {[number, string, number][]} */ ([[132, '#e83f5b', 1.1], [152, '#1e88e5', 1.0]])) {

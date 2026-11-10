@@ -228,10 +228,22 @@ def crush() -> Canvas:                 # two lovebirds on a dock under a heart m
     c.disc(13.5, 2.5, 2, 'P'); c.disc(17.5, 2.5, 2, 'P'); c.tri([(11.5, 3), (19.5, 3), (15.5, 7.5)], 'P')  # heart moon
     c.outline(); return c
 
+def looncall() -> Canvas:              # a singing loon on the lake, notes floating up
+    c = Canvas(30, 22)
+    c.rect(0, 17, 30, 5, 'U')                                    # lake
+    c.ellipse(13, 14.5, 9, 3.2, 'C')                             # body
+    for x in range(7, 20, 3): c.set(x, 13, 'W'); c.set(x + 1, 15, 'W')  # chequered back
+    c.rect(19, 7, 3, 7, 'C'); c.rect(19, 10, 3, 1, 'W')          # neck + white necklace
+    c.disc(21, 6, 2.4, 'C'); c.set(22, 5, 'R')                   # head, red eye
+    c.line(23, 6, 27, 5, 'S'); c.line(23, 7, 27, 8, 'S')         # open beak: singing
+    for nx, ny in ((4, 7), (9, 4)):                              # two eighth notes
+        c.disc(nx, ny + 3, 1.2, 'Y'); c.rect(nx + 1, ny - 1, 1, 4, 'Y'); c.set(nx + 2, ny - 1, 'Y'); c.set(nx + 3, ny, 'Y')
+    c.outline(); return c
+
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
-    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'crush': crush,
+    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'crush': crush,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

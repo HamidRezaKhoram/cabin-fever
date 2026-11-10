@@ -3,6 +3,7 @@
 
 const { esc, store, sfx, countdown, games, av, sprites, music, fx, morph, clock, playerImg, playerUrl, fitAll , hit } = window.Rumpus;
 const socket = io();
+window.Rumpus.time.sync(socket);
 
 const codeEl = document.getElementById('room-code');
 const phaseView = document.getElementById('phase-view');
@@ -16,7 +17,7 @@ const timerbar = document.getElementById('timerbar');
 let state = null;
 let roomCode = null;
 /** Games with French content (others use English question banks). */
-const FRENCH_GAMES = ['quiplash', 'mostlikely', 'majority', 'telephone', 'twotruths', 'minigames'];
+const FRENCH_GAMES = ['quiplash', 'mostlikely', 'majority', 'telephone', 'twotruths', 'minigames', 'looncall'];
 document.body.classList.toggle('cb', store('rumpus.cb') === true); // colour-blind palette (this TV)
 // Test tools (bot players) show with /host?debug=1 or /host?bots=1.
 const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.search) || localStorage.getItem('rumpus.debug') === '1'; } catch (e) { return false; } })();
@@ -71,6 +72,7 @@ const RULES = {
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
+  looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
   minigames: ['Quick real-time challenges on your phone', 'Tap, react, count, roast — rules shown each time', 'Turn on Teams for Red vs Blue!'],
 };
 // --- narrator (Rocco reads prompts aloud and in a speech bubble) -------------
@@ -236,6 +238,7 @@ function cueFor(st) {
   if (g.stage === 3 || g.multiplier === 3) return 'final';
   if (p === 'imp-vote' || p === 'ml-vote') return 'vote';     // accusation moments get tension music
   if (p === 'tel-reveal') return 'reveal';                    // the long chain showcase
+  if (p === 'lc-tune' || p === 'lc-song' || p === 'lc-compose') return 'silence'; // Loon Call plays its own beat
   return 'game:' + g.gameId;
 }
 
@@ -285,7 +288,7 @@ const T = '<span class="timer"></span>';
 // Each game's art is drawn at 4× its own pixel size, on its own colour theme.
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
-  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d',
 };
 const art = (id) => {
   const u = sprites.iconUrl(id);

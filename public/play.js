@@ -4,6 +4,7 @@
 
 const { esc, store, countdown, games, sprites, morph, playerImg , hit } = window.Rumpus;
 const socket = io();
+window.Rumpus.time.sync(socket);
 
 const joinView = document.getElementById('join-view');
 const gameView = document.getElementById('game-view');

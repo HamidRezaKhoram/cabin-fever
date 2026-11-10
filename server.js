@@ -41,7 +41,7 @@ const AVATAR_COUNT = 17; // must match public/sprites.js
 const GAMES = {};
 for (const mod of [
   'quiplash', 'fibbage', 'trivia', 'closest', 'majority', 'mostlikely',
-  'imposter', 'twotruths', 'telephone', 'minigames', 'crush', 'cah',
+  'imposter', 'twotruths', 'telephone', 'minigames', 'looncall', 'crush', 'cah',
 ]) {
   const G = require(`./games/${mod}`);
   GAMES[G.meta.id] = G;
@@ -528,10 +528,12 @@ function hostRoom(socket) {
 
 io.on('connection', (socket) => {
   socket.on('debug:ping', (ack) => { if (typeof ack === 'function') ack(); });
+  // Clock sync for rhythm games (phones timestamp taps in server time).
+  socket.on('time:ping', (ack) => { if (typeof ack === 'function') ack(Date.now()); });
   if (DEBUG) {
     dlog('connect', socket.id);
     socket.onAny((ev, payload) => {
-      if (ev === 'debug:ping') return;
+      if (ev === 'debug:ping' || ev === 'time:ping') return;
       let s = '';
       try { s = JSON.stringify(payload) ?? ''; } catch (e) { s = String(payload); }
       dlog('◀', socket.id.slice(0, 6), socket.data.role || '-', ev, s.length > 200 ? s.slice(0, 200) + '…' : s);

@@ -193,6 +193,7 @@
     cah:        { mode: 'minor', bpm: 136, lead: 'staccato', drums: 'drive', arp: 'up', bass: 'eighth', root: 57 },
     crush:      { mode: 'lydian', bpm: 100, lead: 'melodic', drums: 'bossa', arp: 'updown', bass: 'walk', root: 65, swing: 0.14 },
     minigames:  { mode: 'major', bpm: 152, lead: 'bouncy', drums: 'drive', arp: 'up', bass: 'eighth', root: 62 },
+    looncall:   { mode: 'mixo', bpm: 96, lead: 'sparse', drums: 'pop', arp: 'updown', bass: 'octave', root: 60, swing: 0.1 },
   };
 
   const CATALOG = {}; // cue -> [spec]
@@ -258,7 +259,12 @@
   const TOTAL = Object.values(CATALOG).reduce((n, l) => n + l.length, 0);
 
   // -------------------------------------------------------------- audio graph
-  let ctx = null, master = null, musicBus = null, sfxBus = null, duckGain = null;
+  // Created by ensure() on the first user gesture; nothing touches them before that
+  // (every entry point calls ensure() or checks `ctx`/`enabled` first).
+  /** @type {AudioContext} */
+  let ctx = /** @type {AudioContext} */ (/** @type {unknown} */ (null));
+  /** @type {GainNode} */
+  let master = /** @type {GainNode} */ (/** @type {unknown} */ (null)), musicBus = master, sfxBus = master, duckGain = master;
   let musicVol = 0.5, sfxVol = 0.7;
   try {
     const v = JSON.parse(localStorage.getItem('rumpus.vol') || 'null');
@@ -291,6 +297,8 @@
     return ctx;
   }
 
+  /** @param {AudioNode} dest @param {number} f @param {number} t @param {number} dur
+   *  @param {{ wave?: number, type?: OscillatorType | null, vol?: number, attack?: number, release?: number, slide?: number }} [opts] */
   function voice(dest, f, t, dur, { wave = 0.25, type = null, vol = 0.12, attack = 0.005, release = 0.05, slide = 0 } = {}) {
     if (!f) return;
     const o = ctx.createOscillator();
@@ -318,6 +326,7 @@
 
   // -------------------------------------------------------------- sequencer
   // A "deck" plays one compiled track into its own gain (for crossfades).
+  /** @type {any[]} decks: { tr, gain, step, next, stopping, onEnd } (compiled tracks are untyped) */
   let decks = [];
   let hurry = false;
   let intensity = 1; // 1 = round 1, 2 = round 2 (faster, busier); the final round has its own cue
@@ -391,13 +400,16 @@
 
   // -------------------------------------------------------------- cue logic
   let enabled = false;
+  /** @type {string | null} */
   let currentCue = null;
   let pendingCue = null;
   let afterOnce = null;
   let rotation = {};
   try { rotation = JSON.parse(localStorage.getItem('rumpus.rotation') || '{}'); } catch (e) { rotation = {}; }
+  /** @type {HTMLAudioElement | null} */
   let customAudio = null;
   let customCats = {};     // scenario -> [urls] from ./music/<scenario>/
+  /** @type {string | null} */
   let customCue = null;
 
   function nextIndex(cue) {
@@ -471,24 +483,25 @@
     currentCue = cue;
     customCue = cue;
     if (!customAudio) {
-      customAudio = new Audio();
-      customAudio.crossOrigin = 'anonymous';
+      const el = new Audio();
+      customAudio = el;
+      el.crossOrigin = 'anonymous';
       // Route through the same bus as the chiptunes: one volume slider, same ducking.
       normGain = ctx.createGain();
-      ctx.createMediaElementSource(customAudio).connect(normGain).connect(musicBus);
+      ctx.createMediaElementSource(el).connect(normGain).connect(musicBus);
       // A broken/missing file must never leave silence: skip it and pick another.
-      customAudio.addEventListener('error', () => {
+      el.addEventListener('error', () => {
         if (!customCue) return;
-        badTracks.add(customAudio.dataset.src || '');
+        badTracks.add(el.dataset.src || '');
         const rest = (customFor(customCue) || []).filter((u) => !badTracks.has(u));
-        if (rest.length) playCustom(customCue, rest, customAudio.dataset.then || undefined);
+        if (rest.length) playCustom(customCue, rest, el.dataset.then || undefined);
         else { const cue = customCue; customCue = null; currentCue = null; startCue(cue); }
       });
-      customAudio.addEventListener('ended', () => {
+      el.addEventListener('ended', () => {
         if (!customCue) return;
-        if (loopsLeft > 0 && customAudio.dataset.once !== '1') { loopsLeft--; plays++; customAudio.currentTime = 0; customAudio.play().catch(() => {}); return; }
-        if (customAudio.dataset.once === '1') {
-          const follow = pendingCue || customAudio.dataset.then || 'menu';
+        if (loopsLeft > 0 && el.dataset.once !== '1') { loopsLeft--; plays++; el.currentTime = 0; el.play().catch(() => {}); return; }
+        if (el.dataset.once === '1') {
+          const follow = pendingCue || el.dataset.then || 'menu';
           pendingCue = null;
           customCue = null;
           currentCue = null;
@@ -518,12 +531,13 @@
       normGain.gain.setValueAtTime(0, t);
       normGain.gain.linearRampToValueAtTime(level, t + FADE_IN);
     };
+    const audio = customAudio;
     setTimeout(() => {
       if (token !== swapToken) return;
-      customAudio.src = src;
-      customAudio.volume = 1;
-      customAudio.loop = false;
-      customAudio.play().catch(() => {});
+      audio.src = src;
+      audio.volume = 1;
+      audio.loop = false;
+      audio.play().catch(() => {});
       const known = trackInfo[src] && trackInfo[src].gain;
       if (known) start(known);
       else loudnessGain(src).then(start).catch(() => start(1)); // user-added track: measure first, stay silent until then
@@ -533,6 +547,14 @@
 
   function play(cue, opts = {}) {
     if (!enabled) { pendingCue = cue; return; }
+    // 'silence': a game that makes its own music in strict time (Loon Call) takes over the speakers.
+    if (cue === 'silence') {
+      if (currentCue === 'silence') return;
+      if (customAudio) { customAudio.pause(); customCue = null; }
+      decks.forEach((d) => fadeOut(d, 0.4));
+      currentCue = 'silence';
+      return;
+    }
     if (cue === currentCue && (customCue === cue || decks.some((d) => !d.stopping))) return;
     // Title / lobby / scoreboard: keep the current song going instead of switching.
     if (MENU_FAMILY.has(cue) && MENU_FAMILY.has(currentCue || '') && (customCue || decks.some((d) => !d.stopping))) { currentCue = cue; if (customCue) customCue = cue; return; }
@@ -575,7 +597,7 @@
       return;
     }
     const live = decks.some((d) => !d.stopping);
-    if (!live && currentCue) {
+    if (!live && currentCue && currentCue !== 'silence') {
       const once = CATALOG[currentCue] && CATALOG[currentCue][0].once;
       const cue = once ? (pendingCue || afterOnce || 'menu') : currentCue;
       pendingCue = null;
@@ -659,7 +681,20 @@
     award: () => sfx((t, d) => { voice(d, 784, t, 0.12, { vol: 0.1 }); voice(d, 1175, t + 0.12, 0.3, { vol: 0.1 }); }),
   };
 
+  /** Sample-accurate instruments for rhythm games: `t` is AudioContext time. */
+  const rhythm = {
+    ready: () => !!ctx && enabled,
+    now: () => (ctx ? ctx.currentTime : 0),
+    /** @param {number} t */ kick: (t) => { voice(musicBus, 150, t, 0.16, { type: 'sine', vol: 0.5, slide: 0.35, release: 0.1 }); },
+    /** @param {number} t */ hat: (t) => noise(musicBus, t, 0.04, 0.05, 7000),
+    /** @param {number} t @param {boolean} accent */ click: (t, accent) => voice(sfxBus, accent ? 1568 : 1175, t, 0.05, { wave: 0.5, vol: 0.12 }),
+    /** The lead loon's "hoo" — a short sliding call. @param {number} t @param {number} f */
+    call: (t, f) => { voice(sfxBus, f, t, 0.16, { wave: 0.25, vol: 0.16, slide: 1.12, attack: 0.008 }); voice(sfxBus, f * 2, t, 0.08, { type: 'sine', vol: 0.05 }); },
+    /** @param {number} t @param {number} f */ bass: (t, f) => voice(musicBus, f, t, 0.22, { wave: 0.5, vol: 0.12 }),
+  };
+
   window.Rumpus.music = {
+    rhythm,
     enable, play, setVolume, setHurry, setIntensity, duck, sfx: SFX, status,
     /** Test/debug: simulate the music dying (pause without any event) — the watchdog must revive it. */
     debugStop() { if (customAudio) customAudio.pause(); decks.forEach((d) => fadeOut(d, 0.1)); },

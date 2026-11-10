@@ -177,10 +177,11 @@ async function check(name, fn) {
     assert.ok(st.samples > 60);
   });
 
-  await check('game picker shows unique art for all 12 games', async () => {
+  await check('game picker shows unique art for every game', async () => {
+    const games = await (await fetch(BASE + '/api/admin/rules')).json();
     const arts = await tv.$$eval('.game-pick .game-art img', (els) => els.map((e) => [e.src, e.width, e.height]));
-    assert.strictEqual(arts.length, 12);
-    assert.strictEqual(new Set(arts.map((a) => a[0])).size, 12);
+    assert.strictEqual(arts.length, games.games.length, 'one picture per game on the server');
+    assert.strictEqual(new Set(arts.map((a) => a[0])).size, arts.length);
     assert.ok(new Set(arts.map((a) => `${a[1]}x${a[2]}`)).size >= 4, 'art comes in different sizes');
     await shot(tv, '02-lobby');
   });
@@ -439,6 +440,23 @@ async function check(name, fn) {
     await tv.click('[data-act="end"]');
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-act="nobots"]');
+  });
+
+  await check('Loon Call on real phones: clocks sync, a tap during the tune-up lights up that loon on the TV, the beat meter runs', async () => {
+    const off = await phones[0].evaluate(() => ({ rtt: Rumpus.time.rtt(), off: Rumpus.time.offset() }));
+    assert.ok(off.rtt !== null && off.rtt < 200, `phone clock synced (rtt ${off.rtt})`);
+    await tv.click('[data-game-id="looncall"]');
+    await phones[0].waitForSelector('.lc-tap');
+    await tv.waitForSelector('[data-lc-meter] .lc-mode');
+    await tv.waitForFunction(() => Rumpus.music.status().cue === 'silence', null, { timeout: 8000 }); // the game owns the beat
+    // Wait for the clicks, then tap.
+    await phones[0].waitForFunction(() => document.querySelector('.lc-tap') && document.querySelector('.lc-tap').classList.contains('go'), null, { timeout: 8000 });
+    await phones[0].tap('.lc-tap').catch(() => phones[0].click('.lc-tap'));
+    await tv.waitForFunction(() => document.querySelector('.lc-loon.hit-good, .lc-loon.hit-perfect'), null, { timeout: 4000 });
+    await shot(tv, '30-looncall');
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
   });
 
   await check('no page errors anywhere', async () => {
