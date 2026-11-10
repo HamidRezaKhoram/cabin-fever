@@ -1,7 +1,7 @@
 /* Rumpus player (phone) view — renderer of room:stateUpdate. AGPLv3, see LICENSE. */
 'use strict';
 
-const { esc, store, countdown, games, sprites } = window.Rumpus;
+const { esc, store, countdown, games, sprites, morph, playerImg } = window.Rumpus;
 const socket = io();
 
 const joinView = document.getElementById('join-view');
@@ -27,12 +27,64 @@ function avatarGrid(selected, taken = new Set()) {
       <img src="${sprites.avatarUrl(i)}" alt="${a.name}"></button>`).join('');
 }
 avatarPick.innerHTML = avatarGrid(myAvatar);
+
+// --- draw-your-own profile picture (default) or pick an animal -------------
+let avatarMode = store('rumpus.avatarMode') || 'draw';
+let joinPad = null;
+const avatarDraw = document.getElementById('avatar-draw');
+function setAvatarMode(mode) {
+  avatarMode = mode;
+  store('rumpus.avatarMode', mode);
+  document.querySelectorAll('.avatar-mode [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  avatarDraw.hidden = mode !== 'draw';
+  avatarPick.hidden = mode !== 'pick';
+  if (mode === 'draw' && !joinPad) joinPad = window.Rumpus.drawPad(avatarDraw);
+}
+document.querySelector('.avatar-mode').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]');
+  if (b) setAvatarMode(b.dataset.mode);
+});
+setAvatarMode(avatarMode);
+
+// Redraw from the lobby.
+const lobbyDraw = document.getElementById('lobby-draw');
+let lobbyPad = null;
+document.getElementById('lobby-draw-save').addEventListener('click', () => {
+  if (lobbyPad && !lobbyPad.isEmpty()) socket.emit('player:drawAvatar', { image: lobbyPad.toDataURL(128) });
+  lobbyDraw.hidden = true;
+});
 avatarPick.addEventListener('click', (e) => {
   const b = e.target.closest('[data-avatar]');
   if (!b) return;
   myAvatar = +b.dataset.avatar;
   store('rumpus.avatar', myAvatar);
   avatarPick.innerHTML = avatarGrid(myAvatar);
+
+// --- draw-your-own profile picture (default) or pick an animal -------------
+let avatarMode = store('rumpus.avatarMode') || 'draw';
+let joinPad = null;
+const avatarDraw = document.getElementById('avatar-draw');
+function setAvatarMode(mode) {
+  avatarMode = mode;
+  store('rumpus.avatarMode', mode);
+  document.querySelectorAll('.avatar-mode [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  avatarDraw.hidden = mode !== 'draw';
+  avatarPick.hidden = mode !== 'pick';
+  if (mode === 'draw' && !joinPad) joinPad = window.Rumpus.drawPad(avatarDraw);
+}
+document.querySelector('.avatar-mode').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]');
+  if (b) setAvatarMode(b.dataset.mode);
+});
+setAvatarMode(avatarMode);
+
+// Redraw from the lobby.
+const lobbyDraw = document.getElementById('lobby-draw');
+let lobbyPad = null;
+document.getElementById('lobby-draw-save').addEventListener('click', () => {
+  if (lobbyPad && !lobbyPad.isEmpty()) socket.emit('player:drawAvatar', { image: lobbyPad.toDataURL(128) });
+  lobbyDraw.hidden = true;
+});
 });
 
 // --- reactions ----------------------------------------------------------------
@@ -50,6 +102,41 @@ let state = null;
 let lastHtml = null;
 let cleanups = [];
 let ended = false;
+let lastScreenKey = null;
+
+// Delegated input handling: works for nodes added later by morph().
+gameView.addEventListener('submit', (e) => {
+  const f = e.target;
+  if (f.matches('form.text-form')) {
+    e.preventDefault();
+    const v = f.querySelector('input').value;
+    if (v.trim()) send({ text: v });
+  } else if (f.matches('form.number-form')) {
+    e.preventDefault();
+    const n = parseFloat(f.querySelector('input').value.replace(/,/g, ''));
+    if (Number.isFinite(n)) send({ number: n });
+  }
+});
+gameView.addEventListener('click', (e) => {
+  const av = e.target.closest('.lobby-pick [data-avatar]');
+  if (av && !av.disabled) {
+    store('rumpus.avatar', +av.dataset.avatar);
+    socket.emit('player:drawAvatar', { image: null }); // back to the pixel animal
+    socket.emit('player:avatar', { avatar: +av.dataset.avatar });
+    return;
+  }
+  if (e.target.closest('[data-lobby-draw]')) {
+    lobbyDraw.hidden = false;
+    if (!lobbyPad) lobbyPad = window.Rumpus.drawPad(document.getElementById('lobby-pad'));
+    else lobbyPad.clear();
+    lobbyDraw.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  const b = e.target.closest('[data-send]');
+  if (!b || b.disabled) return;
+  for (const x of gameView.querySelectorAll('[data-send]')) x.disabled = true;
+  send(JSON.parse(b.dataset.send));
+});
 
 // Prefill from QR link (?code=ABCD) and from last time.
 const params = new URLSearchParams(location.search);
@@ -61,7 +148,10 @@ joinForm.addEventListener('submit', (e) => {
   e.preventDefault();
   joinError.textContent = '';
   store('rumpus.nick', nickInput.value.trim());
-  socket.emit('player:joinRoom', { code: codeInput.value, nickname: nickInput.value, avatar: myAvatar });
+  socket.emit('player:joinRoom', {
+    code: codeInput.value, nickname: nickInput.value, avatar: myAvatar,
+    drawing: avatarMode === 'draw' && joinPad && !joinPad.isEmpty() ? joinPad.toDataURL(128) : undefined,
+  });
 });
 
 leaveBtn.addEventListener('click', () => {
@@ -127,7 +217,7 @@ function myScore() {
 const waiting = (t) => `<h1>${t} ✓</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div><p>Waiting for the slowpokes… send some taunts below 👇</p>`;
 function meAvatar(cls) {
   const p = state && me && state.players.find((x) => x.id === me.playerId);
-  return p ? sprites.avatarImg(p.avatar, cls) : '';
+  return p ? playerImg(p, cls) : '';
 }
 
 // The original four games' phone screens.
@@ -147,12 +237,16 @@ function legacyPlayer(phase, g, you) {
       return '<h1>Results</h1>' + (w ? `<p class="prompt">"${esc(w.text)}" — ${esc(w.nickname)} wins the round!</p>`
         : '<p>No votes this round. Tough crowd.</p>');
     }
+    case 'trivia-category':
+      if (!you.isChooser) return `<h1>Category round!</h1><p>${esc(g.chooser)} is picking the next category… 🤔</p>`;
+      return `<h1>You're in last place 😅</h1><p>So YOU pick the next category:</p><div class="vote-list">` +
+        g.categoryOptions.map((c, i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-question':
       if (you.answered) return waiting('Locked in');
       return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.question)}</h2><div class="vote-list">` +
         g.choices.map((c, i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-reveal':
-      return `<h1>${you.wasCorrect ? 'Nice! ✓' : 'Nope ✗'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>`;
+      return `<h1>${you.wasCorrect ? 'Nice! ✓' : 'Nope ✗'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>${you.streak > 1 ? `<p class="streak">🔥 ${you.streak} in a row!</p>` : ''}`;
     case 'cah-submit':
       if (you.isCzar) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Sit tight — everyone else is picking a card.</p>`;
       if (you.submitted) return waiting('Card played');
@@ -211,7 +305,8 @@ function render() {
     html = `<h1>You're in!</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div>
       <p>Watch the TV — the host is picking a game.</p>
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
-      <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>`;
+      <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
+      <button class="ghost-btn" data-lobby-draw>✏️ Draw my own picture</button>`;
   } else if (state.phase === 'gameover') {
     const top = g.standings && g.standings[0];
     const rank = (g.standings || []).findIndex((s) => s.nickname === you.nickname);
@@ -226,18 +321,17 @@ function render() {
 
   // Only touch the DOM if this phone's screen actually changed — otherwise
   // another player's submit would wipe what you're typing/drawing.
-  if (html !== lastHtml) {
+  // Same screen (phase/round/step unchanged): patch in place, no re-animation.
+  const screenKey = [state.phase, g.round, g.step, g.chainIndex, g.subject].join('|');
+  if (html !== lastHtml && screenKey === lastScreenKey && lastHtml !== null && !gameView.querySelector('#pad')) {
+    morph(gameView, html);
+    lastHtml = html;
+  } else if (html !== lastHtml) {
+    lastScreenKey = screenKey;
     cleanups.forEach((fn) => fn());
     cleanups = [];
     gameView.innerHTML = html;
     gameView.classList.remove('enter'); void gameView.offsetWidth; gameView.classList.add('enter');
-    const lp = gameView.querySelector('.lobby-pick');
-    if (lp) lp.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-avatar]');
-      if (!b || b.disabled) return;
-      store('rumpus.avatar', +b.dataset.avatar);
-      socket.emit('player:avatar', { avatar: +b.dataset.avatar });
-    });
     const needsInput = gameView.querySelector('form, [data-send], #pad');
     if (needsInput && lastHtml !== null && navigator.vibrate) navigator.vibrate(60);
     lastHtml = html;
@@ -246,29 +340,37 @@ function render() {
     if (first && !('ontouchstart' in window)) first.focus();
   }
   countdown(g.endsAt, '#phone-timer');
+  if (state.phase !== 'lobby') lobbyDraw.hidden = true;
+  renderPace();
 }
 
+// Majority-vote pace buttons: skip question / hurry up / next.
+const paceBar = document.getElementById('pace-bar');
+const PACE = {
+  skipq: { label: '🔄 Skip this question', done: 'Voted to skip' },
+  hurry: { label: '⏩ Hurry them up', done: 'Voted to hurry' },
+  ready: { label: '▶ Next', done: 'Ready' },
+};
+function renderPace() {
+  const pc = state && state.pace;
+  if (!pc || !pc.allowed || !pc.allowed.length || ended) { paceBar.hidden = true; return; }
+  const answering = !!gameView.querySelector('form, [data-send], #pad');
+  const show = pc.allowed.filter((k) => (k === 'skipq' ? answering : k === 'hurry' ? !answering : true));
+  if (!show.length) { paceBar.hidden = true; return; }
+  const mine = (state.you && state.you.paceVotes) || [];
+  const html = show.map((k) => `<button class="pace-btn ${mine.includes(k) ? 'on' : ''}" data-pace="${k}" ${mine.includes(k) ? 'disabled' : ''}>
+      ${mine.includes(k) ? '✓ ' + PACE[k].done : PACE[k].label} <small>${pc.counts[k] || 0}/${pc.need}</small></button>`).join('');
+  paceBar.hidden = false;
+  morph(paceBar, html);
+}
+paceBar.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pace]');
+  if (!b || b.disabled) return;
+  socket.emit('player:vote', { kind: b.dataset.pace });
+  if (navigator.vibrate) navigator.vibrate(20);
+});
+
 function bind(g) {
-  for (const f of gameView.querySelectorAll('form.text-form')) {
-    f.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const v = f.querySelector('input').value;
-      if (v.trim()) send({ text: v });
-    });
-  }
-  for (const f of gameView.querySelectorAll('form.number-form')) {
-    f.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const n = parseFloat(f.querySelector('input').value.replace(/,/g, ''));
-      if (Number.isFinite(n)) send({ number: n });
-    });
-  }
-  for (const b of gameView.querySelectorAll('[data-send]')) {
-    b.addEventListener('click', () => {
-      for (const x of gameView.querySelectorAll('[data-send]')) x.disabled = true;
-      send(JSON.parse(b.dataset.send));
-    });
-  }
   const impl = games[g.gameId];
   if (impl && impl.bind) impl.bind(gameView, { send, state, onCleanup: (fn) => cleanups.push(fn) });
 }

@@ -51,6 +51,8 @@ class MostLikelyGame extends BaseGame {
 
   start() { this.nextRound(); }
 
+  get skippablePhases() { return ['ml-vote']; }
+
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;

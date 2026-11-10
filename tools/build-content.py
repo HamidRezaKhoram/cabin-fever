@@ -72,7 +72,7 @@ def write(name, items, min_count=1000):
 
 def fill(tpl, f):
     out = tpl.replace('{}', f)
-    return re.sub(r"\ba ([aeiouAEIOU])", r"an \1", out)
+    return re.sub(r"\ba ([aeiAEI]|[oO](?!ne|nce)|[uU](?!ni|se|su|ku|ro|ti|fo|FO))", r"an \1", out)
 
 def clean(s):
     return html.unescape(s).strip()
@@ -96,7 +96,7 @@ def boring_trivia(q):
     text = clean(q['question'])
     if q['type'] == 'boolean' or cat in DRY_CATS or DRY_RE.search(text):
         return True
-    if re.search(r"How many letters are in the English|What is the capital of|What colou?r is", text):
+    if re.search(r"How many letters are in the English|What is the capital of|What colou?r is", text, re.I):
         return True
     if cat == 'Entertainment: Video Games' and q['difficulty'] == 'hard':
         return True
@@ -116,12 +116,19 @@ if cah:
         family = bool(re.search(r'family', pack['name'], re.I))
         for i in pack['black']:
             b = cah['black'][i]
-            cah_black.append({'text': clean(b['text']).replace('_', '____'), 'pick': b['pick'], 'a': not family})
+            text = clean(b['text']).replace('_', '____')
+            # Skip instruction cards ("Instead of playing a card…") — they need house rules we don't have.
+            if '____' not in text and not text.rstrip().endswith('?'):
+                continue
+            cah_black.append({'text': text, 'pick': b['pick'], 'a': not family})
         for i in pack['white']:
             cah_white.append({'text': clean(cah['white'][i]), 'a': not family})
     cah_black = dedupe(cah_black, lambda x: x['text'])
     cah_white = dedupe(cah_white, lambda x: x['text'])
-    write('cah-black', [b for b in cah_black if b['pick'] == 1], 500)
+    # Our original Punchline prompts double as Card Chaos prompt cards ("…: ____.").
+    pf, pa = read_txt('punchline.txt')
+    extra = [{'text': f'{t}: ____.', 'pick': 1, 'a': False} for t in pf] + [{'text': f'{t}: ____.', 'pick': 1, 'a': True} for t in pa]
+    write('cah-black', dedupe([b for b in cah_black if b['pick'] == 1] + extra, lambda x: x['text']), 1000)
     write('cah-white', cah_white, 1000)
 
 # ----------------------------------------------------------------- Punchline
@@ -215,7 +222,7 @@ if otqa.exists():
 for c in closest:
     if c['answer'] == int(c['answer']):
         c['answer'] = int(c['answer'])
-OBVIOUS = re.compile(r"legs does (a|an) (spider|insect)|arms does an octopus|chambers does a human heart|lungs does|"
+OBVIOUS = re.compile(r"atomic number|legs does (a|an) (spider|insect)|arms does an octopus|chambers does a human heart|lungs does|"
     r"planets are in our|degrees are in a|sides does a (hexagon|stop sign)|days are in a leap|hours are in a (week|year)|"
     r"years are in a millennium|letters are in the English|bits are in a byte|megabytes|strings does a standard|"
     r"lines are in a (sonnet|haiku)|syllables are in a haiku|cards are in a standard|players are on a|Great Lakes are|"

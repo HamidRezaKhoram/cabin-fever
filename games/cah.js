@@ -10,6 +10,7 @@
 
 const crypto = require('crypto');
 const library = require('./library');
+const flow = require('./flow');
 // Fallback deck if the pools are missing.
 const { WHITE, BLACK } = require('./data/cah-cards.sample');
 
@@ -89,16 +90,32 @@ class CAHGame {
     }, ms);
   }
 
-  isFinal() {
-    return this.totalRounds > 1 && this.round === this.totalRounds;
+  // Escalating stakes: first half ×1, second half ×2, final question ×3.
+  mult() {
+    return flow.stage(this.round, this.totalRounds);
   }
 
-  mult() {
-    return this.isFinal() ? 2 : 1;
+  isFinal() {
+    return this.mult() > 1;
   }
 
   spicy() {
     return !(this.room.settings && this.room.settings.spicy === false);
+  }
+
+  get skippablePhases() { return ['cah-submit']; }
+
+  // New prompt card, same Card Czar; played cards go back to their owners.
+  skipQuestion() {
+    if (this.phase !== 'cah-submit') return;
+    for (const [id, text] of this.submissions) {
+      const hand = this.hands.get(id);
+      if (hand) hand.push(text);
+    }
+    this.submissions = new Map();
+    this.blackCard = this.drawBlack();
+    this.skipSeq = (this.skipSeq || 0) + 1;
+    this.push();
   }
 
   // Host pressed "skip": run the pending phase transition now.
@@ -233,7 +250,10 @@ class CAHGame {
       gameId: 'cah',
       round: this.round,
       totalRounds: this.totalRounds,
-      doublePoints: this.isFinal(),
+      doublePoints: this.mult() > 1,
+      multiplier: this.mult(),
+      stage: flow.stage(this.round, this.totalRounds),
+      skipSeq: this.skipSeq || 0,
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
     };
@@ -263,7 +283,10 @@ class CAHGame {
       gameId: 'cah',
       round: this.round,
       totalRounds: this.totalRounds,
-      doublePoints: this.isFinal(),
+      doublePoints: this.mult() > 1,
+      multiplier: this.mult(),
+      stage: flow.stage(this.round, this.totalRounds),
+      skipSeq: this.skipSeq || 0,
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
       isCzar: playerId === this.czarId,

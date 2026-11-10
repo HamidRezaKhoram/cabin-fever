@@ -1,7 +1,7 @@
 /* Rumpus host (TV) view — renderer of room:stateUpdate. AGPLv3, see LICENSE. */
 'use strict';
 
-const { esc, store, sfx, countdown, games, av, sprites, music, fx } = window.Rumpus;
+const { esc, store, sfx, countdown, games, av, sprites, music, fx, morph, clock, playerImg, playerUrl } = window.Rumpus;
 const socket = io();
 
 const codeEl = document.getElementById('room-code');
@@ -47,9 +47,9 @@ music.onTrack(({ name }) => {
 
 // How-to-play cards shown when a game starts.
 const RULES = {
-  quiplash: ['Everyone answers the same prompt', 'Vote for the funniest answer', 'Win every vote = SWEEP bonus'],
+  quiplash: ['You get 2 prompts — a rival gets each one too', 'Everyone else votes: who\'s funnier?', 'Win every vote = SHUTOUT bonus'],
   fibbage: ['Write a believable fake answer', 'Find the TRUE answer among the lies', 'Points for every friend you fool'],
-  trivia: ['Pick the right answer — fast!', 'Speed = bonus points', 'Answer streaks multiply 🔥'],
+  trivia: ['Pick the right answer — fast!', 'Answer streaks add bonus points 🔥', 'Last place picks the next category'],
   closest: ['Guess the number', 'Closest gets the most points', 'Exact hit = BULLSEYE bonus'],
   majority: ['Type what everyone ELSE will say', 'Match the crowd to score', 'Unique answers get nothing'],
   mostlikely: ['Vote which friend fits the prompt', 'Vote with the majority to score', 'No hard feelings… probably'],
@@ -67,7 +67,7 @@ function showIntro(gameId) {
       ${sprites.iconUrl(gameId) ? `<img class="intro-icon" src="${sprites.iconUrl(gameId)}" alt="">` : ''}
       <div class="intro-title">${esc(meta.name)}</div>
       <ol class="intro-rules">${(RULES[gameId] || []).map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
-      <div class="intro-crew">${state.players.map((p) => sprites.avatarImg(p.avatar, 'avatar big bob')).join('')}</div>
+      <div class="intro-crew">${state.players.map((p) => playerImg(p, 'avatar big bob')).join('')}</div>
     </div>`;
   document.body.appendChild(el);
   setTimeout(() => el.classList.add('out'), 3800);
@@ -135,14 +135,25 @@ socket.on('host:replaced', () => {
 });
 socket.on('room:stateUpdate', (msg) => { state = msg; window.Rumpus.setState(msg); render(); });
 socket.on('room:reaction', (r) => {
-  fx.reaction(esc(r.emoji), sprites.avatarUrl(r.avatar), esc(r.nickname));
+  fx.reaction(esc(r.emoji), playerUrl({ id: r.playerId, avatar: r.avatar, drawn: r.drawn }), esc(r.nickname));
   sfx.pop();
 });
 socket.on('disconnect', () => document.body.classList.add('offline'));
+socket.on('room:event', (ev) => {
+  if (ev.type === 'skipped') { fx.banner('QUESTION SKIPPED!\nFresh one coming up'); sfx.whoosh(); }
+  else if (ev.type === 'hurry') { fx.banner('HURRY UP!\n10 SECONDS LEFT'); sfx.boo(); }
+  else if (ev.type === 'ready') sfx.whoosh();
+});
 
 // --- input --------------------------------------------------------------------
 
 document.addEventListener('click', (e) => {
+  const kick = e.target.closest('[data-kick]');
+  if (kick) {
+    const p = state && state.players.find((x) => x.id === kick.dataset.kick);
+    if (p && confirm(`Kick ${p.nickname}?`)) socket.emit('host:kickPlayer', { playerId: p.id });
+    return;
+  }
   const pickBtn = e.target.closest('.game-pick');
   if (pickBtn && !pickBtn.disabled) return socket.emit('host:startGame', { gameId: pickBtn.dataset.gameId });
   const act = e.target.closest('[data-act]');
@@ -174,9 +185,10 @@ function cueFor(st) {
   const g = st.gameState || {};
   if (p === 'lobby') return st.players.length ? 'menu' : 'title';
   if (p === 'gameover') return 'scoreboard';
+  if (p === 'trivia-category') return 'category';
   if (isRevealPhase(p)) return 'reveal';
   if (isVotePhase(p)) return 'vote';
-  if (g.doublePoints) return 'final';
+  if (g.stage === 3 || g.multiplier === 3) return 'final';
   return 'game:' + g.gameId;
 }
 
@@ -223,6 +235,17 @@ function computeAwards() {
 // --- rendering ----------------------------------------------------------------
 
 const T = '<span class="timer"></span>';
+// Each game's art is drawn at 4× its own pixel size, on its own colour theme.
+const ART_BG = {
+  quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423',
+};
+const art = (id) => {
+  const u = sprites.iconUrl(id);
+  if (!u) return '';
+  const [w, h] = sprites.iconSize(id);
+  return `<div class="game-art" style="--art-bg:${ART_BG[id] || '#2f2850'}"><img src="${u}" width="${w * 4}" height="${h * 4}" alt=""></div>`;
+};
 const icon = (id) => {
   const u = sprites.iconUrl(id);
   return u ? `<img class="game-icon" src="${u}" alt="">` : '';
@@ -233,7 +256,7 @@ function gamePicker(label) {
   const st = state.settings || {};
   const opt = (v, cur, text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
   const crew = state.players.map((p) =>
-    `<figure>${sprites.avatarImg(p.avatar, 'avatar big bob')}${esc(p.nickname)}</figure>`).join('');
+    `<figure>${playerImg(p, 'avatar big bob')}${esc(p.nickname)}</figure>`).join('');
   return `<div class="lobby-head">
       <div>
         <h1>${label}</h1>
@@ -255,10 +278,12 @@ function gamePicker(label) {
     (state.availableGames || []).map((gm) => {
       const disabled = count < gm.minPlayers;
       return `<button class="game-pick" data-game-id="${esc(gm.id)}" ${disabled ? 'disabled' : ''}>
-        ${icon(gm.id)}
-        <span class="game-name">${esc(gm.name)}</span>
-        <span class="game-blurb">${esc(gm.blurb)}</span>
-        <span class="game-min">${disabled ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}</span>
+        ${art(gm.id)}
+        <span class="game-text">
+          <span class="game-name">${esc(gm.name)}</span>
+          <span class="game-blurb">${esc(gm.blurb)}</span>
+          <span class="game-min">${disabled ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}</span>
+        </span>
       </button>`;
     }).join('') + `</div>
     <p class="hint footer-hint"><button class="link-btn" data-act="newroom">Start a fresh room</button></p>`;
@@ -285,7 +310,7 @@ const voterIcons = (names) => names && names.length
 
 // The original four games' screens.
 function legacyHost(phase, g) {
-  const roundTag = g.round ? `<p class="round-tag">Round ${g.round} of ${g.totalRounds}${g.doublePoints ? '<span class="double-badge">2× POINTS</span>' : ''}</p>` : '';
+  const roundTag = g.round ? `<p class="round-tag">Question ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>` : '';
   switch (phase) {
     case 'answering':
       return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
@@ -303,8 +328,13 @@ function legacyHost(phase, g) {
           <span class="votes">${r.votes} vote${r.votes === 1 ? '' : 's'}${r.gained ? ' · +' + r.gained : ''}</span>
           ${voterIcons(r.voters)}${r.sweep ? '<span class="sweep">SWEEP! +250</span>' : ''}</li>`).join('') + '</ol>';
     }
+    case 'trivia-category':
+      return `<p class="round-tag">Category round</p>
+        <h1>${av(g.chooser, 'avatar big bob')} ${esc(g.chooser)} is in last place…</h1>
+        <p class="big-sub">…so they pick the next category! ${T}</p>
+        <div class="cat-card">${g.categoryOptions.map((c) => `<div>${esc(c)}</div>`).join('')}</div>`;
     case 'trivia-question':
-      return `${roundTag}${g.category ? `<span class="cat-tag">${esc(g.category)}</span>` : ''}<h1 class="prompt">${esc(g.question)}</h1>
+      return `${roundTag}${g.category ? `<span class="cat-banner">${esc(g.category)}</span>` : ''}<h1 class="prompt">${esc(g.question)}</h1>
         <p class="big-sub">Fast answers score more! ${T}</p>
         <ol class="answers">${g.choices.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>
         <p class="count">${g.answeredCount} / ${g.totalPlayers} answers in</p>`;
@@ -347,24 +377,12 @@ function legacyHost(phase, g) {
 function renderSidebar(phase) {
   const sorted = state.players.slice();
   if (phase !== 'lobby') sorted.sort((a, b) => b.score - a.score);
-  playerList.innerHTML = '';
-  sorted.forEach((p, i) => {
-    const li = document.createElement('li');
-    li.dataset.id = p.id;
-    if (!p.connected) li.classList.add('offline');
-    if (i === 0 && p.score > 0 && phase !== 'lobby') li.classList.add('leader');
-    li.innerHTML = `${sprites.avatarImg(p.avatar)}<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}</span>` +
-      `<span class="pscore">${p.score}</span>`;
-    const kick = document.createElement('button');
-    kick.className = 'kick';
-    kick.textContent = '✕';
-    kick.title = 'Kick ' + p.nickname;
-    kick.addEventListener('click', () => {
-      if (confirm(`Kick ${p.nickname}?`)) socket.emit('host:kickPlayer', { playerId: p.id });
-    });
-    li.appendChild(kick);
-    playerList.appendChild(li);
-  });
+  morph(playerList, sorted.map((p, i) => {
+    const cls = [!p.connected && 'offline', i === 0 && p.score > 0 && phase !== 'lobby' && 'leader'].filter(Boolean).join(' ');
+    return `<li data-id="${esc(p.id)}" class="${cls}">${playerImg(p)}` +
+      `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}</span>` +
+      `<span class="pscore">${p.score}</span><button class="kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}">✕</button></li>`;
+  }).join(''));
   // Score pop-ups
   for (const p of state.players) {
     const before = prevScores.get(p.id);
@@ -380,12 +398,14 @@ function updateTimerBar(endsAt) {
   if (timerTotal.endsAt !== endsAt) timerTotal = { endsAt, total: Math.max(1000, endsAt - Date.now()) };
   timerbar.hidden = false;
 }
-setInterval(() => {
+// Timer bar drains smoothly on the shared 30 fps clock (transform, not width:
+// no layout work per frame).
+clock.add(() => {
   if (timerbar.hidden || !timerTotal.endsAt) return;
   const left = Math.max(0, timerTotal.endsAt - Date.now());
-  timerbar.firstElementChild.style.width = (100 * left / timerTotal.total) + '%';
+  timerbar.firstElementChild.style.transform = `scaleX(${(left / timerTotal.total).toFixed(4)})`;
   timerbar.classList.toggle('urgent', left < 5000);
-}, 250);
+});
 
 function render() {
   if (!state) return;
@@ -398,8 +418,11 @@ function render() {
 
   const inGame = phase !== 'lobby' && phase !== 'gameover';
   controls.hidden = !inGame;
+  const pc = state.pace || { counts: {}, need: 0 };
+  const paceTxt = ['skipq', 'hurry', 'ready'].filter((k) => pc.counts[k]).map((k) =>
+    `<span class="pace-pill">${{ skipq: '🔄 skip', hurry: '⏩ hurry', ready: '▶ next' }[k]} ${pc.counts[k]}/${pc.need}</span>`).join('');
   controls.innerHTML = inGame
-    ? `<button data-act="skip" ${state.canSkip ? '' : 'disabled'}>Skip ⏭</button><button data-act="end" class="danger">End</button>`
+    ? `${paceTxt}<button data-act="skip" ${state.canSkip ? '' : 'disabled'}>Skip ⏭</button><button data-act="end" class="danger">End</button>`
     : '';
 
   // Work out end-of-game awards before the game-over screen is drawn.
@@ -416,18 +439,18 @@ function render() {
     const awards = lastAwards;
     html = '<h1>🏆 Final scores</h1>' + podium(g.standings || []) +
       (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
-        ${sprites.avatarImg(a.avatar, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
+        ${av(a.name, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
       gamePicker('Play again?');
   } else if (games[g.gameId]) {
     html = games[g.gameId].host(state);
-    if (g.doublePoints && !/2× POINTS/.test(html)) {
-      html = html.replace(/(<p class="round-tag">[^<]*)/, '$1<span class="double-badge">2× POINTS</span>');
+    if (g.multiplier > 1 && !/× POINTS/.test(html)) {
+      html = html.replace(/(<p class="round-tag">[^<]*)/, `$1<span class="double-badge">${g.multiplier}× POINTS</span>`);
     }
   } else {
     html = legacyHost(phase, g) || `<h1>${esc(phase)}</h1>`;
   }
 
-  const key = phase + ':' + (g.round || 0) + ':' + (g.chainIndex || 0);
+  const key = [phase, g.round || 0, g.chainIndex || 0, g.matchIndex == null ? '' : g.matchIndex, g.skipSeq || 0].join(':');
   const phaseChanged = key !== lastPhaseKey;
   if (phaseChanged) {
     const wasInGame = lastPhaseKey && !/^(lobby|gameover)/.test(lastPhaseKey);
@@ -445,11 +468,14 @@ function render() {
     } else {
       music.play(cueFor(state));
       if (isRevealPhase(phase)) {
-        sfx.reveal();
+        if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();
+        else sfx.reveal();
         shake();
         if (gameStats) gameStats.snaps.push(snapshotScores());
       } else if (inGame) sfx.phase();
-      if (phase === 'cah-reveal' || (phase === 'results' && (g.results || []).some((r) => r.sweep))) fx.confetti(90);
+      if (phase === 'cah-reveal' || (phase === 'results' && g.result && g.result.sides.some((sd) => sd.shutout))) fx.confetti(90);
+      if (phase === 'results' && g.result && g.result.sides.some((sd) => sd.shutout)) fx.banner('SHUTOUT!', 'gold');
+      if (phase === 'trivia-category') fx.banner('CATEGORY ROUND!', 'gold');
       if (phase === 'cg-reveal' && g.result && g.result.list.some((e) => e.exact)) { fx.banner('BULLSEYE!', 'gold'); fx.confetti(120); }
       if (phase === 'imp-reveal' && g.result) fx.banner(g.result.outcome === 'caught' ? 'GOTCHA!' : g.result.outcome === 'stole' ? 'STOLEN!' : 'GOT AWAY!', g.result.outcome === 'caught' ? 'gold' : '');
     }
@@ -462,9 +488,15 @@ function render() {
       if (top && top.score > 0) leaderId = top.id;
     }
     if (phase === 'lobby') music.play(cueFor(state));
-    const roundKey = (g.gameId || '') + ':' + (g.round || 0);
-    if (inGame && g.doublePoints && roundKey !== lastRoundSeen) fx.banner('FINAL ROUND!\nDOUBLE POINTS', 'gold');
-    lastRoundSeen = roundKey;
+    // Stage title cards: ROUND 2 (×2) and FINAL QUESTION (×3).
+    const mult = g.multiplier || 1;
+    if (inGame && !isRevealPhase(phase) && mult !== lastRoundSeen) {
+      if (mult === 2) fx.banner('ROUND 2!\nDOUBLE POINTS', 'gold');
+      if (mult === 3) fx.banner('FINAL QUESTION!\nTRIPLE POINTS', 'gold');
+      if (mult > 1) sfx.leader();
+    }
+    if (inGame && !isRevealPhase(phase)) lastRoundSeen = mult;
+    if (!inGame) lastRoundSeen = 1;
     // Pixel wipe between screens (not between lobby re-renders).
     pendingHtml = html;
     if (!wiping) {
@@ -472,13 +504,13 @@ function render() {
       fx.wipe(() => {
         phaseView.innerHTML = pendingHtml;
         wiping = false;
-        countdown(g.endsAt, '.timer', tick);
+        countdown((state.gameState || {}).endsAt, '.timer', tick);
       });
     }
   } else if (wiping) {
     pendingHtml = html;
   } else {
-    phaseView.innerHTML = html;
+    morph(phaseView, html); // small updates (counts, votes) without restarting animations
   }
   updateTimerBar(inGame ? g.endsAt : null);
   if (!wiping) countdown(g.endsAt, '.timer', tick);

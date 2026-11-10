@@ -18,12 +18,15 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const QRCode = require('qrcode');
 const library = require('./games/library');
+const flow = require('./games/flow');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
 // How long a dropped phone / TV keeps its seat before being removed.
 const PLAYER_GRACE_MS = parseInt(process.env.PLAYER_GRACE_MS || '120000', 10);
 const HOST_GRACE_MS = parseInt(process.env.HOST_GRACE_MS || '300000', 10);
+const DEBUG = process.env.RUMPUS_DEBUG === '1';
+const dlog = (...a) => { if (DEBUG) console.log('[debug]', new Date().toISOString().slice(11, 23), ...a); };
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
 const MUSIC_DIR = process.env.RUMPUS_MUSIC_DIR || path.join(__dirname, 'music');
 const AVATAR_COUNT = 17; // must match public/sprites.js
@@ -85,6 +88,30 @@ app.get('/api/music', (req, res) => {
   res.json(files.map((f) => '/music/' + encodeURIComponent(f)));
 });
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
+// Players' hand-drawn profile pictures.
+app.get('/avatar/:code/:id', (req, res) => {
+  const room = rooms.get(String(req.params.code).toUpperCase());
+  const p = room && room.players.get(req.params.id);
+  if (!p || !p.avatarImage) return res.status(404).end();
+  const m = /^data:(image\/(?:png|jpeg));base64,(.*)$/.exec(p.avatarImage);
+  res.type(m[1]).set('Cache-Control', 'max-age=86400').send(Buffer.from(m[2], 'base64'));
+});
+// Debug-only: full room dump (no tokens). Enable with RUMPUS_DEBUG=1.
+app.get('/api/debug', (req, res) => {
+  if (!DEBUG) return res.status(404).json({ error: 'start the server with RUMPUS_DEBUG=1' });
+  const out = [...rooms.values()].map((r) => ({
+    code: r.code, hostConnected: !!(r.hostSocket && r.hostSocket.connected), settings: r.settings,
+    phase: roomPhase(r),
+    pace: { key: r.pace.key, ready: r.pace.ready.size, hurry: r.pace.hurry.size, skipq: r.pace.skipq.size },
+    players: [...r.players.values()].map((p) => ({ id: p.id, nickname: p.nickname, score: p.score, connected: p.connected, avatar: p.avatar, drawn: p.avatarVer || 0 })),
+    game: r.game && {
+      id: r.game.constructor.meta.id, phase: r.game.phase, round: r.game.round, totalRounds: r.game.totalRounds,
+      multiplier: typeof r.game.mult === 'function' ? r.game.mult() : 1, matchIndex: r.game.matchIndex,
+      timerMsLeft: r.game.endsAt ? r.game.endsAt - Date.now() : null, hasTimer: !!r.game.timerFn, skipSeq: r.game.skipSeq || 0,
+    },
+  }));
+  res.json({ uptimeSec: Math.round(process.uptime()), memoryMB: Math.round(process.memoryUsage().rss / 1048576), rooms: out, library: library.stats() });
+});
 app.get('/api/content-stats', (req, res) => res.json(library.stats()));
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -118,7 +145,30 @@ function playersSummary(room) {
     score: p.score,
     connected: p.connected,
     avatar: p.avatar,
+    drawn: p.avatarVer || 0, // >0 = player drew their own picture (served at /avatar/:code/:id)
   }));
+}
+
+// --- pace votes (hurry / ready / skip question) ------------------------------
+const MAX_DRAWING = 80 * 1024;
+function validDrawing(s) {
+  return typeof s === 'string' && s.length < MAX_DRAWING && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(s);
+}
+
+function paceKey(game) {
+  if (!game) return 'lobby';
+  return [game.phase, game.round, game.matchIndex, game.revealIndex, game.skipSeq, game.subject].join('|');
+}
+
+function paceState(room) {
+  const key = paceKey(room.game);
+  if (room.pace.key !== key) room.pace = { key, ready: new Set(), hurry: new Set(), skipq: new Set() };
+  const connected = [...room.players.values()].filter((p) => p.connected).length;
+  return {
+    allowed: flow.allowedVotes(room.game),
+    need: Math.floor(connected / 2) + 1,
+    counts: { ready: room.pace.ready.size, hurry: room.pace.hurry.size, skipq: room.pace.skipq.size },
+  };
 }
 
 // Push a full state update to the host and to every player. The host gets the
@@ -126,6 +176,12 @@ function playersSummary(room) {
 // other players' in-progress input.
 function broadcast(room) {
   if (room.closed) return;
+  if (DEBUG) {
+    const g = room.game;
+    const key = g ? [g.phase, g.round, g.matchIndex, g.skipSeq].join('/') : 'lobby';
+    if (key !== room.dbgKey) dlog(`[room ${room.code}] phase ${room.dbgKey || '-'} → ${key}${g && g.endsAt ? ` (timer ${Math.round((g.endsAt - Date.now()) / 100) / 10}s)` : ''}`);
+    room.dbgKey = key;
+  }
   const base = {
     code: room.code,
     phase: roomPhase(room),
@@ -134,6 +190,7 @@ function broadcast(room) {
     settings: room.settings,
     hostConnected: !!(room.hostSocket && room.hostSocket.connected),
     maxPlayers: MAX_PLAYERS,
+    pace: paceState(room),
   };
   if (room.hostSocket && room.hostSocket.connected) {
     room.hostSocket.emit('room:stateUpdate', {
@@ -148,7 +205,7 @@ function broadcast(room) {
     p.socket.emit('room:stateUpdate', {
       ...base,
       gameState: view.gameState,
-      you: { playerId: p.id, nickname: p.nickname, ...view.you },
+      you: { playerId: p.id, nickname: p.nickname, paceVotes: ['ready', 'hurry', 'skipq'].filter((k) => room.pace[k].has(p.id)), ...view.you },
     });
   }
 }
@@ -226,6 +283,17 @@ function hostRoom(socket) {
 // ---------------------------------------------------------------------------
 
 io.on('connection', (socket) => {
+  socket.on('debug:ping', (ack) => { if (typeof ack === 'function') ack(); });
+  if (DEBUG) {
+    dlog('connect', socket.id);
+    socket.onAny((ev, payload) => {
+      if (ev === 'debug:ping') return;
+      let s = '';
+      try { s = JSON.stringify(payload) ?? ''; } catch (e) { s = String(payload); }
+      dlog('◀', socket.id.slice(0, 6), socket.data.role || '-', ev, s.length > 200 ? s.slice(0, 200) + '…' : s);
+    });
+    socket.on('disconnect', (r) => dlog('disconnect', socket.id, r));
+  }
   socket.on('host:createRoom', () => {
     if (socket.data.room) return;
     const code = makeRoomCode();
@@ -238,6 +306,7 @@ io.on('connection', (socket) => {
       game: null,
       closed: false,
       settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false' },
+      pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set() },
     };
     rooms.set(code, room);
     console.log(`[room ${code}] created`);
@@ -258,8 +327,11 @@ io.on('connection', (socket) => {
   socket.on('host:settings', (msg) => {
     const room = hostRoom(socket);
     if (!room || !msg) return;
-    const rounds = msg.rounds == null ? null : parseInt(msg.rounds, 10);
-    if (rounds === null || (rounds >= 1 && rounds <= 20)) room.settings.rounds = rounds;
+    // Only touch the settings that were sent (the TV sends one at a time).
+    if ('rounds' in msg) {
+      const rounds = msg.rounds == null ? null : parseInt(msg.rounds, 10);
+      if (rounds === null || (rounds >= 1 && rounds <= 20)) room.settings.rounds = rounds;
+    }
     const scale = Number(msg.timerScale);
     if ([0.6, 1, 1.5, 2].includes(scale)) room.settings.timerScale = scale;
     if (typeof msg.spicy === 'boolean') room.settings.spicy = msg.spicy;
@@ -339,6 +411,7 @@ io.on('connection', (socket) => {
       avatar = free.length ? free[crypto.randomInt(free.length)] : crypto.randomInt(AVATAR_COUNT);
     }
     const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar };
+    if (validDrawing(msg.drawing)) { p.avatarImage = msg.drawing; p.avatarVer = 1; }
     room.players.set(p.id, p);
     console.log(`[room ${room.code}] player joined: ${nickname}`);
     attachPlayer(room, p, socket);
@@ -351,6 +424,37 @@ io.on('connection', (socket) => {
     if (!p) return socket.emit('player:rejoinFailed');
     console.log(`[room ${room.code}] player rejoined: ${p.nickname}`);
     attachPlayer(room, p, socket);
+  });
+
+  // Majority vote from phones: hurry / ready / skipq.
+  socket.on('player:vote', (msg) => {
+    const room = socket.data.room;
+    if (!room || socket.data.role !== 'player' || room.closed || !room.game) return;
+    const p = room.players.get(socket.data.playerId);
+    const kind = msg && msg.kind;
+    const pace = paceState(room);
+    if (!p || !pace.allowed.includes(kind)) return;
+    room.pace[kind].add(p.id);
+    if (room.pace[kind].size >= pace.need) {
+      room.pace[kind].clear();
+      const game = room.game;
+      const tellHost = (type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
+      if (kind === 'ready') { tellHost('ready'); game.skip(); }
+      else if (kind === 'hurry') { if (flow.hurry(game)) tellHost('hurry'); }
+      else if (kind === 'skipq') { tellHost('skipped'); game.skipQuestion(); }
+    }
+    broadcast(room);
+  });
+
+  socket.on('player:drawAvatar', (msg) => {
+    const room = socket.data.room;
+    if (!room || socket.data.role !== 'player' || room.closed) return;
+    const p = room.players.get(socket.data.playerId);
+    if (!p) return;
+    if (msg && msg.image === null) { p.avatarImage = null; p.avatarVer = 0; }
+    else if (validDrawing(msg && msg.image)) { p.avatarImage = msg.image; p.avatarVer = (p.avatarVer || 0) + 1; }
+    else return;
+    broadcast(room);
   });
 
   socket.on('player:avatar', (msg) => {
@@ -376,7 +480,7 @@ io.on('connection', (socket) => {
     if (p.lastReact && now - p.lastReact < 600) return;
     p.lastReact = now;
     if (room.hostSocket && room.hostSocket.connected) {
-      room.hostSocket.emit('room:reaction', { playerId: p.id, nickname: p.nickname, avatar: p.avatar, emoji });
+      room.hostSocket.emit('room:reaction', { playerId: p.id, nickname: p.nickname, avatar: p.avatar, drawn: p.avatarVer || 0, emoji });
     }
   });
 
@@ -419,7 +523,7 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Rumpus listening on port ${PORT}`);
+  console.log(`Rumpus listening on port ${server.address().port}`);
   console.log('TV screen:  /host   Phones:  /play');
   for (const ip of lanAddresses()) console.log(`  LAN: http://${ip}:${server.address().port}/host`);
 });

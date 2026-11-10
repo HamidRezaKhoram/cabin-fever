@@ -8,3 +8,4 @@ music/*
 # games/data/cah-cards.js exporting { WHITE, BLACK } to use your own deck;
 # otherwise the game falls back to the small sample deck.
 games/data/cah-cards.js
+test/ui/.shots/

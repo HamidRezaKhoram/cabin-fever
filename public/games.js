@@ -25,6 +25,63 @@
   const count = (a, b, what) => `<p class="count">${a} / ${b} ${what}</p>`;
   const watchTv = (extra = '') => `<h1>Eyes on the TV 📺</h1>${extra}`;
 
+  // ---------------------------------------------------------------- Punchline (head-to-head)
+  register('quiplash', {
+    host(s) {
+      const g = s.gameState;
+      if (s.phase === 'answering') {
+        return `${roundTag(g)}<h1>Check your phones!</h1>
+          <p class="big-sub">You each have <b>2 prompts</b>. Someone else got the same prompt — be funnier than them. ${T}</p>
+          ${count(g.submittedCount, g.totalAnswers, 'answers in')}`;
+      }
+      const tag = `<p class="round-tag">Round ${g.round} · Matchup ${g.matchIndex + 1} of ${g.matchCount}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+      if (s.phase === 'voting') {
+        return `${tag}<h1 class="prompt">${esc(g.prompt)}</h1>
+          <div class="versus">
+            <div class="vs-card a">${esc(g.answers[0].text)}</div>
+            <div class="vs-badge">VS</div>
+            <div class="vs-card b">${esc(g.answers[1].text)}</div>
+          </div>
+          <p class="big-sub">Vote on your phones! ${T}</p>${count(g.votedCount, g.voterCount, 'votes in')}`;
+      }
+      const r = g.result;
+      return `${tag}<h1 class="prompt">${esc(r.prompt)}</h1>
+        <div class="versus">${r.sides.map((sd, i) => `
+          ${i === 1 ? '<div class="vs-badge">VS</div>' : ''}
+          <div class="vs-card ${i ? 'b' : 'a'} ${r.winner === i ? 'won' : r.winner === -1 ? '' : 'lost'}">
+            ${esc(sd.text)}
+            <div class="vs-meta">${av(sd.nickname, 'avatar')} ${esc(sd.nickname)}</div>
+            <div class="vs-bar"><i style="width:${sd.pct}%"></i></div>
+            <div class="vs-meta"><b>${sd.pct}%</b> · ${sd.votes} vote${sd.votes === 1 ? '' : 's'} · +${sd.gained}
+              <span class="voters">${sd.voters.map((n) => av(n)).join('')}</span></div>
+            ${sd.shutout ? '<span class="sweep">SHUTOUT! +250</span>' : ''}
+          </div>`).join('')}
+        </div>`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      if (s.phase === 'answering') {
+        if (you.submitted) return waiting('Both answers in');
+        return `${roundTag(g)}<p class="round-tag">Prompt ${g.promptNumber} of ${g.promptTotal}</p>
+          <h2 class="prompt">${esc(g.prompt)}</h2>
+          <p>Someone else has this prompt too — beat them.</p>${textForm('Your funniest answer…', 100)}`;
+      }
+      if (s.phase === 'voting') {
+        if (you.isAuthor) return `<h1>That's yours! 😬</h1><p>Sweat it out while everyone votes…</p>`;
+        if (you.voted) return waiting('Vote cast');
+        return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which is funnier?</p><div class="vote-list">` +
+          g.answers.map((a, i) => sendBtn({ choice: i }, esc(a.text))).join('') + '</div>';
+      }
+      const r = g.result;
+      if (you.side >= 0) {
+        const me = r.sides[you.side];
+        return `<h1>${r.winner === you.side ? 'You won the matchup! 🏆' : r.winner === -1 ? 'Dead heat!' : 'Ouch. 💀'}</h1>
+          <p class="prompt">${me.pct}% of the votes · +${me.gained}</p>${me.shutout ? '<p class="sweep">SHUTOUT!</p>' : ''}`;
+      }
+      return watchTv();
+    },
+  });
+
   // ---------------------------------------------------------------- Most Likely To
   register('mostlikely', {
     host(s) {
@@ -36,8 +93,8 @@
       const r = g.result;
       const max = r.tally.length ? r.tally[0].votes : 1;
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
-        <div class="bars">${r.tally.map((t) => `
-          <div class="bar-row ${r.winners.includes(t.nickname) ? 'winner' : ''}">
+        <div class="bars">${r.tally.map((t, i) => `
+          <div class="bar-row ${r.winners.includes(t.nickname) ? 'winner' : ''}" style="animation-delay:${(r.tally.length - 1 - i) * 0.6}s">
             <span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
             <span class="bar" style="width:${(t.votes / max) * 100}%"></span>
             <span class="bar-n">${t.votes}</span>
@@ -67,8 +124,8 @@
           <p class="big-sub">Type what <em>everyone else</em> will say! ${T}</p>${count(g.submittedCount, g.totalPlayers, 'answers in')}`;
       }
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
-        <ol class="answers results">${g.result.groups.map((gr) => `
-          <li class="${gr.top ? 'winner' : ''}">${esc(gr.label)}
+        <ol class="answers results suspense">${g.result.groups.map((gr, i, all) => `
+          <li class="${gr.top ? 'winner' : ''}" style="animation-delay:${(all.length - 1 - i) * 0.5}s">${esc(gr.label)}
             <span class="votes">×${gr.count}</span>
             <span class="voters">${gr.names.map((n) => av(n)).join('')}</span></li>`).join('')}</ol>
         ${scoredList(g.result.gained)}`;
@@ -97,8 +154,8 @@
       const r = g.result;
       return `${roundTag(g)}<h1 class="prompt">${esc(g.question)}</h1>
         <p class="big-answer">${fmt(r.answer)} ${esc(r.unit)}</p>
-        <ol class="answers results">${r.list.map((e) => `
-          <li class="${e.rank === 0 ? 'winner' : ''}">${av(e.nickname)} ${esc(e.nickname)}: ${fmt(e.guess)}${e.exact ? ' <span class="sweep">BULLSEYE!</span>' : ''}
+        <ol class="answers results suspense">${r.list.map((e, i) => `
+          <li class="${e.rank === 0 ? 'winner' : ''}" style="animation-delay:${(r.list.length - 1 - i) * 0.6 + 0.8}s">${av(e.nickname)} ${esc(e.nickname)}: ${fmt(e.guess)}${e.exact ? ' <span class="sweep">BULLSEYE!</span>' : ''}
             <span class="byline">(off by ${fmt(+e.off.toFixed(3))})</span>
             ${e.gained ? `<span class="votes">+${e.gained}</span>` : ''}</li>`).join('')}</ol>`;
     },

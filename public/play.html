@@ -26,7 +26,12 @@
                placeholder="ABCD" required>
         <label for="nick-input">Nickname</label>
         <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Your name" required>
-        <label>Pick your animal</label>
+        <label>Your profile picture</label>
+        <div class="avatar-mode">
+          <button type="button" data-mode="draw">✏️ Draw yourself</button>
+          <button type="button" data-mode="pick">🐾 Pick an animal</button>
+        </div>
+        <div id="avatar-draw" class="avatar-draw"></div>
         <div id="avatar-pick" class="avatar-pick"></div>
         <button type="submit">Join</button>
       </form>
@@ -34,12 +39,19 @@
     </section>
 
     <section id="game-view" hidden></section>
+    <section id="lobby-draw" class="lobby-draw" hidden>
+      <div id="lobby-pad"></div>
+      <button id="lobby-draw-save" class="wide">Use this picture</button>
+    </section>
+    <div id="pace-bar" class="pace-bar" hidden></div>
   </main>
 
   <nav id="react-bar" class="react-bar" hidden></nav>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/debug.js"></script>
   <script src="/common.js"></script>
+  <script src="/clock.js"></script>
   <script src="/sprites.js"></script>
   <script src="/bg.js"></script>
   <script src="/draw.js"></script>
