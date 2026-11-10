@@ -39,11 +39,11 @@ shipped in this round directly attack the idle numbers below once real players u
 5. **Punchline (44 s).** Authors sit out their own matchup. Let authors place a **side bet**
    ("I'll win by a landslide" ×2 / "I'll lose" ×0.5) and give 3-player games a final
    **everyone-answers-one-prompt** round so all three vote each time.
-6. **Odd One Out (3 reveals).** Add a mid-round "suspicion meter" on the TV that fills as votes
+6. **Odd One Out (3 reveals).** ✅ Suspicion meter + clues popping in one by one. Was: Add a mid-round "suspicion meter" on the TV that fills as votes
    come in, and reveal clues one at a time with a drumroll.
-7. **Card Chaos.** The czar idles while cards come in: let the czar pre-rank black-card
+7. **Card Chaos.** ✅ The czar picks next round's prompt from three while cards come in. Was: The czar idles while cards come in: let the czar pre-rank black-card
    "vibes" (spicy/clean) to pick the next prompt — gives them a job.
-8. **Global:** wagering ("double down" on your confidence) in Trivia/Closest — the research
+8. **Global:** ✅ Trivia has a once-per-game Double Down (×2 / −300); Majority has match bets. Still open: wagering ("double down" on your confidence) in Trivia/Closest — the research
    calls it out as one of the most satisfying mechanics; audience voting (see backlog).
 
 Re-run after each fix: `node test/playtest.js` (inside the node container) and compare.

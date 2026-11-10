@@ -18,6 +18,7 @@ const CATEGORY_MS = parseInt(process.env.RUMPUS_TRIVIA_CATEGORY_MS || '12000', 1
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_TRIVIA_ROUNDS || '10', 10);
 const BASE_POINTS = 500;
 const SPEED_BONUS = 500;
+const DOUBLE_RISK = 300; // lost on a wrong Double Down answer
 const MIN_PER_CATEGORY = 6;
 
 function shuffle(arr) {
@@ -42,6 +43,7 @@ class TriviaGame {
     this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
     this.question = null;
     this.answers = new Map(); // playerId -> { choice, answeredAt }
+    this.doubled = new Set(); // players who've used their one Double Down this game
     this.streaks = new Map();
     this.roundStartedAt = null;
     this.timer = null;
@@ -185,7 +187,10 @@ class TriviaGame {
     const choice = payload.choice;
     if (!Number.isInteger(choice) || choice < 0 || choice >= this.question.choices.length) return;
     if (this.answers.has(playerId)) return; // one answer each
-    this.answers.set(playerId, { choice, answeredAt: Date.now() });
+    // Double Down (once per game): ×2 if right, −DOUBLE_RISK if wrong.
+    const double = payload.double === true && !this.doubled.has(playerId);
+    if (double) this.doubled.add(playerId);
+    this.answers.set(playerId, { choice, answeredAt: Date.now(), double });
     if (this.answers.size >= this.room.players.size) this.reveal();
     else this.push();
   }
@@ -203,12 +208,14 @@ class TriviaGame {
         const streak = (this.streaks.get(playerId) || 0) + 1;
         this.streaks.set(playerId, streak);
         // Streak bonus: +100 for every consecutive correct answer after the first.
-        const gained = (BASE_POINTS + Math.round(SPEED_BONUS * speedFrac) + (streak - 1) * 100) * this.mult();
+        const gained = (BASE_POINTS + Math.round(SPEED_BONUS * speedFrac) + (streak - 1) * 100) * this.mult() * (a.double ? 2 : 1);
         p.score += gained;
-        scored.push({ nickname: p.nickname, correct: true, gained, streak });
+        scored.push({ nickname: p.nickname, correct: true, gained, streak, double: a.double });
       } else {
         this.streaks.set(playerId, 0);
-        scored.push({ nickname: p.nickname, correct: false, gained: 0, streak: 0 });
+        const lost = a.double ? Math.min(p.score, DOUBLE_RISK) : 0; // never below zero
+        p.score -= lost;
+        scored.push({ nickname: p.nickname, correct: false, gained: -lost, streak: 0, double: a.double });
       }
     }
     // Players who didn't answer lose their streak too.
@@ -306,7 +313,7 @@ class TriviaGame {
       case 'trivia-question':
         return {
           gameState: { ...base, question: this.question.q, choices: this.question.choices },
-          you: { answered: this.answers.has(playerId) },
+          you: { answered: this.answers.has(playerId), canDouble: !this.doubled.has(playerId) },
         };
       case 'trivia-reveal': {
         const mine = this.answers.get(playerId);
