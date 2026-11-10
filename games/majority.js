@@ -42,6 +42,9 @@ const BUILTIN = [
 
 const ANSWER_MS = parseInt(process.env.RUMPUS_MR_ANSWER_MS || '30000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '7000', 10);
+// Second decision per round: "how many others will match you?" — exact call pays.
+const BET_PTS = 150;
+const BET_ZERO_PTS = 50; // calling "nobody" is easy to force with a weird answer, so it pays less
 
 // "The Bananas!" -> "banana"
 function normalize(s) {
@@ -71,6 +74,7 @@ class MajorityGame extends BaseGame {
     this.item = item;
     this.prompt = item ? item.text : BUILTIN[this.round % BUILTIN.length];
     this.answers = new Map(); // id -> text
+    this.bets = new Map();    // id -> how many others they expect to match them
     this.result = null;
     this.phase = 'mr-answer';
     this.setTimer(ANSWER_MS, () => this.reveal());
@@ -78,11 +82,17 @@ class MajorityGame extends BaseGame {
   }
 
   handleSubmit(id, payload) {
-    if (this.phase !== 'mr-answer' || this.answers.has(id)) return;
-    const text = cleanText(payload.text, 40);
-    if (!text || !normalize(text)) return;
-    this.answers.set(id, text);
-    if (this.allIn(this.answers)) this.reveal();
+    if (this.phase !== 'mr-answer') return;
+    if (this.answers.has(id)) {
+      const n = payload.bet;
+      if (this.bets.has(id) || !Number.isInteger(n) || n < 0 || n > this.room.players.size - 1) return;
+      this.bets.set(id, n);
+    } else {
+      const text = cleanText(payload.text, 40);
+      if (!text || !normalize(text)) return;
+      this.answers.set(id, text);
+    }
+    if (this.allIn(this.answers) && this.allIn(this.bets)) this.reveal();
     else this.push();
   }
 
@@ -105,7 +115,19 @@ class MajorityGame extends BaseGame {
         gained.push({ nickname: this.nick(id), gained: this.award(id, pts) });
       }
     }
+    const bets = [];
+    for (const [id, n] of this.bets) {
+      const g = list.find((x) => x.ids.includes(id));
+      const actual = g ? g.ids.length - 1 : 0;
+      const won = n === actual ? this.award(id, n === 0 ? BET_ZERO_PTS : BET_PTS) : 0;
+      bets.push({ nickname: this.nick(id), bet: n, actual, gained: won });
+      if (won) {
+        const row = gained.find((x) => x.nickname === this.nick(id));
+        if (row) row.gained += won; else gained.push({ nickname: this.nick(id), gained: won });
+      }
+    }
     this.result = {
+      bets,
       groups: list.map((g) => ({
         label: g.label,
         count: g.ids.length,
@@ -120,25 +142,28 @@ class MajorityGame extends BaseGame {
   }
 
   onPlayerLeft() {
-    if (this.phase === 'mr-answer' && this.room.players.size && this.allIn(this.answers)) this.reveal();
+    if (this.phase === 'mr-answer' && this.room.players.size && this.allIn(this.answers) && this.allIn(this.bets)) this.reveal();
   }
 
   hostView() {
     if (this.phase === 'mr-answer') {
-      return { prompt: this.prompt, submittedCount: this.answers.size, totalPlayers: this.room.players.size };
+      return { prompt: this.prompt, submittedCount: this.answers.size, betCount: this.bets.size, totalPlayers: this.room.players.size };
     }
     return { prompt: this.prompt, result: this.result };
   }
 
   playerOnly(id) {
     if (this.phase === 'mr-answer') {
-      return { gameState: { prompt: this.prompt }, you: { submitted: this.answers.has(id) } };
+      return {
+        gameState: { prompt: this.prompt, maxBet: this.room.players.size - 1 },
+        you: { submitted: this.answers.has(id), answer: this.answers.get(id) || null, bet: this.bets.has(id) ? this.bets.get(id) : null },
+      };
     }
     const mine = this.answers.get(id);
     const g = mine && this.result.groups.find((x) => x.names.includes(this.nick(id)));
     return {
       gameState: { prompt: this.prompt, result: this.result },
-      you: { answer: mine || null, matched: g ? g.count - 1 : 0 },
+      you: { answer: mine || null, matched: g ? g.count - 1 : 0, bet: this.bets.has(id) ? this.bets.get(id) : null },
     };
   }
 }

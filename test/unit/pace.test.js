@@ -115,7 +115,7 @@ test('escalating points across a 4-question game: ×1, ×1, ×2, ×3', async () 
   for (const [r, mult] of [[1, 1], [2, 1], [3, 2], [4, 3]]) {
     await until(() => h.state.phase === 'mr-answer' && h.state.gameState.round === r, 'round ' + r);
     assert.strictEqual(h.state.gameState.multiplier, mult);
-    for (const p of ps) p.submit({ text: 'same' });
+    for (const p of ps) { p.submit({ text: 'same' }); p.submit({ bet: 0 }); } // bets miss (2 matched): score is matching only
     await h.phase('mr-reveal');
     total += 300 * mult; // 3 matching answers = 300 each, × stage
     assert.strictEqual(h.state.players[0].score, total, `after round ${r}`);

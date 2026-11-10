@@ -217,24 +217,32 @@
       const g = s.gameState;
       if (s.phase === 'mr-answer') {
         return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
-          <p class="big-sub">Type what <em>everyone else</em> will say! ${T}</p>${count(g.submittedCount, g.totalPlayers, 'answers in')}`;
+          <p class="big-sub">Type what <em>everyone else</em> will say — then bet how many will match you! ${T}</p>
+          ${count(g.submittedCount, g.totalPlayers, 'answers in')}${count(g.betCount, g.totalPlayers, 'bets placed')}`;
       }
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
         <ol class="answers results suspense">${g.result.groups.map((gr, i, all) => `
           <li class="${gr.top ? 'winner' : ''}" style="animation-delay:${(all.length - 1 - i) * 0.5}s">${esc(gr.label)}
             <span class="votes">×${gr.count}</span>
             <span class="voters">${gr.names.map((n) => av(n)).join('')}</span></li>`).join('')}</ol>
+        ${(g.result.bets || []).some((b) => b.gained) ? `<p class="big-sub">🎯 Called it: ${g.result.bets.filter((b) => b.gained).map((b) => `${av(b.nickname)} ${esc(b.nickname)} (${b.bet})`).join(', ')}</p>` : ''}
         ${scoredList(g.result.gained)}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
       if (s.phase === 'mr-answer') {
-        if (you.submitted) return waiting('Answer locked');
+        if (you.submitted && you.bet == null) {
+          return `<p class="prompt">“${esc(you.answer)}”</p><h2>How many others will say the same?</h2>
+            <p>Call it exactly for bonus points (+${150} · “nobody” +50).</p><div class="bet-row">` +
+            Array.from({ length: g.maxBet + 1 }, (_, n) => sendBtn({ bet: n }, String(n), 'vote-btn bet-btn')).join('') + '</div>';
+        }
+        if (you.submitted) return waiting('Answer + bet locked', `You bet ${you.bet} will match you. Waiting for the others…`);
         return `${roundTag(g)}<h2 class="prompt">${esc(g.prompt)}</h2>
           <p>Say what you think most people will say.</p>${textForm('Your answer…', 40)}`;
       }
       return `<h1>${you.matched ? `Matched ${you.matched} other${you.matched === 1 ? '' : 's'}!` : 'All alone ✗'}</h1>
-        <p class="prompt">${esc(you.answer || '(no answer)')}</p>`;
+        <p class="prompt">${esc(you.answer || '(no answer)')}</p>
+        ${you.bet != null ? `<p>${you.bet === you.matched ? '🎯 Your bet was spot on!' : `You bet ${you.bet}.`}</p>` : ''}`;
     },
   });
 

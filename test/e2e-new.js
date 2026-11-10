@@ -125,6 +125,7 @@ async function main() {
   await all('mr-answer');
   submit('Ann', { text: 'Bananas' }); submit('Ben', { text: 'the banana' });
   submit('Cat', { text: 'BANANA!' }); submit('Dan', { text: 'lemon' });
+  for (const n of ['Ann', 'Ben', 'Cat', 'Dan']) submit(n, { bet: 2 });
   const mr = await phase('host', 'mr-reveal');
   const top = mr.gameState.result.groups[0];
   if (top.count !== 3) return fail(`majority normalization grouped ${top.count}, expected 3: ${JSON.stringify(mr.gameState.result)}`);
