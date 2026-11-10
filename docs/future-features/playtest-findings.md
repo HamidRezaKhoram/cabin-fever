@@ -29,7 +29,7 @@ shipped in this round directly attack the idle numbers below once real players u
    still waiting on; ✅ reveal entries actually show now (they were invisible — CSS bug).
    Still to do: *everyone votes a favourite entry per chain* during the reveal (reaction taps →
    points); for 6+ players split into two shorter chains.
-2. **Two Truths (58 s).** The 120 s write phase is the dead air: split it — write *one*
+2. **Two Truths (58 s).** ✅ Write phase cut to 90 s and the TV names who's still writing. Next step if still slow: split it — write *one*
    statement per mini-phase (truth, truth, lie) with 30 s each, and show a teaser on the TV
    ("Ben is lying about something…"). Add a bonus for guessing *which truth* surprised people most.
 3. **Fib Finder (53 s).** Fast liars wait for slow ones: add **"likes"** (tap lies you find funny

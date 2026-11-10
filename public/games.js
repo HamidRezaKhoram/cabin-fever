@@ -23,6 +23,9 @@
       <button type="submit">${button}</button>
     </form>`;
   const count = (a, b, what) => `<p class="count">${a} / ${b} ${what}</p>`;
+  /** TV row naming who everyone is waiting on. @param {string[] | undefined} names @param {string} verb */
+  const waitingRow = (names, verb) => (names && names.length
+    ? `<p class="waiting-on">Still ${verb}: ${names.map((n) => `<span>${av(n)} ${esc(n)}</span>`).join('')}</p>` : '');
   const watchTv = (extra = '') => `<h1>Eyes on the TV 📺</h1>${extra}`;
 
   // ---------------------------------------------------------------- Punchline (head-to-head)
@@ -277,7 +280,8 @@
       if (s.phase === 'tt-write') {
         return `<h1>Two Truths &amp; a Lie</h1>
           <p class="big-sub">On your phone: write two true things about yourself and one convincing lie. ${T}</p>
-          ${count(g.submittedCount, g.totalPlayers, 'ready')}`;
+          ${count(g.submittedCount, g.totalPlayers, 'ready')}
+          ${waitingRow(g.waitingOn, 'writing')}`;
       }
       const r = g.result;
       return `${roundTag(g, 'Player')}<h1 class="prompt">${av(g.subject, 'avatar big bob')} ${esc(g.subject)}</h1>
@@ -406,7 +410,7 @@
       const verb = { write: 'writing', draw: 'drawing', describe: 'guessing' }[g.stepType];
       return `${roundTag(g, 'Step')}<h1>${msg}</h1><p class="big-sub">${T}</p>
         ${count(g.submittedCount, g.totalPlayers, 'done')}
-        ${g.waitingOn && g.waitingOn.length ? `<p class="waiting-on">Still ${verb}: ${g.waitingOn.map((n) => `<span>${av(n)} ${esc(n)}</span>`).join('')}</p>` : ''}`;
+        ${waitingRow(g.waitingOn, verb)}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
