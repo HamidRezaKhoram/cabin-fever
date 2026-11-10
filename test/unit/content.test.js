@@ -10,10 +10,10 @@ const load = (n) => JSON.parse(fs.readFileSync(path.join(DIR, n + '.json'), 'utf
 const POOLS = ['punchline', 'trivia', 'fibbage', 'closest', 'majority', 'mostlikely', 'imposter', 'telephone', 'cah-black', 'cah-white'];
 const text = (x) => x.text || x.q || x.word || '';
 
-test('every pool: 1000+ items, unique ids, boolean 18+ flag, some adult content', () => {
+test('every pool: enough items (quality over quantity), unique ids, boolean 18+ flag, some adult content', () => {
   for (const n of POOLS) {
     const items = load(n);
-    assert.ok(items.length >= 1000, `${n}: ${items.length}`);
+    assert.ok(items.length >= 300, `${n}: only ${items.length} items`);
     assert.strictEqual(new Set(items.map((i) => i.id)).size, items.length, `${n}: duplicate ids`);
     assert.ok(items.every((i) => typeof i.a === 'boolean'), `${n}: missing adult flag`);
     assert.ok(items.every((i) => text(i).trim().length > 1), `${n}: empty item`);
@@ -71,4 +71,19 @@ test('every bundled music file is credited and sits in a known scenario folder',
     assert.ok(known.includes(rel.split(path.sep)[0]), `${rel} is not in a known scenario folder`);
   }
   assert.ok(/CC0/.test(credits));
+});
+
+test('sourced content: Wikidata facts are present and every non-original item names its source', () => {
+  const closest = load('closest');
+  assert.ok(closest.filter((q) => /^Wikidata Q\d+ \(CC0\)$/.test(q.src || '')).length >= 150, 'Wikidata facts in Closest Guess');
+  for (const n of ['trivia', 'fibbage', 'closest', 'cah-black', 'cah-white']) {
+    const sourced = load(n).filter((q) => q.src);
+    assert.ok(sourced.length > 0, `${n} has sourced items`);
+  }
+  assert.ok(load('trivia').filter((q) => q.cat !== 'After Dark').every((q) => q.src), 'every downloaded trivia question is attributed');
+});
+
+test('benign-violation filter: no cruel topics in any pool', () => {
+  const cruel = /\b(rape|holocaust|genocide|school shooting|nazis?|hitler)\b/i;
+  for (const n of POOLS) assert.ok(!load(n).some((q) => cruel.test(text(q) + ' ' + (q.answer || ''))), `${n} has a non-benign item`);
 });

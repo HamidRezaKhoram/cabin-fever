@@ -520,3 +520,61 @@ body.host.in-game .phase-view { background: rgba(10, 8, 20, 0.55); }
 body.host.sidebar-min { grid-template-columns: 1fr 0px; }
 body.host.sidebar-min #sidebar { opacity: 0; pointer-events: none; padding: 0; overflow: hidden; }
 #sidebar { transition: opacity 0.4s steps(12); }
+
+.source-line { position: fixed; right: 16px; bottom: 10px; z-index: 30; font-size: max(14px, 1.8vh); color: var(--dim); background: rgba(10, 8, 20, 0.6); padding: 2px 8px; }
+.source-line[hidden] { display: none; }
+
+/* ---------- v10: readability + accessibility (WCAG 2.2 AA) ----------
+ * - Long text (prompts, answers, cards, clues, buttons) uses VT323: a pixel font
+ *   that's far more legible in sentences than the wide Press Start 2P, which is
+ *   kept for short headings/labels only.
+ * - Lines are capped at ~40 characters (readable line length) and sit on a dark,
+ *   near-opaque panel so text keeps ≥ 4.5:1 contrast over bright scenes.
+ * - Touch targets ≥ 48px; visible keyboard focus; reduced motion respected. */
+h1.prompt, h2.prompt, .vs-card, ol.answers, .chain-text, .clue-list .clue, .big-answer, .vote-btn, .hand-btn,
+.cat-card div, .winner-line, .intro-rules, .mg-rule, .role {
+  font-family: var(--body); letter-spacing: 0; font-weight: 400;
+}
+h1.prompt { line-height: 1.12; max-width: 40ch; text-shadow: 3px 3px 0 var(--edge), 0 0 18px rgba(0,0,0,0.6); }
+body.host h1.prompt { align-self: stretch; width: 100%; margin-left: 0; margin-right: 0; text-align: center; max-width: none; } /* auto margins in a flex column shrink-wrap the box and break fit() */
+body.host .phase-view.in-game { background: rgba(8, 6, 16, 0.84); }
+body.host .vs-card { line-height: 1.15; }
+body.host ol.answers { max-width: 60ch; }
+.big-answer { line-height: 1.1; }
+/* Phones: scalable text + bigger targets */
+body.play { --phone-scale: 1; font-size: calc(clamp(20px, 5.4vw, 30px) * var(--phone-scale)); }
+body.play h2.prompt { font-size: calc(clamp(24px, 7vw, 34px) * var(--phone-scale)); line-height: 1.15; }
+body.play .vote-btn, body.play .hand-btn { font-size: calc(clamp(22px, 6.4vw, 32px) * var(--phone-scale)); min-height: 56px; }
+body.play button, body.play input, body.play select { min-height: 48px; }
+body.play .react-bar button, body.play .maker-arrow { min-width: 48px; }
+#text-size { font-family: var(--pixel); font-size: 12px; min-height: 40px; min-width: 40px; }
+:focus-visible { outline: 3px solid var(--accent2) !important; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+/* Character maker */
+.avatar-mode button { font-size: 9px; }
+.avatar-make[hidden] { display: none; }
+.maker { display: grid; gap: 10px; }
+.maker-preview { width: 160px; height: 160px; margin: 0 auto; image-rendering: pixelated; background: var(--panel2); box-shadow: 0 0 0 4px var(--edge); }
+.maker-rows { display: grid; gap: 6px; }
+.maker-row { display: grid; grid-template-columns: 56px 1fr 56px; gap: 6px; align-items: center; }
+.maker-arrow { background: var(--panel2); color: var(--ink); padding: 8px 0 11px; font-size: 14px; }
+.maker-label { text-align: center; font-size: calc(24px * var(--phone-scale, 1)); line-height: 1; }
+.maker-label small { display: block; font-size: 16px; color: var(--dim); }
+.maker-random { background: var(--accent2); color: #14121f; }
+
+/* ---------- v11: compact player strip (replaces the big sidebar) ----------
+ * Lobby: a slim strip under the top bar, in normal flow — it wraps and pushes
+ * content down as players join. In a game it's hidden, and flashes in as an
+ * overlay for 5 s when someone joins, leaves or reconnects. */
+body.host, body.host.sidebar-min { grid-template-areas: "top" "side" "stage"; grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+body.host #sidebar { grid-area: side; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 12px; overflow: visible; opacity: 1; pointer-events: auto; }
+body.host #player-list { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; overflow: visible; }
+body.host #player-list li { margin: 0; padding: 3px 8px; gap: 6px; }
+body.host #player-list .pname { flex: none; font-size: max(18px, 2.4vh); }
+body.host #player-list img.avatar { width: max(28px, 3.6vh); height: max(28px, 3.6vh); }
+body.host .team-bar { margin: 0; flex: 0 0 auto; min-width: 180px; }
+body.host.in-game #sidebar { display: none; }
+body.host.in-game.sidebar-peek #sidebar { display: flex; position: fixed; top: 56px; left: 50%; transform: translateX(-50%); z-index: 35; max-width: 92vw;
+  background: rgba(36, 31, 61, 0.96); box-shadow: 0 0 0 4px var(--edge); animation: drop-in 0.3s steps(9) both; }

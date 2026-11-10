@@ -1,0 +1,8986 @@
+{
+"mountain_height": [
+{
+"qid": "Q513",
+"label": "Mount Everest",
+"v": "8848.86"
+},
+{
+"qid": "Q39231",
+"label": "Mount Fuji",
+"v": "3777.24"
+},
+{
+"qid": "Q524",
+"label": "Mount Vesuvius",
+"v": "1281"
+},
+{
+"qid": "Q583",
+"label": "Mont Blanc",
+"v": "4805.59"
+},
+{
+"qid": "Q43105",
+"label": "Mount Elbrus",
+"v": "5642"
+},
+{
+"qid": "Q43512",
+"label": "K2",
+"v": "8611"
+},
+{
+"qid": "Q72303",
+"label": "Mount Ararat",
+"v": "5137"
+},
+{
+"qid": "Q80344",
+"label": "Mount Olympus",
+"v": "2917.727"
+},
+{
+"qid": "Q725591",
+"label": "Mount Bazardüzü",
+"v": "2706"
+},
+{
+"qid": "Q725591",
+"label": "Mount Bazardüzü",
+"v": "4466"
+},
+{
+"qid": "Q82019",
+"label": "Kanchenjunga",
+"v": "8586"
+},
+{
+"qid": "Q83497",
+"label": "Mount Rushmore",
+"v": "1745"
+},
+{
+"qid": "Q1374",
+"label": "Matterhorn",
+"v": "4477.54"
+},
+{
+"qid": "Q229107",
+"label": "Mount Kailash",
+"v": "6638"
+},
+{
+"qid": "Q130736",
+"label": "Nanga Parbat",
+"v": "8126"
+},
+{
+"qid": "Q165440",
+"label": "Dhaulagiri",
+"v": "8167"
+},
+{
+"qid": "Q169986",
+"label": "Makalu",
+"v": "8485"
+},
+{
+"qid": "Q172070",
+"label": "Mount Kenya",
+"v": "5199"
+},
+{
+"qid": "Q377485",
+"label": "Mount Sinai",
+"v": "2287"
+},
+{
+"qid": "Q130321",
+"label": "Mount Athos",
+"v": "2033"
+},
+{
+"qid": "Q131230",
+"label": "Mauna Kea",
+"v": "4207.3"
+},
+{
+"qid": "Q168702",
+"label": "Lhotse",
+"v": "8516"
+},
+{
+"qid": "Q178167",
+"label": "Mount Kosciuszko",
+"v": "2228"
+},
+{
+"qid": "Q14081",
+"label": "Chimborazo",
+"v": "6263.47"
+},
+{
+"qid": "Q170089",
+"label": "Cho Oyu",
+"v": "8188"
+},
+{
+"qid": "Q170070",
+"label": "Manaslu",
+"v": "8163"
+},
+{
+"qid": "Q40758",
+"label": "Damavand",
+"v": "5610"
+},
+{
+"qid": "Q40758",
+"label": "Damavand",
+"v": "5628"
+},
+{
+"qid": "Q104674",
+"label": "Ben Nevis",
+"v": "1344.527"
+},
+{
+"qid": "Q105124",
+"label": "Shishapangma",
+"v": "8027"
+},
+{
+"qid": "Q107635",
+"label": "Baekdu Mountain",
+"v": "2744"
+},
+{
+"qid": "Q180996",
+"label": "Broad Peak",
+"v": "8051"
+},
+{
+"qid": "Q1045888",
+"label": "Puncak Jaya",
+"v": "4884"
+},
+{
+"qid": "Q3375",
+"label": "Zugspitze",
+"v": "2962.06"
+},
+{
+"qid": "Q120306",
+"label": "Mount Logan",
+"v": "5959"
+},
+{
+"qid": "Q168714",
+"label": "Tambora",
+"v": "2850"
+},
+{
+"qid": "Q213360",
+"label": "Table Mountain",
+"v": "1085"
+},
+{
+"qid": "Q233836",
+"label": "Ojos del Salado",
+"v": "6893"
+},
+{
+"qid": "Q60967",
+"label": "Mount Kinabalu",
+"v": "4095"
+},
+{
+"qid": "Q187138",
+"label": "Gasherbrum",
+"v": "8080"
+},
+{
+"qid": "Q216059",
+"label": "Mount Tai",
+"v": "1545"
+},
+{
+"qid": "Q1451",
+"label": "Pinatubo",
+"v": "1486"
+},
+{
+"qid": "Q1484",
+"label": "Mayon Volcano",
+"v": "2462"
+},
+{
+"qid": "Q186853",
+"label": "Gasherbrum II",
+"v": "8034"
+},
+{
+"qid": "Q5059",
+"label": "Aoraki / Mount Cook",
+"v": "3724"
+},
+{
+"qid": "Q188982",
+"label": "Mount Erebus",
+"v": "3794"
+},
+{
+"qid": "Q194057",
+"label": "Mount Rainier",
+"v": "4389"
+},
+{
+"qid": "Q203568",
+"label": "Mount Aragats",
+"v": "4090"
+},
+{
+"qid": "Q205976",
+"label": "Mount of Olives",
+"v": "826"
+},
+{
+"qid": "Q105261",
+"label": "Mount Parnassus",
+"v": "2455"
+},
+{
+"qid": "Q1024",
+"label": "Triglav",
+"v": "2864"
+},
+{
+"qid": "Q181476",
+"label": "Cotopaxi volcano",
+"v": "5897"
+},
+{
+"qid": "Q215471",
+"label": "Mount Hermon",
+"v": "2813.95"
+},
+{
+"qid": "Q238147",
+"label": "Citlaltepetl",
+"v": "5636"
+},
+{
+"qid": "Q211529",
+"label": "Khan Tengri",
+"v": "7010"
+},
+{
+"qid": "Q219986",
+"label": "Gangkhar Puensum",
+"v": "7570"
+},
+{
+"qid": "Q3388",
+"label": "Grossglockner",
+"v": "3798"
+},
+{
+"qid": "Q207680",
+"label": "Mount Kazbek",
+"v": "5033"
+},
+{
+"qid": "Q76309",
+"label": "Mount Pelée",
+"v": "1397"
+},
+{
+"qid": "Q210252",
+"label": "Klyuchevskaya Sopka",
+"v": "4800"
+},
+{
+"qid": "Q207917",
+"label": "Mount Nemrut",
+"v": "2150"
+},
+{
+"qid": "Q216894",
+"label": "Mount Arafat",
+"v": "454"
+},
+{
+"qid": "Q235539",
+"label": "Mount Whitney",
+"v": "4421"
+},
+{
+"qid": "Q190562",
+"label": "Mount Cameroon",
+"v": "4095"
+},
+{
+"qid": "Q213262",
+"label": "Nanda Devi",
+"v": "7816"
+},
+{
+"qid": "Q4777",
+"label": "Mount Roraima",
+"v": "2810"
+},
+{
+"qid": "Q207132",
+"label": "Terich Mir",
+"v": "7708"
+},
+{
+"qid": "Q207323",
+"label": "Vulcano",
+"v": "500"
+},
+{
+"qid": "Q627508",
+"label": "Hoverla",
+"v": "2061"
+},
+{
+"qid": "Q4425",
+"label": "Eiger",
+"v": "3967"
+},
+{
+"qid": "Q158470",
+"label": "Mount Agung",
+"v": "3142"
+},
+{
+"qid": "Q158470",
+"label": "Mount Agung",
+"v": "3031"
+},
+{
+"qid": "Q193785",
+"label": "Mount Tabor",
+"v": "530"
+},
+{
+"qid": "Q617511",
+"label": "Sněžka",
+"v": "1603.3"
+},
+{
+"qid": "Q210722",
+"label": "Sugarloaf Mountain",
+"v": "395"
+},
+{
+"qid": "Q231620",
+"label": "Parícutin",
+"v": "2800"
+},
+{
+"qid": "Q271700",
+"label": "Noshaq",
+"v": "7492"
+},
+{
+"qid": "Q672936",
+"label": "Rysy",
+"v": "2501"
+},
+{
+"qid": "Q15312",
+"label": "Jungfrau",
+"v": "4158"
+},
+{
+"qid": "Q81213",
+"label": "Gerlachovský štít",
+"v": "2654.4"
+},
+{
+"qid": "Q81213",
+"label": "Gerlachovský štít",
+"v": "2655"
+},
+{
+"qid": "Q214011",
+"label": "Kebnekaise",
+"v": "2096.8"
+},
+{
+"qid": "Q214916",
+"label": "Llullaillaco",
+"v": "6723"
+},
+{
+"qid": "Q455963",
+"label": "Mount Apo",
+"v": "2954"
+},
+{
+"qid": "Q41413",
+"label": "Ismoil Somoni Peak",
+"v": "7495"
+},
+{
+"qid": "Q134927",
+"label": "Mount Emei",
+"v": "3099"
+},
+{
+"qid": "Q209341",
+"label": "Musala",
+"v": "2925.4"
+},
+{
+"qid": "Q332762",
+"label": "Jengish Chokusu",
+"v": "7439"
+},
+{
+"qid": "Q60789",
+"label": "Adam's Peak",
+"v": "2243"
+},
+{
+"qid": "Q217457",
+"label": "Shkhara",
+"v": "5193.2"
+},
+{
+"qid": "Q695221",
+"label": "Aburaj",
+"v": "1220"
+},
+{
+"qid": "Q158526",
+"label": "Monte Titano",
+"v": "739"
+},
+{
+"qid": "Q158526",
+"label": "Monte Titano",
+"v": "756"
+},
+{
+"qid": "Q503433",
+"label": "Jbel Toubkal",
+"v": "4167"
+},
+{
+"qid": "Q203942",
+"label": "Galdhøpiggen",
+"v": "2468.854"
+},
+{
+"qid": "Q208081",
+"label": "Aneto",
+"v": "3404"
+},
+{
+"qid": "Q209528",
+"label": "Mulhacén",
+"v": "3479"
+},
+{
+"qid": "Q724367",
+"label": "Belukha Mountain",
+"v": "4506"
+},
+{
+"qid": "Q500275",
+"label": "Yushan Main Peak",
+"v": "3952"
+},
+{
+"qid": "Q3403",
+"label": "Dufourspitze",
+"v": "4634"
+},
+{
+"qid": "Q306201",
+"label": "Devils Tower",
+"v": "1558"
+},
+{
+"qid": "Q182913",
+"label": "Grímsvötn",
+"v": "1725"
+},
+{
+"qid": "Q209064",
+"label": "Mont Ventoux",
+"v": "1910"
+},
+{
+"qid": "Q217142",
+"label": "Snowdon",
+"v": "1085"
+},
+{
+"qid": "Q272593",
+"label": "Nevado Sajama",
+"v": "6542"
+},
+{
+"qid": "Q120314",
+"label": "Mount Wutai",
+"v": "3061"
+},
+{
+"qid": "Q126804",
+"label": "Mount Erciyes",
+"v": "3916"
+},
+{
+"qid": "Q200935",
+"label": "Huascarán",
+"v": "6768"
+},
+{
+"qid": "Q206161",
+"label": "Mount Herzl",
+"v": "834"
+},
+{
+"qid": "Q859376",
+"label": "Volcán de Fuego",
+"v": "3765"
+},
+{
+"qid": "Q312818",
+"label": "Mount Scopus",
+"v": "826"
+},
+{
+"qid": "Q476313",
+"label": "Dykh-Tau",
+"v": "5204"
+},
+{
+"qid": "Q4168",
+"label": "Loreley",
+"v": "193"
+},
+{
+"qid": "Q16525",
+"label": "Mönch",
+"v": "4110"
+},
+{
+"qid": "Q622616",
+"label": "Mount Lu",
+"v": "1474"
+},
+{
+"qid": "Q912579",
+"label": "Korab",
+"v": "2764"
+},
+{
+"qid": "Q503368",
+"label": "Carrauntoohil",
+"v": "1038.6"
+},
+{
+"qid": "Q746524",
+"label": "Moldoveanu Peak",
+"v": "2544"
+},
+{
+"qid": "Q16648",
+"label": "Monte San Giorgio",
+"v": "1097"
+},
+{
+"qid": "Q207421",
+"label": "Tungurahua volcano",
+"v": "5016"
+},
+{
+"qid": "Q213704",
+"label": "Pico Bolívar",
+"v": "4978"
+},
+{
+"qid": "Q275435",
+"label": "Ras Dashen",
+"v": "4533"
+},
+{
+"qid": "Q873358",
+"label": "Mount Sanqing",
+"v": "1817"
+},
+{
+"qid": "Q1315012",
+"label": "Snæfellsjökull",
+"v": "1446"
+},
+{
+"qid": "Q499019",
+"label": "Jebel Barkal",
+"v": "287"
+},
+{
+"qid": "Q506938",
+"label": "Corcovado",
+"v": "710"
+},
+{
+"qid": "Q746787",
+"label": "Ol Doinyo Lengai",
+"v": "2960"
+},
+{
+"qid": "Q1514176",
+"label": "Mount Yamantau",
+"v": "1640"
+},
+{
+"qid": "Q123782",
+"label": "Fansipan",
+"v": "3143"
+},
+{
+"qid": "Q123782",
+"label": "Fansipan",
+"v": "3147.3"
+},
+{
+"qid": "Q838587",
+"label": "Lenin Peak",
+"v": "7134"
+},
+{
+"qid": "Q847323",
+"label": "Rinjani",
+"v": "3726"
+},
+{
+"qid": "Q235062",
+"label": "Galeras",
+"v": "4276"
+},
+{
+"qid": "Q679590",
+"label": "Mount Bromo",
+"v": "2329"
+},
+{
+"qid": "Q732115",
+"label": "Montserrat",
+"v": "1236"
+},
+{
+"qid": "Q750190",
+"label": "Sulaiman-Too",
+"v": "1110"
+},
+{
+"qid": "Q791652",
+"label": "Avachinsky",
+"v": "2741"
+},
+{
+"qid": "Q15265",
+"label": "Mount Pilatus",
+"v": "2128"
+},
+{
+"qid": "Q825347",
+"label": "Colima",
+"v": "3850"
+},
+{
+"qid": "Q1010335",
+"label": "Burkhan Khaldun",
+"v": "2450"
+},
+{
+"qid": "Q15117",
+"label": "Dom",
+"v": "4546"
+},
+{
+"qid": "Q215138",
+"label": "Mount Fitz Roy",
+"v": "3406"
+},
+{
+"qid": "Q309098",
+"label": "Mount Meru",
+"v": "4562.13"
+},
+{
+"qid": "Q686841",
+"label": "Hoher Dachstein",
+"v": "2995"
+},
+{
+"qid": "Q378943",
+"label": "Vitosha",
+"v": "2292"
+},
+{
+"qid": "Q732838",
+"label": "Mount Elgon",
+"v": "4321"
+},
+{
+"qid": "Q770496",
+"label": "Mount Saint Elias",
+"v": "5489"
+},
+{
+"qid": "Q1372",
+"label": "Gran Paradiso",
+"v": "4061"
+},
+{
+"qid": "Q154372",
+"label": "Monte Cassino",
+"v": "520"
+},
+{
+"qid": "Q819979",
+"label": "Mount Olympus",
+"v": "1952"
+},
+{
+"qid": "Q215662",
+"label": "Monte Perdido",
+"v": "3355"
+},
+{
+"qid": "Q1288751",
+"label": "Mount Gerizim",
+"v": "881"
+},
+{
+"qid": "Q239485",
+"label": "Phou Bia",
+"v": "2819"
+},
+{
+"qid": "Q275662",
+"label": "Mount Hood",
+"v": "3425"
+},
+{
+"qid": "Q275662",
+"label": "Mount Hood",
+"v": "11237"
+},
+{
+"qid": "Q1137644",
+"label": "Pumori",
+"v": "7161"
+},
+{
+"qid": "Q1142817",
+"label": "Mount Narodnaya",
+"v": "1894"
+},
+{
+"qid": "Q1142817",
+"label": "Mount Narodnaya",
+"v": "1895"
+},
+{
+"qid": "Q680161",
+"label": "Mount Nebo",
+"v": "808"
+},
+{
+"qid": "Q739484",
+"label": "Pico da Neblina",
+"v": "2994"
+},
+{
+"qid": "Q748355",
+"label": "Mount Shasta",
+"v": "4322"
+},
+{
+"qid": "Q15127",
+"label": "Finsteraarhorn",
+"v": "4274"
+},
+{
+"qid": "Q15132",
+"label": "Piz Bernina",
+"v": "4048"
+},
+{
+"qid": "Q48877",
+"label": "Shiveluch",
+"v": "3283"
+},
+{
+"qid": "Q155721",
+"label": "Brocken",
+"v": "1141.2"
+},
+{
+"qid": "Q62467",
+"label": "Coma Pedrosa",
+"v": "2942"
+},
+{
+"qid": "Q1032440",
+"label": "Jezercë",
+"v": "2694"
+},
+{
+"qid": "Q582128",
+"label": "Gyachung Kang",
+"v": "7952"
+},
+{
+"qid": "Q215516",
+"label": "Mount Helicon",
+"v": "1748"
+},
+{
+"qid": "Q630579",
+"label": "Muztagh Ata",
+"v": "7546"
+},
+{
+"qid": "Q641588",
+"label": "Arenal Volcano",
+"v": "1670"
+},
+{
+"qid": "Q255010",
+"label": "Parinacota",
+"v": "6348"
+},
+{
+"qid": "Q870063",
+"label": "Hkakabo Razi",
+"v": "5881"
+},
+{
+"qid": "Q928681",
+"label": "Mount Pico",
+"v": "2351"
+},
+{
+"qid": "Q737859",
+"label": "Mount Karisimbi",
+"v": "4507"
+},
+{
+"qid": "Q404728",
+"label": "Aiguille du Midi",
+"v": "3842"
+},
+{
+"qid": "Q540520",
+"label": "Meron",
+"v": "1208"
+},
+{
+"qid": "Q14052",
+"label": "Sangay volcano",
+"v": "5230"
+},
+{
+"qid": "Q148521",
+"label": "Illimani",
+"v": "6438"
+},
+{
+"qid": "Q822326",
+"label": "Mount Tahat",
+"v": "2908"
+},
+{
+"qid": "Q822326",
+"label": "Mount Tahat",
+"v": "2918"
+},
+{
+"qid": "Q83659",
+"label": "Mount Ida",
+"v": "2456"
+},
+{
+"qid": "Q578862",
+"label": "Pico Cristóbal Colón",
+"v": "5775"
+},
+{
+"qid": "Q646398",
+"label": "Kongur Tagh",
+"v": "7649"
+},
+{
+"qid": "Q277441",
+"label": "Mount Wilhelm",
+"v": "4509"
+},
+{
+"qid": "Q322824",
+"label": "Signal de Botrange",
+"v": "694.24"
+},
+{
+"qid": "Q451697",
+"label": "Ama Dablam",
+"v": "6814"
+},
+{
+"qid": "Q495501",
+"label": "Mount Kumgang",
+"v": "1638"
+},
+{
+"qid": "Q15122",
+"label": "Weisshorn",
+"v": "4505"
+},
+{
+"qid": "Q825709",
+"label": "Gunnbjørn Fjeld",
+"v": "3694"
+},
+{
+"qid": "Q586212",
+"label": "Monte Pissis",
+"v": "6795"
+},
+{
+"qid": "Q594387",
+"label": "Mount Baker",
+"v": "3286"
+},
+{
+"qid": "Q1018862",
+"label": "Bárðarbunga",
+"v": "2010"
+},
+{
+"qid": "Q648551",
+"label": "Nevado del Huila",
+"v": "5364"
+},
+{
+"qid": "Q1140980",
+"label": "Mount Song",
+"v": "1516"
+},
+{
+"qid": "Q933778",
+"label": "Rakaposhi",
+"v": "7788"
+},
+{
+"qid": "Q692922",
+"label": "Novarupta",
+"v": "841"
+},
+{
+"qid": "Q26544",
+"label": "La Soufrière",
+"v": "1220"
+},
+{
+"qid": "Q1050238",
+"label": "Namcha Barwa",
+"v": "7782"
+},
+{
+"qid": "Q837723",
+"label": "Maglić",
+"v": "2386"
+},
+{
+"qid": "Q854295",
+"label": "Masherbrum",
+"v": "7821"
+},
+{
+"qid": "Q1139538",
+"label": "Nuptse",
+"v": "7861"
+},
+{
+"qid": "Q858808",
+"label": "Osorno",
+"v": "2652"
+},
+{
+"qid": "Q316401",
+"label": "Feldberg",
+"v": "1494.2"
+},
+{
+"qid": "Q1141272",
+"label": "Kamet",
+"v": "7756"
+},
+{
+"qid": "Q341983",
+"label": "Gjeravica",
+"v": "2656"
+},
+{
+"qid": "Q470777",
+"label": "Mount Amiata",
+"v": "1738"
+},
+{
+"qid": "Q513216",
+"label": "Kelut",
+"v": "1731"
+},
+{
+"qid": "Q748040",
+"label": "Mount Hiei",
+"v": "848.1"
+},
+{
+"qid": "Q1248",
+"label": "Viso",
+"v": "3841"
+},
+{
+"qid": "Q117822",
+"label": "Acotango",
+"v": "6052"
+},
+{
+"qid": "Q122795",
+"label": "Mount Tongariro",
+"v": "1978"
+},
+{
+"qid": "Q1048225",
+"label": "Villarrica Volcano",
+"v": "2850"
+},
+{
+"qid": "Q594726",
+"label": "Volcan Baru",
+"v": "3475"
+},
+{
+"qid": "Q834454",
+"label": "Gasherbrum IV",
+"v": "7932"
+},
+{
+"qid": "Q615337",
+"label": "Mount Mitchell",
+"v": "2037"
+},
+{
+"qid": "Q636540",
+"label": "Corno Grande",
+"v": "2912"
+}
+],
+"river_length": [],
+"building_height": [
+{
+"qid": "Q12495",
+"label": "Burj Khalifa",
+"v": "828"
+},
+{
+"qid": "Q9188",
+"label": "Empire State Building",
+"v": "453"
+},
+{
+"qid": "Q9188",
+"label": "Empire State Building",
+"v": "1500"
+},
+{
+"qid": "Q29294",
+"label": "Willis Tower",
+"v": "442.1"
+},
+{
+"qid": "Q83063",
+"label": "Petronas Towers",
+"v": "1483"
+},
+{
+"qid": "Q83101",
+"label": "Taipei 101",
+"v": "2"
+},
+{
+"qid": "Q83101",
+"label": "Taipei 101",
+"v": "508"
+},
+{
+"qid": "Q1030463",
+"label": "Mode Gakuen Cocoon Tower",
+"v": "204"
+},
+{
+"qid": "Q11274",
+"label": "Chrysler Building",
+"v": "252.3"
+},
+{
+"qid": "Q11274",
+"label": "Chrysler Building",
+"v": "282"
+},
+{
+"qid": "Q11274",
+"label": "Chrysler Building",
+"v": "318.9"
+},
+{
+"qid": "Q11245",
+"label": "One World Trade Center",
+"v": "541.3"
+},
+{
+"qid": "Q42258",
+"label": "Mirante do Vale",
+"v": "170"
+},
+{
+"qid": "Q16318627",
+"label": "Abeno Harukas",
+"v": "300"
+},
+{
+"qid": "Q80852",
+"label": "Shanghai World Financial Center",
+"v": "492"
+},
+{
+"qid": "Q18536",
+"label": "The Shard",
+"v": "306"
+},
+{
+"qid": "Q189476",
+"label": "Abraj Al Bait",
+"v": "607"
+},
+{
+"qid": "Q18547",
+"label": "Shanghai Tower",
+"v": "632"
+},
+{
+"qid": "Q29272",
+"label": "Ryugyong Hotel",
+"v": "323"
+},
+{
+"qid": "Q29272",
+"label": "Ryugyong Hotel",
+"v": "335"
+},
+{
+"qid": "Q223207",
+"label": "Oriental Pearl Tower",
+"v": "468"
+},
+{
+"qid": "Q80813",
+"label": "Jin Mao Tower",
+"v": "420.5"
+},
+{
+"qid": "Q80813",
+"label": "Jin Mao Tower",
+"v": "421"
+},
+{
+"qid": "Q216357",
+"label": "Grande Arche",
+"v": "110.9"
+},
+{
+"qid": "Q167566",
+"label": "Palace of Culture and Science",
+"v": "230"
+},
+{
+"qid": "Q169420",
+"label": "Edifício Altino Arantes",
+"v": "161.22"
+},
+{
+"qid": "Q191161",
+"label": "30 St Mary Axe",
+"v": "180"
+},
+{
+"qid": "Q323767",
+"label": "Montparnasse Tower",
+"v": "209"
+},
+{
+"qid": "Q170610",
+"label": "Edifício Itália",
+"v": "165"
+},
+{
+"qid": "Q868772",
+"label": "Trump Tower",
+"v": "664"
+},
+{
+"qid": "Q270066",
+"label": "7 World Trade Center",
+"v": "225"
+},
+{
+"qid": "Q317034",
+"label": "International Commerce Centre",
+"v": "484"
+},
+{
+"qid": "Q214855",
+"label": "Bank of China Tower",
+"v": "367.4"
+},
+{
+"qid": "Q217652",
+"label": "Woolworth Building",
+"v": "241"
+},
+{
+"qid": "Q192680",
+"label": "New York Times Building",
+"v": "318.8"
+},
+{
+"qid": "Q206435",
+"label": "Turning Torso",
+"v": "190"
+},
+{
+"qid": "Q745016",
+"label": "Kuala Lumpur Tower",
+"v": "421"
+},
+{
+"qid": "Q151765",
+"label": "Commerzbank Tower",
+"v": "259"
+},
+{
+"qid": "Q151765",
+"label": "Commerzbank Tower",
+"v": "300.1"
+},
+{
+"qid": "Q4255374",
+"label": "Lakhta Centre",
+"v": "462"
+},
+{
+"qid": "Q245246",
+"label": "CITIC Plaza",
+"v": "390.2"
+},
+{
+"qid": "Q328505",
+"label": "Bank of America Tower",
+"v": "365.8"
+},
+{
+"qid": "Q656743",
+"label": "Kingdom Centre",
+"v": "302"
+},
+{
+"qid": "Q125846",
+"label": "Q1 Tower",
+"v": "322"
+},
+{
+"qid": "Q18640924",
+"label": "Landmark 81",
+"v": "461.5"
+},
+{
+"qid": "Q236201",
+"label": "Shun Hing Square",
+"v": "384"
+},
+{
+"qid": "Q382121",
+"label": "Zifeng Tower",
+"v": "316"
+},
+{
+"qid": "Q382121",
+"label": "Zifeng Tower",
+"v": "450"
+},
+{
+"qid": "Q59483",
+"label": "Mercury City Tower",
+"v": "338.8"
+},
+{
+"qid": "Q838780",
+"label": "Almas Tower",
+"v": "363"
+},
+{
+"qid": "Q217727",
+"label": "875 North Michigan Avenue",
+"v": "344"
+},
+{
+"qid": "Q271695",
+"label": "Aon Center",
+"v": "346.3"
+},
+{
+"qid": "Q336246",
+"label": "Torre Glòries",
+"v": "144"
+},
+{
+"qid": "Q546221",
+"label": "Trump International Hotel and Tower",
+"v": "423.2"
+},
+{
+"qid": "Q57900",
+"label": "U.S. Bank Tower",
+"v": "310.3"
+},
+{
+"qid": "Q156198",
+"label": "Messeturm",
+"v": "256.5"
+},
+{
+"qid": "Q7969454",
+"label": "Merdeka 118",
+"v": "678.9"
+},
+{
+"qid": "Q7969454",
+"label": "Merdeka 118",
+"v": "2227"
+},
+{
+"qid": "Q7969454",
+"label": "Merdeka 118",
+"v": "678.9"
+},
+{
+"qid": "Q7969454",
+"label": "Merdeka 118",
+"v": "2227"
+},
+{
+"qid": "Q216865",
+"label": "Transamerica Pyramid",
+"v": "260"
+},
+{
+"qid": "Q218305",
+"label": "40 Wall Street",
+"v": "284"
+},
+{
+"qid": "Q337631",
+"label": "Tuntex Sky Tower",
+"v": "323"
+},
+{
+"qid": "Q557933",
+"label": "Al Hamra Tower",
+"v": "412"
+},
+{
+"qid": "Q754321",
+"label": "China Media Group Guanghua Road Office Area",
+"v": "234"
+},
+{
+"qid": "Q216264",
+"label": "23 Marina",
+"v": "392.4"
+},
+{
+"qid": "Q494895",
+"label": "Lotte World Tower",
+"v": "554.5"
+},
+{
+"qid": "Q494895",
+"label": "Lotte World Tower",
+"v": "555.7"
+},
+{
+"qid": "Q648338",
+"label": "Rose Tower",
+"v": "333"
+},
+{
+"qid": "Q112640",
+"label": "Central Plaza",
+"v": "374"
+},
+{
+"qid": "Q262041",
+"label": "70 Pine Street",
+"v": "290.2"
+},
+{
+"qid": "Q1043438",
+"label": "Guangzhou International Finance Center",
+"v": "440"
+},
+{
+"qid": "Q1077308",
+"label": "Ping An Finance Centre",
+"v": "599.05"
+},
+{
+"qid": "Q587108",
+"label": "Yokohama Landmark Tower",
+"v": "295.8"
+},
+{
+"qid": "Q680614",
+"label": "30 Rockefeller Plaza",
+"v": "259"
+},
+{
+"qid": "Q845182",
+"label": "Emirates Office Tower",
+"v": "355"
+},
+{
+"qid": "Q464482",
+"label": "MetLife Building",
+"v": "246"
+},
+{
+"qid": "Q941908",
+"label": "3 World Trade Center",
+"v": "328.9"
+},
+{
+"qid": "Q652452",
+"label": "Metropolitan Life Insurance Company Tower",
+"v": "213"
+},
+{
+"qid": "Q19492",
+"label": "Princess Tower",
+"v": "414"
+},
+{
+"qid": "Q233940",
+"label": "432 Park Avenue",
+"v": "425.5"
+},
+{
+"qid": "Q391243",
+"label": "Citigroup Center",
+"v": "279"
+},
+{
+"qid": "Q737484",
+"label": "Seagram Building",
+"v": "157"
+},
+{
+"qid": "Q391648",
+"label": "Cayan Tower",
+"v": "306.4"
+},
+{
+"qid": "Q519568",
+"label": "Torre Moeve",
+"v": "248.3"
+},
+{
+"qid": "Q118214",
+"label": "Telekom Tower",
+"v": "310"
+},
+{
+"qid": "Q1165269",
+"label": "Marina 101",
+"v": "425"
+},
+{
+"qid": "Q844324",
+"label": "Trump World Tower",
+"v": "262"
+},
+{
+"qid": "Q499486",
+"label": "Bank of America Plaza",
+"v": "311.8"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "136"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "138"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "156"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "172"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "176"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "206"
+},
+{
+"qid": "Q521935",
+"label": "Seven Sisters",
+"v": "240"
+},
+{
+"qid": "Q638512",
+"label": "Bitexco Financial Tower",
+"v": "265.5"
+},
+{
+"qid": "Q651362",
+"label": "Singer Building",
+"v": "187"
+},
+{
+"qid": "Q80367",
+"label": "Triumph Palace",
+"v": "264"
+},
+{
+"qid": "Q130478",
+"label": "The Center",
+"v": "346"
+},
+{
+"qid": "Q1470046",
+"label": "Kingkey 100",
+"v": "442"
+},
+{
+"qid": "Q687413",
+"label": "4 Times Square",
+"v": "246.5"
+},
+{
+"qid": "Q790278",
+"label": "Avaz Twist Tower",
+"v": "172"
+},
+{
+"qid": "Q1033099",
+"label": "Grand Lisboa",
+"v": "261"
+},
+{
+"qid": "Q1066676",
+"label": "Plaza Hotel",
+"v": "76"
+},
+{
+"qid": "Q1127212",
+"label": "2 World Trade Center",
+"v": "374"
+},
+{
+"qid": "Q503477",
+"label": "One Canada Square",
+"v": "235"
+},
+{
+"qid": "Q632566",
+"label": "Edifício Copan",
+"v": "118.43"
+},
+{
+"qid": "Q1161278",
+"label": "Shimao International Plaza",
+"v": "333.3"
+},
+{
+"qid": "Q1351208",
+"label": "4 World Trade Center",
+"v": "297.7"
+},
+{
+"qid": "Q1509747",
+"label": "Tour First",
+"v": "231"
+},
+{
+"qid": "Q3142395",
+"label": "Hyatt Regency Paris Etoile",
+"v": "137"
+},
+{
+"qid": "Q3142395",
+"label": "Hyatt Regency Paris Etoile",
+"v": "190"
+},
+{
+"qid": "Q908703",
+"label": "Columbia Center",
+"v": "294.8"
+},
+{
+"qid": "Q1052475",
+"label": "First Canadian Place",
+"v": "298"
+},
+{
+"qid": "Q1121971",
+"label": "Two Prudential Plaza",
+"v": "303.3"
+},
+{
+"qid": "Q166882",
+"label": "Istanbul Sapphire",
+"v": "261"
+},
+{
+"qid": "Q875078",
+"label": "731 Lexington Avenue",
+"v": "245.7"
+},
+{
+"qid": "Q901058",
+"label": "Vehicle Assembly Building",
+"v": "160.3"
+},
+{
+"qid": "Q953610",
+"label": "Torre de Cristal",
+"v": "249"
+},
+{
+"qid": "Q1138183",
+"label": "Philadelphia City Hall",
+"v": "167"
+},
+{
+"qid": "Q571763",
+"label": "Barolo Palace",
+"v": "100"
+},
+{
+"qid": "Q80495",
+"label": "Millennium Tower",
+"v": "202"
+},
+{
+"qid": "Q197833",
+"label": "China Zun",
+"v": "528"
+},
+{
+"qid": "Q1364354",
+"label": "Emperador Castellana Tower",
+"v": "230"
+},
+{
+"qid": "Q1542408",
+"label": "Gran Torre Costanera",
+"v": "300"
+},
+{
+"qid": "Q737602",
+"label": "Aspire Tower",
+"v": "300"
+},
+{
+"qid": "Q859452",
+"label": "Hearst Tower",
+"v": "182"
+},
+{
+"qid": "Q910101",
+"label": "CitySpire",
+"v": "248.1"
+},
+{
+"qid": "Q935919",
+"label": "JPMorgan Chase Tower",
+"v": "305.4"
+},
+{
+"qid": "Q134124",
+"label": "Ocean Heights",
+"v": "310"
+},
+{
+"qid": "Q168575",
+"label": "CTF Finance Centre",
+"v": "530"
+},
+{
+"qid": "Q1330847",
+"label": "Elite Residence",
+"v": "381"
+},
+{
+"qid": "Q2631701",
+"label": "Central Park Tower",
+"v": "472.4"
+},
+{
+"qid": "Q5711011",
+"label": "Plasco Building",
+"v": "42"
+},
+{
+"qid": "Q321291",
+"label": "Main Tower",
+"v": "200"
+},
+{
+"qid": "Q321291",
+"label": "Main Tower",
+"v": "240"
+},
+{
+"qid": "Q1050074",
+"label": "28 Liberty Street",
+"v": "247.8"
+},
+{
+"qid": "Q572887",
+"label": "8 Canada Square",
+"v": "199.51"
+},
+{
+"qid": "Q167195",
+"label": "Post Tower",
+"v": "162.5"
+},
+{
+"qid": "Q1331574",
+"label": "Tower 42",
+"v": "182.9"
+},
+{
+"qid": "Q1368798",
+"label": "SEG Plaza",
+"v": "291.6"
+},
+{
+"qid": "Q1374287",
+"label": "Eurasia",
+"v": "308.9"
+},
+{
+"qid": "Q1470076",
+"label": "HHHR Tower",
+"v": "317"
+},
+{
+"qid": "Q2023928",
+"label": "One57",
+"v": "257"
+},
+{
+"qid": "Q2023928",
+"label": "One57",
+"v": "1005"
+},
+{
+"qid": "Q2631268",
+"label": "111 West 57th Street",
+"v": "435.3"
+},
+{
+"qid": "Q274916",
+"label": "8 Spruce Street",
+"v": "300"
+},
+{
+"qid": "Q333305",
+"label": "One Raffles Place",
+"v": "280"
+},
+{
+"qid": "Q920809",
+"label": "Pirelli Tower",
+"v": "110"
+},
+{
+"qid": "Q511612",
+"label": "Bahrain World Trade Center",
+"v": "240"
+},
+{
+"qid": "Q609140",
+"label": "AON Hanoi Landmark Tower",
+"v": "346"
+},
+{
+"qid": "Q57767",
+"label": "Wells Fargo Plaza",
+"v": "302.4"
+},
+{
+"qid": "Q1141262",
+"label": "Gate of Europe",
+"v": "114"
+},
+{
+"qid": "Q1364394",
+"label": "Torre Picasso",
+"v": "157"
+},
+{
+"qid": "Q1808295",
+"label": "Al Yaqoub Tower",
+"v": "330.1"
+},
+{
+"qid": "Q702322",
+"label": "Koryo Hotel",
+"v": "148"
+},
+{
+"qid": "Q212831",
+"label": "20 Exchange Place",
+"v": "226"
+},
+{
+"qid": "Q956198",
+"label": "New York World Building",
+"v": "106.6"
+}
+],
+"film_year": [
+{
+"qid": "Q44578",
+"label": "Titanic",
+"v": "1997"
+},
+{
+"qid": "Q132689",
+"label": "Casablanca",
+"v": "1942"
+},
+{
+"qid": "Q133654",
+"label": "The Silence of the Lambs",
+"v": "1991"
+},
+{
+"qid": "Q5890",
+"label": "V for Vendetta",
+"v": "2005"
+},
+{
+"qid": "Q13417189",
+"label": "Interstellar",
+"v": "2014"
+},
+{
+"qid": "Q25188",
+"label": "Inception",
+"v": "2010"
+},
+{
+"qid": "Q2875",
+"label": "Gone with the Wind",
+"v": "1939"
+},
+{
+"qid": "Q17738",
+"label": "Star Wars: Episode IV – A New Hope",
+"v": "1977"
+},
+{
+"qid": "Q41483",
+"label": "The Good, the Bad and the Ugly",
+"v": "1966"
+},
+{
+"qid": "Q165713",
+"label": "Star Wars: Episode I – The Phantom Menace",
+"v": "1999"
+},
+{
+"qid": "Q23781155",
+"label": "Avengers: Endgame",
+"v": "2019"
+},
+{
+"qid": "Q42051",
+"label": "Star Wars: Episode III – Revenge of the Sith",
+"v": "2005"
+},
+{
+"qid": "Q160618",
+"label": "Brokeback Mountain",
+"v": "2005"
+},
+{
+"qid": "Q24815",
+"label": "Citizen Kane",
+"v": "1941"
+},
+{
+"qid": "Q181795",
+"label": "Star Wars: Episode V – The Empire Strikes Back",
+"v": "1980"
+},
+{
+"qid": "Q184843",
+"label": "Blade Runner",
+"v": "1982"
+},
+{
+"qid": "Q192724",
+"label": "Iron Man",
+"v": "2008"
+},
+{
+"qid": "Q484442",
+"label": "Spider-Man",
+"v": "2002"
+},
+{
+"qid": "Q181803",
+"label": "Star Wars: Episode VI – Return of the Jedi",
+"v": "1983"
+},
+{
+"qid": "Q131390",
+"label": "300",
+"v": "2006"
+},
+{
+"qid": "Q181069",
+"label": "Star Wars: Episode II – Attack of the Clones",
+"v": "2002"
+},
+{
+"qid": "Q14171368",
+"label": "Avengers: Age of Ultron",
+"v": "2015"
+},
+{
+"qid": "Q190086",
+"label": "Some Like It Hot",
+"v": "1959"
+},
+{
+"qid": "Q109116",
+"label": "The Great Dictator",
+"v": "1940"
+},
+{
+"qid": "Q61448040",
+"label": "Parasite",
+"v": "2019"
+},
+{
+"qid": "Q19355",
+"label": "Life Is Beautiful",
+"v": "1997"
+},
+{
+"qid": "Q228186",
+"label": "Lawrence of Arabia",
+"v": "1962"
+},
+{
+"qid": "Q275120",
+"label": "Captain America: The First Avenger",
+"v": "2011"
+},
+{
+"qid": "Q180098",
+"label": "Ben-Hur",
+"v": "1959"
+},
+{
+"qid": "Q208263",
+"label": "The Green Mile",
+"v": "1999"
+},
+{
+"qid": "Q484048",
+"label": "Amélie",
+"v": "2001"
+},
+{
+"qid": "Q150804",
+"label": "The Pianist",
+"v": "2002"
+},
+{
+"qid": "Q163038",
+"label": "Psycho",
+"v": "1960"
+},
+{
+"qid": "Q2579784",
+"label": "Gravity",
+"v": "2013"
+},
+{
+"qid": "Q42759035",
+"label": "Joker",
+"v": "2019"
+},
+{
+"qid": "Q102754",
+"label": "Dr. No",
+"v": "1962"
+},
+{
+"qid": "Q6074",
+"label": "Star Wars: Episode VII – The Force Awakens",
+"v": "2015"
+},
+{
+"qid": "Q186341",
+"label": "The Shining",
+"v": "1980"
+},
+{
+"qid": "Q23010088",
+"label": "Spider-Man: Homecoming",
+"v": "2017"
+},
+{
+"qid": "Q180214",
+"label": "Black Swan",
+"v": "2010"
+},
+{
+"qid": "Q189540",
+"label": "Seven Samurai",
+"v": "1954"
+},
+{
+"qid": "Q185888",
+"label": "The Social Network",
+"v": "2010"
+},
+{
+"qid": "Q205028",
+"label": "Iron Man 2",
+"v": "2010"
+},
+{
+"qid": "Q160071",
+"label": "Twilight",
+"v": "2008"
+},
+{
+"qid": "Q571032",
+"label": "Django Unchained",
+"v": "2012"
+},
+{
+"qid": "Q842306",
+"label": "Saludos Amigos",
+"v": "1942"
+},
+{
+"qid": "Q184605",
+"label": "2012",
+"v": "2009"
+},
+{
+"qid": "Q484675",
+"label": "Léon: The Professional",
+"v": "1994"
+},
+{
+"qid": "Q212965",
+"label": "The Hunger Games",
+"v": "2012"
+},
+{
+"qid": "Q152780",
+"label": "Life of Pi",
+"v": "2012"
+},
+{
+"qid": "Q18002795",
+"label": "The Revenant",
+"v": "2015"
+},
+{
+"qid": "Q18406872",
+"label": "Doctor Strange",
+"v": "2016"
+},
+{
+"qid": "Q47075",
+"label": "Scarface",
+"v": "1983"
+},
+{
+"qid": "Q181086",
+"label": "A Clockwork Orange",
+"v": "1971"
+},
+{
+"qid": "Q190525",
+"label": "Memento",
+"v": "2000"
+},
+{
+"qid": "Q188652",
+"label": "Rocky",
+"v": "1976"
+},
+{
+"qid": "Q18547944",
+"label": "The Martian",
+"v": "2015"
+},
+{
+"qid": "Q19347291",
+"label": "Deadpool",
+"v": "2016"
+},
+{
+"qid": "Q60072",
+"label": "The Sound of Music",
+"v": "1965"
+},
+{
+"qid": "Q188718",
+"label": "The Bridge on the River Kwai",
+"v": "1957"
+},
+{
+"qid": "Q210364",
+"label": "Shutter Island",
+"v": "2010"
+},
+{
+"qid": "Q209538",
+"label": "Iron Man 3",
+"v": "2013"
+},
+{
+"qid": "Q151904",
+"label": "Casino Royale",
+"v": "2006"
+},
+{
+"qid": "Q152350",
+"label": "Battleship Potemkin",
+"v": "1925"
+},
+{
+"qid": "Q736731",
+"label": "The Three Caballeros",
+"v": "1944"
+},
+{
+"qid": "Q1765358",
+"label": "Captain America: The Winter Soldier",
+"v": "2014"
+},
+{
+"qid": "Q18407657",
+"label": "Captain America: Civil War",
+"v": "2016"
+},
+{
+"qid": "Q20502242",
+"label": "Wonder Woman",
+"v": "2017"
+},
+{
+"qid": "Q55436290",
+"label": "Barbie",
+"v": "2023"
+},
+{
+"qid": "Q72962",
+"label": "Reservoir Dogs",
+"v": "1992"
+},
+{
+"qid": "Q190145",
+"label": "Spider-Man 2",
+"v": "2004"
+},
+{
+"qid": "Q201293",
+"label": "Roman Holiday",
+"v": "1953"
+},
+{
+"qid": "Q204191",
+"label": "It's a Wonderful Life",
+"v": "1946"
+},
+{
+"qid": "Q13619743",
+"label": "Minions",
+"v": "2015"
+},
+{
+"qid": "Q18602670",
+"label": "Spectre",
+"v": "2015"
+},
+{
+"qid": "Q27985819",
+"label": "Spider-Man: Far From Home",
+"v": "2019"
+},
+{
+"qid": "Q68934496",
+"label": "Spider-Man: No Way Home",
+"v": "2021"
+}
+],
+"living_birth_year": [],
+"city_population": [
+{
+"qid": "Q90",
+"label": "Paris",
+"v": "2103778"
+},
+{
+"qid": "Q84",
+"label": "London",
+"v": "8799728"
+},
+{
+"qid": "Q220",
+"label": "Rome",
+"v": "2748109"
+},
+{
+"qid": "Q237",
+"label": "Vatican City",
+"v": "949"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "13274285"
+},
+{
+"qid": "Q64",
+"label": "Berlin",
+"v": "3700577"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "5866139"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "8804190"
+},
+{
+"qid": "Q235",
+"label": "Monaco",
+"v": "38857"
+},
+{
+"qid": "Q956",
+"label": "Beijing",
+"v": "21893095"
+},
+{
+"qid": "Q8646",
+"label": "Hong Kong",
+"v": "7413070"
+},
+{
+"qid": "Q1490",
+"label": "Tokyo",
+"v": "14264798"
+},
+{
+"qid": "Q8678",
+"label": "Rio de Janeiro",
+"v": "6211223"
+},
+{
+"qid": "Q61",
+"label": "Washington, D.C.",
+"v": "689545"
+},
+{
+"qid": "Q1218",
+"label": "Jerusalem",
+"v": "1050151"
+},
+{
+"qid": "Q1741",
+"label": "Vienna",
+"v": "2028289"
+},
+{
+"qid": "Q1757",
+"label": "Helsinki",
+"v": "694392"
+},
+{
+"qid": "Q406",
+"label": "Istanbul",
+"v": "15655924"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "643452"
+},
+{
+"qid": "Q270",
+"label": "Warsaw",
+"v": "1862402"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "921468"
+},
+{
+"qid": "Q43387",
+"label": "Edirne",
+"v": "180327"
+},
+{
+"qid": "Q2841",
+"label": "Bogotá",
+"v": "8034649"
+},
+{
+"qid": "Q19689",
+"label": "Tirana",
+"v": "389323"
+},
+{
+"qid": "Q1754",
+"label": "Stockholm",
+"v": "984748"
+},
+{
+"qid": "Q1297",
+"label": "Chicago",
+"v": "2746388"
+},
+{
+"qid": "Q1899",
+"label": "Kyiv",
+"v": "2952301"
+},
+{
+"qid": "Q1486",
+"label": "Buenos Aires",
+"v": "3121707"
+},
+{
+"qid": "Q2887",
+"label": "Santiago",
+"v": "6257516"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "5652922"
+},
+{
+"qid": "Q1085",
+"label": "Prague",
+"v": "1397880"
+},
+{
+"qid": "Q597",
+"label": "Lisbon",
+"v": "545796"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "5450496"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "5676648"
+},
+{
+"qid": "Q85",
+"label": "Cairo",
+"v": "9801536"
+},
+{
+"qid": "Q1781",
+"label": "Budapest",
+"v": "1675777"
+},
+{
+"qid": "Q1489",
+"label": "Mexico City",
+"v": "9209944"
+},
+{
+"qid": "Q8684",
+"label": "Seoul",
+"v": "9668465"
+},
+{
+"qid": "Q34600",
+"label": "Kyoto",
+"v": "1463723"
+},
+{
+"qid": "Q4361",
+"label": "Curitiba",
+"v": "1773718"
+},
+{
+"qid": "Q1854",
+"label": "Ho Chi Minh City",
+"v": "14002598"
+},
+{
+"qid": "Q174",
+"label": "São Paulo",
+"v": "11451999"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "11135191"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "24870895"
+},
+{
+"qid": "Q1530",
+"label": "Baghdad",
+"v": "8126755"
+},
+{
+"qid": "Q9248",
+"label": "Baku",
+"v": "2300500"
+},
+{
+"qid": "Q1492",
+"label": "Barcelona",
+"v": "1731649"
+},
+{
+"qid": "Q1748",
+"label": "Copenhagen",
+"v": "667099"
+},
+{
+"qid": "Q585",
+"label": "Oslo",
+"v": "717710"
+},
+{
+"qid": "Q3766",
+"label": "Damascus",
+"v": "2685360"
+},
+{
+"qid": "Q3640",
+"label": "Ankara",
+"v": "5803482"
+},
+{
+"qid": "Q3616",
+"label": "Tehran",
+"v": "8693706"
+},
+{
+"qid": "Q1726",
+"label": "Munich",
+"v": "1505036"
+},
+{
+"qid": "Q239",
+"label": "Brussels",
+"v": "195546"
+},
+{
+"qid": "Q33986",
+"label": "Valparaíso",
+"v": "296655"
+},
+{
+"qid": "Q62",
+"label": "San Francisco",
+"v": "873965"
+},
+{
+"qid": "Q3870",
+"label": "Nairobi",
+"v": "5545000"
+},
+{
+"qid": "Q1761",
+"label": "Dublin",
+"v": "592713"
+},
+{
+"qid": "Q19660",
+"label": "Bucharest",
+"v": "1716961"
+},
+{
+"qid": "Q1930",
+"label": "Ottawa",
+"v": "1017449"
+},
+{
+"qid": "Q1156",
+"label": "Mumbai",
+"v": "15414288"
+},
+{
+"qid": "Q641",
+"label": "Venice",
+"v": "250369"
+},
+{
+"qid": "Q2280",
+"label": "Minsk",
+"v": "1995091"
+},
+{
+"qid": "Q3711",
+"label": "Belgrade",
+"v": "1197714"
+},
+{
+"qid": "Q1770",
+"label": "Tallinn",
+"v": "457572"
+},
+{
+"qid": "Q216",
+"label": "Vilnius",
+"v": "619405"
+},
+{
+"qid": "Q1055",
+"label": "Hamburg",
+"v": "1869473"
+},
+{
+"qid": "Q1877",
+"label": "Đồng Hới",
+"v": "160325"
+},
+{
+"qid": "Q472",
+"label": "Sofia",
+"v": "1213134"
+},
+{
+"qid": "Q1880",
+"label": "Concepción",
+"v": "217537"
+},
+{
+"qid": "Q994",
+"label": "Tbilisi",
+"v": "1331485"
+},
+{
+"qid": "Q490",
+"label": "Milan",
+"v": "1354196"
+},
+{
+"qid": "Q1780",
+"label": "Bratislava",
+"v": "480902"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "1154885"
+},
+{
+"qid": "Q2844",
+"label": "Brasília",
+"v": "2996899"
+},
+{
+"qid": "Q1404",
+"label": "Uetersen",
+"v": "18936"
+},
+{
+"qid": "Q172",
+"label": "Toronto",
+"v": "2794356"
+},
+{
+"qid": "Q5838",
+"label": "Kabul",
+"v": "5333284"
+},
+{
+"qid": "Q1773",
+"label": "Riga",
+"v": "588911"
+},
+{
+"qid": "Q14773",
+"label": "Macau",
+"v": "682100"
+},
+{
+"qid": "Q1354",
+"label": "Dhaka",
+"v": "16800000"
+},
+{
+"qid": "Q987",
+"label": "New Delhi",
+"v": "249998"
+},
+{
+"qid": "Q1410",
+"label": "Gibraltar",
+"v": "34003"
+},
+{
+"qid": "Q2868",
+"label": "Lima",
+"v": "9943800"
+},
+{
+"qid": "Q612",
+"label": "Dubai",
+"v": "3944751"
+},
+{
+"qid": "Q1764",
+"label": "Reykjavík",
+"v": "138772"
+},
+{
+"qid": "Q11194",
+"label": "Sarajevo",
+"v": "275524"
+},
+{
+"qid": "Q1435",
+"label": "Zagreb",
+"v": "767131"
+},
+{
+"qid": "Q5465",
+"label": "Cape Town",
+"v": "3776313"
+},
+{
+"qid": "Q1520",
+"label": "Astana",
+"v": "1078362"
+},
+{
+"qid": "Q100",
+"label": "Boston",
+"v": "675647"
+},
+{
+"qid": "Q3561",
+"label": "Algiers",
+"v": "2364230"
+},
+{
+"qid": "Q1533",
+"label": "Caracas",
+"v": "2245744"
+},
+{
+"qid": "Q1865",
+"label": "Kuala Lumpur",
+"v": "9000280"
+},
+{
+"qid": "Q2044",
+"label": "Florence",
+"v": "360930"
+},
+{
+"qid": "Q3114",
+"label": "Canberra",
+"v": "381488"
+},
+{
+"qid": "Q3820",
+"label": "Beirut",
+"v": "2421354"
+},
+{
+"qid": "Q1953",
+"label": "Yerevan",
+"v": "1106300"
+},
+{
+"qid": "Q1794",
+"label": "Frankfurt",
+"v": "760656"
+},
+{
+"qid": "Q3141",
+"label": "Melbourne",
+"v": "5350705"
+},
+{
+"qid": "Q23556",
+"label": "Atlanta",
+"v": "498715"
+},
+{
+"qid": "Q1348",
+"label": "Kolkata",
+"v": "4496694"
+},
+{
+"qid": "Q3838",
+"label": "Kinshasa",
+"v": "14565700"
+},
+{
+"qid": "Q2634",
+"label": "Naples",
+"v": "913462"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "1902590"
+},
+{
+"qid": "Q70",
+"label": "Bern",
+"v": "136988"
+},
+{
+"qid": "Q437",
+"label": "Ljubljana",
+"v": "284293"
+},
+{
+"qid": "Q1335",
+"label": "Montevideo",
+"v": "1302954"
+},
+{
+"qid": "Q6022566",
+"label": "Monte Águila",
+"v": "6574"
+},
+{
+"qid": "Q1353",
+"label": "Delhi",
+"v": "26495000"
+},
+{
+"qid": "Q8660",
+"label": "Karachi",
+"v": "14910352"
+},
+{
+"qid": "Q3856",
+"label": "Nicosia",
+"v": "56848"
+},
+{
+"qid": "Q1858",
+"label": "Hanoi",
+"v": "8717600"
+},
+{
+"qid": "Q3761",
+"label": "Accra",
+"v": "1782150"
+},
+{
+"qid": "Q18808",
+"label": "Pyongyang",
+"v": "2863000"
+},
+{
+"qid": "Q3787",
+"label": "Abuja",
+"v": "1693400"
+},
+{
+"qid": "Q1867",
+"label": "Taipei",
+"v": "2442991"
+},
+{
+"qid": "Q3624",
+"label": "Addis Ababa",
+"v": "5704000"
+},
+{
+"qid": "Q71",
+"label": "Geneva",
+"v": "211152"
+},
+{
+"qid": "Q3037",
+"label": "Kathmandu",
+"v": "845767"
+},
+{
+"qid": "Q1563",
+"label": "Havana",
+"v": "2492618"
+},
+{
+"qid": "Q72",
+"label": "Zurich",
+"v": "440935"
+},
+{
+"qid": "Q35765",
+"label": "Osaka",
+"v": "2751862"
+},
+{
+"qid": "Q384",
+"label": "Skopje",
+"v": "422540"
+},
+{
+"qid": "Q456",
+"label": "Lyon",
+"v": "519127"
+},
+{
+"qid": "Q23768",
+"label": "Las Vegas",
+"v": "641903"
+},
+{
+"qid": "Q1362",
+"label": "Islamabad",
+"v": "1014825"
+},
+{
+"qid": "Q269",
+"label": "Tashkent",
+"v": "2956384"
+},
+{
+"qid": "Q21197",
+"label": "Chișinău",
+"v": "567038"
+},
+{
+"qid": "Q3692",
+"label": "Riyadh",
+"v": "7009100"
+},
+{
+"qid": "Q340",
+"label": "Montreal",
+"v": "1895211"
+},
+{
+"qid": "Q3805",
+"label": "Amman",
+"v": "4007526"
+},
+{
+"qid": "Q3926",
+"label": "Pretoria",
+"v": "741651"
+},
+{
+"qid": "Q6602",
+"label": "Strasbourg",
+"v": "293771"
+},
+{
+"qid": "Q1863",
+"label": "Andorra la Vella",
+"v": "24042"
+},
+{
+"qid": "Q23564",
+"label": "Podgorica",
+"v": "150977"
+},
+{
+"qid": "Q23436",
+"label": "Edinburgh",
+"v": "488050"
+},
+{
+"qid": "Q16555",
+"label": "Houston",
+"v": "2304580"
+},
+{
+"qid": "Q18094",
+"label": "Honolulu",
+"v": "350964"
+},
+{
+"qid": "Q3551",
+"label": "Rabat",
+"v": "515619"
+},
+{
+"qid": "Q8673",
+"label": "Lagos",
+"v": "15070000"
+},
+{
+"qid": "Q33935",
+"label": "Tel Aviv",
+"v": "467875"
+},
+{
+"qid": "Q23430",
+"label": "Ulaanbaatar",
+"v": "1396288"
+},
+{
+"qid": "Q365",
+"label": "Cologne",
+"v": "1025523"
+},
+{
+"qid": "Q3579",
+"label": "Tripoli",
+"v": "1293016"
+},
+{
+"qid": "Q5083",
+"label": "Seattle",
+"v": "737015"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "4803262"
+},
+{
+"qid": "Q1844",
+"label": "Vaduz",
+"v": "5668"
+},
+{
+"qid": "Q3861",
+"label": "Doha",
+"v": "1186023"
+},
+{
+"qid": "Q3897",
+"label": "Luanda",
+"v": "2487444"
+},
+{
+"qid": "Q1519",
+"label": "Abu Dhabi",
+"v": "1570000"
+},
+{
+"qid": "Q34001",
+"label": "Roubaix",
+"v": "98286"
+},
+{
+"qid": "Q23661",
+"label": "Wellington",
+"v": "216200"
+},
+{
+"qid": "Q23438",
+"label": "Ashgabat",
+"v": "1030063"
+},
+{
+"qid": "Q9361",
+"label": "Bishkek",
+"v": "1191000"
+},
+{
+"qid": "Q16554",
+"label": "Denver",
+"v": "715522"
+},
+{
+"qid": "Q1963",
+"label": "Khartoum",
+"v": "5345000"
+},
+{
+"qid": "Q31487",
+"label": "Kraków",
+"v": "804237"
+},
+{
+"qid": "Q3894",
+"label": "Kampala",
+"v": "1680600"
+},
+{
+"qid": "Q24826",
+"label": "Liverpool",
+"v": "513441"
+},
+{
+"qid": "Q1479",
+"label": "Bordeaux",
+"v": "267991"
+},
+{
+"qid": "Q3572",
+"label": "Tunis",
+"v": "602560"
+},
+{
+"qid": "Q1022",
+"label": "Stuttgart",
+"v": "609365"
+},
+{
+"qid": "Q36600",
+"label": "The Hague",
+"v": "548320"
+},
+{
+"qid": "Q9022",
+"label": "Guadalajara",
+"v": "1385621"
+},
+{
+"qid": "Q1731",
+"label": "Dresden",
+"v": "562764"
+},
+{
+"qid": "Q24639",
+"label": "Vancouver",
+"v": "662248"
+},
+{
+"qid": "Q2900",
+"label": "Quito",
+"v": "1763275"
+},
+{
+"qid": "Q1850",
+"label": "Phnom Penh",
+"v": "2129371"
+},
+{
+"qid": "Q23800",
+"label": "Valletta",
+"v": "5197"
+},
+{
+"qid": "Q16556",
+"label": "Phoenix",
+"v": "1608139"
+},
+{
+"qid": "Q11746",
+"label": "Wuhan",
+"v": "12326518"
+},
+{
+"qid": "Q1449",
+"label": "Genoa",
+"v": "558745"
+},
+{
+"qid": "Q495",
+"label": "Turin",
+"v": "841600"
+},
+{
+"qid": "Q9365",
+"label": "Dushanbe",
+"v": "948251"
+},
+{
+"qid": "Q2933",
+"label": "Asunción",
+"v": "462241"
+},
+{
+"qid": "Q3183",
+"label": "Perth",
+"v": "2141834"
+},
+{
+"qid": "Q3703",
+"label": "Bamako",
+"v": "4227569"
+},
+{
+"qid": "Q1874",
+"label": "Odesa",
+"v": "1010537"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "717273"
+},
+{
+"qid": "Q87",
+"label": "Alexandria",
+"v": "5362517"
+},
+{
+"qid": "Q3718",
+"label": "Dakar",
+"v": "1438725"
+},
+{
+"qid": "Q16557",
+"label": "Dallas",
+"v": "1304379"
+},
+{
+"qid": "Q83285",
+"label": "Durrës",
+"v": "101728"
+},
+{
+"qid": "Q1842",
+"label": "Luxembourg",
+"v": "137678"
+},
+{
+"qid": "Q4093",
+"label": "Glasgow",
+"v": "626410"
+},
+{
+"qid": "Q5831",
+"label": "Melilla",
+"v": "86780"
+},
+{
+"qid": "Q7880",
+"label": "Toulouse",
+"v": "514819"
+},
+{
+"qid": "Q18013",
+"label": "Sacramento",
+"v": "524943"
+},
+{
+"qid": "Q2656",
+"label": "Palermo",
+"v": "630167"
+},
+{
+"qid": "Q3921",
+"label": "Harare",
+"v": "2150000"
+},
+{
+"qid": "Q9326",
+"label": "Vientiane",
+"v": "948487"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "639111"
+},
+{
+"qid": "Q33959",
+"label": "Nice",
+"v": "357737"
+},
+{
+"qid": "Q34404",
+"label": "New Orleans",
+"v": "383997"
+},
+{
+"qid": "Q3935",
+"label": "Windhoek",
+"v": "486169"
+},
+{
+"qid": "Q1718",
+"label": "Düsseldorf",
+"v": "619444"
+},
+{
+"qid": "Q2471",
+"label": "Sanaa",
+"v": "2957000"
+}
+],
+"birth_name": [
+{
+"qid": "Q76",
+"label": "Barack Obama",
+"v": "Barack Hussein Obama II"
+},
+{
+"qid": "Q2831",
+"label": "Michael Jackson",
+"v": "Michael Joseph Jackson"
+},
+{
+"qid": "Q9960",
+"label": "Ronald Reagan",
+"v": "Ronald Wilson Reagan"
+},
+{
+"qid": "Q207",
+"label": "George W. Bush",
+"v": "George Walker Bush"
+},
+{
+"qid": "Q7243",
+"label": "Leo Tolstoy",
+"v": "Lev Nikolayevich Tolstoy"
+},
+{
+"qid": "Q1035",
+"label": "Charles Darwin",
+"v": "Charles Robert Darwin"
+},
+{
+"qid": "Q6279",
+"label": "Joe Biden",
+"v": "Joseph Robinette Biden Jr."
+},
+{
+"qid": "Q8016",
+"label": "Winston Churchill",
+"v": "Winston Leonard Spencer Churchill"
+},
+{
+"qid": "Q882",
+"label": "Charlie Chaplin",
+"v": "Charles Spencer Chaplin"
+},
+{
+"qid": "Q8743",
+"label": "Thomas Edison",
+"v": "Thomas Alva Edison"
+},
+{
+"qid": "Q9682",
+"label": "Elizabeth II",
+"v": "Elizabeth Alexandra Mary Windsor"
+},
+{
+"qid": "Q7245",
+"label": "Mark Twain",
+"v": "Samuel Langhorne Clemens"
+},
+{
+"qid": "Q8027",
+"label": "Martin Luther King Jr.",
+"v": "Michael King Jr."
+},
+{
+"qid": "Q5686",
+"label": "Charles Dickens",
+"v": "Charles John Huffam Dickens"
+},
+{
+"qid": "Q8007",
+"label": "Franklin Delano Roosevelt",
+"v": "Franklin Delano Roosevelt"
+},
+{
+"qid": "Q4616",
+"label": "Marilyn Monroe",
+"v": "Norma Jeane Mortenson"
+},
+{
+"qid": "Q181",
+"label": "Jimmy Wales",
+"v": "Jimmy Donal Wales"
+},
+{
+"qid": "Q19837",
+"label": "Steve Jobs",
+"v": "Abdul Lateef Jandali"
+},
+{
+"qid": "Q4617",
+"label": "Corbin Bleu",
+"v": "Corbin Bleu Reivers"
+},
+{
+"qid": "Q1124",
+"label": "Bill Clinton",
+"v": "William Jefferson Blythe III"
+},
+{
+"qid": "Q30875",
+"label": "Oscar Wilde",
+"v": "Oscar Fingal O’Flahertie Wills Wilde"
+},
+{
+"qid": "Q1615",
+"label": "Neil Armstrong",
+"v": "Neil Alden Armstrong"
+},
+{
+"qid": "Q5679",
+"label": "Lord Byron",
+"v": "George Gordon Byron"
+},
+{
+"qid": "Q8704",
+"label": "Walt Disney",
+"v": "Walter Elias Disney"
+},
+{
+"qid": "Q303",
+"label": "Elvis Presley",
+"v": "Elvis Aaron Presley"
+},
+{
+"qid": "Q3335",
+"label": "George Orwell",
+"v": "Eric Arthur Blair"
+},
+{
+"qid": "Q6882",
+"label": "James Joyce",
+"v": "James Augustine Aloysius Joyce"
+},
+{
+"qid": "Q36322",
+"label": "Jane Austen",
+"v": "Jane Austen"
+},
+{
+"qid": "Q317521",
+"label": "Elon Musk",
+"v": "Elon Reeve Musk"
+},
+{
+"qid": "Q23685",
+"label": "Jimmy Carter",
+"v": "James Earl Carter Jr."
+},
+{
+"qid": "Q35064",
+"label": "Agatha Christie",
+"v": "Agatha Mary Clarissa Miller"
+},
+{
+"qid": "Q23505",
+"label": "George H. W. Bush",
+"v": "George Herbert Walker Bush"
+},
+{
+"qid": "Q1744",
+"label": "Madonna",
+"v": "Madonna Louise Ciccone"
+},
+{
+"qid": "Q33866",
+"label": "Theodore Roosevelt",
+"v": "Theodore Roosevelt Jr."
+},
+{
+"qid": "Q9588",
+"label": "Richard Nixon",
+"v": "Richard Milhous Nixon"
+},
+{
+"qid": "Q9916",
+"label": "Dwight D. Eisenhower",
+"v": "David Dwight Eisenhower"
+},
+{
+"qid": "Q7251",
+"label": "Alan Turing",
+"v": "Alan Mathison Turing"
+},
+{
+"qid": "Q34296",
+"label": "Woodrow Wilson",
+"v": "Woodrow Wilson"
+},
+{
+"qid": "Q7374",
+"label": "Alfred Hitchcock",
+"v": "Alfred Joseph Hitchcock"
+},
+{
+"qid": "Q9049",
+"label": "Noam Chomsky",
+"v": "Avram Noam Chomsky"
+},
+{
+"qid": "Q19185",
+"label": "George Bernard Shaw",
+"v": "George Bernard Shaw"
+},
+{
+"qid": "Q33760",
+"label": "Bertrand Russell",
+"v": "Bertrand Arthur William Russell"
+},
+{
+"qid": "Q1203",
+"label": "John Lennon",
+"v": "John Winston Lennon"
+},
+{
+"qid": "Q36107",
+"label": "Muhammad Ali",
+"v": "Cassius Marcellus Clay, Jr."
+},
+{
+"qid": "Q392",
+"label": "Bob Dylan",
+"v": "Robert Allen Zimmerman"
+},
+{
+"qid": "Q35610",
+"label": "Arthur Conan Doyle",
+"v": "Arthur Ignatius Conan Doyle"
+},
+{
+"qid": "Q34660",
+"label": "J. K. Rowling",
+"v": "Joanne Rowling"
+},
+{
+"qid": "Q26876",
+"label": "Taylor Swift",
+"v": "Taylor Alison Swift"
+},
+{
+"qid": "Q1779",
+"label": "Louis Armstrong",
+"v": "Louis Daniel Armstrong"
+},
+{
+"qid": "Q5603",
+"label": "Andy Warhol",
+"v": "Andrew Warhola Jr."
+},
+{
+"qid": "Q5604",
+"label": "Frank Lloyd Wright",
+"v": "Franklin Lincoln Wright"
+},
+{
+"qid": "Q11813",
+"label": "James Madison",
+"v": "James Madison, Jr."
+},
+{
+"qid": "Q43274",
+"label": "Charles III",
+"v": "Prince Charles Philip Arthur George Windsor of Edinburgh"
+},
+{
+"qid": "Q6109517",
+"label": "Leo XIV",
+"v": "Robert Francis Prevost"
+},
+{
+"qid": "Q83287",
+"label": "Selena Gomez",
+"v": "Selena Marie Gomez"
+},
+{
+"qid": "Q40909",
+"label": "Virginia Woolf",
+"v": "Adeline Virginia Alexandra Stephen"
+},
+{
+"qid": "Q9582",
+"label": "Gerald Ford",
+"v": "Leslie Lynch King Jr."
+},
+{
+"qid": "Q5608",
+"label": "Eminem",
+"v": "Marshall Bruce Mathers III"
+},
+{
+"qid": "Q36661",
+"label": "Henrik Ibsen",
+"v": "Henrik Johan Ibsen"
+},
+{
+"qid": "Q42511",
+"label": "H. G. Wells",
+"v": "Herbert George Wells"
+},
+{
+"qid": "Q38203",
+"label": "Helen Keller",
+"v": "Helen Adams Keller"
+},
+{
+"qid": "Q11816",
+"label": "John Quincy Adams",
+"v": "John Quincy Adams"
+},
+{
+"qid": "Q409",
+"label": "Bob Marley",
+"v": "Robert Nesta Marley"
+},
+{
+"qid": "Q35236",
+"label": "Herbert Hoover",
+"v": "Herbert Clark Hoover"
+},
+{
+"qid": "Q80",
+"label": "Tim Berners-Lee",
+"v": "Timothy John Berners-Lee"
+},
+{
+"qid": "Q83338",
+"label": "Robin Williams",
+"v": "Robin McLaurin Williams"
+},
+{
+"qid": "Q36023",
+"label": "Calvin Coolidge",
+"v": "John Calvin"
+},
+{
+"qid": "Q34836",
+"label": "Ulysses S. Grant",
+"v": "Hiram Ulysses Grant"
+},
+{
+"qid": "Q37150",
+"label": "Lana Del Rey",
+"v": "Elizabeth Woolridge Grant"
+},
+{
+"qid": "Q2001",
+"label": "Stanley Kubrick",
+"v": "Stanley Kubrick"
+},
+{
+"qid": "Q37767",
+"label": "T. S. Eliot",
+"v": "Thomas Stearns Eliot"
+},
+{
+"qid": "Q34012",
+"label": "Marlon Brando",
+"v": "Marlon Brando Junior"
+},
+{
+"qid": "Q25089",
+"label": "Woody Allen",
+"v": "Allan Stewart Konigsberg"
+},
+{
+"qid": "Q36844",
+"label": "Rihanna",
+"v": "Robyn Rihanna Fenty"
+},
+{
+"qid": "Q38082",
+"label": "Lewis Carroll",
+"v": "Charles Lutwidge Dodgson"
+},
+{
+"qid": "Q34436",
+"label": "Scarlett Johansson",
+"v": "Scarlett Ingrid Johansson"
+},
+{
+"qid": "Q11637",
+"label": "Judy Garland",
+"v": "Frances Ethel Gumm"
+},
+{
+"qid": "Q42786",
+"label": "Audrey Hepburn",
+"v": "Audrey Kathleen Ruston"
+},
+{
+"qid": "Q9685",
+"label": "Diana, Princess of Wales",
+"v": "Diana Frances Spencer"
+},
+{
+"qid": "Q83396",
+"label": "Eleanor Roosevelt",
+"v": "Anna Eleanor Roosevelt"
+},
+{
+"qid": "Q38111",
+"label": "Leonardo DiCaprio",
+"v": "Leonardo Wilhelm DiCaprio"
+},
+{
+"qid": "Q81438",
+"label": "Walt Whitman",
+"v": "Walt Whitman"
+},
+{
+"qid": "Q2599",
+"label": "Paul McCartney",
+"v": "James Paul McCartney"
+},
+{
+"qid": "Q38392",
+"label": "William Faulkner",
+"v": "William Cuthbert Falkner"
+},
+{
+"qid": "Q39212",
+"label": "John Steinbeck",
+"v": "Jeffery Ernest Steinbeck"
+},
+{
+"qid": "Q48301",
+"label": "Martin Heidegger",
+"v": "Martin Heidegger"
+},
+{
+"qid": "Q34597",
+"label": "James A. Garfield",
+"v": "James Abram Garfield"
+},
+{
+"qid": "Q39829",
+"label": "Stephen King",
+"v": "Stephen Edwin King"
+},
+{
+"qid": "Q11975",
+"label": "Britney Spears",
+"v": "Britney Jean Spears"
+},
+{
+"qid": "Q264766",
+"label": "Theresa May",
+"v": "Theresa Mary Brasier"
+},
+{
+"qid": "Q34851",
+"label": "Elizabeth Taylor",
+"v": "Elizabeth Rosemond Taylor"
+},
+{
+"qid": "Q35332",
+"label": "Brad Pitt",
+"v": "William Bradley Pitt"
+},
+{
+"qid": "Q4441",
+"label": "Emily Dickinson",
+"v": "Emily Elizabeth Dickinson"
+},
+{
+"qid": "Q19526",
+"label": "Maya Angelou",
+"v": "Marguerite Annie Johnson"
+},
+{
+"qid": "Q35171",
+"label": "Grover Cleveland",
+"v": "Stephen Grover Cleveland"
+},
+{
+"qid": "Q4573",
+"label": "Sean Connery",
+"v": "Thomas Sean Connery"
+},
+{
+"qid": "Q45765",
+"label": "Jack London",
+"v": "John Griffith Chaney"
+},
+{
+"qid": "Q11891",
+"label": "James K. Polk",
+"v": "James Knox Polk"
+},
+{
+"qid": "Q131149",
+"label": "Henry David Thoreau",
+"v": "David Henry Thoreau"
+},
+{
+"qid": "Q39476",
+"label": "Emma Watson",
+"v": "Emma Charlotte Duerre Watson"
+},
+{
+"qid": "Q12325",
+"label": "James Buchanan",
+"v": "James Buchanan, Jr."
+},
+{
+"qid": "Q40946",
+"label": "Daniel Defoe",
+"v": "Daniel Foe"
+},
+{
+"qid": "Q80900",
+"label": "Pearl S. Buck",
+"v": "Pearl Comfort Sydenstricker"
+},
+{
+"qid": "Q4235",
+"label": "Miley Cyrus",
+"v": "Destiny Hope Cyrus"
+},
+{
+"qid": "Q855252",
+"label": "Bhumibol Adulyadej",
+"v": "Bhumibala Aduladeja"
+},
+{
+"qid": "Q81447",
+"label": "Aldous Huxley",
+"v": "Aldous Leonard Huxley Arnold"
+},
+{
+"qid": "Q35286",
+"label": "Warren G. Harding",
+"v": "Warren Gamaliel Harding"
+},
+{
+"qid": "Q3099714",
+"label": "Justin Trudeau",
+"v": "Justin Pierre James Trudeau"
+},
+{
+"qid": "Q359442",
+"label": "Bernie Sanders",
+"v": "Bernard Sanders"
+},
+{
+"qid": "Q36949",
+"label": "Robert De Niro",
+"v": "Robert Anthony De Niro"
+},
+{
+"qid": "Q35686",
+"label": "Rutherford B. Hayes",
+"v": "Rutherford Birchard Hayes"
+},
+{
+"qid": "Q40912",
+"label": "Frank Sinatra",
+"v": "Francis Albert Sinatra"
+},
+{
+"qid": "Q10707",
+"label": "Robert Mugabe",
+"v": "Robert Gabriel Mugabe"
+},
+{
+"qid": "Q131333",
+"label": "George Eliot",
+"v": "Mary Anne Evans"
+},
+{
+"qid": "Q37876",
+"label": "Natalie Portman",
+"v": "Natalie Herschlag"
+},
+{
+"qid": "Q40715",
+"label": "Jennifer Lopez",
+"v": "Jennifer Lynn Lopez"
+},
+{
+"qid": "Q42493",
+"label": "Katy Perry",
+"v": "Katheryn Elizabeth Hudson"
+},
+{
+"qid": "Q1189",
+"label": "Usain Bolt",
+"v": "Usain St. Leo Bolt"
+},
+{
+"qid": "Q13133",
+"label": "Michelle Obama",
+"v": "Michelle LaVaughn Robinson"
+},
+{
+"qid": "Q2263",
+"label": "Tom Hanks",
+"v": "Thomas Jeffrey Hanks"
+},
+{
+"qid": "Q23215",
+"label": "Adele",
+"v": "Adele Laurie Blue Adkins"
+},
+{
+"qid": "Q34389",
+"label": "Whitney Houston",
+"v": "Whitney Elizabeth Houston"
+},
+{
+"qid": "Q360",
+"label": "Julian Assange",
+"v": "Julian Paul Hawkins"
+},
+{
+"qid": "Q40096",
+"label": "Will Smith",
+"v": "Willard Carroll Smith II"
+},
+{
+"qid": "Q5383",
+"label": "David Bowie",
+"v": "David Robert Jones"
+},
+{
+"qid": "Q19673",
+"label": "Al Gore",
+"v": "Albert Arnold Gore Jr."
+},
+{
+"qid": "Q44461",
+"label": "Richard Dawkins",
+"v": "Clinton Richard Dawkins"
+},
+{
+"qid": "Q55800",
+"label": "Oprah Winfrey",
+"v": "Orpah Gail Winfrey"
+},
+{
+"qid": "Q5928",
+"label": "Jimi Hendrix",
+"v": "Johnny Allen Hendrix"
+},
+{
+"qid": "Q6107",
+"label": "Tupac Shakur",
+"v": "Lesane Parish Crooks"
+},
+{
+"qid": "Q126462",
+"label": "Thomas Paine",
+"v": "Thomas Paine"
+},
+{
+"qid": "Q43303",
+"label": "Malcolm X",
+"v": "Malcolm Little"
+},
+{
+"qid": "Q205707",
+"label": "Bradley Cooper",
+"v": "Bradley Charles Cooper"
+},
+{
+"qid": "Q41163",
+"label": "Al Pacino",
+"v": "Alfredo James Pacino"
+},
+{
+"qid": "Q40826",
+"label": "Knut Hamsun",
+"v": "Knut Pedersen Hamsun"
+},
+{
+"qid": "Q47152",
+"label": "Mary Shelley",
+"v": "Mary Godwin"
+},
+{
+"qid": "Q202765",
+"label": "Kate Winslet",
+"v": "Kate Elizabeth Winslet"
+},
+{
+"qid": "Q37459",
+"label": "Nicole Kidman",
+"v": "Nicole Mary Kidman"
+},
+{
+"qid": "Q41173",
+"label": "Demi Lovato",
+"v": "Demetria Devonne Lovato"
+},
+{
+"qid": "Q40874",
+"label": "Doris Lessing",
+"v": "Doris May Tayler"
+},
+{
+"qid": "Q72334",
+"label": "Toni Morrison",
+"v": "Chloe Ardelia Wofford"
+},
+{
+"qid": "Q80966",
+"label": "Cate Blanchett",
+"v": "Catherine Élise Blanchett"
+},
+{
+"qid": "Q42544",
+"label": "Thomas More",
+"v": "Thomas More"
+},
+{
+"qid": "Q35498",
+"label": "Chester A. Arthur",
+"v": "Chester Alan Arthur"
+},
+{
+"qid": "Q38222",
+"label": "George Lucas",
+"v": "George Walton Lucas Jr."
+},
+{
+"qid": "Q10390",
+"label": "John McCain",
+"v": "John Sidney McCain III"
+},
+{
+"qid": "Q34460",
+"label": "Gwyneth Paltrow",
+"v": "Gwyneth Kate Paltrow"
+},
+{
+"qid": "Q40523",
+"label": "Julia Roberts",
+"v": "Julia Fiona Roberts"
+},
+{
+"qid": "Q4985",
+"label": "Herman Melville",
+"v": "Herman Melville"
+},
+{
+"qid": "Q9204",
+"label": "C. S. Lewis",
+"v": "Clive Staples Lewis"
+},
+{
+"qid": "Q1276",
+"label": "Leonard Cohen",
+"v": "Leonard Norman Cohen"
+},
+{
+"qid": "Q234679",
+"label": "Charlotte Rampling",
+"v": "Tessa Charlotte Rampling"
+},
+{
+"qid": "Q56016",
+"label": "Katharine Hepburn",
+"v": "Katharine Houghton Hepburn"
+},
+{
+"qid": "Q39792",
+"label": "Jack Nicholson",
+"v": "John Joseph Nicholson"
+},
+{
+"qid": "Q132537",
+"label": "J. Robert Oppenheimer",
+"v": "Julius Robert Oppenheimer"
+},
+{
+"qid": "Q41921",
+"label": "Rosa Parks",
+"v": "Rosa Louise McCauley"
+},
+{
+"qid": "Q48337",
+"label": "Morgan Freeman",
+"v": "Morgan Freeman"
+},
+{
+"qid": "Q40791",
+"label": "Sandra Bullock",
+"v": "Sandra Annette Bullock"
+},
+{
+"qid": "Q234819",
+"label": "Alice Munro",
+"v": "Alice Ann Laidlaw"
+},
+{
+"qid": "Q23844",
+"label": "George Clooney",
+"v": "George Timothy Clooney"
+},
+{
+"qid": "Q37079",
+"label": "Tom Cruise",
+"v": "Thomas Cruise Mapother IV"
+},
+{
+"qid": "Q40504",
+"label": "Jim Carrey",
+"v": "James Eugene Carrey"
+},
+{
+"qid": "Q503706",
+"label": "Chris Pratt",
+"v": "Christopher Michael Pratt"
+},
+{
+"qid": "Q82110",
+"label": "Steven Seagal",
+"v": "Steven Frederic Seagal"
+},
+{
+"qid": "Q80976",
+"label": "Prince Philip, Duke of Edinburgh",
+"v": "Philip of Greece and Denmark"
+},
+{
+"qid": "Q11459",
+"label": "Serena Williams",
+"v": "Serena Jameka Williams"
+},
+{
+"qid": "Q129817",
+"label": "Russell Crowe",
+"v": "Russell Ira Crowe"
+},
+{
+"qid": "Q132524",
+"label": "Ayn Rand",
+"v": "Alisa Zinovyevna Rosenbaum"
+},
+{
+"qid": "Q180453",
+"label": "Dolly Parton",
+"v": "Dolly Rebecca Parton"
+},
+{
+"qid": "Q23365",
+"label": "Jeremy Renner",
+"v": "Jeremy Lee Renner"
+},
+{
+"qid": "Q40026",
+"label": "Sylvester Stallone",
+"v": "Sylvester Gardenzio Stallone"
+},
+{
+"qid": "Q2643",
+"label": "George Harrison",
+"v": "George Harrison"
+},
+{
+"qid": "Q6383803",
+"label": "Keir Starmer",
+"v": "Keir Rodney Starmer"
+},
+{
+"qid": "Q3772",
+"label": "Quentin Tarantino",
+"v": "Quentin Jerome Tarantino"
+},
+{
+"qid": "Q43416",
+"label": "Keanu Reeves",
+"v": "Keanu Charles Reeves"
+},
+{
+"qid": "Q11998",
+"label": "Kylie Minogue",
+"v": "Kylie Ann Minogue"
+},
+{
+"qid": "Q184746",
+"label": "Jane Goodall",
+"v": "Valerie Jane Morris-Goodall"
+},
+{
+"qid": "Q72984",
+"label": "Bing Crosby",
+"v": "Harry Lillis Crosby"
+},
+{
+"qid": "Q102124",
+"label": "Sigourney Weaver",
+"v": "Susan Alexandra Weaver"
+},
+{
+"qid": "Q41142",
+"label": "Jane Fonda",
+"v": "Jane Seymour Fonda"
+},
+{
+"qid": "Q41142",
+"label": "Jane Fonda",
+"v": "Jayne Seymour Fonda"
+},
+{
+"qid": "Q40531",
+"label": "John Wayne",
+"v": "Marion Robert Morrison"
+},
+{
+"qid": "Q65932",
+"label": "Anthony Hopkins",
+"v": "Philip Anthony Hopkins"
+},
+{
+"qid": "Q189490",
+"label": "Jennifer Lawrence",
+"v": "Jennifer Shrader Lawrence"
+},
+{
+"qid": "Q23760",
+"label": "Rowan Atkinson",
+"v": "Rowan Sebastian Atkinson"
+},
+{
+"qid": "Q280856",
+"label": "George VI",
+"v": "Prince Albert Frederick Arthur George of York"
+},
+{
+"qid": "Q43033",
+"label": "Desmond Tutu",
+"v": "Desmond Mpilo Tutu"
+},
+{
+"qid": "Q42869",
+"label": "Nicolas Cage",
+"v": "Nicholas Kim Coppola"
+},
+{
+"qid": "Q83059",
+"label": "Saul Bellow",
+"v": "Solomon Bellows"
+},
+{
+"qid": "Q1033016",
+"label": "Halle Berry",
+"v": "Maria Halle Berry"
+},
+{
+"qid": "Q10664",
+"label": "Neville Chamberlain",
+"v": "Arthur Neville Chamberlain"
+},
+{
+"qid": "Q12003",
+"label": "Cher",
+"v": "Cheryl Sarkisian"
+},
+{
+"qid": "Q123469",
+"label": "Sinclair Lewis",
+"v": "Harry Sinclair Lewis"
+},
+{
+"qid": "Q40640",
+"label": "Ray Bradbury",
+"v": "Raymond Douglas Bradbury"
+},
+{
+"qid": "Q47285",
+"label": "Joseph John Thomson",
+"v": "Joseph John Thomson."
+},
+{
+"qid": "Q102513",
+"label": "Harriet Beecher Stowe",
+"v": "Elizabeth Harriet Beecher"
+},
+{
+"qid": "Q16390",
+"label": "Humphrey Bogart",
+"v": "Humphrey DeForest Bogart"
+},
+{
+"qid": "Q24313",
+"label": "Mike Pence",
+"v": "Michael Richard Pence"
+},
+{
+"qid": "Q3925",
+"label": "Grace Kelly",
+"v": "Grace Patricia Kelly"
+},
+{
+"qid": "Q42775",
+"label": "Johnny Cash",
+"v": "J. R. Cash"
+},
+{
+"qid": "Q42229",
+"label": "Mel Gibson",
+"v": "Mel Colm-Cille Gerard Gibson"
+},
+{
+"qid": "Q2808",
+"label": "Elton John",
+"v": "Reginald Kenneth Dwight"
+},
+{
+"qid": "Q37571",
+"label": "Jackson Pollock",
+"v": "Paul Jackson Pollock"
+},
+{
+"qid": "Q41351",
+"label": "Jodie Foster",
+"v": "Alicia Christian Foster"
+},
+{
+"qid": "Q13424289",
+"label": "Edward Snowden",
+"v": "Edward Joseph Snowden"
+},
+{
+"qid": "Q188500",
+"label": "Elisha Cuthbert",
+"v": "Elisha Ann Cuthbert"
+},
+{
+"qid": "Q23466",
+"label": "Chris Pine",
+"v": "Christopher Whitelaw Pine"
+},
+{
+"qid": "Q5443",
+"label": "Greta Garbo",
+"v": "Greta Lovisa Gustafsson"
+},
+{
+"qid": "Q69339",
+"label": "Nathaniel Hawthorne",
+"v": "Nathaniel Hathorne"
+},
+{
+"qid": "Q80938",
+"label": "John Travolta",
+"v": "John Joseph Travolta"
+},
+{
+"qid": "Q9673",
+"label": "Lewis Hamilton",
+"v": "Lewis Carl Davidson Hamilton"
+},
+{
+"qid": "Q25369",
+"label": "Kobe Bryant",
+"v": "Kobe Bean Bryant"
+},
+{
+"qid": "Q2632",
+"label": "Ringo Starr",
+"v": "Richard Starkey"
+},
+{
+"qid": "Q312556",
+"label": "Jeff Bezos",
+"v": "Jeffrey Preston Jorgensen"
+},
+{
+"qid": "Q41314",
+"label": "Bobby Fischer",
+"v": "Robert James Fischer"
+},
+{
+"qid": "Q47059",
+"label": "Aishwarya Rai",
+"v": "Aishwarya Rai"
+},
+{
+"qid": "Q181677",
+"label": "George R. R. Martin",
+"v": "George Raymond Martin"
+},
+{
+"qid": "Q185",
+"label": "Larry Sanger",
+"v": "Lawrence Mark Sanger"
+},
+{
+"qid": "Q2252",
+"label": "Buzz Aldrin",
+"v": "Edwin Eugene Aldrin"
+},
+{
+"qid": "Q41563",
+"label": "Julia Gillard",
+"v": "Julia Eileen Gillard"
+},
+{
+"qid": "Q175535",
+"label": "Matt Damon",
+"v": "Matthew Paige Damon"
+},
+{
+"qid": "Q186304",
+"label": "Kim Kardashian",
+"v": "Kimberly Noel Kardashian"
+},
+{
+"qid": "Q23359",
+"label": "Taylor Lautner",
+"v": "Taylor Daniel Lautner"
+},
+{
+"qid": "Q41148",
+"label": "Martin Scorsese",
+"v": "Martin Charles Scorsese"
+},
+{
+"qid": "Q44077",
+"label": "Jessica Alba",
+"v": "Jessica Marie Alba"
+},
+{
+"qid": "Q80596",
+"label": "Arthur Miller",
+"v": "Arthur Asher Miller"
+},
+{
+"qid": "Q10738",
+"label": "Dwayne Johnson",
+"v": "Dwayne Douglas Johnson"
+},
+{
+"qid": "Q1375057",
+"label": "Kendall Jenner",
+"v": "Kendall Nicole Jenner"
+},
+{
+"qid": "Q180338",
+"label": "Christopher Lee",
+"v": "Christopher Frank Carandini Lee"
+},
+{
+"qid": "Q24829",
+"label": "Orson Welles",
+"v": "George Orson Welles"
+},
+{
+"qid": "Q28935729",
+"label": "JD Vance",
+"v": "James Donald Bowman"
+},
+{
+"qid": "Q36301",
+"label": "Anne Hathaway",
+"v": "Anne Jacqueline Hathaway"
+},
+{
+"qid": "Q43044",
+"label": "Demi Moore",
+"v": "Demi Gene Guynes"
+},
+{
+"qid": "Q44980",
+"label": "Alex Ferguson",
+"v": "Alexander Chapman Ferguson"
+},
+{
+"qid": "Q185696",
+"label": "Louisa May Alcott",
+"v": "Louisa May Alcott"
+},
+{
+"qid": "Q131814",
+"label": "Tina Turner",
+"v": "Anna Mae Bullock"
+},
+{
+"qid": "Q202878",
+"label": "Mae West",
+"v": "Mary Jane West"
+},
+{
+"qid": "Q36812",
+"label": "William, Prince of Wales",
+"v": "William Arthur Philip Louis of Wales"
+},
+{
+"qid": "Q38119",
+"label": "Daniel Radcliffe",
+"v": "Daniel Jacob Radcliffe"
+},
+{
+"qid": "Q47899",
+"label": "Paris Hilton",
+"v": "Paris Whitney Hilton"
+},
+{
+"qid": "Q7542",
+"label": "Prince",
+"v": "Prince Rogers Nelson"
+},
+{
+"qid": "Q83359",
+"label": "James Dean",
+"v": "James Byron Dean"
+},
+{
+"qid": "Q80069",
+"label": "Megan Fox",
+"v": "Megan Denise Fox"
+},
+{
+"qid": "Q3606816",
+"label": "Jacinda Ardern",
+"v": "Jacinda Kate Laurell Ardern"
+},
+{
+"qid": "Q181659",
+"label": "Ursula K. Le Guin",
+"v": "Ursula Kroeber"
+},
+{
+"qid": "Q11930",
+"label": "Kevin Costner",
+"v": "Kevin Michael Costner"
+},
+{
+"qid": "Q206",
+"label": "Stephen Harper",
+"v": "Stephen Joseph Harper"
+},
+{
+"qid": "Q83333",
+"label": "James Watson",
+"v": "James Dewey Watson"
+},
+{
+"qid": "Q123351",
+"label": "Michael Caine",
+"v": "Maurice Joseph Micklewhite"
+},
+{
+"qid": "Q2673",
+"label": "Chuck Norris",
+"v": "Carlos Ray Norris"
+},
+{
+"qid": "Q284636",
+"label": "Jason Bateman",
+"v": "Jason Kent Bateman"
+},
+{
+"qid": "Q40572",
+"label": "Heath Ledger",
+"v": "Heathcliff Andrew Ledger"
+},
+{
+"qid": "Q43874",
+"label": "Eddie Murphy",
+"v": "Edward Regan Murphy"
+},
+{
+"qid": "Q4636",
+"label": "Barbra Streisand",
+"v": "Barbara Joan Streisand"
+},
+{
+"qid": "Q44593",
+"label": "V. S. Naipaul",
+"v": "Vidiadhar Surajprasad Naipaul"
+},
+{
+"qid": "Q71206",
+"label": "Bette Davis",
+"v": "Ruth Elizabeth Davis"
+},
+{
+"qid": "Q10479",
+"label": "Catherine, Princess of Wales",
+"v": "Catherine Elizabeth Middleton"
+},
+{
+"qid": "Q108941",
+"label": "Carrie Fisher",
+"v": "Carrie Frances Fisher"
+},
+{
+"qid": "Q129429",
+"label": "Vivien Leigh",
+"v": "Vivian Mary Hartley"
+},
+{
+"qid": "Q181667",
+"label": "Washington Irving",
+"v": "Washington Irving"
+},
+{
+"qid": "Q22316",
+"label": "John Kerry",
+"v": "John Forbes Kerry"
+},
+{
+"qid": "Q269412",
+"label": "George V",
+"v": "Prince George Frederick Ernest Albert of Wales"
+},
+{
+"qid": "Q39562",
+"label": "Michael Phelps",
+"v": "Michael Fred Phelps II"
+},
+{
+"qid": "Q41871",
+"label": "Paul Newman",
+"v": "Paul Leonard Newman"
+},
+{
+"qid": "Q44380",
+"label": "Cameron Diaz",
+"v": "Cameron Michelle Diaz"
+},
+{
+"qid": "Q590227",
+"label": "Edward VIII",
+"v": "His Highness Prince Edward of York"
+},
+{
+"qid": "Q83325",
+"label": "Pamela Anderson",
+"v": "Pamela Denise Anderson"
+},
+{
+"qid": "Q80048",
+"label": "Al Capone",
+"v": "Alphonse Gabriel Capone"
+},
+{
+"qid": "Q170581",
+"label": "Nancy Pelosi",
+"v": "Nancy Patricia D'Alesandro"
+},
+{
+"qid": "Q20875",
+"label": "Edward VII",
+"v": "Albert Edward"
+},
+{
+"qid": "Q34970",
+"label": "D. H. Lawrence",
+"v": "David Herbert Richards Lawrence"
+},
+{
+"qid": "Q42581",
+"label": "Keira Knightley",
+"v": "Keira Christina Knightley"
+},
+{
+"qid": "Q49001",
+"label": "Whoopi Goldberg",
+"v": "Caryn Elaine Johnson"
+},
+{
+"qid": "Q71243",
+"label": "Clark Gable",
+"v": "William Clark Gable"
+},
+{
+"qid": "Q102870",
+"label": "Harriet Tubman",
+"v": "Araminta Ross"
+},
+{
+"qid": "Q1225",
+"label": "Bruce Springsteen",
+"v": "Bruce Frederick Joseph Springsteen"
+},
+{
+"qid": "Q129006",
+"label": "Clement Attlee",
+"v": "Clement Richard Attlee"
+},
+{
+"qid": "Q36184",
+"label": "Bram Stoker",
+"v": "Abraham Stoker"
+},
+{
+"qid": "Q544387",
+"label": "Ray Charles",
+"v": "Ray Charles Robinson"
+},
+{
+"qid": "Q80405",
+"label": "Julianne Moore",
+"v": "Julie Anne Smith"
+},
+{
+"qid": "Q178166",
+"label": "Vin Diesel",
+"v": "Mark Sinclair"
+},
+{
+"qid": "Q13526",
+"label": "Thomas Robert Malthus",
+"v": "Thomas Robert Malthus"
+},
+{
+"qid": "Q193426",
+"label": "Nancy Reagan",
+"v": "Anne Frances Robbins"
+},
+{
+"qid": "Q2071",
+"label": "David Lynch",
+"v": "David Keith Lynch"
+},
+{
+"qid": "Q34584",
+"label": "Anastacia",
+"v": "Anastacia Lyn Newkirk"
+},
+{
+"qid": "Q12665",
+"label": "Robert Baden-Powell, 1st Baron Baden-Powell",
+"v": "lord Gezan Baden Powell"
+},
+{
+"qid": "Q80823",
+"label": "Anne Boleyn",
+"v": "Anne Boleyn"
+},
+{
+"qid": "Q130311",
+"label": "George Michael",
+"v": "Georgios Kyriacos Panayiotou"
+},
+{
+"qid": "Q134180",
+"label": "Truman Capote",
+"v": "Truman Streckfus Persons"
+},
+{
+"qid": "Q151414",
+"label": "George Marshall",
+"v": "George Catlett Marshall"
+},
+{
+"qid": "Q42745",
+"label": "Rita Hayworth",
+"v": "Margarita Carmen Cansino"
+},
+{
+"qid": "Q4547",
+"label": "Daniel Craig",
+"v": "Daniel Wroughton Craig"
+},
+{
+"qid": "Q483382",
+"label": "Steve Wozniak",
+"v": "Stephan Gary Wozniak"
+},
+{
+"qid": "Q81520",
+"label": "Pierce Brosnan",
+"v": "Pierce Brendan Brosnan"
+},
+{
+"qid": "Q160278",
+"label": "John D. Rockefeller",
+"v": "John Davison Rockefeller sr."
+},
+{
+"qid": "Q133050",
+"label": "Susan Sarandon",
+"v": "Susan Abigail Tomalin"
+},
+{
+"qid": "Q150651",
+"label": "George Carlin",
+"v": "George Denis Patrick Carlin"
+},
+{
+"qid": "Q166389",
+"label": "Daniel Day-Lewis",
+"v": "Daniel Michael Blake Day"
+},
+{
+"qid": "Q165421",
+"label": "Jacqueline Kennedy Onassis",
+"v": "Jacqueline Lee Bouvier"
+},
+{
+"qid": "Q190523",
+"label": "Christopher Plummer",
+"v": "Arthur Christopher Orme Plummer"
+},
+{
+"qid": "Q41533",
+"label": "Frank Lampard",
+"v": "Frank James Lampard"
+},
+{
+"qid": "Q43144",
+"label": "Sarah Palin",
+"v": "Sarah Louise Heath"
+},
+{
+"qid": "Q57282",
+"label": "Jacob Zuma",
+"v": "Jacob Gedleyihlekisa Zuma"
+},
+{
+"qid": "Q83492",
+"label": "Gary Oldman",
+"v": "Gary Leonard Oldman"
+},
+{
+"qid": "Q100937",
+"label": "Fred Astaire",
+"v": "Frederick Austerlitz"
+},
+{
+"qid": "Q104372",
+"label": "Doris Day",
+"v": "Doris Mary Anne Kappelhoff"
+},
+{
+"qid": "Q103876",
+"label": "Peter O'Toole",
+"v": "Peter Seamus Lorcan O’Toole"
+},
+{
+"qid": "Q104000",
+"label": "Lauren Bacall",
+"v": "Betty Joan Perske"
+},
+{
+"qid": "Q125017",
+"label": "Uma Thurman",
+"v": "Uma Karuna Thurman"
+},
+{
+"qid": "Q126599",
+"label": "Kristen Stewart",
+"v": "Kristen Jaymes Stewart"
+},
+{
+"qid": "Q131691",
+"label": "Arthur Wellesley, 1st Duke of Wellington",
+"v": "Arthur Colley Wellesley"
+},
+{
+"qid": "Q131725",
+"label": "Joan Baez",
+"v": "Joan Chandos Baez"
+},
+{
+"qid": "Q165557",
+"label": "Robert E. Lee",
+"v": "Robert Edward Lee"
+},
+{
+"qid": "Q349391",
+"label": "Helen Mirren",
+"v": "Elena Lydia Vasilievna Mironov"
+},
+{
+"qid": "Q40475",
+"label": "Joan Crawford",
+"v": "Lucille Fay LeSueur"
+},
+{
+"qid": "Q44063",
+"label": "Reese Witherspoon",
+"v": "Laura Jeanne Reese Witherspoon"
+},
+{
+"qid": "Q4496",
+"label": "Mitt Romney",
+"v": "Willard Mitt Romney"
+},
+{
+"qid": "Q47664",
+"label": "Catherine Zeta-Jones",
+"v": "Catherine Zeta Jones"
+},
+{
+"qid": "Q76478",
+"label": "Kirsten Dunst",
+"v": "Kirsten Caroline Dunst"
+},
+{
+"qid": "Q104109",
+"label": "Mary Pickford",
+"v": "Gladys Louise Smith"
+},
+{
+"qid": "Q134262",
+"label": "Tennessee Williams",
+"v": "Thomas Lanier Williams"
+},
+{
+"qid": "Q159778",
+"label": "Michelle Pfeiffer",
+"v": "Michelle Marie Pfeiffer"
+},
+{
+"qid": "Q2172",
+"label": "Lance Armstrong",
+"v": "Lance Edward Gunderson"
+},
+{
+"qid": "Q485298",
+"label": "Gillian Anderson",
+"v": "Gillian Leigh Anderson"
+},
+{
+"qid": "Q101797",
+"label": "Winona Ryder",
+"v": "Winona Laura Horowitz"
+},
+{
+"qid": "Q104027",
+"label": "Kirk Douglas",
+"v": "Issur Danielovitch Demsky"
+},
+{
+"qid": "Q123078",
+"label": "Robert A. Heinlein",
+"v": "Robert Anson Heinlein"
+},
+{
+"qid": "Q133747",
+"label": "William Henry Bragg",
+"v": "William Henry Bragg"
+},
+{
+"qid": "Q1768",
+"label": "Ella Fitzgerald",
+"v": "Ella Jane Fitzgerald"
+},
+{
+"qid": "Q167520",
+"label": "Jon Voight",
+"v": "Jonathan Vincent Voight"
+},
+{
+"qid": "Q191966",
+"label": "Gene Wilder",
+"v": "Jerome Silberman"
+},
+{
+"qid": "Q191050",
+"label": "Ambrose Bierce",
+"v": "Ambrose Gwinnetter Bierice"
+},
+{
+"qid": "Q266613",
+"label": "Wayne Rooney",
+"v": "Wayne Mark Rooney"
+},
+{
+"qid": "Q4465",
+"label": "Peter Jackson",
+"v": "Peter Robert Jackson"
+},
+{
+"qid": "Q103949",
+"label": "Buster Keaton",
+"v": "Joseph Frank Keaton"
+},
+{
+"qid": "Q25310",
+"label": "Robert F. Kennedy",
+"v": "Robert Francis Kennedy"
+},
+{
+"qid": "Q1514",
+"label": "Janis Joplin",
+"v": "Janis Lyn Joplin"
+},
+{
+"qid": "Q180989",
+"label": "Jane Addams",
+"v": "Laura Jane Addams"
+},
+{
+"qid": "Q19155",
+"label": "Henry Fonda",
+"v": "Henry Jaynes Fonda"
+},
+{
+"qid": "Q213864",
+"label": "Paul Walker",
+"v": "Paul William Walker IV"
+},
+{
+"qid": "Q230762",
+"label": "Dale Carnegie",
+"v": "Dale Arley Carnegey"
+},
+{
+"qid": "Q44221",
+"label": "Sean Penn",
+"v": "Sean Justin Penn"
+},
+{
+"qid": "Q48187",
+"label": "Eric Clapton",
+"v": "Eric Patrick Clapton"
+},
+{
+"qid": "Q5950",
+"label": "James Brown",
+"v": "James Joseph Brown"
+},
+{
+"qid": "Q676094",
+"label": "Drew Barrymore",
+"v": "Drew Blythe Barrymore"
+},
+{
+"qid": "Q7407",
+"label": "Andre Agassi",
+"v": "Andre Kirk Agassi"
+},
+{
+"qid": "Q83410",
+"label": "Cary Grant",
+"v": "Archibald Alec Leach"
+},
+{
+"qid": "Q853",
+"label": "Andrei Tarkovsky",
+"v": "Andrei Arsenyevich Tarkovsky"
+},
+{
+"qid": "Q102642",
+"label": "Diane Keaton",
+"v": "Diane Hall"
+},
+{
+"qid": "Q108366",
+"label": "Gregory Peck",
+"v": "Eldred Gregory Peck"
+},
+{
+"qid": "Q119798",
+"label": "Michael Douglas",
+"v": "Michael Kirk Douglas"
+},
+{
+"qid": "Q128121",
+"label": "Mick Jagger",
+"v": "Michael Philip Jagger"
+},
+{
+"qid": "Q172678",
+"label": "Samuel L. Jackson",
+"v": "Samuel Leroy Jackson"
+},
+{
+"qid": "Q181900",
+"label": "Stan Lee",
+"v": "Stanley Martin Lieber"
+},
+{
+"qid": "Q215072",
+"label": "John Goodman",
+"v": "John Stephen Goodman"
+},
+{
+"qid": "Q45772",
+"label": "Christian Bale",
+"v": "Christian Charles Philip Bale"
+},
+{
+"qid": "Q5921",
+"label": "Chuck Berry",
+"v": "Charles Edward Anderson Berry"
+},
+{
+"qid": "Q714",
+"label": "Stevie Wonder",
+"v": "Stevland Hardaway Judkins"
+},
+{
+"qid": "Q182580",
+"label": "Shirley Temple",
+"v": "Shirley Temple"
+},
+{
+"qid": "Q102462",
+"label": "James Stewart",
+"v": "James Maitland Stewart"
+},
+{
+"qid": "Q59215",
+"label": "Robert Redford",
+"v": "Charles Robert Redford"
+},
+{
+"qid": "Q148285",
+"label": "Osho",
+"v": "Chandra Mohan Jain"
+},
+{
+"qid": "Q151972",
+"label": "Josephine Baker",
+"v": "Freda Josephine McDonald"
+},
+{
+"qid": "Q146256",
+"label": "Miriam Makeba",
+"v": "Zenzile Miriam Makeba"
+},
+{
+"qid": "Q161819",
+"label": "Julie Andrews",
+"v": "Julia Elizabeth Wells"
+},
+{
+"qid": "Q19198",
+"label": "Chester Bennington",
+"v": "Chester Charles Bennington"
+},
+{
+"qid": "Q230141",
+"label": "Chimamanda Ngozi Adichie",
+"v": "Ngozi Grace Adichie"
+},
+{
+"qid": "Q28054",
+"label": "Judi Dench",
+"v": "Judith Olivia Dench"
+},
+{
+"qid": "Q43936",
+"label": "William of Ockham",
+"v": "William of Ockham"
+},
+{
+"qid": "Q481832",
+"label": "Amy Adams",
+"v": "Amy Lou Adams"
+},
+{
+"qid": "Q58444",
+"label": "Liam Neeson",
+"v": "William John Neeson"
+},
+{
+"qid": "Q6096",
+"label": "Snoop Dogg",
+"v": "Calvin Cordozar Broadus Jr."
+},
+{
+"qid": "Q104183",
+"label": "Lillian Gish",
+"v": "Lillian Diana Gish"
+},
+{
+"qid": "Q128995",
+"label": "Anthony Eden",
+"v": "Robert Anthony Eden"
+},
+{
+"qid": "Q134333",
+"label": "Roger Moore",
+"v": "Roger George Moore"
+},
+{
+"qid": "Q171091",
+"label": "Philip K. Dick",
+"v": "Philip Kindred Dick"
+},
+{
+"qid": "Q1705028",
+"label": "Sanae Takaichi",
+"v": "Sanae Takaichi"
+},
+{
+"qid": "Q19810",
+"label": "Victoria Beckham",
+"v": "Victoria Caroline Adams"
+},
+{
+"qid": "Q36105",
+"label": "Charles Bronson",
+"v": "Charles Dennis Buchinsky"
+},
+{
+"qid": "Q459830",
+"label": "Steven Gerrard",
+"v": "Steven George Gerrard"
+},
+{
+"qid": "Q44467",
+"label": "Orlando Bloom",
+"v": "Orlando Jonathan Blanchard Copeland Bloom"
+},
+{
+"qid": "Q93957",
+"label": "Gary Cooper",
+"v": "Frank James Cooper"
+},
+{
+"qid": "Q62975",
+"label": "Sharon Stone",
+"v": "Sharon Yvonne Stone"
+},
+{
+"qid": "Q14441",
+"label": "Liza Minnelli",
+"v": "Liza May Minnelli"
+},
+{
+"qid": "Q152316",
+"label": "Prince Harry, Duke of Sussex",
+"v": "Prince Henry Charles Albert David of Wales"
+},
+{
+"qid": "Q153761",
+"label": "Elinor Ostrom",
+"v": "Elinor Claire Awan"
+},
+{
+"qid": "Q186327",
+"label": "Marilyn Manson",
+"v": "Brian Hugh Warner"
+},
+{
+"qid": "Q19825",
+"label": "Cecil John Rhodes",
+"v": "Cecil John Rhodes"
+},
+{
+"qid": "Q215868",
+"label": "Alice Walker",
+"v": "Alice Malsenior Walker"
+},
+{
+"qid": "Q3304418",
+"label": "Meghan, Duchess of Sussex",
+"v": "Rachel Meghan Markle"
+},
+{
+"qid": "Q426582",
+"label": "Anthony Bourdain",
+"v": "Anthony Michael Bourdain"
+},
+{
+"qid": "Q56008",
+"label": "Tim Burton",
+"v": "Timothy Walter Burton"
+},
+{
+"qid": "Q57376",
+"label": "Jigme Khesar Namgyel Wangchuck",
+"v": "Jigme Khesar Namgyel Wangchuck"
+},
+{
+"qid": "Q95026",
+"label": "Shirley MacLaine",
+"v": "Shirley MacLean Beaty"
+},
+{
+"qid": "Q103846",
+"label": "Groucho Marx",
+"v": "Julius Henry Marx"
+},
+{
+"qid": "Q12674",
+"label": "Rudolf Diesel",
+"v": "Rudolf Christian Karl Diesel"
+},
+{
+"qid": "Q152019",
+"label": "Laura Bush",
+"v": "Laura Lane Welch"
+},
+{
+"qid": "Q193517",
+"label": "Emily Blunt",
+"v": "Emily Olivia Laura Blunt"
+},
+{
+"qid": "Q215562",
+"label": "Frederick Douglass",
+"v": "Frederick Augustus Washington Bailey"
+},
+{
+"qid": "Q223766",
+"label": "P. T. Barnum",
+"v": "Phineas Taylor Barnum."
+},
+{
+"qid": "Q43135",
+"label": "Kevin Rudd",
+"v": "Kevin Michael Rudd"
+},
+{
+"qid": "Q45229",
+"label": "Zac Efron",
+"v": "Zachary David Alexander Efron"
+},
+{
+"qid": "Q44903",
+"label": "Lindsay Lohan",
+"v": "Lindsay Dee Lohan"
+},
+{
+"qid": "Q44437",
+"label": "John Cena",
+"v": "John Felix Anthony Cena"
+},
+{
+"qid": "Q485508",
+"label": "Charles Manson",
+"v": "Charles Milles Maddox"
+},
+{
+"qid": "Q55245",
+"label": "Laurence Olivier",
+"v": "Laurence Kerr Olivier"
+},
+{
+"qid": "Q6711",
+"label": "Allen Ginsberg",
+"v": "Irwin Allen Ginsberg"
+},
+{
+"qid": "Q83297",
+"label": "John William Strutt",
+"v": "John William Strutt"
+},
+{
+"qid": "Q19901232",
+"label": "Droupadi Murmu",
+"v": "Durgi Biranchi Tudu"
+},
+{
+"qid": "Q171677",
+"label": "Roger Bacon",
+"v": "Roger Bacon"
+},
+{
+"qid": "Q122614",
+"label": "Renée Zellweger",
+"v": "Renée Kathleen Zellweger"
+},
+{
+"qid": "Q128297",
+"label": "Maria Meneghini Callas",
+"v": "Maria Anna Cecilia Sofia Kalogeropoulou"
+},
+{
+"qid": "Q177984",
+"label": "Peter Sellers",
+"v": "Richard Henry Seller"
+},
+{
+"qid": "Q177984",
+"label": "Peter Sellers",
+"v": "Richard Henry Sellers"
+},
+{
+"qid": "Q173139",
+"label": "George Weah",
+"v": "George Manneh Oppong Weah"
+},
+{
+"qid": "Q183337",
+"label": "David Attenborough",
+"v": "David Frederick Attenborough"
+},
+{
+"qid": "Q190386",
+"label": "Rachel McAdams",
+"v": "Rachel Anne McAdams"
+},
+{
+"qid": "Q184586",
+"label": "Gareth Bale",
+"v": "Gareth Frank Bale"
+},
+{
+"qid": "Q235132",
+"label": "Emilia Clarke",
+"v": "Emilia Isobel Euphemia Rose Clarke"
+},
+{
+"qid": "Q49214",
+"label": "Dan Quayle",
+"v": "James Danforth Quayle"
+},
+{
+"qid": "Q483325",
+"label": "Ellen DeGeneres",
+"v": "Ellen Lee DeGeneres"
+},
+{
+"qid": "Q7436908",
+"label": "Scott Morrison",
+"v": "Scott John Morrison"
+},
+{
+"qid": "Q93187",
+"label": "Hilary Swank",
+"v": "Hilary Ann Swank"
+},
+{
+"qid": "Q106481",
+"label": "Alan Rickman",
+"v": "Alan Sidney Patrick Rickman"
+},
+{
+"qid": "Q80739",
+"label": "Charlton Heston",
+"v": "John Charles Carter"
+},
+{
+"qid": "Q192245",
+"label": "Susan B. Anthony",
+"v": "Susan Anthony"
+},
+{
+"qid": "Q11578",
+"label": "Venus Williams",
+"v": "Venus Ebony Starr Williams"
+},
+{
+"qid": "Q131380",
+"label": "Kim Basinger",
+"v": "Kimila Ann Basinger"
+},
+{
+"qid": "Q132952",
+"label": "Adam Sandler",
+"v": "Adam Richard Sandler"
+},
+{
+"qid": "Q134077",
+"label": "Rachel Weisz",
+"v": "Rachel Hannah Weisz"
+},
+{
+"qid": "Q169577",
+"label": "Ernest Lawrence",
+"v": "Ernest Orlando Lawrence"
+},
+{
+"qid": "Q171736",
+"label": "Robert Duvall",
+"v": "Robert Selden Duvall"
+},
+{
+"qid": "Q93330",
+"label": "Juan Perón",
+"v": "Juan Domingo Perón"
+},
+{
+"qid": "Q188955",
+"label": "Matthew McConaughey",
+"v": "Matthew David McConaughey"
+},
+{
+"qid": "Q314801",
+"label": "Hal Holbrook",
+"v": "Harold Rowe Holbrook Jr."
+},
+{
+"qid": "Q308722",
+"label": "James Gandolfini",
+"v": "James J. Gandolfini Junior"
+},
+{
+"qid": "Q36767",
+"label": "Robert Pattinson",
+"v": "Robert Douglas Thomas Pattinson"
+},
+{
+"qid": "Q45575",
+"label": "Dennis M. Ritchie",
+"v": "Dennis MacAlistair Ritchie"
+},
+{
+"qid": "Q53944",
+"label": "Rupert Murdoch",
+"v": "Keith Rupert Murdoch"
+},
+{
+"qid": "Q8349",
+"label": "\"Weird Al\" Yankovic",
+"v": "Alfred Matthew Yankovic"
+},
+{
+"qid": "Q129187",
+"label": "Patrick White",
+"v": "Patrick Victor Martindale White"
+},
+{
+"qid": "Q132616",
+"label": "Naomi Watts",
+"v": "Naomi Ellen Watts"
+},
+{
+"qid": "Q171758",
+"label": "Matthew Perry",
+"v": "Matthew Langford Perry"
+},
+{
+"qid": "Q172840",
+"label": "Murray Gell-Mann",
+"v": "Murray Gell-Mann"
+},
+{
+"qid": "Q185140",
+"label": "Joaquin Phoenix",
+"v": "Joaquin Rafael Bottom"
+},
+{
+"qid": "Q1924847",
+"label": "Margot Robbie",
+"v": "Margot Elise Robbie"
+},
+{
+"qid": "Q187019",
+"label": "Philip Roth",
+"v": "Philip Milton Roth"
+},
+{
+"qid": "Q47875",
+"label": "Robbie Williams",
+"v": "Robert Peter Williams"
+},
+{
+"qid": "Q482907",
+"label": "Bryan Adams",
+"v": "Bryan Guy Adams"
+},
+{
+"qid": "Q834621",
+"label": "Bono",
+"v": "Paul David Hewson"
+},
+{
+"qid": "Q7934",
+"label": "Frank Herbert",
+"v": "Frank Patrick Herbert"
+},
+{
+"qid": "Q94041",
+"label": "James Cagney",
+"v": "James Francis Cagney"
+},
+{
+"qid": "Q10125",
+"label": "Andy Murray",
+"v": "Andrew Barron Murray"
+},
+{
+"qid": "Q104358",
+"label": "Billie Holiday",
+"v": "Eleanora Fagan"
+},
+{
+"qid": "Q151973",
+"label": "Richard Burton",
+"v": "Richard Walter Jenkins"
+},
+{
+"qid": "Q144622",
+"label": "Phil Collins",
+"v": "Philip David Charles Collins"
+},
+{
+"qid": "Q15873",
+"label": "Brian May",
+"v": "Brian Harold May"
+},
+{
+"qid": "Q170510",
+"label": "Ian McKellen",
+"v": "Ian Murray McKellen"
+},
+{
+"qid": "Q187033",
+"label": "Sally Field",
+"v": "Sally Margaret Field"
+},
+{
+"qid": "Q192682",
+"label": "Ryan Reynolds",
+"v": "Ryan Rodney Reynolds"
+},
+{
+"qid": "Q229232",
+"label": "Gloria Swanson",
+"v": "Gloria May Josephine Swanson"
+},
+{
+"qid": "Q160432",
+"label": "Jude Law",
+"v": "David Jude Heyworth Law"
+},
+{
+"qid": "Q173585",
+"label": "Jessica Lange",
+"v": "Jessica Phyllis Lange"
+},
+{
+"qid": "Q173223",
+"label": "Mary Cassatt",
+"v": "Mary Stevenson Cassatt"
+},
+{
+"qid": "Q192069",
+"label": "Enid Blyton",
+"v": "Enid Mary Blyton"
+},
+{
+"qid": "Q213195",
+"label": "B.F. Skinner",
+"v": "Burrhus Frederic Skinner"
+},
+{
+"qid": "Q228494",
+"label": "Elizabeth Barrett Browning",
+"v": "Elizabeth Moulton-Barrett"
+},
+{
+"qid": "Q244674",
+"label": "Benedict Cumberbatch",
+"v": "Benedict Timothy Carlton Cumberbatch"
+},
+{
+"qid": "Q276032",
+"label": "Edith Wharton",
+"v": "Edith Newbold Jones"
+},
+{
+"qid": "Q273055",
+"label": "R. Kelly",
+"v": "Robert Sylvester Kelly"
+},
+{
+"qid": "Q29328",
+"label": "Brie Larson",
+"v": "Brianne Sidonie Desaulniers"
+},
+{
+"qid": "Q310937",
+"label": "Peter Dinklage",
+"v": "Peter Hayden Dinklage"
+},
+{
+"qid": "Q33240",
+"label": "Drake",
+"v": "Aubrey Drake Graham"
+},
+{
+"qid": "Q80424",
+"label": "Nelly Furtado",
+"v": "Nelly Kim Furtado"
+},
+{
+"qid": "Q244441",
+"label": "Pete Seeger",
+"v": "Peter Seeger"
+},
+{
+"qid": "Q103343",
+"label": "Jennifer Connelly",
+"v": "Jennifer Lynn Connelly"
+},
+{
+"qid": "Q128027",
+"label": "Giorgio Vasari",
+"v": "Giorgio II Vasari"
+},
+{
+"qid": "Q127944",
+"label": "Arthur Holly Compton",
+"v": "Arthur Holly Compton"
+},
+{
+"qid": "Q160009",
+"label": "Pink",
+"v": "Alecia Beth Moore"
+},
+{
+"qid": "Q164487",
+"label": "Ava Gardner",
+"v": "Ava Lavinia Gardner"
+},
+{
+"qid": "Q1618",
+"label": "Charles Lindbergh",
+"v": "Charles Augustus Lindbergh"
+},
+{
+"qid": "Q165518",
+"label": "Ewan McGregor",
+"v": "Ewan Gordon McGregor"
+},
+{
+"qid": "Q170572",
+"label": "Alec Baldwin",
+"v": "Alexander Rae Baldwin III"
+},
+{
+"qid": "Q200101",
+"label": "Jonas Salk",
+"v": "Jonas Salk"
+},
+{
+"qid": "Q28034971",
+"label": "Zohran Mamdani",
+"v": "Zohran Kwame Mamdani"
+},
+{
+"qid": "Q47778",
+"label": "Gary Lineker",
+"v": "Gary Winston Lineker"
+},
+{
+"qid": "Q484523",
+"label": "Jared Leto",
+"v": "Jared Joseph Leto"
+},
+{
+"qid": "Q51114",
+"label": "John Ford",
+"v": "Sean Aloysius O'Feeney"
+},
+{
+"qid": "Q160456",
+"label": "Angela Davis",
+"v": "Angela Yvonne Davis"
+},
+{
+"qid": "Q550778",
+"label": "John de Lancie",
+"v": "Jonathan de Lancie, Jr."
+},
+{
+"qid": "Q10524",
+"label": "Ryan Giggs",
+"v": "Ryan Joseph Wilson"
+},
+{
+"qid": "Q107402",
+"label": "Rosalyn Sussman Yalow",
+"v": "Rosalyn Sussman"
+},
+{
+"qid": "Q11116",
+"label": "Ruth Bader Ginsburg",
+"v": "Joan Ruth Bader"
+},
+{
+"qid": "Q123665",
+"label": "Gloria Macapagal Arroyo",
+"v": "Maria Gloria Macaraeg Macapagal"
+},
+{
+"qid": "Q14278",
+"label": "John Frederick William Herschel",
+"v": "John Frederick William Herschel"
+},
+{
+"qid": "Q150851",
+"label": "Colin Powell",
+"v": "Colin Luther Powell"
+},
+{
+"qid": "Q171745",
+"label": "Jeremy Irons",
+"v": "Jeremy John Irons"
+},
+{
+"qid": "Q169946",
+"label": "Kate Hudson",
+"v": "Kate Garry Hudson"
+},
+{
+"qid": "Q173158",
+"label": "Ben Kingsley",
+"v": "Krishna Pandit Bhanji"
+},
+{
+"qid": "Q185724",
+"label": "Mike Myers",
+"v": "Michael John Myers"
+},
+{
+"qid": "Q19190",
+"label": "Rupert Grint",
+"v": "Rupert Alexander Lloyd Grint"
+},
+{
+"qid": "Q180377",
+"label": "Raymond Chandler",
+"v": "Raymond Thornton Chandler"
+},
+{
+"qid": "Q208026",
+"label": "Tom Hardy",
+"v": "Edward Thomas Hardy"
+},
+{
+"qid": "Q214565",
+"label": "Beatrix Potter",
+"v": "Helen Beatrix Potter"
+},
+{
+"qid": "Q234141",
+"label": "Ian McShane",
+"v": "Ian David McShane"
+},
+{
+"qid": "Q269909",
+"label": "Andy Burnham",
+"v": "Andrew Murray Burnham"
+},
+{
+"qid": "Q26806",
+"label": "Danny DeVito",
+"v": "Daniel Michael DeVito Jr."
+},
+{
+"qid": "Q294641",
+"label": "Martin Landau",
+"v": "Martin James Landau"
+},
+{
+"qid": "Q324546",
+"label": "Marco Rubio",
+"v": "Marco Antonio Rubio"
+},
+{
+"qid": "Q4030",
+"label": "Duke Ellington",
+"v": "Edward Kennedy Ellington"
+},
+{
+"qid": "Q41422",
+"label": "Mark Ruffalo",
+"v": "Mark Alan Ruffalo"
+},
+{
+"qid": "Q58912",
+"label": "Courteney Cox",
+"v": "Courteney Bass Cox"
+},
+{
+"qid": "Q62766",
+"label": "Jay-Z",
+"v": "Shawn Corey Carter"
+},
+{
+"qid": "Q65586823",
+"label": "Joshua Bassett",
+"v": "Joshua Taylor Bassett"
+},
+{
+"qid": "Q71275",
+"label": "Spencer Tracy",
+"v": "Spencer Bonaventure Tracy"
+},
+{
+"qid": "Q104859",
+"label": "Michael Collins",
+"v": "Michael Collins"
+},
+{
+"qid": "Q123174",
+"label": "Vanessa Hudgens",
+"v": "Vanessa Anne Hudgens"
+},
+{
+"qid": "Q126513",
+"label": "Steve Irwin",
+"v": "Stephen Robert Irwin"
+},
+{
+"qid": "Q150943",
+"label": "Gene Hackman",
+"v": "Eugene Allen Hackman"
+},
+{
+"qid": "Q162269",
+"label": "Jefferson Davis",
+"v": "Jefferson Finis Davis"
+},
+{
+"qid": "Q180962",
+"label": "Norman Mailer",
+"v": "Norman Kingsley Mailer"
+},
+{
+"qid": "Q179051",
+"label": "Kareem Abdul-Jabbar",
+"v": "Ferdinand Lewis Alcindor, Jr."
+},
+{
+"qid": "Q179497",
+"label": "Oliver Stone",
+"v": "William Oliver Stone"
+},
+{
+"qid": "Q182870",
+"label": "Mario Puzo",
+"v": "Mario Gianluigi Puzo"
+},
+{
+"qid": "Q190076",
+"label": "Joe Cocker",
+"v": "John Robert Cocker"
+},
+{
+"qid": "Q213512",
+"label": "Bill Cosby",
+"v": "William Henry Cosby Jr."
+},
+{
+"qid": "Q23547",
+"label": "Bryan Cranston",
+"v": "Bryan Lee Cranston"
+},
+{
+"qid": "Q240933",
+"label": "Joan Rivers",
+"v": "Joan Alexandra Molinsky"
+},
+{
+"qid": "Q29250",
+"label": "Bill Murray",
+"v": "William James Murray"
+},
+{
+"qid": "Q35703",
+"label": "Gertrude B. Elion",
+"v": "Gertrude Belle Elion"
+},
+{
+"qid": "Q36290",
+"label": "Diana Ross",
+"v": "Diana Ernestine Earle Ross"
+},
+{
+"qid": "Q47100",
+"label": "Ben Stiller",
+"v": "Benjamin Edward Meara Stiller"
+},
+{
+"qid": "Q73089",
+"label": "Gene Kelly",
+"v": "Eugene Curran Kelly"
+},
+{
+"qid": "Q335697",
+"label": "Anthony Albanese",
+"v": "Anthony Norman Elle"
+},
+{
+"qid": "Q11641",
+"label": "Grace Hopper",
+"v": "Grace Brewster Murray"
+},
+{
+"qid": "Q162005",
+"label": "Paul Allen",
+"v": "Paul Gardner Allen"
+},
+{
+"qid": "Q174957",
+"label": "Nina Simone",
+"v": "Eunice Kathleen Waymon"
+},
+{
+"qid": "Q182408",
+"label": "Glenda Jackson",
+"v": "Glenda May Jackson"
+},
+{
+"qid": "Q188772",
+"label": "Willem Dafoe",
+"v": "William James Dafoe"
+},
+{
+"qid": "Q189119",
+"label": "E. M. Forster",
+"v": "Edward Morgan Forster"
+},
+{
+"qid": "Q18430",
+"label": "Joseph Stiglitz",
+"v": "Joseph Eugene Stiglitz"
+},
+{
+"qid": "Q191084",
+"label": "Val Kilmer",
+"v": "Val Edward Kilmer"
+},
+{
+"qid": "Q193982",
+"label": "Sinéad O'Connor",
+"v": "Sinéad Marie Bernadette O'Connor"
+},
+{
+"qid": "Q222071",
+"label": "Courtney Love",
+"v": "Courtney Michelle Harrison"
+},
+{
+"qid": "Q263696",
+"label": "Debbie Reynolds",
+"v": "Mary Frances Reynolds"
+},
+{
+"qid": "Q294927",
+"label": "Jerry Lewis",
+"v": "Joseph Levitch"
+},
+{
+"qid": "Q30121972",
+"label": "Charlie Kirk",
+"v": "Charles James Kirk"
+},
+{
+"qid": "Q312549",
+"label": "Paramahansa Yogananda",
+"v": "Mukunda Lal Ghosh"
+},
+{
+"qid": "Q342604",
+"label": "Idris Elba",
+"v": "Idrissa Akuna Elba"
+},
+{
+"qid": "Q463877",
+"label": "Melinda Gates",
+"v": "Melinda Ann French"
+},
+{
+"qid": "Q483507",
+"label": "Kelly Clarkson",
+"v": "Kelly Brianne Clarkson"
+},
+{
+"qid": "Q483771",
+"label": "Elijah Wood",
+"v": "Elijah Jordan Wood"
+},
+{
+"qid": "Q56068",
+"label": "Jennifer Doudna",
+"v": "Jennifer Anne Doudna"
+},
+{
+"qid": "Q78484",
+"label": "Rudolf Steiner",
+"v": "Rudolf Joseph Lorenz Steiner"
+},
+{
+"qid": "Q239411",
+"label": "Ivanka Trump",
+"v": "Ivana Marie Trump"
+},
+{
+"qid": "Q134183",
+"label": "Magic Johnson",
+"v": "Earvin Johnson Jr."
+},
+{
+"qid": "Q1374481",
+"label": "Garry Shandling",
+"v": "Garry Emmanuel Shandling"
+},
+{
+"qid": "Q133313",
+"label": "Jake Gyllenhaal",
+"v": "Jacob Benjamin Gyllenhaal"
+},
+{
+"qid": "Q159592",
+"label": "John Napier",
+"v": "John Napier"
+},
+{
+"qid": "Q163286",
+"label": "Hugh Grant",
+"v": "Hugh John Mungo Grant"
+},
+{
+"qid": "Q174843",
+"label": "Jeff Bridges",
+"v": "Jeffrey Leon Bridges"
+},
+{
+"qid": "Q189226",
+"label": "Amanda Seyfried",
+"v": "Amanda Michelle Seyfried"
+},
+{
+"qid": "Q213430",
+"label": "Larry King",
+"v": "Lawrence Harvey Zeiger"
+},
+{
+"qid": "Q229166",
+"label": "Amber Heard",
+"v": "Amber Laura Heard"
+},
+{
+"qid": "Q29033668",
+"label": "Cardi B",
+"v": "Belcalis Marlenis Almánzar"
+},
+{
+"qid": "Q302817",
+"label": "Aaron Swartz",
+"v": "Aaron Hillel George Swartz"
+},
+{
+"qid": "Q318750",
+"label": "Stephen Hillenburg",
+"v": "Stephen McDannell Hillenburg"
+},
+{
+"qid": "Q334155",
+"label": "Sadiq Khan",
+"v": "Sadiq Aman Khan"
+},
+{
+"qid": "Q9550",
+"label": "Katrina Kaif",
+"v": "Katrina Rosemary Turcotte"
+},
+{
+"qid": "Q94002",
+"label": "Barbara Stanwyck",
+"v": "Ruby Catherine Stevens"
+},
+{
+"qid": "Q123829",
+"label": "George Gershwin",
+"v": "Jacob Gershwin"
+},
+{
+"qid": "Q105180",
+"label": "Sojourner Truth",
+"v": "Isabella Baumfree"
+},
+{
+"qid": "Q160528",
+"label": "Burt Lancaster",
+"v": "Burton Stephen Lancaster"
+},
+{
+"qid": "Q171363",
+"label": "Viggo Mortensen",
+"v": "Viggo Peter Mortensen"
+},
+{
+"qid": "Q172140",
+"label": "Michael Crichton",
+"v": "John Michael Crichton"
+},
+{
+"qid": "Q179414",
+"label": "Kate Beckinsale",
+"v": "Kathrin Romany Beckinsale"
+},
+{
+"qid": "Q178882",
+"label": "Kristen Bell",
+"v": "Kristen Anne Bell"
+},
+{
+"qid": "Q193555",
+"label": "Brendan Fraser",
+"v": "Brendan James Frasier"
+},
+{
+"qid": "Q19877770",
+"label": "Timothée Chalamet",
+"v": "Timothée Hal Chalamet"
+},
+{
+"qid": "Q33605",
+"label": "Kesha",
+"v": "Kesha Rose Sebert"
+},
+{
+"qid": "Q3506475",
+"label": "Rajnath Singh",
+"v": "Rajnath Singh"
+},
+{
+"qid": "Q45909",
+"label": "John Cale",
+"v": "John Davies Cale"
+},
+{
+"qid": "Q117392",
+"label": "Malcolm McDowell",
+"v": "Malcolm Taylor"
+},
+{
+"qid": "Q103939",
+"label": "Charlie Sheen",
+"v": "Carlos Irwin Estevez"
+},
+{
+"qid": "Q182546",
+"label": "Robert H. Goddard",
+"v": "Robert Goddard"
+},
+{
+"qid": "Q131261",
+"label": "Oliver Kahn",
+"v": "Oliver Kahn"
+},
+{
+"qid": "Q132845",
+"label": "Adrian IV",
+"v": "Nicholas Breakspear"
+},
+{
+"qid": "Q132845",
+"label": "Adrian IV",
+"v": "Nicolas Breakspear"
+},
+{
+"qid": "Q13560423",
+"label": "Dove Cameron",
+"v": "Chloe Celeste Hosterman"
+},
+{
+"qid": "Q163263",
+"label": "Eva Longoria",
+"v": "Eva Jacqueline Longoria"
+},
+{
+"qid": "Q168992",
+"label": "Jessica Simpson",
+"v": "Jessica Ann Simpson"
+},
+{
+"qid": "Q171905",
+"label": "Jamie Foxx",
+"v": "Eric Marlon Bishop"
+},
+{
+"qid": "Q1770624",
+"label": "Kylie Jenner",
+"v": "Kylie Kristen Jenner"
+},
+{
+"qid": "Q180374",
+"label": "Frank Gehry",
+"v": "Frank Owen Goldberg"
+},
+{
+"qid": "Q182642",
+"label": "John Glenn",
+"v": "John Herschel Glenn"
+},
+{
+"qid": "Q194419",
+"label": "Richard Branson",
+"v": "Richard Charles Nicholas Branson"
+},
+{
+"qid": "Q204299",
+"label": "Frances McDormand",
+"v": "Cynthia Ann Smith"
+},
+{
+"qid": "Q209662",
+"label": "Lucille Ball",
+"v": "Lucille Désirée Ball"
+},
+{
+"qid": "Q215359",
+"label": "Dean Martin",
+"v": "Dino Paul Crocetti"
+},
+{
+"qid": "Q218698",
+"label": "Jerome K. Jerome",
+"v": "Jerome Klapka Jerome"
+},
+{
+"qid": "Q211283",
+"label": "Bob Hoskins",
+"v": "Robert William Hoskins"
+},
+{
+"qid": "Q2731624",
+"label": "Conrad Bain",
+"v": "Conrad Stafford Bain"
+},
+{
+"qid": "Q306403",
+"label": "James Franco",
+"v": "James Edward Franco"
+},
+{
+"qid": "Q332032",
+"label": "Alice Cooper",
+"v": "Vincent Damon Furnier"
+},
+{
+"qid": "Q3626966",
+"label": "Harry Styles",
+"v": "Harry Edward Styles"
+},
+{
+"qid": "Q49017",
+"label": "Hugh Laurie",
+"v": "James Hugh Calum Laurie"
+},
+{
+"qid": "Q483379",
+"label": "Gwen Stefani",
+"v": "Gwen Renée Stefani"
+},
+{
+"qid": "Q498019",
+"label": "Richard Simmons",
+"v": "Milton Teagle Simmons"
+},
+{
+"qid": "Q170899",
+"label": "Néstor Kirchner",
+"v": "Néstor Carlos Kirchner"
+},
+{
+"qid": "Q152505",
+"label": "Leonard Bernstein",
+"v": "Louis Bernstein"
+},
+{
+"qid": "Q103894",
+"label": "Alec Guinness",
+"v": "Alec Guinness de Cuffe"
+},
+{
+"qid": "Q162389",
+"label": "Tony Curtis",
+"v": "Bernard Schwartz"
+},
+{
+"qid": "Q154824",
+"label": "Norman Borlaug",
+"v": "Norman Ernest Borlaug"
+},
+{
+"qid": "Q163249",
+"label": "Jessica Biel",
+"v": "Jessica Claire Biel"
+},
+{
+"qid": "Q168763",
+"label": "Liv Tyler",
+"v": "Liv Rundgren"
+},
+{
+"qid": "Q179041",
+"label": "Lisa Kudrow",
+"v": "Lisa Valerie Kudrow"
+},
+{
+"qid": "Q187364",
+"label": "Robert Zemeckis",
+"v": "Robert Lee Zemeckis"
+},
+{
+"qid": "Q184219",
+"label": "Michelle Rodriguez",
+"v": "Mayte Michelle Rodriguez"
+},
+{
+"qid": "Q190152",
+"label": "Larry Bird",
+"v": "Larry Joe Bird"
+},
+{
+"qid": "Q210059",
+"label": "Neil Gaiman",
+"v": "Neil Richard Gaiman"
+},
+{
+"qid": "Q206922",
+"label": "Andy Serkis",
+"v": "Andrew Clement Serkis"
+},
+{
+"qid": "Q207036",
+"label": "A. A. Milne",
+"v": "Alan Alexander Milne"
+},
+{
+"qid": "Q213550",
+"label": "Billy Graham",
+"v": "William Franklin Graham Jr."
+},
+{
+"qid": "Q235349",
+"label": "Jill Biden",
+"v": "Jill Tracy Jacobs"
+},
+{
+"qid": "Q25078",
+"label": "Terry Gilliam",
+"v": "Terrence Vance Gilliam"
+},
+{
+"qid": "Q464318",
+"label": "Annie Besant",
+"v": "Annie Wood"
+},
+{
+"qid": "Q295498",
+"label": "Henry Cavill",
+"v": "Henry William Dalgliesh Cavill"
+},
+{
+"qid": "Q373895",
+"label": "Betty White",
+"v": "Betty Marion White"
+},
+{
+"qid": "Q483907",
+"label": "Jack Black",
+"v": "Thomas Jacob Black"
+},
+{
+"qid": "Q94081",
+"label": "Bob Hope",
+"v": "Leslie Townes Hope"
+},
+{
+"qid": "Q372311",
+"label": "Glenn Close",
+"v": "Glenda Veronica Close"
+},
+{
+"qid": "Q102711",
+"label": "Dennis Hopper",
+"v": "Dennis Lee Hopper"
+},
+{
+"qid": "Q11740",
+"label": "Katherine Johnson",
+"v": "Creola Katherine Coleman"
+},
+{
+"qid": "Q172303",
+"label": "Tyra Banks",
+"v": "Tyra Lynne Banks"
+},
+{
+"qid": "Q165911",
+"label": "Usher",
+"v": "Usher Raymond IV"
+},
+{
+"qid": "Q181484",
+"label": "Sia",
+"v": "Sia Kate Isobelle Furler"
+},
+{
+"qid": "Q170741",
+"label": "Manne Siegbahn",
+"v": "Karl Manne Georg Siegbahn"
+},
+{
+"qid": "Q192218",
+"label": "Ted Bundy",
+"v": "Theodore Robert Cowell"
+},
+{
+"qid": "Q183631",
+"label": "Ernest Walton",
+"v": "Ernest Thomas Sinton Walton"
+},
+{
+"qid": "Q182763",
+"label": "Forest Whitaker",
+"v": "Forest Steven Whitaker"
+},
+{
+"qid": "Q194280",
+"label": "Hugh Hefner",
+"v": "Hugh Marston Hefner"
+},
+{
+"qid": "Q19074",
+"label": "Samuel P. Huntington",
+"v": "Samuel Phillips Huntington"
+},
+{
+"qid": "Q222818",
+"label": "Eartha Kitt",
+"v": "Eartha Mae Keith"
+},
+{
+"qid": "Q265852",
+"label": "Tim Cook",
+"v": "Timothy Donald Cook"
+},
+{
+"qid": "Q2837916",
+"label": "Huell Howser",
+"v": "Huell Burnley Howser"
+},
+{
+"qid": "Q375590",
+"label": "Rami Malek",
+"v": "Rami Said Malek"
+},
+{
+"qid": "Q44176",
+"label": "Hulk Hogan",
+"v": "Terry Eugene Bollea"
+},
+{
+"qid": "Q49004",
+"label": "Patrick Swayze",
+"v": "Patrick Wayne Swayze"
+},
+{
+"qid": "Q49081",
+"label": "Christopher Hitchens",
+"v": "Christopher Eric Hitchens"
+},
+{
+"qid": "Q484615",
+"label": "Ethan Hawke",
+"v": "Ethan Green Hawke"
+},
+{
+"qid": "Q5066520",
+"label": "Chadwick Boseman",
+"v": "Chadwick Aaron Boseman"
+},
+{
+"qid": "Q83493",
+"label": "Susan Boyle",
+"v": "Susan Magdalane Boyle"
+},
+{
+"qid": "Q273210",
+"label": "James Baldwin",
+"v": "James Arthur Jones"
+},
+{
+"qid": "Q103917",
+"label": "Steven Soderbergh",
+"v": "Steven Andrew Soderbergh"
+},
+{
+"qid": "Q190628",
+"label": "Barbara Bush",
+"v": "Barbara Pierce"
+},
+{
+"qid": "Q105167",
+"label": "Tom Clancy",
+"v": "Thomas Leo Clancy, Jr."
+},
+{
+"qid": "Q171421",
+"label": "Henry Morton Stanley",
+"v": "John Rowlands"
+},
+{
+"qid": "Q138005",
+"label": "Michael Keaton",
+"v": "Michael John Douglas"
+},
+{
+"qid": "Q128604",
+"label": "Lester B. Pearson",
+"v": "Lester Bowles Pearson"
+},
+{
+"qid": "Q154421",
+"label": "Ed Asner",
+"v": "Eddie Asner"
+},
+{
+"qid": "Q159347",
+"label": "Steve McQueen",
+"v": "Terrence Steven McQueen"
+},
+{
+"qid": "Q160392",
+"label": "Evangeline Lilly",
+"v": "Nicole Evangeline Lilly"
+},
+{
+"qid": "Q162959",
+"label": "Blake Lively",
+"v": "Blake Ellender Brown"
+},
+{
+"qid": "Q180861",
+"label": "Roger Waters",
+"v": "George Roger Waters"
+},
+{
+"qid": "Q179374",
+"label": "Robert Owen",
+"v": "Robert Marcus Owen"
+},
+{
+"qid": "Q186123",
+"label": "Francis Fukuyama",
+"v": "Yoshihiro Francis Fukuyama"
+},
+{
+"qid": "Q188375",
+"label": "Lucy Liu",
+"v": "Lucy Alexis Liu"
+},
+{
+"qid": "Q188492",
+"label": "Seth MacFarlane",
+"v": "Seth Woodbury MacFarlane"
+},
+{
+"qid": "Q189758",
+"label": "Marvin Gaye",
+"v": "Marvin Pentz Gay, Jr."
+},
+{
+"qid": "Q21738166",
+"label": "Jenna Ortega",
+"v": "Jenna Marie Ortega"
+},
+{
+"qid": "Q234644",
+"label": "Elizabeth Olsen",
+"v": "Elizabeth Chase Olsen"
+},
+{
+"qid": "Q221464",
+"label": "Gilbert Gottfried",
+"v": "Gilbert Jeremy Gottfried"
+},
+{
+"qid": "Q222134",
+"label": "Ted Kaczynski",
+"v": "Theodore John Kaczynski"
+},
+{
+"qid": "Q229313",
+"label": "Jessica Chastain",
+"v": "Jessica Michelle Chastain"
+},
+{
+"qid": "Q2315802",
+"label": "Dakota Johnson",
+"v": "Dakota Mayi Johnson"
+},
+{
+"qid": "Q295803",
+"label": "Tom Hiddleston",
+"v": "Thomas William Hiddleston"
+},
+{
+"qid": "Q51123",
+"label": "D. W. Griffith",
+"v": "David Llewelyn Wark Griffith"
+},
+{
+"qid": "Q49216",
+"label": "Walter Mondale",
+"v": "Walter Frederick Mondale"
+},
+{
+"qid": "Q633",
+"label": "Neil Young",
+"v": "Neil Percival Young"
+},
+{
+"qid": "Q66241169",
+"label": "Jude Bellingham",
+"v": "Jude Victor William Bellingham"
+},
+{
+"qid": "Q83456",
+"label": "John Terry",
+"v": "John George Terry"
+},
+{
+"qid": "Q80905",
+"label": "Donald Arthur Glaser",
+"v": "Donald Arthur Glaser"
+},
+{
+"qid": "Q95089",
+"label": "Ginger Rogers",
+"v": "Virginia Katherine McMath"
+},
+{
+"qid": "Q94123",
+"label": "Jack Lemmon",
+"v": "John Uhler Lemmon III"
+},
+{
+"qid": "Q102341",
+"label": "Farrah Fawcett",
+"v": "Farrah Leni Fawcett"
+},
+{
+"qid": "Q104266",
+"label": "Mel Brooks",
+"v": "Melvin Kaminsky"
+},
+{
+"qid": "Q103578",
+"label": "Macaulay Culkin",
+"v": "Macaulay Carson Culkin"
+},
+{
+"qid": "Q14540",
+"label": "Tina Fey",
+"v": "Elizabeth Stamatina Fey"
+},
+{
+"qid": "Q16239385",
+"label": "Taron Egerton",
+"v": "Taron David Egerton"
+},
+{
+"qid": "Q188214",
+"label": "Mary Robinson",
+"v": "Mary Therese Winifred Bourke"
+},
+{
+"qid": "Q201279",
+"label": "Woody Harrelson",
+"v": "Woodrow Tracy Harrelson"
+},
+{
+"qid": "Q209641",
+"label": "John le Carré",
+"v": "David John Moore Cornwell"
+},
+{
+"qid": "Q220918",
+"label": "Emilio Estevez",
+"v": "Emilio Estevez Sheen"
+},
+{
+"qid": "Q235478",
+"label": "Shelley Duvall",
+"v": "Shelley Alexis Duvall"
+},
+{
+"qid": "Q28288",
+"label": "Eddie Redmayne",
+"v": "Edward John David Redmayne"
+},
+{
+"qid": "Q3626950",
+"label": "Zayn Malik",
+"v": "Zain Javadd Malik"
+},
+{
+"qid": "Q51506",
+"label": "Richard Attenborough",
+"v": "Richard Samuel Attenborough"
+},
+{
+"qid": "Q51522",
+"label": "Sydney Pollack",
+"v": "Sydney Irwin Pollack"
+},
+{
+"qid": "Q908933",
+"label": "Donna Summer",
+"v": "LaDonna Adrian Gaines"
+},
+{
+"qid": "Q213812",
+"label": "Babe Ruth",
+"v": "Babe Herman Ruth, Jr."
+},
+{
+"qid": "Q104514",
+"label": "Adrien Brody",
+"v": "Adrien Nicholas Brody"
+},
+{
+"qid": "Q104791",
+"label": "Ed Harris",
+"v": "Edward Allen Harris"
+},
+{
+"qid": "Q190089",
+"label": "John Duns Scotus",
+"v": "John Duns"
+},
+{
+"qid": "Q180383",
+"label": "Helen Clark",
+"v": "Helen Elizabeth Clark"
+},
+{
+"qid": "Q131285",
+"label": "John Williams",
+"v": "John Towner Williams"
+},
+{
+"qid": "Q134867",
+"label": "Danny Boyle",
+"v": "Daniel Francis Boyle"
+},
+{
+"qid": "Q137042",
+"label": "Nat King Cole",
+"v": "Nathaniel Adams Coles"
+},
+{
+"qid": "Q166272",
+"label": "Geoffrey Rush",
+"v": "Geoffrey Roy Rush"
+},
+{
+"qid": "Q174311",
+"label": "Christopher Reeve",
+"v": "Christopher D'Olier Reeve"
+},
+{
+"qid": "Q200355",
+"label": "Olivia Wilde",
+"v": "Olivia Jane Cockburn"
+},
+{
+"qid": "Q218503",
+"label": "Will Ferrell",
+"v": "John William Ferrell"
+},
+{
+"qid": "Q276525",
+"label": "Paul Rudd",
+"v": "Paul Stephen Rudd"
+},
+{
+"qid": "Q291169",
+"label": "Jeremy Corbyn",
+"v": "Jeremy Bernard Corbyn"
+},
+{
+"qid": "Q352159",
+"label": "Stephen Curry",
+"v": "Wardell Stephen Curry II"
+},
+{
+"qid": "Q4273363",
+"label": "Frances Arnold",
+"v": "Frances Hamilton Arnold"
+},
+{
+"qid": "Q48973",
+"label": "Glenn Theodore Seaborg",
+"v": "Glen Theodore Seaborg"
+},
+{
+"qid": "Q50678",
+"label": "John Mahama",
+"v": "John Dramani Mahama"
+},
+{
+"qid": "Q484365",
+"label": "David Duchovny",
+"v": "David William Duchovny"
+},
+{
+"qid": "Q54527",
+"label": "Billie Jean King",
+"v": "Billie Jean Moffitt"
+},
+{
+"qid": "Q82786",
+"label": "Leslie Nielsen",
+"v": "Leslie William Nielsen"
+},
+{
+"qid": "Q93188",
+"label": "Errol Flynn",
+"v": "Errol Leslie Thomson Flynn"
+},
+{
+"qid": "Q102551",
+"label": "Ernest Borgnine",
+"v": "Ermes Effron Borgnino"
+},
+{
+"qid": "Q11617",
+"label": "Aaliyah",
+"v": "Aaliyah Dana Haughton"
+},
+{
+"qid": "Q139637",
+"label": "David Copperfield",
+"v": "David Seth Kotkin"
+},
+{
+"qid": "Q150916",
+"label": "Jon Bon Jovi",
+"v": "John Francis Bongiovi Jr."
+},
+{
+"qid": "Q160219",
+"label": "Stephenie Meyer",
+"v": "Stephenie Morgan"
+},
+{
+"qid": "Q166646",
+"label": "Ramsay MacDonald",
+"v": "James McDonald Ramsay"
+},
+{
+"qid": "Q161916",
+"label": "Owen Wilson",
+"v": "Owen Cunningham Wilson"
+},
+{
+"qid": "Q172035",
+"label": "Colin Farrell",
+"v": "Colin James Farrell"
+},
+{
+"qid": "Q16759",
+"label": "Kaley Cuoco",
+"v": "Kaley Christine Cuoco"
+},
+{
+"qid": "Q174346",
+"label": "Katie Holmes",
+"v": "Kate Noelle Holmes"
+},
+{
+"qid": "Q186896",
+"label": "Matt LeBlanc",
+"v": "Matthew Steven LeBlanc"
+},
+{
+"qid": "Q180004",
+"label": "Fergie",
+"v": "Stacy Ann Ferguson"
+},
+{
+"qid": "Q182655",
+"label": "Rod Stewart",
+"v": "Roderick David Stewart"
+},
+{
+"qid": "Q189400",
+"label": "Brooke Shields",
+"v": "Brooke Christa Camille Shields"
+},
+{
+"qid": "Q201732",
+"label": "Robert Graves",
+"v": "Robert von Ranke Graves"
+},
+{
+"qid": "Q217619",
+"label": "Anthony Burgess",
+"v": "John Anthony Burgess Wilson"
+},
+{
+"qid": "Q231886",
+"label": "Aphra Behn",
+"v": "Aphra Johnson"
+},
+{
+"qid": "Q270691",
+"label": "Sridevi",
+"v": "Shree Amma Yanger Ayyapan"
+},
+{
+"qid": "Q280098",
+"label": "Geena Davis",
+"v": "Virginia Elizabeth Davis"
+},
+{
+"qid": "Q273715",
+"label": "Jordan Henderson",
+"v": "Jordan Brian Henderson"
+},
+{
+"qid": "Q315271",
+"label": "Jason Momoa",
+"v": "Joseph Jason Namakaeha Momoa"
+},
+{
+"qid": "Q549981",
+"label": "Norah Jones",
+"v": "Geethali Norah Jones Shankar"
+},
+{
+"qid": "Q76797",
+"label": "Johannes Hans Daniel Jensen",
+"v": "Hans Daniel Jensen"
+},
+{
+"qid": "Q103157",
+"label": "Kurt Russell",
+"v": "Kurt Vogel Russell"
+},
+{
+"qid": "Q636",
+"label": "Kate Bush",
+"v": "Catherine Bush"
+},
+{
+"qid": "Q112536",
+"label": "Joey King",
+"v": "Joey Lynn King"
+},
+{
+"qid": "Q12006",
+"label": "Dave Grohl",
+"v": "David Eric Grohl"
+},
+{
+"qid": "Q13590412",
+"label": "Prince George of Wales",
+"v": "Prince George Alexander Louis of Cambridge"
+},
+{
+"qid": "Q151754",
+"label": "Anne, Princess Royal",
+"v": "Princess Anne Elizabeth Alice Louise of Edinburgh"
+},
+{
+"qid": "Q16472",
+"label": "Robert Mitchum",
+"v": "Robert Charles Durman Mitchum"
+},
+{
+"qid": "Q170574",
+"label": "Helen Hunt",
+"v": "Helen Elizabeth Hunt"
+},
+{
+"qid": "Q167498",
+"label": "Meg Ryan",
+"v": "Margaret Mary Emily Hyra"
+},
+{
+"qid": "Q181162",
+"label": "Steve Ballmer",
+"v": "Steven Anthony Ballmer"
+},
+{
+"qid": "Q179572",
+"label": "George F. Smoot",
+"v": "George Fitzgerald Smoot III"
+},
+{
+"qid": "Q178517",
+"label": "David Gilmour",
+"v": "David Jon Gilmour"
+},
+{
+"qid": "Q193048",
+"label": "Laurence Fishburne",
+"v": "Laurence John Fishburne III"
+},
+{
+"qid": "Q214959",
+"label": "Harry Belafonte",
+"v": "Harold George Bellanfanti"
+},
+{
+"qid": "Q202148",
+"label": "Burt Reynolds",
+"v": "Burton Leon Reynolds, Jr."
+},
+{
+"qid": "Q208117",
+"label": "Bella Thorne",
+"v": "Annabella Avery Thorne"
+},
+{
+"qid": "Q230004",
+"label": "Rosamund Pike",
+"v": "Rosamund Mary Ellen Pike"
+},
+{
+"qid": "Q228603",
+"label": "Saoirse Ronan",
+"v": "Saoirse Una Ronan"
+},
+{
+"qid": "Q23728",
+"label": "Larry David",
+"v": "Lawrence Gene David"
+},
+{
+"qid": "Q298347",
+"label": "Nicholas Hoult",
+"v": "Nicholas Caradoc Hoult"
+},
+{
+"qid": "Q312157",
+"label": "Raheem Sterling",
+"v": "Raheem Shaquille Sterling"
+},
+{
+"qid": "Q314914",
+"label": "Donald Pleasence",
+"v": "Donald Henry Pleasence"
+},
+{
+"qid": "Q67701",
+"label": "Anna Kendrick",
+"v": "Anna Cooke Kendrick"
+},
+{
+"qid": "Q95030",
+"label": "Warren Beatty",
+"v": "Henry Warren Beaty"
+},
+{
+"qid": "Q104340",
+"label": "Harold Lloyd",
+"v": "Harold Clayton Lloyd"
+},
+{
+"qid": "Q11237",
+"label": "Nelson Rockefeller",
+"v": "Nelson Aldrich Rockefeller"
+},
+{
+"qid": "Q13476175",
+"label": "Lorde",
+"v": "Ella Marija Lani Yelich-O'Connor"
+},
+{
+"qid": "Q153243",
+"label": "Josiah Willard Gibbs",
+"v": "Josiah Willard Gibbs"
+},
+{
+"qid": "Q153717",
+"label": "Freeman Dyson",
+"v": "Freeman John Dyson"
+},
+{
+"qid": "Q174908",
+"label": "Michael Moore",
+"v": "Michael Francis Moore"
+},
+{
+"qid": "Q18637166",
+"label": "Andrew Tate",
+"v": "Emory Andrew Tate III"
+},
+{
+"qid": "Q179631",
+"label": "Edward Elgar",
+"v": "Edward William Elgar"
+},
+{
+"qid": "Q185051",
+"label": "Christopher Walken",
+"v": "Ronald Walken"
+},
+{
+"qid": "Q207544",
+"label": "L. Frank Baum",
+"v": "Lyman Frank Baum"
+},
+{
+"qid": "Q205721",
+"label": "Joni Mitchell",
+"v": "Roberta Joan Anderson"
+},
+{
+"qid": "Q201656",
+"label": "Nick Jonas",
+"v": "Nicholas Jerry Jonas"
+},
+{
+"qid": "Q206856",
+"label": "Angela Lansbury",
+"v": "Angela Brigid Lansbury"
+},
+{
+"qid": "Q219780",
+"label": "Hunter S. Thompson",
+"v": "Hunter Stockton Thompson"
+},
+{
+"qid": "Q217160",
+"label": "Kenny Rogers",
+"v": "Kenneth Donald Rogers"
+},
+{
+"qid": "Q245407",
+"label": "Richard Bach",
+"v": "Richard David Bach"
+},
+{
+"qid": "Q276028",
+"label": "Frances Hodgson Burnett",
+"v": "Frances Hodgson Burnett"
+},
+{
+"qid": "Q400",
+"label": "Jenna Jameson",
+"v": "Jennifer Marie Massoli"
+},
+{
+"qid": "Q41233",
+"label": "Timothy Dalton",
+"v": "Timothy Leonard Dalton Leggett"
+},
+{
+"qid": "Q44054",
+"label": "Franz Marc",
+"v": "Franz Moritz Wilhelm Marc"
+},
+{
+"qid": "Q47878",
+"label": "Sid Vicious",
+"v": "John Simon Ritchie"
+},
+{
+"qid": "Q483417",
+"label": "Rio Ferdinand",
+"v": "Rio Gavin Ferdinand"
+},
+{
+"qid": "Q57380",
+"label": "Goodluck Jonathan",
+"v": "Goodluck Ebele Azikiwe Jonathan"
+},
+{
+"qid": "Q712180",
+"label": "Wilford Brimley",
+"v": "Anthony Wilford Brimley"
+},
+{
+"qid": "Q7520267",
+"label": "Simone Biles",
+"v": "Simone Arianne Biles"
+},
+{
+"qid": "Q82563",
+"label": "Leon Cooper",
+"v": "Leon N. Kupchik"
+},
+{
+"qid": "Q153330",
+"label": "Andrew Mountbatten-Windsor",
+"v": "Andrew Albert Christian Edward Mountbatten-Windsor"
+},
+{
+"qid": "Q185856",
+"label": "Barnabas",
+"v": "Joseph"
+},
+{
+"qid": "Q104913",
+"label": "Robert Edwards",
+"v": "Robert Geoffrey Edwards"
+},
+{
+"qid": "Q105825",
+"label": "William Hurt",
+"v": "William McChord Hurt"
+},
+{
+"qid": "Q108283",
+"label": "Alan Arkin",
+"v": "Alan Wolf Arkin"
+},
+{
+"qid": "Q207191",
+"label": "John C. Calhoun",
+"v": "John Caldwell Calhoun"
+},
+{
+"qid": "Q1545",
+"label": "Cyndi Lauper",
+"v": "Cynthia Ann Stephanie Lauper"
+},
+{
+"qid": "Q167696",
+"label": "Nicole Scherzinger",
+"v": "Nicole Prascovia Elikolani Valiente"
+},
+{
+"qid": "Q180224",
+"label": "Lenny Kravitz",
+"v": "Leonard Albert Kravitz"
+},
+{
+"qid": "Q193357",
+"label": "Daphne du Maurier",
+"v": "Daphne Busson du Maurier"
+},
+{
+"qid": "Q193368",
+"label": "Ted Turner",
+"v": "Robert Edward Turner III"
+},
+{
+"qid": "Q202725",
+"label": "Mia Farrow",
+"v": "Maria de Lourdes Villiers Farrow"
+},
+{
+"qid": "Q218718",
+"label": "Jay Leno",
+"v": "James Douglas Muir Leno"
+},
+{
+"qid": "Q229184",
+"label": "Lily Collins",
+"v": "Lily Jane Collins"
+},
+{
+"qid": "Q2434360",
+"label": "Tim Walz",
+"v": "Timothy James Walz"
+},
+{
+"qid": "Q232477",
+"label": "Jacqueline Bisset",
+"v": "Winifred Jacqueline Fraser Bisset"
+},
+{
+"qid": "Q269890",
+"label": "Don Rickles",
+"v": "Donald Jay Rickles"
+},
+{
+"qid": "Q276181",
+"label": "Jim Varney",
+"v": "James Albert Varney Jr."
+},
+{
+"qid": "Q428223",
+"label": "Robert Plant",
+"v": "Robert Anthony Plant"
+},
+{
+"qid": "Q4538",
+"label": "Jonathan Winters",
+"v": "Jonathan Harshman Winters III"
+},
+{
+"qid": "Q467112",
+"label": "Nicola Sturgeon",
+"v": "Nicola Ferguson Sturgeon"
+},
+{
+"qid": "Q5162259",
+"label": "Conor McGregor",
+"v": "Conor Anthony McGregor"
+},
+{
+"qid": "Q541599",
+"label": "Dolores O'Riordan",
+"v": "Dolores Mary Eileen O'Riordan"
+},
+{
+"qid": "Q7407093",
+"label": "Sam Altman",
+"v": "Samuel Harris Altman"
+},
+{
+"qid": "Q7346",
+"label": "John Coltrane",
+"v": "John William Coltrane"
+},
+{
+"qid": "Q231726",
+"label": "Hailee Steinfeld",
+"v": "Hailee Puring Steinfeld"
+},
+{
+"qid": "Q189990",
+"label": "Antony Hewish",
+"v": "Antony Hewish"
+},
+{
+"qid": "Q178103",
+"label": "Cecil Frank Powell",
+"v": "Cecil Frank Powell"
+},
+{
+"qid": "Q10510",
+"label": "Jenson Button",
+"v": "Jenson Alexander Lyons Button"
+},
+{
+"qid": "Q106465",
+"label": "John Grisham",
+"v": "John Ray Grisham II"
+},
+{
+"qid": "Q191789",
+"label": "Martha Washington",
+"v": "Martha Dandridge"
+},
+{
+"qid": "Q240573",
+"label": "Sophie Turner",
+"v": "Sophie Turner"
+},
+{
+"qid": "Q127471",
+"label": "Ashley Tisdale",
+"v": "Ashley Michelle Tisdale"
+},
+{
+"qid": "Q131433",
+"label": "Shania Twain",
+"v": "Eilleen Regina Edwards"
+},
+{
+"qid": "Q134549",
+"label": "Ted Kennedy",
+"v": "Edward Moore Kennedy"
+},
+{
+"qid": "Q152832",
+"label": "Kevin Keegan",
+"v": "Joseph Kevin Keegan"
+},
+{
+"qid": "Q169982",
+"label": "Gerard Butler",
+"v": "Gerard James Butler"
+},
+{
+"qid": "Q182665",
+"label": "Iggy Pop",
+"v": "James Newell Osterberg"
+},
+{
+"qid": "Q184572",
+"label": "Martin Sheen",
+"v": "Ramon Antonio Gerardo Estevez"
+},
+{
+"qid": "Q184785",
+"label": "Anne Rice",
+"v": "Howard Allen Frances O'Brien"
+},
+{
+"qid": "Q203433",
+"label": "Spiro Agnew",
+"v": "Spiro Theodore Agnew"
+},
+{
+"qid": "Q213122",
+"label": "Betty Ford",
+"v": "Elizabeth Anne Bloomer Ford"
+},
+{
+"qid": "Q219631",
+"label": "Adam Levine",
+"v": "Adam Noah Levine"
+},
+{
+"qid": "Q219353",
+"label": "Rosalynn Carter",
+"v": "Eleanor Rosalynn Smith"
+},
+{
+"qid": "Q220901",
+"label": "Laura Dern",
+"v": "Laura Elizabeth Dern"
+},
+{
+"qid": "Q233619",
+"label": "Hrithik Roshan",
+"v": "Hrithik Roshan Nagrath"
+},
+{
+"qid": "Q234888",
+"label": "Vera Rubin",
+"v": "Vera Florence Cooper"
+},
+{
+"qid": "Q264840",
+"label": "Vera Farmiga",
+"v": "Vera Ann Farmiga"
+},
+{
+"qid": "Q270707",
+"label": "Dorothy Parker",
+"v": "Dorothy Rothschild"
+},
+{
+"qid": "Q272610",
+"label": "Cormac McCarthy",
+"v": "Charles Joseph McCarthy Jr."
+},
+{
+"qid": "Q296047",
+"label": "Sam Harris",
+"v": "Samuel Benjamin Harris"
+},
+{
+"qid": "Q355522",
+"label": "Mitch McConnell",
+"v": "Addison Mitchell McConnell Jr."
+},
+{
+"qid": "Q43994",
+"label": "Matt Groening",
+"v": "Matthew Abraham Groening"
+},
+{
+"qid": "Q43994",
+"label": "Matt Groening",
+"v": "Matthew Abram Groening"
+},
+{
+"qid": "Q493956",
+"label": "Andrea M. Ghez",
+"v": "Andrea Mia Ghez"
+},
+{
+"qid": "Q5104",
+"label": "Miranda Cosgrove",
+"v": "Miranda Taylor Cosgrove"
+},
+{
+"qid": "Q55177",
+"label": "Sunita Williams",
+"v": "Sunita Lyn Pandya"
+},
+{
+"qid": "Q867813",
+"label": "Claire Danes",
+"v": "Claire Catherine Danes"
+},
+{
+"qid": "Q95002",
+"label": "William Holden",
+"v": "William Franklin Beedle"
+},
+{
+"qid": "Q105719",
+"label": "Jean Harlow",
+"v": "Harlean Harlow Carpenter"
+},
+{
+"qid": "Q106365",
+"label": "Isabelle Huppert",
+"v": "Isabelle Anne Huppert"
+},
+{
+"qid": "Q213427",
+"label": "Aaron Ramsey",
+"v": "Aaron James Ramsey"
+},
+{
+"qid": "Q154927",
+"label": "Haakon VII of Norway",
+"v": "Prince Christian Frederik Carl Georg Valdemar Axel of Denmark"
+},
+{
+"qid": "Q156491",
+"label": "Bonnie Tyler",
+"v": "Gaynor Hopkins"
+}
+],
+"city_nickname": [
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "Third Rome"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "The First Throne"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "Third Rome"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "The First Throne"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "Third Rome"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "The First Throne"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "Third Rome"
+},
+{
+"qid": "Q649",
+"label": "Moscow",
+"v": "The First Throne"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "Lion City"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "Lion City"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "Lion City"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "Lion City"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "Lion City"
+},
+{
+"qid": "Q334",
+"label": "Singapore",
+"v": "Lion City"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "Big Apple"
+},
+{
+"qid": "Q60",
+"label": "New York City",
+"v": "The City That Never Sleeps"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "The Classic City"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "City of the Violet Crown"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "The Classic City"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "City of the Violet Crown"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "The Classic City"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "City of the Violet Crown"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "The Classic City"
+},
+{
+"qid": "Q1524",
+"label": "Athens",
+"v": "City of the Violet Crown"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "Venice of the north"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "Venice of the north"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "Venice of the north"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "Venice of the north"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "Venice of the north"
+},
+{
+"qid": "Q727",
+"label": "Amsterdam",
+"v": "Venice of the north"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "City of White Nights"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Northern Palmyra"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to Europe"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to the West"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "City of White Nights"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Northern Palmyra"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to Europe"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to the West"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "City of White Nights"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Northern Palmyra"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to Europe"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to the West"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "City of White Nights"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Northern Palmyra"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to Europe"
+},
+{
+"qid": "Q656",
+"label": "Saint Petersburg",
+"v": "Window to the West"
+},
+{
+"qid": "Q597",
+"label": "Lisbon",
+"v": "Queen of the Sea"
+},
+{
+"qid": "Q597",
+"label": "Lisbon",
+"v": "Queen of the Sea"
+},
+{
+"qid": "Q597",
+"label": "Lisbon",
+"v": "Queen of the Sea"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Emerald City"
+},
+{
+"qid": "Q3130",
+"label": "Sydney",
+"v": "the Harbour City"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "City of Angels"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "The Big Mango"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "City of Angels"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "The Big Mango"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "City of Angels"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "The Big Mango"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "City of Angels"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "The Big Mango"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "City of Angels"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "The Big Mango"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "City of Angels"
+},
+{
+"qid": "Q1861",
+"label": "Bangkok",
+"v": "The Big Mango"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "J-Town"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "The Big Durian"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "J-Town"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "The Big Durian"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "J-Town"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "J-Town"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "The Big Durian"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "The Big Durian"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "J-Town"
+},
+{
+"qid": "Q3630",
+"label": "Jakarta",
+"v": "The Big Durian"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q8686",
+"label": "Shanghai",
+"v": "Paris of the East"
+},
+{
+"qid": "Q1748",
+"label": "Copenhagen",
+"v": "Wonderful Copenhagen"
+},
+{
+"qid": "Q1748",
+"label": "Copenhagen",
+"v": "Wonderful Copenhagen"
+},
+{
+"qid": "Q1748",
+"label": "Copenhagen",
+"v": "Wonderful Copenhagen"
+},
+{
+"qid": "Q1748",
+"label": "Copenhagen",
+"v": "Wonderful Copenhagen"
+},
+{
+"qid": "Q1748",
+"label": "Copenhagen",
+"v": "Wonderful Copenhagen"
+},
+{
+"qid": "Q62",
+"label": "San Francisco",
+"v": "Frisco"
+},
+{
+"qid": "Q62",
+"label": "San Francisco",
+"v": "Frisco"
+},
+{
+"qid": "Q19660",
+"label": "Bucharest",
+"v": "Paris of the Balkans"
+},
+{
+"qid": "Q1761",
+"label": "Dublin",
+"v": "The Fair City"
+},
+{
+"qid": "Q19660",
+"label": "Bucharest",
+"v": "Paris of the Balkans"
+},
+{
+"qid": "Q19660",
+"label": "Bucharest",
+"v": "Paris of the Balkans"
+},
+{
+"qid": "Q1761",
+"label": "Dublin",
+"v": "The Fair City"
+},
+{
+"qid": "Q1761",
+"label": "Dublin",
+"v": "The Fair City"
+},
+{
+"qid": "Q641",
+"label": "Venice",
+"v": "Bride of the Sea"
+},
+{
+"qid": "Q641",
+"label": "Venice",
+"v": "Bride of the Sea"
+},
+{
+"qid": "Q641",
+"label": "Venice",
+"v": "Bride of the Sea"
+},
+{
+"qid": "Q641",
+"label": "Venice",
+"v": "Bride of the Sea"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "Capital of the South"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "Southern capital"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "Capital of the South"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "Southern capital"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "Capital of the South"
+},
+{
+"qid": "Q3646",
+"label": "Krasnodar",
+"v": "Southern capital"
+},
+{
+"qid": "Q14773",
+"label": "Macau",
+"v": "Las Vegas of the East"
+},
+{
+"qid": "Q14773",
+"label": "Macau",
+"v": "Monte Carlo of the Orient"
+},
+{
+"qid": "Q14773",
+"label": "Macau",
+"v": "Las Vegas of the East"
+},
+{
+"qid": "Q14773",
+"label": "Macau",
+"v": "Monte Carlo of the Orient"
+},
+{
+"qid": "Q100",
+"label": "Boston",
+"v": "Beantown"
+},
+{
+"qid": "Q100",
+"label": "Boston",
+"v": "The Cradle of Liberty"
+},
+{
+"qid": "Q100",
+"label": "Boston",
+"v": "The Hub"
+},
+{
+"qid": "Q2044",
+"label": "Florence",
+"v": "Florence"
+},
+{
+"qid": "Q3141",
+"label": "Melbourne",
+"v": "the Garden City"
+},
+{
+"qid": "Q3141",
+"label": "Melbourne",
+"v": "the Garden City"
+},
+{
+"qid": "Q3141",
+"label": "Melbourne",
+"v": "the Garden City"
+},
+{
+"qid": "Q3141",
+"label": "Melbourne",
+"v": "the Garden City"
+},
+{
+"qid": "Q3141",
+"label": "Melbourne",
+"v": "the Garden City"
+},
+{
+"qid": "Q23556",
+"label": "Atlanta",
+"v": "ATL"
+},
+{
+"qid": "Q23556",
+"label": "Atlanta",
+"v": "Hotlanta"
+},
+{
+"qid": "Q23556",
+"label": "Atlanta",
+"v": "The Big Peach"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Queen City of the Pacific and others"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Queen City of the Pacific and others"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Queen City of the Pacific and others"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Queen City of the Pacific and others"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Pearl of the Orient"
+},
+{
+"qid": "Q1461",
+"label": "Manila",
+"v": "Queen City of the Pacific and others"
+},
+{
+"qid": "Q23768",
+"label": "Las Vegas",
+"v": "Sin City"
+},
+{
+"qid": "Q23768",
+"label": "Las Vegas",
+"v": "The Entertainment Capital of the World"
+},
+{
+"qid": "Q23768",
+"label": "Las Vegas",
+"v": "Sin City"
+},
+{
+"qid": "Q23768",
+"label": "Las Vegas",
+"v": "The Entertainment Capital of the World"
+},
+{
+"qid": "Q16555",
+"label": "Houston",
+"v": "Space City"
+},
+{
+"qid": "Q23436",
+"label": "Edinburgh",
+"v": "Athens of the North"
+},
+{
+"qid": "Q23436",
+"label": "Edinburgh",
+"v": "Athens of the North"
+},
+{
+"qid": "Q16555",
+"label": "Houston",
+"v": "Space City"
+},
+{
+"qid": "Q5083",
+"label": "Seattle",
+"v": "Queen City"
+},
+{
+"qid": "Q5083",
+"label": "Seattle",
+"v": "Emerald City"
+},
+{
+"qid": "Q5083",
+"label": "Seattle",
+"v": "Jet City"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Joburg"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Jozi"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "The City of Gold"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Joburg"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Jozi"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "The City of Gold"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Joburg"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Jozi"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "The City of Gold"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Joburg"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Jozi"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "The City of Gold"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Joburg"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Jozi"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "The City of Gold"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Joburg"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "Jozi"
+},
+{
+"qid": "Q34647",
+"label": "Johannesburg",
+"v": "The City of Gold"
+},
+{
+"qid": "Q16554",
+"label": "Denver",
+"v": "Mile High City"
+},
+{
+"qid": "Q16557",
+"label": "Dallas",
+"v": "Big D"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The Ever-Faithful City"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The City of Eaglets"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The City of Three Cathedrals"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The City of Lion"
+},
+{
+"qid": "Q1874",
+"label": "Odesa",
+"v": "Odesa-Mama"
+},
+{
+"qid": "Q1874",
+"label": "Odesa",
+"v": "Southern Palmira"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The Ever-Faithful City"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The City of Eaglets"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The City of Three Cathedrals"
+},
+{
+"qid": "Q36036",
+"label": "Lviv",
+"v": "The City of Lion"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "Motor City"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "The 313"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "The D"
+},
+{
+"qid": "Q34404",
+"label": "New Orleans",
+"v": "The Big Easy"
+},
+{
+"qid": "Q34404",
+"label": "New Orleans",
+"v": "Crescent City"
+},
+{
+"qid": "Q34404",
+"label": "New Orleans",
+"v": "NOLA"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "Motor City"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "The 313"
+},
+{
+"qid": "Q12439",
+"label": "Detroit",
+"v": "The D"
+},
+{
+"qid": "Q16559",
+"label": "Austin",
+"v": "City of the Violet Crown"
+},
+{
+"qid": "Q900",
+"label": "Kazan",
+"v": "Third Capital of Russia"
+},
+{
+"qid": "Q900",
+"label": "Kazan",
+"v": "Third Capital of Russia"
+},
+{
+"qid": "Q5092",
+"label": "Baltimore",
+"v": "Charm City"
+},
+{
+"qid": "Q5092",
+"label": "Baltimore",
+"v": "Bodymore, Murderland"
+},
+{
+"qid": "Q34217",
+"label": "Oxford",
+"v": "The City of Dreaming Spires"
+},
+{
+"qid": "Q34217",
+"label": "Oxford",
+"v": "The City of Dreaming Spires"
+},
+{
+"qid": "Q35775",
+"label": "Boise",
+"v": "City of Trees"
+},
+{
+"qid": "Q35775",
+"label": "Boise",
+"v": "City of Trees"
+},
+{
+"qid": "Q42053",
+"label": "Isfahan",
+"v": "Manchester of Persia"
+},
+{
+"qid": "Q42053",
+"label": "Isfahan",
+"v": "Manchester of Persia"
+},
+{
+"qid": "Q42053",
+"label": "Isfahan",
+"v": "Manchester of Persia"
+},
+{
+"qid": "Q37836",
+"label": "Milwaukee",
+"v": "Cream City"
+},
+{
+"qid": "Q37836",
+"label": "Milwaukee",
+"v": "Brew City"
+},
+{
+"qid": "Q37836",
+"label": "Milwaukee",
+"v": "Mil Town"
+},
+{
+"qid": "Q37320",
+"label": "Cleveland",
+"v": "The Land"
+},
+{
+"qid": "Q37320",
+"label": "Cleveland",
+"v": "The Forest City"
+},
+{
+"qid": "Q39450",
+"label": "Anchorage",
+"v": "The City of Lights and Flowers"
+},
+{
+"qid": "Q34804",
+"label": "Albuquerque",
+"v": "Burque"
+},
+{
+"qid": "Q34804",
+"label": "Albuquerque",
+"v": "The Duke City"
+},
+{
+"qid": "Q49233",
+"label": "Orlando",
+"v": "The City Beautiful"
+},
+{
+"qid": "Q16558",
+"label": "Fort Worth",
+"v": "Funky town"
+},
+{
+"qid": "Q16558",
+"label": "Fort Worth",
+"v": "Cowtown"
+},
+{
+"qid": "Q16558",
+"label": "Fort Worth",
+"v": "Panther city"
+},
+{
+"qid": "Q28260",
+"label": "Lincoln",
+"v": "Star City"
+},
+{
+"qid": "Q28260",
+"label": "Lincoln",
+"v": "Star City"
+},
+{
+"qid": "Q79990",
+"label": "Christchurch",
+"v": "Garden City"
+},
+{
+"qid": "Q28271",
+"label": "Annapolis",
+"v": "America's Sailing Capital"
+},
+{
+"qid": "Q28271",
+"label": "Annapolis",
+"v": "Crabtown on the Bay"
+},
+{
+"qid": "Q28271",
+"label": "Annapolis",
+"v": "Naptown"
+},
+{
+"qid": "Q28271",
+"label": "Annapolis",
+"v": "Sailing Capital of the World"
+},
+{
+"qid": "Q79990",
+"label": "Christchurch",
+"v": "Garden City"
+},
+{
+"qid": "Q16565",
+"label": "Charlotte",
+"v": "Hornet's Nest"
+},
+{
+"qid": "Q16562",
+"label": "El Paso",
+"v": "Land of the Sun"
+},
+{
+"qid": "Q16562",
+"label": "El Paso",
+"v": "Star of the Southwest"
+},
+{
+"qid": "Q16562",
+"label": "El Paso",
+"v": "The Sun City"
+},
+{
+"qid": "Q16562",
+"label": "El Paso",
+"v": "Land of the Sun"
+},
+{
+"qid": "Q16562",
+"label": "El Paso",
+"v": "Star of the Southwest"
+},
+{
+"qid": "Q16562",
+"label": "El Paso",
+"v": "The Sun City"
+},
+{
+"qid": "Q79867",
+"label": "Birmingham",
+"v": "The Magic City"
+},
+{
+"qid": "Q49259",
+"label": "Virginia Beach",
+"v": "Neptune City"
+},
+{
+"qid": "Q49259",
+"label": "Virginia Beach",
+"v": "The Resort City"
+},
+{
+"qid": "Q49259",
+"label": "Virginia Beach",
+"v": "Neptune City"
+},
+{
+"qid": "Q49259",
+"label": "Virginia Beach",
+"v": "The Resort City"
+},
+{
+"qid": "Q49259",
+"label": "Virginia Beach",
+"v": "Neptune City"
+},
+{
+"qid": "Q49259",
+"label": "Virginia Beach",
+"v": "The Resort City"
+},
+{
+"qid": "Q1513",
+"label": "Nagpur",
+"v": "Orange City"
+},
+{
+"qid": "Q1513",
+"label": "Nagpur",
+"v": "Orange City"
+},
+{
+"qid": "Q29042",
+"label": "Akureyri",
+"v": "Capital of North Iceland"
+},
+{
+"qid": "Q598",
+"label": "Rzeszów",
+"v": "J-Town"
+},
+{
+"qid": "Q598",
+"label": "Rzeszów",
+"v": "J-Town"
+},
+{
+"qid": "Q598",
+"label": "Rzeszów",
+"v": "J-Town"
+},
+{
+"qid": "Q125434",
+"label": "Gqeberha",
+"v": "The Friendly City"
+},
+{
+"qid": "Q125434",
+"label": "Gqeberha",
+"v": "The Windy City"
+},
+{
+"qid": "Q125434",
+"label": "Gqeberha",
+"v": "The Friendly City"
+},
+{
+"qid": "Q125434",
+"label": "Gqeberha",
+"v": "The Windy City"
+},
+{
+"qid": "Q125434",
+"label": "Gqeberha",
+"v": "The Friendly City"
+},
+{
+"qid": "Q125434",
+"label": "Gqeberha",
+"v": "The Windy City"
+},
+{
+"qid": "Q10086",
+"label": "Mysore",
+"v": "City of Palaces"
+},
+{
+"qid": "Q10086",
+"label": "Mysore",
+"v": "City of Palaces"
+},
+{
+"qid": "Q49268",
+"label": "Fort Wayne",
+"v": "City Of Churches"
+},
+{
+"qid": "Q184587",
+"label": "Grand Rapids",
+"v": "Furniture City"
+},
+{
+"qid": "Q743218",
+"label": "Jonava",
+"v": "The capital of Jonai and Janinos"
+},
+{
+"qid": "Q49273",
+"label": "Lubbock",
+"v": "Hub City"
+},
+{
+"qid": "Q16868",
+"label": "Laredo",
+"v": "The City Under Seven Flags"
+},
+{
+"qid": "Q16868",
+"label": "Laredo",
+"v": "The Gateway City"
+},
+{
+"qid": "Q16868",
+"label": "Laredo",
+"v": "The City Under Seven Flags"
+},
+{
+"qid": "Q16868",
+"label": "Laredo",
+"v": "The Gateway City"
+},
+{
+"qid": "Q26432",
+"label": "Zoetermeer",
+"v": "Sweet Lake City"
+},
+{
+"qid": "Q486479",
+"label": "Rochester",
+"v": "Roch"
+},
+{
+"qid": "Q486479",
+"label": "Rochester",
+"v": "Med City"
+},
+{
+"qid": "Q643883",
+"label": "Sialkot",
+"v": "City of Iqbal"
+},
+{
+"qid": "Q181314",
+"label": "Wavre",
+"v": "the City of the Maca"
+}
+]
+}

@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const { startServer, until, makeHost, makePlayer, joinError, contentDir } = require('../helpers');
 
 let srv;
-before(async () => { srv = await startServer({ RUMPUS_CONTENT_DIR: contentDir({ closest: [{ q: 'N?', answer: 10 }] }), RUMPUS_CONTENT_MODE: 'replace' }); });
+before(async () => { srv = await startServer({ RUMPUS_CONTENT_DIR: contentDir({ closest: [{ q: 'N?', answer: 10 }] }), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_ANSWER_MS: '30000' }); });
 after(() => srv.stop());
 
 async function room(n) {

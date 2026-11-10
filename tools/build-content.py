@@ -66,7 +66,13 @@ def dedupe(items: list[Item], key: Callable[[Item], str]) -> list[Item]:
         out.append(it)
     return out
 
-def write(name: str, items: list[Item], min_count: int = 1000) -> None:
+SRC_LABEL = {
+    'opentdb': 'Open Trivia DB (CC BY-SA 4.0)', 'otqa': 'OpenTriviaQA (CC BY-SA 4.0)',
+    'cah': 'Cards Against Humanity (CC BY-NC-SA 4.0)', 'wikidata': 'Wikidata (CC0)',
+}
+
+def write(name: str, items: list[Item], min_count: int = 300) -> None:
+    items = [it for it in items if benign(' '.join(str(it.get(k, '')) for k in ('text', 'q', 'answer', 'word')))]
     for it in items:
         it.setdefault('id', sid(name, json.dumps({k: v for k, v in it.items() if k != 'a'}, sort_keys=True)))
     adult = sum(1 for i in items if i['a'])
@@ -95,9 +101,31 @@ TWIST_RE = re.compile(r"worst|never|weird|embarrass|secret|lie|regret|scar|gross
                       r"steal|hide|cheat|cry|fake|ruin|mom|dad|grandma|stranger|weirdest|creep|cursed|"
                       r"apocalypse|villain|explode|panic|disaster|horrible|smell|sexy|date|bed|toilet", re.I)
 
+# Benign-violation theory (McGraw & Warren 2010): humour needs a violation that
+# still feels safe. Topics that are violations without being benign aren't
+# funny at a party, even in 18+ mode — drop them from every pool.
+NON_BENIGN = re.compile(r"\b(rap(e|ed|es|ing|ist)|molest\w*|pedophil\w*|paedophil\w*|child porn|incest|holocaust|"
+                        r"genocide|nazi\w*|hitler|auschwitz|school shooting|mass shooting|lynch\w*|slavery|suicide|"
+                        r"terminal(ly)? ill|cancer (kids?|children)|dead (baby|babies)|9/11|isis|terroris\w*|"
+                        r"domestic violence|beating (my|your|his|her) (wife|kids?))\b", re.I)
+
+def benign(text: str) -> bool:
+    return not NON_BENIGN.search(text)
+
+# Item-writing flaws that research links to poor items (negatively worded stems,
+# "all/none of the above", which-of-the-following lists) + TV readability (long stems).
+FLAWED = re.compile(r"\bNOT\b|\bEXCEPT\b|\bnot\b.*\?$|all of the above|none of the above|which of the following|which of these", re.I)
+
 def boring_trivia(q: Item) -> bool:
     cat = clean(q.get('category', ''))
     text = clean(q['question'])
+    # IRT: items almost nobody can answer don't separate players and aren't fun → no "hard" items.
+    if q.get('difficulty') == 'hard':
+        return True
+    if FLAWED.search(text) or len(text) > 130:
+        return True
+    if any(re.search(r'all of the above|none of the above', clean(a), re.I) for a in [q['correct_answer']] + q['incorrect_answers']):
+        return True
     if q['type'] == 'boolean' or cat in DRY_CATS or DRY_RE.search(text):
         return True
     if re.search(r"How many letters are in the English|What is the capital of|What colou?r is", text, re.I):
@@ -124,9 +152,9 @@ if cah:
             # Skip instruction cards ("Instead of playing a card…") — they need house rules we don't have.
             if '____' not in text and not text.rstrip().endswith('?'):
                 continue
-            cah_black.append({'text': text, 'pick': b['pick'], 'a': not family})
+            cah_black.append({'text': text, 'pick': b['pick'], 'a': not family, 'src': SRC_LABEL['cah']})
         for i in pack['white']:
-            cah_white.append({'text': clean(cah['white'][i]), 'a': not family})
+            cah_white.append({'text': clean(cah['white'][i]), 'a': not family, 'src': SRC_LABEL['cah']})
     cah_black = dedupe(cah_black, lambda x: x['text'])
     cah_white = dedupe(cah_white, lambda x: x['text'])
     # Our original Punchline prompts double as Card Chaos prompt cards ("…: ____.").
@@ -138,7 +166,7 @@ if cah:
 # ----------------------------------------------------------------- Punchline
 fam, adult = read_txt('punchline.txt')
 punch = [{'text': t, 'a': False} for t in fam] + [{'text': t, 'a': True} for t in adult]
-punch += [{'text': b['text'], 'a': b['a'] or bool(ADULT_RE.search(b['text']))} for b in cah_black if b['pick'] == 1]
+punch += [{'text': b['text'], 'a': b['a'] or bool(ADULT_RE.search(b['text'])), 'src': SRC_LABEL['cah']} for b in cah_black if b['pick'] == 1]
 write('punchline', dedupe(punch, lambda x: x['text']))
 
 # ----------------------------------------------------------------- Trivia + Fib Finder (OpenTDB split) + adult
@@ -158,21 +186,21 @@ for q in opentdb:
     cat = clean(q.get('category', ''))
     if q['type'] == 'boolean':
         choices = ['True', 'False']
-        trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct), 'cat': cat, 'a': is_adult})
+        trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct), 'cat': cat, 'a': is_adult, 'src': SRC_LABEL['opentdb']})
         continue
     nums = [correct] + wrong
     if all(re.fullmatch(r'-?\d[\d,]*(\.\d+)?', n) for n in nums) and not re.search(r'which of|following', text, re.I):
-        closest.append({'q': text, 'answer': float(correct.replace(',', '')), 'a': is_adult})
+        closest.append({'q': text, 'answer': float(correct.replace(',', '')), 'a': is_adult, 'src': SRC_LABEL['opentdb']})
     fib_ok = (short_answer(correct) and not re.search(r'which of (these|the following)|not |following|true|false|\bthese\b', text, re.I)
               and len(text) < 160)
     # Deterministic split so the two games never share a question.
     fib_ok = fib_ok and not cat.startswith('Entertainment: Video Games') and not cat.startswith('Entertainment: Cartoon')
     if fib_ok and q['difficulty'] != 'easy' and int(sid('split', text), 16) % 100 < 80:
-        fib.append({'q': text, 'answer': correct, 'cat': cat, 'a': is_adult})
+        fib.append({'q': text, 'answer': correct, 'cat': cat, 'a': is_adult, 'src': SRC_LABEL['opentdb']})
     else:
         choices = wrong + [correct]
         rng.shuffle(choices)
-        trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct), 'cat': cat, 'a': is_adult})
+        trivia.append({'q': text, 'choices': choices, 'correct': choices.index(correct), 'cat': cat, 'a': is_adult, 'src': SRC_LABEL['opentdb']})
 
 for line in (SRC / 'adult-trivia.txt').read_text(encoding='utf-8').splitlines():
     if '|' not in line or line.startswith('#'):
@@ -195,7 +223,6 @@ except Exception:
     pass
 
 write('trivia', dedupe(trivia, lambda x: x['q']))
-write('fibbage', dedupe(fib, lambda x: x['q']))
 
 # ----------------------------------------------------------------- Closest Guess
 ELEMENTS = ('Hydrogen Helium Lithium Beryllium Boron Carbon Nitrogen Oxygen Fluorine Neon Sodium Magnesium Aluminium Silicon '
@@ -221,10 +248,54 @@ for line in (SRC / 'adult-closest.txt').read_text(encoding='utf-8').splitlines()
         continue
     p = [x.strip() for x in line.split('|')]
     closest.append({'q': p[0], 'answer': float(p[1]), 'unit': p[2] if len(p) > 2 else '', 'a': True})
+# OpenTriviaQA numbers were mostly obscure TV/celebrity minutiae → dropped (replaced by Wikidata facts).
 otqa = VENDOR / 'opentriviaqa-numeric.json'
-if otqa.exists():
+if False and otqa.exists():  # noqa: SIM — kept for reference
     for q in json.loads(otqa.read_text()):
-        closest.append({'q': q['q'], 'answer': float(q['answer'].replace(',', '')), 'a': bool(ADULT_RE.search(q['q']))})
+        closest.append({'q': q['q'], 'answer': float(q['answer'].replace(',', '')), 'a': bool(ADULT_RE.search(q['q'])), 'src': SRC_LABEL['otqa']})
+# Wikidata (CC0): popular superlative facts (Korn et al. 2019 / Prakash et al. 2015: well-known
+# entities + extremes make the most interesting trivia). Popularity = sitelinks (filtered in the query).
+WD = VENDOR / 'wikidata.json'
+wd: dict[str, list[Item]] = json.loads(WD.read_text(encoding='utf-8')) if WD.exists() else {}
+def wd_src(r: Item) -> str:
+    return f"Wikidata {r['qid']} (CC0)"
+def num(v: str) -> float | None:
+    try:
+        return float(v)
+    except ValueError:
+        return None
+WD_TEMPLATES: dict[str, tuple[str, str, float]] = {
+    'mountain_height': ('How tall is {}, in metres?', 'm', 1),
+    'river_length': ('How long is the {} river, in km?', 'km', 1),
+    'building_height': ('How tall is {}, in metres?', 'm', 1),
+    'film_year': ('In what year did the film "{}" come out?', '', 1),
+    'living_birth_year': ('In what year was {} born?', '', 1),
+    'city_population': ('What is the population of {}, in millions (roughly)?', 'million', 1e-6),
+}
+# Be brutal: rows are ordered by popularity (sitelinks) — keep only the famous head of each list.
+WD_TOP = {'mountain_height': 60, 'building_height': 50, 'city_population': 120, 'film_year': 80, 'river_length': 60, 'living_birth_year': 150}
+for key, (tpl, unit, scale) in WD_TEMPLATES.items():
+    for r in wd.get(key, [])[:WD_TOP.get(key, 50)]:
+        if key == 'city_population' and (num(r['v']) or 0) < 1_000_000:
+            continue  # small numbers make dull guesses
+        v = num(r['v'])
+        if v is None or v <= 0:
+            continue
+        label = r['label'][:-6] if key == 'river_length' and r['label'].endswith(' River') else r['label']
+        ans = round(v * scale, 1) if scale != 1 else round(v)
+        closest.append({'q': tpl.format(label), 'answer': ans, 'unit': unit, 'a': False, 'src': wd_src(r)})
+for r in wd.get('birth_name', []):
+    bn = r['v'].strip()
+    # Only real reveals: the birth name shares no word with the famous name (stage names, not maiden names).
+    famous = {w for w in re.findall(r"[a-z]{3,}", r['label'].lower())}
+    if bn and len(bn) <= 40 and not famous & set(re.findall(r"[a-z]{3,}", bn.lower())):
+        fib.append({'q': f"{r['label']}'s real birth name is ____.", 'answer': bn, 'cat': 'Real names', 'a': False, 'src': wd_src(r)})
+for r in wd.get('city_nickname', []):
+    nick = r['v'].strip()
+    if nick and r['label'].lower() not in nick.lower() and len(nick) <= 30:
+        fib.append({'q': f"{r['label']} is nicknamed \"____\".", 'answer': nick, 'cat': 'City nicknames', 'a': False, 'src': wd_src(r)})
+write('fibbage', dedupe(fib, lambda x: x['q']))
+
 for c in closest:
     if c['answer'] == int(c['answer']):
         c['answer'] = int(c['answer'])

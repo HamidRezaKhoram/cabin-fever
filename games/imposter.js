@@ -48,6 +48,8 @@ class ImposterGame extends BaseGame {
       spicy: this.spicy(),
       filter: (x) => Array.isArray(x.words) && x.words.length >= 4,
     });
+    this.poolName = 'imposter';
+    this.item = item;
     const fallback = BUILTIN[this.round % BUILTIN.length];
     this.category = item ? item.category : fallback.category;
     this.word = item ? item.word : fallback.words[0];

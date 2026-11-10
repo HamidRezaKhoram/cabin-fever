@@ -26,7 +26,8 @@ Repo: https://github.com/HamidRezaKhoram/homejack (git remote `homejack`, branch
 5. **Original games only.** Games may share genre mechanics with party games, but never copy a
    specific commercial game's name, art, text or look. Display names stay original
    (Punchline, Fib Finder, Card Chaos, …).
-6. **Content rules:** each game that uses questions needs **≥1000 items**, **no repeats** across
+6. **Content rules: quality over quantity** (user's call) — only genuinely fun, well-written items;
+   a few hundred great ones beat thousands of bland ones. **No repeats** across
    ≥10 games (enforced by `games/library.js` + `data/history.json`), and an **18+ mix** (~30% of
    draws when the 🌶 toggle is on; adult items flagged `a: true`). Boring/generic/everyday
    prompts are filtered out (see filters in `tools/build-content.py`). Only add content that's

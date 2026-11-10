@@ -164,6 +164,8 @@ class TriviaGame {
       || library.drawOne('trivia', { spicy })
       || QUESTIONS[this.round % QUESTIONS.length];
     this.segmentLeft -= 1;
+    this.poolName = 'trivia';
+    this.item = this.question;
     this.answers = new Map();
     this.phase = 'trivia-question';
     this.roundStartedAt = Date.now();
@@ -212,6 +214,7 @@ class TriviaGame {
     // Players who didn't answer lose their streak too.
     for (const id of this.room.players.keys()) if (!this.answers.has(id)) this.streaks.set(id, 0);
     scored.sort((a, b) => b.gained - a.gained);
+    if (this.question.id) library.recordAnswers('trivia', this.question.id, scored.filter((x) => x.correct).length, scored.length);
     this.roundResult = { correct, scored };
     this.phase = 'trivia-reveal';
     this.setTimer(REVEAL_MS, () => this.nextRound());
@@ -259,6 +262,7 @@ class TriviaGame {
       category: this.category ? prettyCategory(this.category) : (this.question && prettyCategory(this.question.cat)),
       segmentLeft: this.segmentLeft,
       chooser: chooser ? chooser.nickname : null,
+      source: this.phase === 'trivia-category' || !this.question ? null : this.question.src || null,
     };
   }
 

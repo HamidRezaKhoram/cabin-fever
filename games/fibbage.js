@@ -123,6 +123,9 @@ class FibbageGame {
     this.round += 1;
     const q = library.drawOne('fibbage', { spicy: this.spicy() }) || QUESTIONS[this.round % QUESTIONS.length];
     this.prompt = q.q;
+    this.poolName = 'fibbage';
+    this.item = q;
+    this.source = q.src || null;
     this.answer = q.answer;
     this.bluffs = new Map();
     this.collided = new Set();
@@ -268,6 +271,7 @@ class FibbageGame {
       endsAt: this.endsAt,
       doublePoints: this.mult() > 1,
       multiplier: this.mult(),
+      source: this.source || null,
       stage: flow.stage(this.round, this.totalRounds),
       skipSeq: this.skipSeq || 0,
     };

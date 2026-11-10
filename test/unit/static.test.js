@@ -15,7 +15,7 @@ const server = read('server.js');
 const GAME_IDS = server.match(/for \(const mod of \[([^\]]+)\]/)[1].match(/'([a-z]+)'/g).map((s) => s.slice(1, -1));
 
 test('server game list matches the game modules on disk', () => {
-  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js'].includes(f)).map((f) => f.slice(0, -3));
+  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js'].includes(f)).map((f) => f.slice(0, -3));
   assert.deepStrictEqual([...GAME_IDS].sort(), files.sort());
   for (const id of GAME_IDS) {
     const meta = require(path.join(ROOT, 'games', id)).meta;
@@ -116,4 +116,44 @@ test('every game background has its own content scene (not just a palette)', () 
   const bg = read('public/bg.js');
   const stat = bg.slice(bg.indexOf('const STATIC = {'), bg.indexOf('const ANIM = {'));
   for (const id of GAME_IDS) assert.ok(new RegExp(`\\n    ${id}\\(g\\)`).test(stat), `no scene motif for ${id}`);
+});
+
+// ---- accessibility ------------------------------------------------------------
+const lum = (hex) => {
+  const c = hex.replace('#', '').match(/../g).map((h) => parseInt(h, 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+
+test('WCAG contrast: every theme\'s text colours are ≥ 4.5:1 on the dark question panel and buttons', () => {
+  const css = read('public/style.css');
+  const panelBg = '#0e0c17'; // rgba(8,6,16,0.84) over the darkest-to-brightest scenes ≈ this
+  const root = { accent: '#ffb02e', accent2: '#5ee0a0', panel: '#241f3d', ink: '#f4f1e8' };
+  const themes = { lobby: root };
+  for (const m of css.matchAll(/body\[data-theme="(\w+)"\]\s*\{([^}]+)\}/g)) {
+    const t = { ...root };
+    for (const v of m[2].matchAll(/--(accent2?|panel):\s*(#[0-9a-f]{6})/gi)) t[v[1]] = v[2];
+    themes[m[1]] = t;
+  }
+  assert.ok(Object.keys(themes).length >= 12);
+  for (const [name, t] of Object.entries(themes)) {
+    assert.ok(contrast(t.accent, panelBg) >= 4.5, `${name}: prompt colour ${t.accent} only ${contrast(t.accent, panelBg).toFixed(2)}:1`);
+    assert.ok(contrast(t.ink, t.panel) >= 4.5, `${name}: button text on ${t.panel} only ${contrast(t.ink, t.panel).toFixed(2)}:1`);
+  }
+});
+
+test('accessibility basics: focus ring, reduced motion, 48px targets, labelled reactions, live region', () => {
+  const css = read('public/style.css');
+  assert.match(css, /:focus-visible\s*\{[^}]*outline/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /body\.play button, body\.play input, body\.play select \{ min-height: 48px; \}/);
+  assert.match(read('public/play.js'), /aria-label="React: /);
+  assert.match(read('public/play.html'), /id="game-view"[^>]*aria-live="polite"/);
+  assert.match(read('public/avatar-maker.js'), /aria-label="Previous /);
+});
+
+test('character maker options match the server schema', () => {
+  require('../../public/avatar-maker.js');
+  const { LOOK_PARTS } = require('../../games/avatar-schema');
+  assert.deepStrictEqual(window.Rumpus.avatarMaker.counts, LOOK_PARTS);
 });

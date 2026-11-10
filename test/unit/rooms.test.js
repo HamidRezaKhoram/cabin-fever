@@ -212,7 +212,7 @@ test('reactions reach the TV with the sender avatar; junk and spam are dropped',
   await until(() => h.reactions.length >= 1, 'reaction');
   await sleep(200);
   assert.strictEqual(h.reactions.length, 1);
-  assert.deepStrictEqual({ ...h.reactions[0], playerId: undefined }, { playerId: undefined, nickname: 'Ann', avatar: 5, drawn: 0, emoji: '🔥' });
+  assert.deepStrictEqual({ ...h.reactions[0], playerId: undefined }, { playerId: undefined, nickname: 'Ann', avatar: 5, drawn: 0, look: null, emoji: '🔥' });
   await sleep(650);
   a.sock.emit('player:react', { emoji: '<script>' });
   await sleep(150);
@@ -229,4 +229,20 @@ test('players never see other players\' private data', async () => {
   const raw = JSON.stringify(a.state);
   assert.ok(!raw.includes('token'));
   assert.ok(!raw.includes(h.hostToken));
+});
+
+test('character maker: a look is validated, shared with everyone, editable, and clearable', async () => {
+  const h = await makeHost(srv);
+  const look = { skin: 2, hair: 3, hairColor: 5, eyes: 1, mouth: 4, facial: 2, glasses: 3, hat: 1, shirt: 7 };
+  const a = await makePlayer(srv, h.code, 'Maker', { look });
+  const b = await makePlayer(srv, h.code, 'Cheater', { look: { ...look, hat: 99 } });
+  await until(() => h.state.players.length === 2, 'joined');
+  assert.deepStrictEqual(h.state.players.find((p) => p.nickname === 'Maker').look, look);
+  assert.strictEqual(h.state.players.find((p) => p.nickname === 'Cheater').look, null, 'invalid look rejected');
+  a.sock.emit('player:look', { look: { ...look, hat: 4 } });
+  await until(() => h.state.players.find((p) => p.nickname === 'Maker').look.hat === 4, 'edited');
+  b.sock.emit('player:look', { look: { skin: 1 } }); // incomplete → ignored
+  a.sock.emit('player:look', { look: null });
+  await until(() => h.state.players.find((p) => p.nickname === 'Maker').look === null, 'cleared');
+  assert.strictEqual(h.state.players.find((p) => p.nickname === 'Cheater').look, null);
 });

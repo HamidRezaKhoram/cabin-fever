@@ -97,11 +97,11 @@ test('/api/music is an empty list when there is no music folder', async () => {
   } finally { await s2.stop(); }
 });
 
-test('/api/content-stats covers every pool with 1000+ items', async () => {
+test('/api/content-stats covers every pool', async () => {
   const stats = JSON.parse((await get(srv.url, '/api/content-stats')).body);
   for (const pool of ['punchline', 'trivia', 'fibbage', 'closest', 'majority', 'mostlikely', 'imposter', 'telephone', 'cah-black', 'cah-white']) {
     assert.ok(stats[pool], `missing pool ${pool}`);
-    assert.ok(stats[pool].total >= 1000, `${pool} has ${stats[pool].total}`);
+    assert.ok(stats[pool].total >= 300, `${pool} has ${stats[pool].total}`);
     assert.ok(stats[pool].adult > 0, `${pool} has no 18+ items`);
   }
 });

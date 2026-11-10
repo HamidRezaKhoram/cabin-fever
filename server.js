@@ -19,6 +19,7 @@ const fs = require('fs');
 const QRCode = require('qrcode');
 const library = require('./games/library');
 const flow = require('./games/flow');
+const { cleanLook } = require('./games/avatar-schema');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
@@ -158,6 +159,7 @@ function playersSummary(room) {
     connected: p.connected,
     avatar: p.avatar,
     team: room.settings.teams ? p.team || null : null,
+    look: p.look || null, // character-maker look (rendered on clients)
     drawn: p.avatarVer || 0, // >0 = player drew their own picture (served at /avatar/:code/:id)
   }));
 }
@@ -458,6 +460,8 @@ io.on('connection', (socket) => {
     }
     const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar };
     if (validDrawing(msg.drawing)) { p.avatarImage = msg.drawing; p.avatarVer = 1; }
+    const look = cleanLook(msg.look);
+    if (look) p.look = look;
     if (room.settings.teams) assignTeam(room, p);
     room.players.set(p.id, p);
     console.log(`[room ${room.code}] player joined: ${nickname}`);
@@ -488,7 +492,11 @@ io.on('connection', (socket) => {
       const tellHost = (type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
       if (kind === 'ready') { tellHost('ready'); game.skip(); }
       else if (kind === 'hurry') { if (flow.hurry(game)) tellHost('hurry'); }
-      else if (kind === 'skipq') { tellHost('skipped'); game.skipQuestion(); }
+      else if (kind === 'skipq') {
+        if (game.poolName && game.item && game.item.id) library.recordSkip(game.poolName, game.item.id); // retire it
+        tellHost('skipped');
+        game.skipQuestion();
+      }
     }
     broadcast(room);
   });
@@ -503,6 +511,17 @@ io.on('connection', (socket) => {
     const team = msg && msg.team;
     if (!p || (team !== 'red' && team !== 'blue')) return;
     p.team = team;
+    broadcast(room);
+  });
+
+  // Character maker: set/clear your look (null = back to the pixel animal).
+  socket.on('player:look', (msg) => {
+    const room = socket.data.room;
+    if (!room || socket.data.role !== 'player' || room.closed) return;
+    const p = room.players.get(socket.data.playerId);
+    if (!p) return;
+    if (msg && msg.look === null) p.look = null;
+    else { const look = cleanLook(msg && msg.look); if (!look) return; p.look = look; p.avatarImage = null; p.avatarVer = 0; }
     broadcast(room);
   });
 
@@ -540,7 +559,7 @@ io.on('connection', (socket) => {
     if (p.lastReact && now - p.lastReact < 600) return;
     p.lastReact = now;
     if (room.hostSocket && room.hostSocket.connected) {
-      room.hostSocket.emit('room:reaction', { playerId: p.id, nickname: p.nickname, avatar: p.avatar, drawn: p.avatarVer || 0, emoji });
+      room.hostSocket.emit('room:reaction', { playerId: p.id, nickname: p.nickname, avatar: p.avatar, drawn: p.avatarVer || 0, look: p.look || null, emoji });
     }
   });
 

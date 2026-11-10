@@ -1,7 +1,6 @@
 /* Rumpus player (phone) view — renderer of room:stateUpdate. AGPLv3, see LICENSE. */
 'use strict';
 
-/** @typedef {{ isEmpty(): boolean, toDataURL(size?: number): string, clear(): void }} DrawPad */
 
 const { esc, store, countdown, games, sprites, morph, playerImg , hit } = window.Rumpus;
 const socket = io();
@@ -16,6 +15,17 @@ const nickInput = /** @type {HTMLInputElement} */ (document.getElementById('nick
 const banner = document.getElementById('banner');
 const leaveBtn = document.getElementById('leave-btn');
 const reactBar = document.getElementById('react-bar');
+
+// Text size (accessibility): 100% → 120% → 140%, remembered on this phone.
+const SIZES = [1, 1.2, 1.4];
+let sizeIx = Math.max(0, SIZES.indexOf(Number(store('rumpus.textSize')) || 1));
+const applySize = () => document.body.style.setProperty('--phone-scale', String(SIZES[sizeIx]));
+applySize();
+document.getElementById('text-size').addEventListener('click', () => {
+  sizeIx = (sizeIx + 1) % SIZES.length;
+  store('rumpus.textSize', SIZES[sizeIx]);
+  applySize();
+});
 const avatarPick = document.getElementById('avatar-pick');
 
 window.Rumpus.background(document.getElementById('bg'), { fps: 4 });
@@ -30,18 +40,21 @@ function avatarGrid(selected, taken = new Set()) {
 }
 avatarPick.innerHTML = avatarGrid(myAvatar);
 
-// --- draw-your-own profile picture (default) or pick an animal -------------
-let avatarMode = store('rumpus.avatarMode') || 'draw';
-/** @type {DrawPad | null} */
-let joinPad = null;
-const avatarDraw = document.getElementById('avatar-draw');
+// --- make your character (default) or pick an animal ----------------------
+const maker = window.Rumpus.avatarMaker;
+let myLook = store('rumpus.look') || maker.random();
+let avatarMode = store('rumpus.avatarMode') === 'pick' ? 'pick' : 'make';
+const avatarMake = document.getElementById('avatar-make');
+maker.editor(avatarMake, myLook, (l) => { myLook = l; store('rumpus.look', l); });
 function setAvatarMode(mode) {
   avatarMode = mode;
   store('rumpus.avatarMode', mode);
-  /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.avatar-mode [data-mode]')).forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
-  avatarDraw.hidden = mode !== 'draw';
+  /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.avatar-mode [data-mode]')).forEach((b) => {
+    b.classList.toggle('on', b.dataset.mode === mode);
+    b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+  });
+  avatarMake.hidden = mode !== 'make';
   avatarPick.hidden = mode !== 'pick';
-  if (mode === 'draw' && !joinPad) joinPad = window.Rumpus.drawPad(avatarDraw);
 }
 document.querySelector('.avatar-mode').addEventListener('click', (e) => {
   const b = hit(e.target, '[data-mode]');
@@ -49,12 +62,11 @@ document.querySelector('.avatar-mode').addEventListener('click', (e) => {
 });
 setAvatarMode(avatarMode);
 
-// Redraw from the lobby.
+// Edit your character from the lobby.
 const lobbyDraw = document.getElementById('lobby-draw');
-/** @type {DrawPad | null} */
-let lobbyPad = null;
+let lobbyMakerReady = false;
 document.getElementById('lobby-draw-save').addEventListener('click', () => {
-  if (lobbyPad && !lobbyPad.isEmpty()) socket.emit('player:drawAvatar', { image: lobbyPad.toDataURL(128) });
+  socket.emit('player:look', { look: myLook });
   lobbyDraw.hidden = true;
 });
 avatarPick.addEventListener('click', (e) => {
@@ -67,7 +79,8 @@ avatarPick.addEventListener('click', (e) => {
 
 // --- reactions ----------------------------------------------------------------
 const REACTIONS = ['😂', '🔥', '💀', '👏', '😱', '🤮', '😍', '🍆', '🍑', '🍻', '🙄', '🤡'];
-reactBar.innerHTML = REACTIONS.map((r) => `<button data-react="${r}">${r}</button>`).join('');
+const REACT_NAMES = { '😂': 'laughing', '🔥': 'fire', '💀': 'dead', '👏': 'applause', '😱': 'shocked', '🤮': 'gross', '😍': 'love it', '🍆': 'eggplant', '🍑': 'peach', '🍻': 'cheers', '🙄': 'eye roll', '🤡': 'clown' };
+reactBar.innerHTML = REACTIONS.map((r) => `<button data-react="${r}" aria-label="React: ${REACT_NAMES[r] || r}">${r}</button>`).join('');
 reactBar.addEventListener('click', (e) => {
   const b = hit(e.target, '[data-react]');
   if (!b) return;
@@ -101,7 +114,7 @@ gameView.addEventListener('click', (e) => {
   const av = hit(e.target, '.lobby-pick [data-avatar]');
   if (av && !av.disabled) {
     store('rumpus.avatar', +av.dataset.avatar);
-    socket.emit('player:drawAvatar', { image: null }); // back to the pixel animal
+    socket.emit('player:look', { look: null }); // back to the pixel animal
     socket.emit('player:avatar', { avatar: +av.dataset.avatar });
     return;
   }
@@ -109,8 +122,7 @@ gameView.addEventListener('click', (e) => {
   if (tb) { socket.emit('player:team', { team: tb.dataset.team }); return; }
   if (hit(e.target, '[data-lobby-draw]')) {
     lobbyDraw.hidden = false;
-    if (!lobbyPad) lobbyPad = window.Rumpus.drawPad(document.getElementById('lobby-pad'));
-    else lobbyPad.clear();
+    if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-pad'), myLook, (l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
     lobbyDraw.scrollIntoView({ behavior: 'smooth' });
     return;
   }
@@ -132,7 +144,7 @@ joinForm.addEventListener('submit', (e) => {
   store('rumpus.nick', nickInput.value.trim());
   socket.emit('player:joinRoom', {
     code: codeInput.value, nickname: nickInput.value, avatar: myAvatar,
-    drawing: avatarMode === 'draw' && joinPad && !joinPad.isEmpty() ? joinPad.toDataURL(128) : undefined,
+    look: avatarMode === 'make' ? myLook : undefined,
   });
 });
 
@@ -288,7 +300,7 @@ function render() {
       <p>Watch the TV — the host is picking a game.</p>
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
       <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
-      <button class="ghost-btn" data-lobby-draw>✏️ Draw my own picture</button>
+      <button class="ghost-btn" data-lobby-draw>🧑 Edit my character</button>
       ${state.settings && state.settings.teams ? (() => {
         const mineTeam = (state.players.find((p) => p.id === me.playerId) || {}).team;
         const other = mineTeam === 'red' ? 'blue' : 'red';

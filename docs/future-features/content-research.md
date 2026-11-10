@@ -1,4 +1,18 @@
-# Content enrichment from real sources (requested, queued after Teams)
+# Content enrichment from real sources — status: in progress
+
+**Done:** Wikidata (CC0) facts for Closest Guess & Fib Finder with on-screen sources;
+item telemetry that retires skipped items and items with no discrimination (IRT);
+benign-violation filter; brutal quality cut (no OpenTDB "hard" items, no negatively
+worded / all-of-the-above / long stems, OpenTriviaQA numbers dropped as too obscure).
+
+Research used:
+- Prakash et al., *Mining Interesting Trivia for Entities from Wikipedia*, IJCAI 2015 — https://arxiv.org/pdf/1510.03025
+- Korn et al., *Automatically Generating Interesting Facts from Wikipedia Tables*, SIGMOD 2019 — https://research.google/pubs/automatically-generating-interesting-facts-from-wikipedia-tables/
+- Item response theory (difficulty / discrimination) — https://en.wikipedia.org/wiki/Item_response_theory
+- *The Impact of Item-Writing Flaws on Difficulty and Discrimination in IRT* (2025) — https://arxiv.org/html/2503.10533v3
+- McGraw & Warren, *Benign Violations: Making Immoral Behavior Funny*, 2010 — https://leeds-faculty.colorado.edu/mcgrawp/pdf/mcgraw.warren.2010.pdf
+
+# Original plan
 
 Goal: every game's questions/prompts come from **sources** (open data, open-licensed text,
 public-domain material), chosen and filtered using **research on what makes a good question**,

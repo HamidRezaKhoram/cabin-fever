@@ -22,6 +22,7 @@ interface Player {
   connected: boolean;
   avatar: number;
   team?: 'red' | 'blue' | null;
+  look?: Record<string, number> | null;
   avatarImage?: string | null;
   avatarVer?: number;
   dropTimer?: NodeJS.Timeout | null;
@@ -70,6 +71,9 @@ interface GameLike {
   subject?: string;
   skippablePhases?: string[];
   noPaceVotes?: boolean;
+  /** Content pool + item currently on screen (for skip/answer telemetry). */
+  poolName?: string;
+  item?: { id?: string; src?: string } | null;
   start(): void;
   destroy(): void;
   skip(): void;

@@ -28,14 +28,12 @@ let lastAwards = [];
 
 const scene = window.Rumpus.background(document.getElementById('bg'), { fps: 12 });
 let sidebarTimer = null;
-let sidebarPlayers = 0;
-/** Show the player sidebar, then tuck it away after 10 s while a game is running. */
+let rosterKey = '';
+/** In a game the player strip is hidden; flash it for 5 s when someone joins, leaves or reconnects. */
 function peekSidebar() {
-  document.body.classList.remove('sidebar-min');
+  document.body.classList.add('sidebar-peek');
   clearTimeout(sidebarTimer);
-  sidebarTimer = setTimeout(() => {
-    if (state && !['lobby', 'gameover'].includes(state.phase)) document.body.classList.add('sidebar-min');
-  }, 10000);
+  sidebarTimer = setTimeout(() => document.body.classList.remove('sidebar-peek'), 5000);
 }
 
 // --- press start (unlocks audio) -----------------------------------------------
@@ -146,7 +144,7 @@ socket.on('host:replaced', () => {
 });
 socket.on('room:stateUpdate', (msg) => { state = msg; window.Rumpus.setState(msg); render(); });
 socket.on('room:reaction', (r) => {
-  fx.reaction(esc(r.emoji), playerUrl({ id: r.playerId, avatar: r.avatar, drawn: r.drawn }), esc(r.nickname));
+  fx.reaction(esc(r.emoji), playerUrl({ id: r.playerId, avatar: r.avatar, drawn: r.drawn, look: r.look }), esc(r.nickname));
   sfx.pop();
 });
 socket.on('disconnect', () => document.body.classList.add('offline'));
@@ -451,12 +449,11 @@ function render() {
   // (it pops back for 10 s whenever someone new joins).
   const wasInGame = document.body.classList.contains('in-game');
   document.body.classList.toggle('in-game', inGame);
-  if (inGame && !wasInGame) peekSidebar();
-  if (!inGame) { clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-min'); }
-  // Someone arrived (new join or a reconnect) → show the sidebar for 10 s.
-  const connectedNow = state.players.filter((p) => p.connected).length;
-  if (inGame && connectedNow > sidebarPlayers) peekSidebar();
-  sidebarPlayers = connectedNow;
+  if (!inGame || !wasInGame) { clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
+  // Someone joined, left or (re)connected → flash the player strip for 5 s.
+  const roster = state.players.map((p) => p.id + (p.connected ? '+' : '-')).sort().join(',');
+  if (inGame && wasInGame && roster !== rosterKey) peekSidebar();
+  rosterKey = roster;
   controls.hidden = !inGame;
   const pc = state.pace || { counts: {}, need: 0 };
   const paceTxt = ['skipq', 'hurry', 'ready'].filter((k) => pc.counts[k]).map((k) =>
@@ -558,6 +555,10 @@ function render() {
     layoutStage();
   }
   updateTimerBar(inGame ? g.endsAt : null);
+  // Content attribution for sourced questions (Wikidata, Open Trivia DB, …).
+  const srcEl = document.getElementById('source-line');
+  srcEl.hidden = !(inGame && g.source);
+  if (inGame && g.source && srcEl.textContent !== 'Source: ' + g.source) srcEl.textContent = 'Source: ' + g.source;
   if (!wiping) countdown(g.endsAt, '.timer', tick);
 }
 
@@ -566,12 +567,19 @@ function layoutStage() {
   const inGame = state && !['lobby', 'gameover'].includes(state.phase);
   phaseView.classList.toggle('in-game', !!inGame);
   if (!inGame) return;
-  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = h.dataset.fit || '0.12,3'; });
+  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = h.dataset.fit || '0.13,4'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.vs-card')).forEach((c) => { c.dataset.fit = '0.07,5'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.big-answer')).forEach((c) => { c.dataset.fit = '0.12,2'; });
   fitAll(phaseView);
 }
 window.addEventListener('resize', () => layoutStage());
+// Refit when the stage changes size (sidebar sliding away, fonts loading, …).
+let lastStageW = 0;
+new ResizeObserver(() => {
+  const w = phaseView.clientWidth;
+  if (Math.abs(w - lastStageW) > 4) { lastStageW = w; layoutStage(); }
+}).observe(phaseView);
+if (document.fonts) document.fonts.ready.then(() => layoutStage());
 
 function tick(left) {
   if (left > 0 && left <= 5) sfx.tick();
