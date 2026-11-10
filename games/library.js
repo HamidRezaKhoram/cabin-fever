@@ -23,6 +23,51 @@ const HISTORY_FILE = path.join(DATA_DIR, 'history.json');
 const SPICY_SHARE = parseFloat(process.env.RUMPUS_SPICY_SHARE || '0.3');
 const HISTORY_CAP = 20000;
 
+const STATS_FILE = path.join(DATA_DIR, 'item-stats.json');
+/** Per-item play telemetry → item-response-theory-style quality signal.
+ * @type {Record<string, Record<string, { skips?: number, answers?: number, correct?: number }>>} */
+let itemStats = {};
+try { itemStats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8')); } catch (e) { itemStats = {}; }
+let statsTimer = null;
+function saveStats() {
+  if (statsTimer) return;
+  statsTimer = setTimeout(() => {
+    statsTimer = null;
+    try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STATS_FILE, JSON.stringify(itemStats)); } catch (e) { /* best effort */ }
+  }, 1500);
+  if (statsTimer.unref) statsTimer.unref();
+}
+/** @param {string} pool @param {string} id */
+function statFor(pool, id) {
+  const p = itemStats[pool] || (itemStats[pool] = {});
+  return p[id] || (p[id] = {});
+}
+/** A majority voted to skip this item → it's retired. @param {string} pool @param {string} id */
+function recordSkip(pool, id) { const s = statFor(pool, id); s.skips = (s.skips || 0) + 1; saveStats(); }
+/** @param {string} pool @param {string} id @param {number} correct @param {number} answers */
+function recordAnswers(pool, id, correct, answers) {
+  if (!answers) return;
+  const s = statFor(pool, id);
+  s.answers = (s.answers || 0) + answers;
+  s.correct = (s.correct || 0) + correct;
+  saveStats();
+}
+/**
+ * Retire items that tell players apart badly (IRT: low discrimination) — almost
+ * everyone right or almost everyone wrong after enough answers — or that a
+ * majority voted to skip. @param {string} pool @param {string} id
+ */
+function retired(pool, id) {
+  const s = itemStats[pool] && itemStats[pool][id];
+  if (!s) return false;
+  if ((s.skips || 0) >= 1) return true;
+  if ((s.answers || 0) >= 8) {
+    const rate = (s.correct || 0) / s.answers;
+    return rate > 0.95 || rate < 0.05;
+  }
+  return false;
+}
+
 const pools = new Map();
 let history = {};
 try { history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch (e) { history = {}; }
@@ -126,8 +171,11 @@ function pickFrom(name, candidates, exclude) {
 function draw(name, n = 1, opts = {}) {
   const pool = load(name);
   const filt = opts.filter || (() => true);
-  const fam = pool.family.filter(filt);
-  const adult = opts.spicy ? pool.adult.filter(filt) : [];
+  const ok = (/** @type {PoolItem} */ x) => filt(x) && !retired(name, x.id);
+  let fam = pool.family.filter(ok);
+  let adult = opts.spicy ? pool.adult.filter(ok) : [];
+  // Never let retirement empty a pool: fall back to everything if too few remain.
+  if (fam.length + adult.length < n) { fam = pool.family.filter(filt); adult = opts.spicy ? pool.adult.filter(filt) : []; }
   const out = [];
   const taken = new Set();
   const s = seen(name);
@@ -162,4 +210,4 @@ function stats() {
   return out;
 }
 
-module.exports = { draw, drawOne, load, stats };
+module.exports = { draw, drawOne, load, stats, recordSkip, recordAnswers, retired };

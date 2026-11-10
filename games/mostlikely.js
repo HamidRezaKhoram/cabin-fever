@@ -57,6 +57,8 @@ class MostLikelyGame extends BaseGame {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
     const item = library.drawOne('mostlikely', { spicy: this.spicy() });
+    this.poolName = 'mostlikely';
+    this.item = item;
     this.prompt = item ? item.text : BUILTIN[this.round % BUILTIN.length];
     this.spicyRound = !!(item && item.a);
     this.votes = new Map(); // voter -> target

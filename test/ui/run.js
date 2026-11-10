@@ -77,12 +77,11 @@ async function check(name, fn) {
       await p.goto(`${BASE}/play?code=${code}&debug=1`);
       assert.strictEqual(await p.inputValue('#code-input'), code);
       if (i === 0) {
-        // Default: draw your own profile picture.
-        assert.strictEqual(await p.isVisible('#avatar-draw canvas'), true, 'draw mode is the default');
-        const box = await (await p.$('#avatar-draw canvas')).boundingBox();
-        await p.mouse.move(box.x + 20, box.y + 20); await p.mouse.down();
-        for (let k = 0; k < 8; k++) await p.mouse.move(box.x + 20 + k * 20, box.y + 20 + k * 15);
-        await p.mouse.up();
+        // Default: the character maker. Change a few parts.
+        assert.strictEqual(await p.isVisible('#avatar-make .maker-preview'), true, 'character maker is the default');
+        await p.click('#avatar-make [data-part="hat"][data-step="1"]');
+        await p.click('#avatar-make [data-part="glasses"][data-step="1"]');
+        await p.click('#avatar-make [data-random]');
       } else {
         await p.click('.avatar-mode [data-mode="pick"]');
         await p.click(`#avatar-pick [data-avatar="${i + 2}"]`);
@@ -104,9 +103,10 @@ async function check(name, fn) {
     await tv.waitForFunction(() => document.querySelectorAll('#player-list li').length === 3);
     const avatars = await tv.$$eval('.lobby-crew img', (els) => els.map((e) => e.src));
     assert.strictEqual(avatars.length, 3);
-    assert.ok(avatars.some((src) => /\/avatar\/[A-Z]{4}\//.test(src)), 'the drawn picture shows on the TV');
-    const drawnOk = await tv.evaluate(() => [...document.querySelectorAll('.lobby-crew img.drawn')].every((i) => i.complete && i.naturalWidth > 0));
-    assert.ok(drawnOk, 'drawn picture loads');
+    const looks = await tv.evaluate(() => (window.__lastPlayers = null, [...document.querySelectorAll('.lobby-crew img')].length));
+    assert.strictEqual(looks, 3);
+    const hasLook = await phones[0].evaluate(() => !!JSON.parse(localStorage.getItem('rumpus.look') || 'null'));
+    assert.ok(hasLook, 'the made character is saved on the phone');
     await shot(phones[0], '03-phone-lobby');
   });
 
@@ -172,11 +172,14 @@ async function check(name, fn) {
   });
 
   await check('TV fills the screen: the prompt is big (10-foot rule) and content is vertically centred', async () => {
+    await tv.waitForTimeout(1500); // let the screen wipe + layout settle
     const m = await tv.evaluate(() => {
       const h = document.querySelector('#phase-view h1.prompt');
       const pv = document.getElementById('phase-view');
-      return { font: parseFloat(getComputedStyle(h).fontSize), vh: innerHeight, inGame: pv.classList.contains('in-game') };
+      return { font: parseFloat(getComputedStyle(h).fontSize), vh: innerHeight, inGame: pv.classList.contains('in-game'),
+        diag: { fit: h.dataset.fit, style: h.getAttribute('style'), cw: h.clientWidth, sw: h.scrollWidth, sh: h.scrollHeight, text: h.textContent.slice(0, 60) } };
     });
+    console.log('    fill diag:', JSON.stringify(m.diag));
     assert.ok(m.inGame, 'stage layout active');
     assert.ok(m.font >= m.vh * 0.05, `prompt font ${m.font}px is under 5% of screen height (${m.vh}px)`);
   });
@@ -215,10 +218,10 @@ async function check(name, fn) {
     assert.match(src, /^data:image\/jpeg;base64,/);
   });
 
-  await check('in a game the TV switches to that game\'s look, hides join clutter, tucks the sidebar away after 10 s', async () => {
+  await check('in a game the TV switches to that game\'s look and hides the join clutter and the player strip', async () => {
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'telephone');
     assert.strictEqual(await tv.isVisible('.join-hint'), false);
-    await tv.waitForFunction(() => document.body.classList.contains('sidebar-min'), null, { timeout: 15000 });
+    assert.strictEqual(await tv.isVisible('#sidebar'), false);
   });
 
   await check('Minigame Mayhem on real phones: tapping registers on the TV', async () => {
@@ -241,16 +244,18 @@ async function check(name, fn) {
     await shot(tv, '08-minigame-result');
   });
 
-  await check('someone (re)joining mid-game brings the sidebar back', async () => {
+  await check('the player strip flashes for 5 s when someone leaves or reconnects mid-game', async () => {
     tv.once('dialog', (d) => d.accept());
     await tv.click('[data-act="end"]');
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-game-id="closest"]');
     await tv.waitForFunction(() => document.body.classList.contains('in-game'));
-    await phones[2].evaluate(() => Rumpus.debugSocket.disconnect());
-    await tv.waitForFunction(() => document.body.classList.contains('sidebar-min'), null, { timeout: 15000 });
-    await phones[2].reload(); // reconnects with the saved seat token
-    await tv.waitForFunction(() => !document.body.classList.contains('sidebar-min'), null, { timeout: 10000 });
+    assert.strictEqual(await tv.isVisible('#sidebar'), false);
+    await phones[2].evaluate(() => Rumpus.debugSocket.disconnect()); // someone drops → strip flashes
+    await tv.waitForSelector('#sidebar', { state: 'visible', timeout: 5000 });
+    await tv.waitForSelector('#sidebar', { state: 'hidden', timeout: 8000 }); // gone again after ~5 s
+    await phones[2].reload(); // reconnects with the saved seat token → flashes again
+    await tv.waitForSelector('#sidebar', { state: 'visible', timeout: 8000 });
   });
 
   await check('TV reload resumes the same room', async () => {

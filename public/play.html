@@ -12,7 +12,8 @@
   <header class="playbar">
     <span class="brand small">RUMPUS</span>
     <span id="me-tag"></span>
-    <span id="phone-timer" class="timer"></span>
+    <span id="phone-timer" class="timer" aria-hidden="true"></span>
+    <button id="text-size" class="link-btn" aria-label="Change text size">Aa</button>
     <button id="leave-btn" class="link-btn" hidden>Leave</button>
   </header>
   <div id="banner" class="banner" hidden></div>
@@ -28,20 +29,20 @@
         <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Your name" required>
         <label>Your profile picture</label>
         <div class="avatar-mode">
-          <button type="button" data-mode="draw">✏️ Draw yourself</button>
+          <button type="button" data-mode="make">🧑 Make your character</button>
           <button type="button" data-mode="pick">🐾 Pick an animal</button>
         </div>
-        <div id="avatar-draw" class="avatar-draw"></div>
+        <div id="avatar-make" class="avatar-make"></div>
         <div id="avatar-pick" class="avatar-pick"></div>
         <button type="submit">Join</button>
       </form>
       <p id="join-error" class="error"></p>
     </section>
 
-    <section id="game-view" hidden></section>
-    <section id="lobby-draw" class="lobby-draw" hidden>
+    <section id="game-view" hidden aria-live="polite"></section>
+    <section id="lobby-draw" class="lobby-draw" hidden aria-label="Edit your character">
       <div id="lobby-pad"></div>
-      <button id="lobby-draw-save" class="wide">Use this picture</button>
+      <button id="lobby-draw-save" class="wide">Save my character</button>
     </section>
     <div id="pace-bar" class="pace-bar" hidden></div>
   </main>
@@ -53,6 +54,7 @@
   <script src="/common.js"></script>
   <script src="/clock.js"></script>
   <script src="/sprites.js"></script>
+  <script src="/avatar-maker.js"></script>
   <script src="/bg.js"></script>
   <script src="/draw.js"></script>
   <script src="/games.js"></script>

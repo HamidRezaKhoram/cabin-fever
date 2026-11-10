@@ -67,6 +67,8 @@ class MajorityGame extends BaseGame {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
     const item = library.drawOne('majority', { spicy: this.spicy() });
+    this.poolName = 'majority';
+    this.item = item;
     this.prompt = item ? item.text : BUILTIN[this.round % BUILTIN.length];
     this.answers = new Map(); // id -> text
     this.result = null;

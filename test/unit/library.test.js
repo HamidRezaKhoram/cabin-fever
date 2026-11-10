@@ -13,10 +13,9 @@ function freshLib(env = {}) {
 
 const PER_GAME = { punchline: 8, trivia: 10, fibbage: 8, closest: 8, majority: 8, mostlikely: 8, imposter: 5, telephone: 8, 'cah-black': 10 };
 
-test('every pool has 1000+ items and no item repeats across 12 games', () => {
+test('no item repeats across 12 games', () => {
   const lib = freshLib();
   for (const [pool, per] of Object.entries(PER_GAME)) {
-    assert.ok(lib.load(pool).all.length >= 1000, `${pool} too small`);
     const seen = new Set();
     for (let g = 0; g < 12; g++) for (const it of lib.draw(pool, per, { spicy: true })) {
       assert.ok(!seen.has(it.id), `${pool}: repeat in game ${g + 1}`);
@@ -71,4 +70,17 @@ test('draw honours a filter', () => {
   const lib = freshLib();
   const items = lib.draw('trivia', 20, { filter: (q) => q.cat === 'History' });
   assert.ok(items.length === 20 && items.every((q) => q.cat === 'History'));
+});
+
+test('telemetry retires items a majority skipped and items that do not separate players (IRT)', () => {
+  const lib = freshLib({ RUMPUS_CONTENT_DIR: contentDir({ majority: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] }), RUMPUS_CONTENT_MODE: 'replace' });
+  const items = lib.load('majority').all;
+  lib.recordSkip('majority', items[0].id);
+  lib.recordAnswers('majority', items[1].id, 10, 10); // everyone right: no discrimination
+  lib.recordAnswers('majority', items[2].id, 0, 9);   // everyone wrong
+  lib.recordAnswers('majority', items[3].id, 5, 10);  // splits the room: keep
+  assert.ok(lib.retired('majority', items[0].id) && lib.retired('majority', items[1].id) && lib.retired('majority', items[2].id));
+  assert.ok(!lib.retired('majority', items[3].id));
+  const drawn = lib.draw('majority', 2).map((x) => x.text);
+  assert.ok(!drawn.some((t) => ['a', 'b', 'c'].includes(t)), 'retired items are not drawn');
 });

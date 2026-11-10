@@ -64,6 +64,8 @@ class ClosestGame extends BaseGame {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
     this.q = library.drawOne('closest', { spicy: this.spicy() }) || BUILTIN[this.round % BUILTIN.length];
+    this.poolName = 'closest';
+    this.item = this.q;
     this.guesses = new Map();
     this.result = null;
     this.phase = 'cg-guess';
@@ -106,9 +108,9 @@ class ClosestGame extends BaseGame {
 
   hostView() {
     if (this.phase === 'cg-guess') {
-      return { question: this.q.q, unit: this.q.unit || '', submittedCount: this.guesses.size, totalPlayers: this.room.players.size };
+      return { question: this.q.q, unit: this.q.unit || '', submittedCount: this.guesses.size, totalPlayers: this.room.players.size, source: this.q.src || null };
     }
-    return { question: this.q.q, result: this.result };
+    return { question: this.q.q, result: this.result, source: this.q.src || null };
   }
 
   playerOnly(id) {
