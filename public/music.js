@@ -269,7 +269,12 @@
   function ensure() {
     if (ctx) return ctx;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    // Limiter on the master output: peaks get compressed instead of clipping into harsh distortion.
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -10; limiter.knee.value = 10; limiter.ratio.value = 12;
+    limiter.attack.value = 0.003; limiter.release.value = 0.25;
+    limiter.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = 0.8; master.connect(limiter);
     duckGain = ctx.createGain(); duckGain.gain.value = 1; duckGain.connect(master);
     musicBus = ctx.createGain(); musicBus.gain.value = musicVol * musicVol; musicBus.connect(duckGain);
     sfxBus = ctx.createGain(); sfxBus.gain.value = sfxVol * sfxVol; sfxBus.connect(master);
@@ -407,6 +412,7 @@
     const tr = track(cue, nextIndex(cue));
     decks.forEach((d) => fadeOut(d, tr.once ? 0.3 : 0.9));
     currentCue = cue;
+    plays++;
     const deck = newDeck(tr, () => {
       // One-shots hand over to the follow-up cue (or the last requested one).
       const follow = pendingCue || then || afterOnce;
@@ -436,6 +442,8 @@
   const TARGET_RMS = 0.1;
   let normGain = null;
   let loopsLeft = 0;
+  let plays = 0;                 // how many track plays have started (status/tests)
+  const badTracks = new Set();   // files that failed to load are skipped
   /** @param {string} src @returns {Promise<number>} */
   async function loudnessGain(src) {
     const key = 'rumpus.loud:' + src;
@@ -447,7 +455,7 @@
       for (let i = 0; i < d.length; i += 31) { const x = d[i]; if (Math.abs(x) > 0.001) { sum += x * x; n++; } } // skip silence
     }
     const rms = n ? Math.sqrt(sum / n) : TARGET_RMS;
-    const g = Math.min(3, Math.max(0.25, TARGET_RMS / rms));
+    const g = Math.min(2, Math.max(0.25, TARGET_RMS / rms)); // capped so quiet files can't be boosted into clipping
     try { localStorage.setItem(key, String(g)); } catch (e) { /* ignore */ }
     return g;
   }
@@ -464,9 +472,17 @@
       // Route through the same bus as the chiptunes: one volume slider, same ducking.
       normGain = ctx.createGain();
       ctx.createMediaElementSource(customAudio).connect(normGain).connect(musicBus);
+      // A broken/missing file must never leave silence: skip it and pick another.
+      customAudio.addEventListener('error', () => {
+        if (!customCue) return;
+        badTracks.add(customAudio.dataset.src || '');
+        const rest = (customFor(customCue) || []).filter((u) => !badTracks.has(u));
+        if (rest.length) playCustom(customCue, rest, customAudio.dataset.then || undefined);
+        else { const cue = customCue; customCue = null; currentCue = null; startCue(cue); }
+      });
       customAudio.addEventListener('ended', () => {
         if (!customCue) return;
-        if (loopsLeft > 0 && customAudio.dataset.once !== '1') { loopsLeft--; customAudio.currentTime = 0; customAudio.play().catch(() => {}); return; }
+        if (loopsLeft > 0 && customAudio.dataset.once !== '1') { loopsLeft--; plays++; customAudio.currentTime = 0; customAudio.play().catch(() => {}); return; }
         if (customAudio.dataset.once === '1') {
           const follow = pendingCue || customAudio.dataset.then || 'menu';
           pendingCue = null;
@@ -476,8 +492,11 @@
         } else playCustom(customCue, customFor(customCue));
       });
     }
-    const src = list[Math.floor(Math.random() * list.length)];
+    const pool = list.filter((u) => !badTracks.has(u));
+    const src = (pool.length ? pool : list)[Math.floor(Math.random() * (pool.length || list.length))];
     customAudio.src = src;
+    customAudio.dataset.src = src;
+    plays++;
     customAudio.volume = 1;
     customAudio.loop = false;
     loopsLeft = MENU_FAMILY.has(cue) ? 2 : 0; // menu songs play 3× before moving on
@@ -510,15 +529,61 @@
     if (ctx.state === 'suspended') await ctx.resume();
     if (enabled) return;
     enabled = true;
-    try {
-      const cats = await (await fetch('/api/music')).json();
-      customCats = cats && !Array.isArray(cats) ? cats : {};
-    } catch (e) { customCats = {}; }
+    await loadCategories();
+    setInterval(loadCategories, 60000); // pick up newly added tracks; recover from a failed fetch
     setInterval(tickAll, 25);
+    setInterval(watchdog, 4000);
     const first = pendingCue || 'title';
     pendingCue = null;
     currentCue = null;
     play(first);
+  }
+
+  // Watchdog: whatever went wrong (stalled stream, suspended context, a missed
+  // 'ended' event), if music should be playing but isn't, restart the current cue.
+  function watchdog() {
+    if (!enabled || !ctx) return;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (customCue && customAudio) {
+      if (customAudio.paused || customAudio.ended) {
+        if (customAudio.dataset.once === '1') return; // a one-shot handles its own hand-off
+        playCustom(customCue, customFor(customCue) || []);
+      }
+      return;
+    }
+    const live = decks.some((d) => !d.stopping);
+    if (!live && currentCue) {
+      const once = CATALOG[currentCue] && CATALOG[currentCue][0].once;
+      const cue = once ? (pendingCue || afterOnce || 'menu') : currentCue;
+      pendingCue = null;
+      currentCue = null;
+      play(cue);
+    }
+  }
+
+  let catsError = '';
+  async function loadCategories() {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch('/api/music', { cache: 'no-store' });
+        const cats = await r.json();
+        customCats = cats && !Array.isArray(cats) ? cats : {};
+        catsError = '';
+        // If the current scene now has custom tracks, switch over.
+        if (currentCue && !customCue && customFor(currentCue)) { const c = currentCue; currentCue = null; play(c); }
+        return;
+      } catch (e) {
+        catsError = String(e);
+        await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+      }
+    }
+  }
+
+  function status() {
+    return { catsError,
+      cue: currentCue, custom: !!customCue, plays,
+      playing: customCue ? !!customAudio && !customAudio.paused : decks.some((d) => !d.stopping),
+    };
   }
 
   function setHurry(on) { hurry = !!on; }
@@ -536,8 +601,15 @@
   function setVolume(kind, v) {
     if (kind === 'music') musicVol = v; else sfxVol = v;
     try { localStorage.setItem('rumpus.vol', JSON.stringify({ music: musicVol, sfx: sfxVol })); } catch (e) { /* ignore */ }
-    if (musicBus) musicBus.gain.setTargetAtTime(musicVol * musicVol, ctx.currentTime, 0.05);
-    if (sfxBus) sfxBus.gain.setTargetAtTime(sfxVol * sfxVol, ctx.currentTime, 0.05);
+    // Smooth ramp (no zipper noise / clicks while dragging): cancel pending changes, glide ~80 ms.
+    const ramp = (/** @type {GainNode | null} */ node, /** @type {number} */ to) => {
+      if (!node) return;
+      const t = ctx.currentTime;
+      node.gain.cancelScheduledValues(t);
+      node.gain.setValueAtTime(node.gain.value, t);
+      node.gain.linearRampToValueAtTime(to, t + 0.08);
+    };
+    if (kind === 'music') ramp(musicBus, musicVol * musicVol); else ramp(sfxBus, sfxVol * sfxVol);
   }
 
   function sfx(fn) { if (ctx && enabled) fn(ctx.currentTime, sfxBus); }
@@ -558,7 +630,9 @@
   };
 
   window.Rumpus.music = {
-    enable, play, setVolume, setHurry, setIntensity, duck, sfx: SFX,
+    enable, play, setVolume, setHurry, setIntensity, duck, sfx: SFX, status,
+    /** Test/debug: simulate the music dying (pause without any event) — the watchdog must revive it. */
+    debugStop() { if (customAudio) customAudio.pause(); decks.forEach((d) => fadeOut(d, 0.1)); },
     customCategories: () => customCats,
     volumes: () => ({ music: musicVol, sfx: sfxVol }),
     isEnabled: () => enabled,

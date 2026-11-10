@@ -80,12 +80,11 @@ window.Rumpus = Object.assign(window.Rumpus || {}, (function () {
   // A player's picture: their own drawing if they made one, else their pixel animal.
   function playerUrl(p) {
     if (p && p.look && window.Rumpus.avatarMaker) return window.Rumpus.avatarMaker.url(p.look);
-    if (p && p.drawn && lastState) return `/avatar/${lastState.code}/${encodeURIComponent(p.id)}?v=${p.drawn}`;
     return window.Rumpus.sprites ? window.Rumpus.sprites.avatarUrl(p ? p.avatar : 0) : '';
   }
   function playerImg(p, cls = 'avatar') {
     if (!p) return '';
-    return `<img class="${cls}${p.drawn ? ' drawn' : ''}" src="${playerUrl(p)}" alt="">`;
+    return `<img class="${cls}" src="${playerUrl(p)}" alt="">`;
   }
   function av(nickname, cls = 'avatar tiny') {
     if (!lastState) return '';

@@ -4,7 +4,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const flow = require('../../games/flow');
-const { startServer, until, sleep, makeHost, makePlayer, contentDir, get, PNG } = require('../helpers');
+const { startServer, until, sleep, makeHost, makePlayer, contentDir } = require('../helpers');
 
 test('stage multipliers: first half ×1, second half ×2, final question ×3', () => {
   const sched = (n) => Array.from({ length: n }, (_, i) => flow.stage(i + 1, n));
@@ -122,24 +122,4 @@ test('escalating points across a 4-question game: ×1, ×1, ×2, ×3', async () 
     h.emit('host:skip');
   }
   await h.phase('gameover');
-});
-
-test('drawn profile pictures: sent at join, served over HTTP, junk rejected, can reset', async () => {
-  const h = await makeHost(srv);
-  const a = await makePlayer(srv, h.code, 'Artist', { drawing: PNG });
-  const b = await makePlayer(srv, h.code, 'Plain', { drawing: 'data:image/svg+xml;base64,PHN2Zz4=' });
-  await until(() => h.state.players.length === 2, 'joined');
-  const me = h.state.players.find((p) => p.nickname === 'Artist');
-  assert.strictEqual(me.drawn, 1);
-  assert.strictEqual(h.state.players.find((p) => p.nickname === 'Plain').drawn, 0);
-  const img = await get(srv.url, `/avatar/${h.code}/${me.id}`);
-  assert.strictEqual(img.status, 200);
-  assert.match(img.headers['content-type'], /image\/png/);
-  assert.strictEqual((await get(srv.url, `/avatar/${h.code}/nobody`)).status, 404);
-  b.sock.emit('player:drawAvatar', { image: 'data:image/png;base64,' + 'A'.repeat(100 * 1024) }); // too big
-  a.sock.emit('player:drawAvatar', { image: PNG });
-  await until(() => h.state.players.find((p) => p.nickname === 'Artist').drawn === 2, 'redrawn');
-  assert.strictEqual(h.state.players.find((p) => p.nickname === 'Plain').drawn, 0);
-  a.sock.emit('player:drawAvatar', { image: null });
-  await until(() => h.state.players.find((p) => p.nickname === 'Artist').drawn === 0, 'reset to animal');
 });

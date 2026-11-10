@@ -42,8 +42,7 @@ h1 { font-size: clamp(18px, 2.4vw, 34px); line-height: 1.4; margin: 0.4em 0; tex
 h2 { font-size: clamp(14px, 1.6vw, 22px); line-height: 1.5; margin: 0.5em 0; text-shadow: 2px 2px 0 var(--edge); }
 a { color: var(--accent2); }
 
-/* Pixel box: stepped corners via box-shadow */
-.px-box, .game-pick, .vote-btn, .hand-btn, .clue-list li, .chain-entry, .role, #sidebar, #topbar, .panel {
+.game-pick,.vote-btn,.hand-btn,.clue-list li,.chain-entry,.role,#sidebar,#topbar,.panel {
   box-shadow:
     0 calc(-1 * var(--px)) 0 0 var(--edge), 0 var(--px) 0 0 var(--edge),
     calc(-1 * var(--px)) 0 0 0 var(--edge), var(--px) 0 0 0 var(--edge),
@@ -335,7 +334,7 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .size.on { background: var(--accent2); }
 .size span { background: var(--ink); display: block; }
 .tool-btn { background: var(--panel2); color: var(--ink); }
-.cat-tag { display: inline-block; background: var(--purple); color: #fff; font-size: 18px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; }
+
 
 @media (max-width: 900px) {
   body.host { grid-template-columns: 1fr; grid-template-areas: "top" "stage" "side"; height: auto; }
@@ -413,8 +412,8 @@ button.game-pick:not(:disabled):hover .game-art img { animation: bob 0.6s steps(
 .avatar-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
 .avatar-mode button { background: var(--panel2); color: var(--ink); font-size: 9px; padding: 10px 6px 13px; }
 .avatar-mode button.on { background: var(--accent); color: #221a00; }
-.avatar-draw[hidden], .avatar-pick[hidden], .lobby-draw[hidden] { display: none; }
-.lobby-draw { margin-top: 14px; background: rgba(20,18,31,0.86); padding: 14px; box-shadow: 0 0 0 4px var(--edge); }
+.avatar-pick[hidden],.lobby-maker[hidden] { display: none; }
+.lobby-maker { margin-top: 14px; background: rgba(20,18,31,0.86); padding: 14px; box-shadow: 0 0 0 4px var(--edge); }
 img.avatar.drawn { background: #fff; box-shadow: 0 0 0 2px var(--edge); object-fit: cover; image-rendering: auto; }
 
 /* ---------- v6: fill the screen (10-foot UI) ----------
@@ -517,8 +516,8 @@ body.host.in-game .join-hint, body.host.in-game .qr-small, body.host.in-game .br
 body.host.in-game #topbar { padding: 4px 16px; }
 body.host.in-game .room-code { font-size: max(16px, 2.4vh); letter-spacing: 0.15em; }
 body.host.in-game .phase-view { background: rgba(10, 8, 20, 0.55); }
-body.host.sidebar-min { grid-template-columns: 1fr 0px; }
-body.host.sidebar-min #sidebar { opacity: 0; pointer-events: none; padding: 0; overflow: hidden; }
+
+
 #sidebar { transition: opacity 0.4s steps(12); }
 
 .source-line { position: fixed; right: 16px; bottom: 10px; z-index: 30; font-size: max(14px, 1.8vh); color: var(--dim); background: rgba(10, 8, 20, 0.6); padding: 2px 8px; }
@@ -546,7 +545,7 @@ body.play { --phone-scale: 1; font-size: calc(clamp(20px, 5.4vw, 30px) * var(--p
 body.play h2.prompt { font-size: calc(clamp(24px, 7vw, 34px) * var(--phone-scale)); line-height: 1.15; }
 body.play .vote-btn, body.play .hand-btn { font-size: calc(clamp(22px, 6.4vw, 32px) * var(--phone-scale)); min-height: 56px; }
 body.play button, body.play input, body.play select { min-height: 48px; }
-body.play .react-bar button, body.play .maker-arrow { min-width: 48px; }
+body.play .react-bar button { min-width: 48px; }
 #text-size { font-family: var(--pixel); font-size: 12px; min-height: 40px; min-width: 40px; }
 :focus-visible { outline: 3px solid var(--accent2) !important; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
@@ -557,18 +556,18 @@ body.play .react-bar button, body.play .maker-arrow { min-width: 48px; }
 .avatar-make[hidden] { display: none; }
 .maker { display: grid; gap: 10px; }
 .maker-preview { width: 160px; height: 160px; margin: 0 auto; image-rendering: pixelated; background: var(--panel2); box-shadow: 0 0 0 4px var(--edge); }
-.maker-rows { display: grid; gap: 6px; }
-.maker-row { display: grid; grid-template-columns: 56px 1fr 56px; gap: 6px; align-items: center; }
-.maker-arrow { background: var(--panel2); color: var(--ink); padding: 8px 0 11px; font-size: 14px; }
-.maker-label { text-align: center; font-size: calc(24px * var(--phone-scale, 1)); line-height: 1; }
-.maker-label small { display: block; font-size: 16px; color: var(--dim); }
+
+
+
+
+
 .maker-random { background: var(--accent2); color: #14121f; }
 
 /* ---------- v11: compact player strip (replaces the big sidebar) ----------
- * Lobby: a slim strip under the top bar, in normal flow — it wraps and pushes
- * content down as players join. In a game it's hidden, and flashes in as an
- * overlay for 5 s when someone joins, leaves or reconnects. */
-body.host, body.host.sidebar-min { grid-template-areas: "top" "side" "stage"; grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+ * Lobby: a slim strip under the top bar,in normal flow — it wraps and pushes
+ * content down as players join. In a game it's hidden,and flashes in as an
+ * overlay for 5 s when someone joins,leaves or reconnects. */
+body.host { grid-template-areas: "top" "side" "stage"; grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
 body.host #sidebar { grid-area: side; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 12px; overflow: visible; opacity: 1; pointer-events: auto; }
 body.host #player-list { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; overflow: visible; }
 body.host #player-list li { margin: 0; padding: 3px 8px; gap: 6px; }

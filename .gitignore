@@ -7,3 +7,4 @@ data/*.json
 # otherwise the game falls back to the small sample deck.
 games/data/cah-cards.js
 test/ui/.shots/
+test/ui/.music/

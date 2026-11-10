@@ -23,8 +23,6 @@ interface Player {
   avatar: number;
   team?: 'red' | 'blue' | null;
   look?: Record<string, number> | null;
-  avatarImage?: string | null;
-  avatarVer?: number;
   dropTimer?: NodeJS.Timeout | null;
   lastReact?: number;
 }
@@ -101,7 +99,7 @@ interface RumpusClock {
   FPS: number;
   add(fn: (frame: number) => void): () => void;
   frame(): number;
-  stats(): { fps: number; avgMs: number; maxMs: number; samples: number };
+  stats(): { fps: number; medianFps: number; avgMs: number; maxMs: number; samples: number };
   resetStats(): void;
 }
 

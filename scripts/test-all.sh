@@ -34,11 +34,21 @@ if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
 step "4/5 build image + start server"
 "$CT" build -q -t homejack:test . >/dev/null
 "$CT" rm -f homejack-test >/dev/null 2>&1 || true
-"$CT" run -d --name homejack-test --network host -e PORT=$PORT \
+# A 1-second test track in music/menu/ so the browser test can check the menu music never stops.
+python3 - "$ROOT/test/ui/.music" <<'PY'
+import math, struct, sys, wave, os
+for scene in ('title', 'menu'):
+    d = os.path.join(sys.argv[1], scene); os.makedirs(d, exist_ok=True)
+    with wave.open(os.path.join(d, 'test-beep.wav'), 'w') as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(22050)
+        w.writeframes(b''.join(struct.pack('<h', int(6000 * math.sin(2 * math.pi * 440 * i / 22050))) for i in range(22050)))
+PY
+"$CT" run -d --name homejack-test --network host -e PORT=$PORT -v "$ROOT/test/ui/.music":/app/music:ro,Z \
   -e RUMPUS_DEBUG=1 -e RUMPUS_ANSWER_MS=20000 -e RUMPUS_VOTE_MS=8000 -e RUMPUS_RESULTS_MS=5000 -e RUMPUS_REVEAL_MS=2000 \
   homejack:test >/dev/null
 trap '"$CT" rm -f homejack-test >/dev/null 2>&1 || true' EXIT
 for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
+echo "test server music: $(curl -s "http://localhost:$PORT/api/music")"
 
 step "5/5 browser tests (TV + 3 phones)"
 mkdir -p "$ROOT/test/ui/.shots"
