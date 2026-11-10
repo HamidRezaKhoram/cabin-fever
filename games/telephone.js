@@ -27,6 +27,7 @@ const VOTE_MS = parseInt(process.env.RUMPUS_TEL_VOTE_MS || '30000', 10);
 // After each chain is shown, everyone taps their favourite step (not their own): +50 to its author.
 const FAV_MS = parseInt(process.env.RUMPUS_TEL_FAV_MS || '10000', 10);
 const FAV_PTS = 50;
+const SPLIT_AT = 6;
 const MAX_IMAGE = 400 * 1024;
 
 function validImage(s) {
@@ -38,7 +39,11 @@ class TelephoneGame extends BaseGame {
     super(room, push);
     this.order = shuffle(this.playerIds());
     this.n = this.order.length;
-    this.totalRounds = this.n; // one "round" per step
+    // 6+ players: two groups pass chains among themselves, so chains stay short and
+    // the reveal comes sooner (playtest: one long chain each left people idle for 80 s).
+    this.split = this.n >= SPLIT_AT ? Math.floor(this.n / 2) : 0;
+    this.steps = this.split ? Math.min(this.split, this.n - this.split) : this.n;
+    this.totalRounds = this.steps; // one "round" per step
     this.chains = this.order.map((owner) => ({ owner, entries: [] }));
     this.doubleFinal = false;
     const ideas = library.draw('telephone', this.order.length, { spicy: this.spicy(), lang: this.room.settings.lang });
@@ -58,13 +63,16 @@ class TelephoneGame extends BaseGame {
   chainFor(id, k = this.step) {
     const j = this.order.indexOf(id);
     if (j < 0) return null;
-    return ((j - k) % this.n + this.n) % this.n;
+    if (!this.split) return ((j - k) % this.n + this.n) % this.n;
+    const start = j < this.split ? 0 : this.split;
+    const size = j < this.split ? this.split : this.n - this.split;
+    return start + ((j - start - k) % size + size) % size;
   }
 
   nextStep() {
     this.step += 1;
     this.round = this.step + 1;
-    if (this.step >= this.n) return this.beginReveal();
+    if (this.step >= this.steps) return this.beginReveal();
     this.done = new Map();
     const type = this.stepType(this.step);
     this.phase = 'tel-' + type;

@@ -94,6 +94,32 @@ test('Punchline: authors cannot vote on their own matchup; votes 100 each; SHUTO
   assert.strictEqual(r.gameState.result.sides[0].gained, 0);
 });
 
+test('Punchline: authors place side bets while the room votes (landslide +250, a lost bet never goes below 0)', async () => {
+  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
+  h.emit('host:startGame', { gameId: 'quiplash' });
+  await h.phase('answering');
+  await answerAll(ps);
+  await h.phase('voting');
+  await until(() => ps.every((p) => p.state.phase === 'voting'), 'phones voting');
+  const authors = ps.filter((p) => p.state.you.isAuthor);
+  const voters = ps.filter((p) => !p.state.you.isAuthor);
+  authors[0].submit({ bet: 'landslide' }); authors[1].submit({ bet: 'win' });
+  authors[1].submit({ bet: 'landslide' }); // only one bet
+  voters[0].submit({ bet: 'win' }); // voters can't bet
+  await until(() => authors.every((a) => a.state.you.bet), 'bets placed');
+  assert.strictEqual(authors[1].state.you.bet, 'win');
+  const placed = Object.fromEntries(authors.map((a) => [a.nickname, a.state.you.bet]));
+  for (const p of voters) p.submit({ choice: 1 });
+  const r = await h.phase('results');
+  const [s0, s1] = r.gameState.result.sides;
+  // Side 1 took every vote. Whoever bet on side 1 wins their bet; the other loses (from 0 → stays 0).
+  const win1 = placed[s1.nickname] === 'landslide' ? 250 : 100;
+  assert.strictEqual(s1.bet.won, true);
+  assert.strictEqual(score(s1.nickname), 2 * 100 + 250 + win1);
+  assert.strictEqual(s0.bet.won, false);
+  assert.strictEqual(score(s0.nickname), 0, 'a lost bet never takes you below zero');
+});
+
 test('Punchline: a missing answer forfeits the matchup', async () => {
   const s2 = await startServer({ RUMPUS_CONTENT_DIR: contentDir(POOLS), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_ANSWER_MS: '600' });
   try {
@@ -491,6 +517,23 @@ test('Doodle Telephone: chains pass to the right people, bad images rejected, no
   for (const p of ps) p.submit({ key: p.state.gameState.drawings[0].key });
   await h.phase('gameover');
   assert.strictEqual(ps.reduce((n, p) => n + score(p.nickname), 0), 600 + 50, "3 doodle votes × 200 + one favourite × 50");
+});
+
+test('Doodle Telephone with 6 players: two groups of 3, chains stay inside their group', async () => {
+  const { h, ps } = await room(['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay']);
+  h.emit('host:startGame', { gameId: 'telephone' });
+  await h.phase('tel-write');
+  await until(() => ps.every((p) => p.state && p.state.phase === 'tel-write'), 'phones writing');
+  assert.strictEqual(h.state.gameState.totalRounds, 3, '3 steps, not 6');
+  for (const p of ps) p.submit({ text: `${p.nickname} phrase` });
+  await h.phase('tel-draw');
+  await until(() => ps.every((p) => p.state.phase === 'tel-draw'), 'phones drawing');
+  // Who draws whose phrase: the "passes to" relation forms two separate 3-cycles.
+  const next = new Map(ps.map((p) => [p.state.gameState.prev.content.split(' ')[0], p.nickname]));
+  const cycle = (start) => { const seen = [start]; let x = next.get(start); while (x !== start) { seen.push(x); x = next.get(x); } return seen; };
+  const groups = new Set(ps.map((p) => cycle(p.nickname).sort().join(',')));
+  assert.strictEqual(groups.size, 2);
+  for (const g of groups) assert.strictEqual(g.split(',').length, 3);
 });
 
 // ------------------------------------------------------------------ 18+ toggle

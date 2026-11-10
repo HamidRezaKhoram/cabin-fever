@@ -24,6 +24,11 @@ const RESULTS_MS = parseInt(process.env.RUMPUS_RESULTS_MS || '7000', 10);
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_ROUNDS || '2', 10);
 const POINTS_PER_VOTE = 100;
 const SHUTOUT_BONUS = 250;
+/** Side bets an author can place on their own matchup while the room votes. */
+const SIDE_BETS = {
+  win: { label: "I'll win", win: 100, lose: 50 },
+  landslide: { label: 'Landslide (75%+)', win: 250, lose: 100 },
+};
 
 class QuiplashGame extends BaseGame {
   constructor(room, push) {
@@ -83,6 +88,13 @@ class QuiplashGame extends BaseGame {
       this.matchups[next.mi].answers[next.side] = text;
       if (this.playerIds().every((p) => this.remaining(p).length === 0)) this.startVoting();
       else this.push();
+    } else if (this.phase === 'voting' && payload.bet !== undefined) {
+      // Authors aren't idle while the room votes: a side bet on their own matchup.
+      const m = this.matchIndex == null ? undefined : this.matchups[this.matchIndex];
+      const bets = this.bets;
+      if (!m || !bets || !m.authors.includes(id) || bets.has(id) || !(payload.bet in SIDE_BETS)) return;
+      bets.set(id, payload.bet);
+      this.push();
     } else if (this.phase === 'voting') {
       const m = this.matchups[this.matchIndex];
       const c = payload.choice;
@@ -108,6 +120,8 @@ class QuiplashGame extends BaseGame {
     if (this.matchIndex >= this.matchups.length) return this.nextRound();
     const m = this.matchups[this.matchIndex];
     this.votes = new Map();
+    /** @type {Map<string, string>} author → side bet */
+    this.bets = new Map();
     // Forfeits: if one or both players didn't answer, skip straight to results.
     if (m.answers[0] == null || m.answers[1] == null || this.voters().length === 0) return this.finishMatchup();
     this.phase = 'voting';
@@ -133,9 +147,25 @@ class QuiplashGame extends BaseGame {
         nickname: this.nick(id), votes: tally[i], gained, shutout,
         pct: totalVotes ? Math.round((tally[i] / totalVotes) * 100) : 0,
         voters: [...this.votes].filter(([, c]) => c === i).map(([v]) => this.nick(v)),
+        bet: /** @type {{ kind: string, label: string, won: boolean, pts: number } | null} */ (null),
       };
     };
     const sides = [side(0), side(1)];
+    // Side bets: "I'll win" / "Landslide" (75%+ of the votes). Losses never take a score below 0.
+    const bets = this.bets || new Map();
+    sides.forEach((sd, i) => {
+      const author = /** @type {string} */ (m.authors[i]);
+      const kind = bets.get(author);
+      if (!kind) return;
+      const bet = SIDE_BETS[/** @type {keyof typeof SIDE_BETS} */ (kind)];
+      const won = kind === 'landslide' ? totalVotes > 0 && tally[i] / totalVotes >= 0.75 : tally[i] > tally[1 - i];
+      const p = this.room.players.get(author);
+      let pts;
+      if (won) pts = this.award(author, bet.win);
+      else { pts = -(p ? Math.min(p.score, bet.lose) : 0); if (p) p.score += pts; }
+      sd.bet = { kind, label: bet.label, won, pts };
+      sd.gained += pts;
+    });
     sides.forEach((sd, i) => { if (sd.shutout) stats.feat(this.room, m.authors[i], 'shutouts'); });
     const best = tally[0] === tally[1] ? -1 : tally[0] > tally[1] ? 0 : 1;
     if (best >= 0 && sides[best].votes > 0 && m.answers[best] != null) {
@@ -189,7 +219,7 @@ class QuiplashGame extends BaseGame {
     if (this.phase === 'voting') {
       return {
         gameState: { prompt: m.prompt, answers: m.answers.map((text) => ({ text })) },
-        you: { isAuthor: m.authors.includes(id), voted: this.votes.has(id) },
+        you: { isAuthor: m.authors.includes(id), voted: this.votes.has(id), bet: this.bets ? this.bets.get(id) || null : null },
       };
     }
     const mine = m.authors.indexOf(id);
