@@ -294,6 +294,7 @@ function gamePicker(label) {
         <div class="night-row">🎉 <b>Game night</b> — a playlist chosen by your phones, with a grand champion:
           ${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}</div>
         <div class="settings">
+          <a class="hl-link" href="/admin" target="_blank">⚙ House rules &amp; content</a> · <a class="hl-link" href="/highlights" target="_blank">🏆 Hall of fame</a>
           <label>Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
             ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
           <label>Timers <select id="set-timer">${opt(0.6, st.timerScale, 'Fast')}${opt(1, st.timerScale, 'Normal')}

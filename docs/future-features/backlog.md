@@ -3,7 +3,7 @@
 **Gameplay**
 - ✅ **Game-night playlist** — shipped: 3/5/7-game nights, phone votes, night points, grand champion.
 - ✅ **Persistent stats & achievements** — shipped: data/stats.json, 9 achievements, /highlights (tonight, all time, hall of fame).
-- **House rules editor** on the TV (timers per game, rounds, 18+ share slider, banned words).
+- ✅ **House rules editor** — shipped at /admin (per-game timers, 18+ share, banned words).
 - **Wagers / double-down** mechanic for Trivia, Closest, Majority (see playtest-findings.md).
 
 **Presentation**
@@ -15,7 +15,7 @@
 - ✅ Highlight reel — shipped with /highlights (best lines, lies, cards and doodles).
 
 **Content**
-- Content editor page on the TV (add/disable prompts without editing files).
+- ✅ Content editor — shipped at /admin (search, disable, add your own).
 - French (Canadian) translations of UI + a French content pack.
 - More 18+ trivia written and fact-checked (Trivia/Closest pools are ~8% / 3% adult; draw mix
   is ~30% via weighting, but bigger adult pools would reduce repeats).

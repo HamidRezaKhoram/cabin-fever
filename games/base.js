@@ -4,6 +4,8 @@
  */
 'use strict';
 
+const house = require('./house');
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -40,8 +42,9 @@ function loadContent(name, builtin) {
   return builtin;
 }
 
+/** Player text: trimmed, single-spaced, capped, house-rule banned words masked. */
 function cleanText(v, max = 120) {
-  return typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '';
+  return typeof v === 'string' ? house.mask(v.trim().replace(/\s+/g, ' ').slice(0, max)) : '';
 }
 
 /** @implements {GameLike} */
@@ -83,7 +86,8 @@ class BaseGame {
   // pass scale=false so they stay snappy.
   setTimer(ms, fn, scale = true) {
     this.clearTimer();
-    const real = Math.round(scale ? ms * (this.settings.timerScale || 1) : ms);
+    const id = /** @type {any} */ (this.constructor).meta ? /** @type {any} */ (this.constructor).meta.id : '';
+    const real = Math.round(scale ? ms * (this.settings.timerScale || 1) * house.timerFor(id) : ms);
     this.endsAt = Date.now() + real;
     this.timerFn = fn;
     // Small grace so phones that auto-submit at 0s still make it in.

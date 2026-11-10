@@ -14,13 +14,14 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const house = require('./house');
 
 const POOL_DIR = path.join(__dirname, 'data', 'pools');
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
 const DATA_DIR = process.env.RUMPUS_DATA_DIR || path.join(__dirname, '..', 'data');
 const HISTORY_FILE = path.join(DATA_DIR, 'history.json');
-// Share of picks that come from the 18+ side of a pool when spicy mode is on.
-const SPICY_SHARE = parseFloat(process.env.RUMPUS_SPICY_SHARE || '0.3');
+// Share of picks from the 18+ side of a pool when spicy mode is on: house rules (/admin).
+house.onChange(() => pools.clear()); // edits (custom prompts, banned words) apply to the next draw
 const HISTORY_CAP = 20000;
 
 const STATS_FILE = path.join(DATA_DIR, 'item-stats.json');
@@ -125,6 +126,8 @@ function load(name) {
     const e = /** @type {NodeJS.ErrnoException} */ (err);
     if (e.code !== 'ENOENT') console.warn(`[library] content/${name}.json: ${e.message}`);
   }
+  const added = (house.get().custom[name] || []).map((x) => ({ ...x, a: !!x.a }));
+  if (added.length) items = items.concat(added);
   const pool = { all: items, family: items.filter((i) => !i.a), adult: items.filter((i) => i.a) };
   pools.set(name, pool);
   return pool;
@@ -174,7 +177,7 @@ function pickFrom(name, candidates, exclude) {
 function draw(name, n = 1, opts = {}) {
   const pool = load(name);
   const filt = opts.filter || (() => true);
-  const ok = (/** @type {PoolItem} */ x) => filt(x) && !retired(name, x.id);
+  const ok = (/** @type {PoolItem} */ x) => filt(x) && !retired(name, x.id) && !house.isDisabled(name, x.id) && !house.isBanned(x);
   let fam = pool.family.filter(ok);
   let adult = opts.spicy ? pool.adult.filter(ok) : [];
   // Never let retirement empty a pool: fall back to everything if too few remain.
@@ -184,7 +187,7 @@ function draw(name, n = 1, opts = {}) {
   const s = seen(name);
   const hasFresh = (list) => list.some((x) => !s.has(x.id) && !taken.has(x.id));
   for (let i = 0; i < n; i++) {
-    const wantAdult = adult.length && (Math.random() < SPICY_SHARE || !fam.length);
+    const wantAdult = adult.length && (Math.random() < house.get().spicyShare || !fam.length);
     const [first, second] = wantAdult ? [adult, fam] : [fam, adult];
     // Unseen items from the preferred side, then unseen from the other side,
     // and only when everything has been played: the least-recently used.

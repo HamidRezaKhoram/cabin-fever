@@ -643,3 +643,13 @@ body.host.in-game.sidebar-peek #sidebar { display: flex; position: fixed; top: 5
 .hl-badges { display: flex; flex-wrap: wrap; gap: 6px; }
 .badge { background: var(--panel2); padding: 4px 8px; box-shadow: 0 0 0 2px var(--edge); }
 .hl-link { color: var(--accent); }
+/* ---------- /admin ---------- */
+.admin-page #screen { max-width: 820px; margin: 0 auto; padding: 16px; }
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; }
+.admin-grid label { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.admin-page textarea, .admin-page input:not([type]), .admin-page select { width: 100%; box-sizing: border-box; }
+.admin-items { list-style: none; padding: 0; max-height: 50vh; overflow-y: auto; }
+.admin-items li { display: flex; gap: 10px; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 2px solid var(--edge); }
+.admin-items li.off span { opacity: 0.45; text-decoration: line-through; }
+.admin-items button { font-size: 12px; padding: 6px 8px; min-height: 0; flex: none; }
+#add-form { display: grid; gap: 8px; }
