@@ -107,8 +107,8 @@ const realFetch = window.fetch.bind(window);
 window.fetch = async (input, init) => {
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href);
   const rel = url.pathname.startsWith(BASE) ? url.pathname.slice(BASE.length) : url.pathname.replace(/^\//, '');
-  // Music lists are static files in the build; every other /api call is answered here.
-  if (rel.startsWith('api/') && !rel.startsWith('api/music')) { await boot(); return api(rel, url.searchParams, init); }
+  // Music lists and the voice flag are static files in the build; every other /api call is answered here.
+  if (rel.startsWith('api/') && !rel.startsWith('api/music') && rel !== 'api/voice') { await boot(); return api(rel, url.searchParams, init); }
   return realFetch(input, init);
 };
 

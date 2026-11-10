@@ -15,7 +15,8 @@ const T = (ms) => String(Math.round(ms / SPEED));
 const { startServer, until, sleep, makeHost, makePlayer } = require('./helpers');
 const { decide, thinkMs } = require('../games/bot-brain');
 
-const GAMES = (process.env.GAMES || 'quiplash,fibbage,trivia,closest,majority,mostlikely,imposter,twotruths,telephone,cah,minigames,crush').split(',');
+// Every game the server offers unless GAMES=a,b is given (a hard-coded list went stale before).
+const GAMES = process.env.GAMES ? process.env.GAMES.split(',') : require('../core/rooms').GAME_LIST.map((/** @type {{ id: string }} */ m) => m.id);
 const NAMES = ['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus', 'Hal'].slice(0, +(process.env.PLAYERS || 4));
 
 (async () => {
