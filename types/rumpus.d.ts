@@ -50,8 +50,12 @@ interface Room {
   /** Tonight's best moments (games/stats.js). */
   /** Set on a room restored after a restart: the game that was cut short (told to the TV once). */
   interrupted?: string | null;
+  /** Phones waiting to join a role game in progress (socket id → their join message); dealt in when it ends. */
+  queue?: Map<string, { socket: any, msg: any, join: () => void }>;
   /** When the TV was last told a game error happened (core/rooms.js `glitch`, rate limit). */
   lastGlitch?: number;
+  /** A saved game to pick up when the TV is back after a restart (core/rooms.js, todo 2.1). */
+  resumeGame?: { id: string, data: any } | null;
   highlights?: { game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }[];
   /** Game night playlist (server.js) or null. */
   night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;

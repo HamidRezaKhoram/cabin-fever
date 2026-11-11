@@ -73,6 +73,27 @@ class ClosestGame extends BaseGame {
 
   start() { this.nextRound(); }
 
+  /** Where the game is, for a TV reload / server restart (core/rooms.js snapshot; todo 2.1). */
+  save() {
+    return { round: this.round, totalRounds: this.totalRounds, q: this.q, phase: this.phase, doubled: [...this.doubled] };
+  }
+  /** Pick a saved game up: the current question is asked again (fresh clock); a finished one moves on.
+   * @param {any} d */
+  resume(d) {
+    this.totalRounds = Number(d.totalRounds) || this.totalRounds;
+    this.round = Math.max(0, Number(d.round) || 0);
+    this.doubled = new Set(Array.isArray(d.doubled) ? d.doubled.map(String) : []);
+    if (d.phase !== 'cg-guess' || !d.q || typeof d.q.q !== 'string' || !Number.isFinite(Number(d.q.answer))) return this.nextRound();
+    this.q = d.q;
+    this.item = this.q;
+    this.guesses = new Map();
+    this.result = null;
+    this.doubling = new Set();
+    this.phase = 'cg-guess';
+    this.setTimer(GUESS_MS, () => this.reveal());
+    this.push();
+  }
+
   get skippablePhases() { return ['cg-guess']; }
 
   nextRound() {

@@ -16,7 +16,8 @@ const DEVICE = (() => {
   /** @type {Storage | null} */
   let tabs = null;
   try {
-    const local = new URLSearchParams(location.search).get('net') === 'local' || sessionStorage.getItem('cf.net') === 'local';
+    const net = new URLSearchParams(location.search).get('net') || sessionStorage.getItem('cf.net');
+    const local = net === 'local' || net === 'rtc-local'; // test modes: several phones in one browser
     if (local) tabs = sessionStorage;
   } catch (e) { /* storage blocked */ }
   let d = tabs ? tabs.getItem('cf.device') : store('cf.device');
@@ -253,6 +254,10 @@ socket.on('player:rejoinFailed', () => {
   store('rumpus.seat', null);
   resetJoinBtn();
   showJoin();
+});
+// A role game is on: this phone is queued and is dealt in (player:joined) when the game ends.
+socket.on('player:queued', (/** @type {any} */ msg) => {
+  joinError.textContent = `You're next! ${String(msg.game || 'A game')} is on right now — you'll join as soon as it ends. Keep this page open.`;
 });
 socket.on('player:joinError', (/** @type {any} */ msg) => {
   resetJoinBtn();

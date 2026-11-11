@@ -49,7 +49,9 @@ async function check(name, fn) {
 
 (async () => {
   await new Promise((r) => server.listen(PORT, r));
-  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+  // WebRtcHideLocalIpsWithMdns off: tabs must reach each other by plain local addresses (the speed test's
+  // real WebRTC links); in a container the .local names Chromium uses instead don't resolve.
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--disable-features=WebRtcHideLocalIpsWithMdns'] });
   const ctx = await browser.newContext(); // one browser: the tabs reach each other (?net=local)
   const errors = [];
   const watch = (p, who) => {
@@ -222,7 +224,7 @@ async function check(name, fn) {
     const before = await tv.evaluate(() => ({ code: (document.getElementById('room-code') || {}).textContent, n: new Function('return state')().players.length }));
     assert.match(before.code, /^[A-Z]{4}$/);
     assert.ok(before.n >= 2, `players in the room (${before.n})`);
-    // A game is running (the round played above): the reload interrupts it, and the page asks "leave?" first.
+    // A game is running (the round played above): the page asks "leave?" first; Closest Cast then picks up again after the reload.
     assert.ok(!['lobby', 'gameover'].includes(await tv.evaluate(() => new Function('return state')().phase)), 'mid-game');
     tv.once('dialog', (d) => d.accept());
     await tv.reload();
@@ -230,11 +232,13 @@ async function check(name, fn) {
     await tv.click('#start-overlay').catch(() => {});
     const after = await tv.evaluate(() => { const st = new Function('return state')(); return { code: st.code, phase: st.phase, names: st.players.map((p) => p.nickname).sort() }; });
     assert.strictEqual(after.code, before.code, 'same room code');
-    assert.strictEqual(after.phase, 'lobby', 'back in the lobby (the game in progress is not kept)');
+    // Closest Cast can resume (todo 2.1): it picks up at a question (or, if that was the last one, the end).
+    assert.ok(['cg-guess', 'gameover'].includes(after.phase), `the game picked up where it was (at ${after.phase})`);
     assert.strictEqual(after.names.length, before.n, 'every seat kept');
     // The phones reconnect on their own and are the same players.
     await tv.waitForFunction((n) => new Function('return state')().players.filter((p) => p.connected).length === n, before.n, { timeout: 30000 });
-    await phones[0].waitForFunction(() => /You're in|Waiting|picking a game/i.test(document.getElementById('game-view').textContent || ''), null, { timeout: 15000 });
+    // …and are back on their game screen (the resumed question, or the lobby if the game had ended).
+    await phones[0].waitForFunction(() => { const gv = document.getElementById('game-view'); return !!gv && !gv.hidden && /You're in|Waiting|picking a game|guess|closest|lock|\d/i.test(gv.textContent || ''); }, null, { timeout: 15000 });
   });
 
   await check('the fast WebRTC channel: unordered, never retransmitted, and it carries messages between two browsers\' ends', async () => {
@@ -268,6 +272,49 @@ async function check(name, fn) {
     assert.deepStrictEqual(r.props, { ordered: false, maxRetransmits: 0 });
     assert.ok(r.toB >= 15 && r.toA >= 15, `messages arrive both ways (${r.toB}, ${r.toA} of 20)`);
     assert.deepStrictEqual(r.surprise, ['peerjs-main'], 'the fast channel is not announced (PeerJS would mistake it for its own)');
+  });
+
+  await check('speed over real WebRTC links (todo 4.1): phones ↔ the TV-hosted server, round trips within budget', async () => {
+    // ?net=rtc-local: real RTCPeerConnections and data channels between the tabs (the website's
+    // path), introduced over a BroadcastChannel instead of the internet broker.
+    const tvR = await ctx.newPage();
+    watch(tvR, 'tv-rtc');
+    await tvR.goto(BASE + 'host.html?net=rtc-local');
+    await tvR.click('#start-overlay').catch(() => {});
+    await tvR.waitForFunction(() => /^[A-Z]{4}$/.test((document.getElementById('room-code') || {}).textContent || ''), null, { timeout: 15000 });
+    const rcode = await tvR.textContent('#room-code');
+    const ps = [];
+    for (const n of ['Ria', 'Sol', 'Teo']) {
+      const p = await ctx.newPage();
+      watch(p, 'phone-rtc-' + n);
+      await p.addInitScript(() => { if (!sessionStorage.getItem('cf.test')) { localStorage.removeItem('rumpus.seat'); sessionStorage.setItem('cf.test', '1'); } });
+      await p.goto(`${BASE}play.html?code=${rcode}&net=rtc-local&debug=1`);
+      await p.fill('#nick-input', n);
+      await p.click('#join-form button[type="submit"]');
+      await p.waitForSelector('#game-view:not([hidden])', { timeout: 15000 }).catch(async (e) => {
+        throw new Error(`${n} did not get in over WebRTC: "${await p.textContent('#join-error').catch(() => '?')}" (${e.message.split('\n')[0]})`);
+      });
+      ps.push(p);
+    }
+    await tvR.waitForFunction(() => new Function('return state')().players.filter((/** @type {any} */ x) => x.connected).length === 3, null, { timeout: 20000 });
+    /** Round trips from each phone at once: the phone's socket → WebRTC → the TV's server → back. */
+    const all = (await Promise.all(ps.map((p) => p.evaluate(async () => {
+      const sock = /** @type {any} */ (window).Rumpus.debugSocket;
+      /** @type {number[]} */ const out = [];
+      for (let i = 0; i < 40; i++) {
+        const t0 = performance.now();
+        await new Promise((r) => sock.emit('debug:ping', r));
+        out.push(performance.now() - t0);
+      }
+      return out;
+    })))).flat().sort((a, b) => a - b);
+    const pct = (/** @type {number} */ q) => Math.round(all[Math.min(all.length - 1, Math.floor(all.length * q))]);
+    const report = { p50: pct(0.5), p95: pct(0.95), max: Math.round(all[all.length - 1]), n: all.length };
+    console.log('  webrtc round trips (ms):', JSON.stringify(report));
+    // One machine, no network: anything slower points at the transport (JSON, heartbeat, channel setup).
+    assert.ok(report.p50 < 25 && report.p95 < 80, `round trips within budget: ${JSON.stringify(report)}`);
+    for (const p of ps) await p.close();
+    await tvR.close();
   });
 
   await check('no page errors anywhere', async () => { assert.deepStrictEqual(errors, []); });

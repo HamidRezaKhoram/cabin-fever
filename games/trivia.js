@@ -85,6 +85,47 @@ class TriviaGame {
     this.nextRound();
   }
 
+  /** Where the game is, for a TV reload / server restart (core/rooms.js snapshot; todo 2.1). */
+  save() {
+    return {
+      round: this.round, totalRounds: this.totalRounds, phase: this.phase, question: this.question, category: this.category,
+      segmentLeft: this.segmentLeft, categoryOptions: this.categoryOptions, chooserId: this.chooserId,
+      usedCategories: [...this.usedCategories], usedTopics: [...this.usedTopics], doubled: [...this.doubled], streaks: [...this.streaks],
+    };
+  }
+  /** Pick a saved game up where it was: a category pick or the current question start again with a
+   * fresh clock (answers given before the restart are gone); after a reveal, the next question.
+   * @param {any} d */
+  resume(d) {
+    const strs = (/** @type {unknown} */ a) => (Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []);
+    this.totalRounds = Number(d.totalRounds) || this.totalRounds;
+    this.round = Math.max(0, Number(d.round) || 0);
+    this.category = typeof d.category === 'string' ? d.category : null;
+    this.segmentLeft = Number(d.segmentLeft) || 0;
+    this.usedCategories = new Set(strs(d.usedCategories));
+    this.usedTopics = new Set(strs(d.usedTopics));
+    this.doubled = new Set(strs(d.doubled));
+    this.streaks = new Map(Array.isArray(d.streaks) ? d.streaks.filter((/** @type {any} */ x) => Array.isArray(x) && typeof x[0] === 'string').map((/** @type {any} */ x) => [x[0], Number(x[1]) || 0]) : []);
+    const opts = strs(d.categoryOptions);
+    if (d.phase === 'trivia-category' && opts.length >= 2) {
+      this.categoryOptions = opts;
+      this.chooserId = typeof d.chooserId === 'string' && this.room.players.has(d.chooserId) ? d.chooserId : ([...this.room.players.keys()][0] || null);
+      this.phase = 'trivia-category';
+      this.setTimer(CATEGORY_MS, () => this.pickCategory(this.rng.int(0, this.categoryOptions.length - 1), true));
+      return this.push();
+    }
+    const q = d.question;
+    if (d.phase !== 'trivia-question' || !q || typeof q.q !== 'string' || !Array.isArray(q.choices) || !Number.isInteger(q.correct)) return this.nextRound();
+    this.question = q;
+    this.item = q;
+    this.answers = new Map();
+    this.phase = 'trivia-question';
+    this.roundStartedAt = Date.now();
+    this.setTimer(QUESTION_MS, () => this.reveal());
+    this.questionWindow = Math.max(1, (this.endsAt || this.roundStartedAt + QUESTION_MS) - this.roundStartedAt);
+    this.push();
+  }
+
   destroy() {
     this.destroyed = true;
     if (this.timer) clearTimeout(this.timer);

@@ -229,6 +229,7 @@ socket.on('room:event', (/** @type {any} */ ev) => {
   // Back after a TV reload / server restart: the room and seats were kept, the game was not.
   else if (ev.type === 'interrupted') fx.banner(`WE'RE BACK!\n${String(ev.game || 'The game').toUpperCase()} was cut short — pick it again`);
   else if (ev.type === 'ready') sfx.whoosh();
+  else if (ev.type === 'resumed') fx.banner(`WE'RE BACK!\n${String(ev.game || 'The game').toUpperCase()} picks up where it left off`);
   // A game bug was caught on the server: say so rather than sit silently (see core/rooms.js glitch).
   else if (ev.type === 'glitch') { fx.banner('SOMETHING WENT WRONG!\nPress Skip — or End if it stays stuck'); sfx.boo(); }
 });
@@ -694,9 +695,14 @@ function render() {
     if (!wiping) {
       wiping = true;
       fx.wipe(() => {
-        phaseView.innerHTML = pendingHtml || '';
-        layoutStage();
-        wiping = false;
+        // Whatever happens below, the wipe is over: a throw here must not leave `wiping` set, or
+        // every later screen would queue behind it and the TV would freeze on this one.
+        try {
+          phaseView.innerHTML = pendingHtml || '';
+          layoutStage();
+        } finally {
+          wiping = false;
+        }
         countdown((state.gameState || {}).endsAt, '.timer', tick);
       });
     }
@@ -761,6 +767,12 @@ phaseView.addEventListener('load', () => {
   if (refitTimer) return;
   refitTimer = window.setTimeout(() => { refitTimer = null; layoutStage(); }, 50);
 }, true);
+/** Tests: the screen has nothing left that could change its size — no re-fit pending, fonts in,
+ * every image decoded, no screen wipe running. A screen measured then is measured as it will stay. */
+/** @type {any} */ (window).cfLayoutBusy = () => (refitTimer ? 'refit pending' : wiping ? 'wipe running'
+  : document.fonts && document.fonts.status !== 'loaded' ? 'fonts loading'
+    : [...phaseView.querySelectorAll('img')].filter((i) => !/** @type {HTMLImageElement} */ (i).complete).map((i) => 'image ' + /** @type {HTMLImageElement} */ (i).src.slice(0, 60)).join(', ') || '');
+/** @type {any} */ (window).cfLayoutIdle = () => !(/** @type {any} */ (window).cfLayoutBusy());
 
 function tick(/** @type {any} */ left) {
   if (left > 0 && left <= 5) sfx.tick();

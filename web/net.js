@@ -380,13 +380,86 @@ function localTransport() {
   };
 }
 
+/** Real WebRTC between tabs of one browser, with the offer/answer passed over a BroadcastChannel
+ * instead of the PeerJS broker: the same data channels (and fast channel) the website version uses,
+ * with no internet needed — for timing the browser-to-browser path in tests (`?net=rtc-local`, todo 4.1).
+ * @returns {Transport} */
+function rtcLocalTransport() {
+  /** @param {RTCDataChannel} ch @param {RTCPeerConnection} pc @returns {Wire} */
+  const wrap = (ch, pc) => {
+    /** @type {((m: Msg) => void)[]} */ const hear = [];
+    /** @type {(() => void)[]} */ const closed = [];
+    ch.onmessage = (e) => { let m; try { m = JSON.parse(String(e.data)); } catch (x) { return; } hear.forEach((f) => f(m)); };
+    ch.onclose = () => closed.forEach((f) => f());
+    const fast = fastChannel(pc, (m) => hear.forEach((f) => f(m)));
+    const send = (/** @type {Msg} */ m) => { if (ch.readyState === 'open') ch.send(JSON.stringify(m)); };
+    return {
+      send,
+      sendFast: (m) => { if (!fast || !fast.send(m)) send(m); },
+      onMessage: (f) => { hear.push(f); },
+      onClose: (f) => { closed.push(f); },
+      close: () => { if (fast) fast.close(); try { ch.close(); pc.close(); } catch (e) { /* closed */ } },
+    };
+  };
+  /** No trickle ICE: wait until this side has gathered its candidates, so the one description sent
+   * carries them all (trickled ones could arrive before the offer/answer and be lost).
+   * @param {RTCPeerConnection} pc @returns {Promise<RTCSessionDescription | null>} */
+  const gathered = (pc) => new Promise((res) => {
+    if (pc.iceGatheringState === 'complete') return res(pc.localDescription);
+    const t = setTimeout(() => res(pc.localDescription), 2000);
+    pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(pc.localDescription); } });
+  });
+  return {
+    listen(code, onConn) {
+      const bc = new BroadcastChannel(PREFIX + 'rtc-' + code);
+      /** @type {Map<string, RTCPeerConnection>} */ const pcs = new Map();
+      bc.onmessage = async (e) => {
+        const { from, to, kind, data } = e.data || {};
+        if (to !== 'tv') return;
+        if (kind === 'offer') {
+          const pc = new RTCPeerConnection();
+          pcs.set(from, pc);
+          pc.ondatachannel = (ev) => {
+            if (ev.channel.label !== 'main') return;
+            const ch = ev.channel;
+            ch.onopen = () => onConn(heartbeat(wrap(ch, pc), { revive: true }), () => linkType(pc));
+          };
+          await pc.setRemoteDescription(data);
+          await pc.setLocalDescription(await pc.createAnswer());
+          const answer = await gathered(pc);
+          bc.postMessage({ from: 'tv', to: from, kind: 'answer', data: answer && { type: answer.type, sdp: answer.sdp } });
+        }
+      };
+      return () => { bc.close(); pcs.forEach((pc) => pc.close()); };
+    },
+    connect(code, onOpen, onFail) {
+      const bc = new BroadcastChannel(PREFIX + 'rtc-' + code);
+      const me = Math.random().toString(36).slice(2);
+      const pc = new RTCPeerConnection();
+      const ch = pc.createDataChannel('main', { ordered: true });
+      let open = false;
+      const t = setTimeout(() => { if (!open) { bc.close(); pc.close(); onFail('no-room'); } }, 5000);
+      ch.onopen = () => { open = true; clearTimeout(t); bc.close(); onOpen(heartbeat(wrap(ch, pc))); };
+      bc.onmessage = (e) => {
+        const { to, kind, data } = e.data || {};
+        if (to !== me) return;
+        if (kind === 'answer' && data) void pc.setRemoteDescription(data).catch(() => {});
+      };
+      void pc.createOffer().then((o) => pc.setLocalDescription(o)).then(() => gathered(pc))
+        .then((d) => bc.postMessage({ from: me, to: 'tv', kind: 'offer', data: d && { type: d.type, sdp: d.sdp } }));
+    },
+  };
+}
+
 /** `?net=local` (remembered for this tab) picks the tab-to-tab transport; otherwise PeerJS. */
 function pickTransport() {
   let local = false;
   try {
     const q = new URLSearchParams(location.search).get('net');
     if (q) sessionStorage.setItem('cf.net', q);
-    local = (q || sessionStorage.getItem('cf.net')) === 'local';
+    const net = q || sessionStorage.getItem('cf.net');
+    if (net === 'rtc-local') return rtcLocalTransport();
+    local = net === 'local';
   } catch (e) { /* storage blocked: PeerJS */ }
   return local || !(/** @type {any} */ (window).Peer) ? localTransport() : peerTransport();
 }

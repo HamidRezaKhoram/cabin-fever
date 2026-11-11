@@ -63,14 +63,21 @@ let roomsSaved = '';
 /** @param {Room} room */
 function snapshot(room) {
   const g = room.game;
+  /** @type {unknown} */
+  let saved = null;
+  if (g && !(g instanceof NightGame) && g.phase !== 'gameover' && typeof (/** @type {any} */ (g)).save === 'function') {
+    try { saved = /** @type {any} */ (g).save(); } catch (e) { saved = null; }
+  }
   return {
     code: room.code, hostToken: room.hostToken, settings: room.settings, highlights: room.highlights || [],
     players: [...room.players.values()].filter((p) => !p.bot).map((p) => ({
       id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null,
     })),
     night: room.night ? { total: room.night.total, played: room.night.played, points: [...room.night.points] } : null,
-    // A real game was on (not the lobby, a finished game or the game-night vote).
-    interrupted: g && !(g instanceof NightGame) && g.phase !== 'gameover' ? /** @type {any} */ (g.constructor).meta.name : room.interrupted || null,
+    // A game that can be picked up again (todo 2.1: trivia, Closest Cast so far) saves where it is.
+    game: saved ? { id: /** @type {any} */ (g).constructor.meta.id, data: saved } : room.resumeGame || null,
+    // A real game was on (not the lobby, a finished game or the game-night vote) and can't resume.
+    interrupted: !saved && g && !(g instanceof NightGame) && g.phase !== 'gameover' ? /** @type {any} */ (g.constructor).meta.name : room.interrupted || null,
   };
 }
 /** @param {boolean} [force] write even if nothing changed (refreshes savedAt) */
@@ -120,6 +127,7 @@ function restoreRooms() {
       pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set(), wrap: new Set() },
       highlights: Array.isArray(s.highlights) ? s.highlights : [],
       interrupted: typeof s.interrupted === 'string' ? s.interrupted : null,
+      resumeGame: s.game && typeof s.game.id === 'string' && s.game.data ? s.game : null,
     };
     for (const sp of Array.isArray(s.players) ? s.players.slice(0, MAX_PLAYERS) : []) {
       if (!sp || typeof sp.id !== 'string' || typeof sp.token !== 'string' || typeof sp.nickname !== 'string') continue;
@@ -248,12 +256,27 @@ function sendState(sock, payload) {
   if (sock.data) sock.data.lastState = json;
   sock.emit('room:stateUpdate', payload);
 }
+/** Between games (or once a game that takes newcomers is on): deal in the phones that queued.
+ * @param {Room} room */
+function admitQueue(room) {
+  if (!room.queue || !room.queue.size) return;
+  const phase = roomPhase(room);
+  const meta = room.game ? /** @type {any} */ (room.game.constructor).meta : null;
+  if (phase !== 'lobby' && phase !== 'gameover' && !(meta && meta.lateJoin)) return;
+  const waiting = [...room.queue.values()];
+  room.queue.clear();
+  for (const q of waiting) {
+    q.socket.data.queuedIn = null;
+    if (q.socket.connected) q.join();
+  }
+}
 /** @param {Room} room */
 function flush(room) {
   if (room.closed) return;
   room.lastFlush = Date.now();
   recordStats(room);
   countNight(room);
+  admitQueue(room);
   if (DEBUG) {
     const g = room.game;
     const key = g ? [g.phase, g.round, g.matchIndex, g.skipSeq].join('/') : 'lobby';
@@ -289,7 +312,8 @@ function baseState(room) {
 
 /** What the TV gets. @param {Room} room @param {ReturnType<typeof baseState>} [base] */
 function hostPayload(room, base = baseState(room)) {
-  return { ...base, gameState: room.game ? room.game.hostGameState() : {}, canSkip: !!(room.game && room.game.timerFn) };
+  return { ...base, gameState: room.game ? room.game.hostGameState() : {}, canSkip: !!(room.game && room.game.timerFn),
+    queued: room.queue ? [...room.queue.values()].map((q) => String(q.msg.nickname || '').trim().slice(0, 16)) : [] };
 }
 
 /** What one phone gets — only its own private view. @param {Room} room @param {Player} p @param {ReturnType<typeof baseState>} [base] */
@@ -326,16 +350,21 @@ function watchGlitches(room, game) {
   game.onGlitch = (what, e) => glitch(room, what, e);
 }
 
-/** @param {Room} room @param {any} GameClass */
-function startGame(room, GameClass) {
-  if (room.game) room.game.destroy();
-  for (const p of room.players.values()) p.score = 0;
-  library.replayReset(); // RUMPUS_REPLAY=1: same seed → same questions (games/library.js)
+/** A new game object hooked up to the room (frames, glitches), now on screen. @param {Room} room @param {any} GameClass */
+function makeGame(room, GameClass) {
   const game = new GameClass(room, () => broadcast(room));
   // Real-time frames (positions at 30 Hz) go to the TV only and may be dropped when it's busy.
   game.frame = (/** @type {Record<string, any>} */ data) => { if (room.hostSocket && room.hostSocket.connected) room.hostSocket.volatile.emit('room:frame', data); };
   watchGlitches(room, game);
   room.game = game;
+  return game;
+}
+/** @param {Room} room @param {any} GameClass */
+function startGame(room, GameClass) {
+  if (room.game) room.game.destroy();
+  for (const p of room.players.values()) p.score = 0;
+  library.replayReset(); // RUMPUS_REPLAY=1: same seed → same questions (games/library.js)
+  const game = makeGame(room, GameClass);
   console.log(`[room ${room.code}] starting game: ${GameClass.meta.id}`);
   safely(room, 'game start', () => game.start());
 }
@@ -497,7 +526,18 @@ function attachHost(room, socket) {
   socket.data.role = 'host';
   socket.data.room = room;
   socket.emit('host:roomCreated', { code: room.code, hostToken: room.hostToken });
-  // Back after a restart: say what was lost, and pick a game night up where it stopped.
+  // Back after a restart: a saved game picks up where it was (the TV is told); otherwise say what was
+  // lost, and pick a game night up where it stopped.
+  if (room.resumeGame && !room.game) {
+    const r = room.resumeGame;
+    room.resumeGame = null;
+    const G = /** @type {Record<string, any>} */ (GAMES)[r.id];
+    if (G && typeof G.prototype.resume === 'function') {
+      const game = makeGame(room, G);
+      safely(room, 'game resume', () => game.resume(r.data));
+      socket.emit('room:event', { type: 'resumed', game: G.meta.name });
+    } else if (G) room.interrupted = G.meta.name;
+  }
   if (room.interrupted) {
     socket.emit('room:event', { type: 'interrupted', game: room.interrupted });
     room.interrupted = null;
@@ -686,7 +726,9 @@ function connection(socket) {
     }
   });
 
-  socket.on('player:joinRoom', (msg) => {
+  socket.on('player:joinRoom', (msg) => joinRoom(socket, msg));
+  /** @param {any} socket @param {any} msg */
+  function joinRoom(socket, msg) {
     if (socket.data.room) return;
     const code = (msg && typeof msg.code === 'string' ? msg.code : '').trim().toUpperCase();
     const nickname = (msg && typeof msg.nickname === 'string' ? msg.nickname : '').trim().replace(/\s+/g, ' ').slice(0, 16);
@@ -717,7 +759,16 @@ function connection(socket) {
     const between = roomPhase(room) === 'lobby' || roomPhase(room) === 'gameover';
     const meta = room.game ? /** @type {any} */ (room.game.constructor).meta : null;
     if (!between && !(meta && meta.lateJoin)) {
-      return void socket.emit('player:joinError', { reason: 'Game in progress — join when this one ends.' });
+      // A role/turn game can't take a newcomer mid-round: queue them; they're dealt in when it ends.
+      if (room.players.size + (room.queue ? room.queue.size : 0) >= MAX_PLAYERS) return void socket.emit('player:joinError', { reason: `Room is full (${MAX_PLAYERS} players max).` });
+      if (room.queue && [...room.queue.values()].some((q) => q.socket !== socket && String(q.msg.nickname || '').trim().toLowerCase() === nickname.toLowerCase())) {
+        return void socket.emit('player:joinError', { reason: 'That nickname is taken.' });
+      }
+      if (!room.queue) room.queue = new Map();
+      room.queue.set(socket.id, { socket, msg, join: () => joinRoom(socket, msg) });
+      socket.data.queuedIn = room;
+      socket.emit('player:queued', { nickname, game: meta ? meta.name : 'A game' });
+      return void broadcast(room);
     }
     if (room.players.size >= MAX_PLAYERS) {
       return void socket.emit('player:joinError', { reason: `Room is full (${MAX_PLAYERS} players max).` });
@@ -737,7 +788,7 @@ function connection(socket) {
     room.players.set(p.id, p);
     console.log(`[room ${room.code}] player joined: ${nickname}`);
     attachPlayer(room, p, socket);
-  });
+  }
 
   socket.on('player:rejoin', (msg) => {
     const room = rooms.get(String((msg && msg.code) || '').toUpperCase());
@@ -847,6 +898,8 @@ function connection(socket) {
   });
 
   socket.on('disconnect', () => {
+    const queued = socket.data.queuedIn;
+    if (queued && queued.queue) { queued.queue.delete(socket.id); broadcast(queued); }
     const room = socket.data.room;
     if (!room || room.closed) return;
     if (socket.data.role === 'host') {

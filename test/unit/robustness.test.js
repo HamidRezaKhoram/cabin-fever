@@ -247,3 +247,41 @@ test('a room in use but unchanged for longer than the keep window still survives
     assert.deepStrictEqual(state.players.map((/** @type {any} */ p) => p.nickname), ['Ann']);
   } finally { await srv.stop(); }
 });
+
+test('a server restart mid-game picks a resumable game (Closest Cast) up at the same question, scores kept', { timeout: 60000 }, async () => {
+  const dir = require('../helpers').tmpDir();
+  let srv = await startServer({ RUMPUS_DATA_DIR: dir, RUMPUS_CG_GUESS_MS: '30000' });
+  /** @type {any} */ let h; /** @type {any[]} */ const ps = [];
+  let question = '';
+  try {
+    h = await makeHost(srv);
+    for (const n of ['Ann', 'Bob']) ps.push(await makePlayer(srv, h.code, n, { device: `device-of-${n}` }));
+    h.emit('host:startGame', { gameId: 'closest' });
+    const st = await h.phase('cg-guess');
+    question = st.gameState.question;
+    await sleep(700); // saved a moment after it changes
+  } finally { srv.proc.kill('SIGKILL'); await sleep(200); }
+  srv = await startServer({ RUMPUS_DATA_DIR: dir, RUMPUS_CG_GUESS_MS: '30000' });
+  try {
+    const tv = srv.connect();
+    /** @type {any[]} */ const events = [];
+    /** @type {any} */ let state = null;
+    tv.on('room:event', (e) => events.push(e));
+    tv.on('room:stateUpdate', (s) => { state = s; });
+    await new Promise((r) => tv.once('connect', r));
+    tv.emit('host:resume', { code: h.code, hostToken: h.hostToken });
+    await until(() => state && state.phase === 'cg-guess', 'the game is back on');
+    assert.strictEqual(state.gameState.question, question, 'the same question');
+    assert.ok(events.some((e) => e.type === 'resumed' && /Closest/.test(e.game)), 'the TV is told it picked up');
+    assert.ok(!events.some((e) => e.type === 'interrupted'), 'not reported as cut short');
+    // A phone comes back with its token and can answer.
+    const a = srv.connect();
+    /** @type {any} */ let ast = null;
+    a.on('room:stateUpdate', (s) => { ast = s; });
+    await new Promise((r) => a.once('connect', r));
+    a.emit('player:rejoin', { code: h.code, token: ps[0].token });
+    await until(() => ast && ast.phase === 'cg-guess', 'the phone sees the question');
+    a.emit('player:submit', { payload: { number: 42 } });
+    await until(() => state.gameState.submittedCount === 1, 'the answer counts');
+  } finally { await srv.stop(); }
+});
