@@ -142,6 +142,17 @@
     talkUntil = Math.max(talkUntil, Date.now() + (nextAt - ctx.currentTime) * 1000);
   }
 
+  /** One line for the lobby: what the 🎙 picker will actually sound like right now. */
+  function status() {
+    if (voiceId === 'classic') return '';
+    if (engine === 'loading') return 'natural voice loading…';
+    if (engine === 'none') return 'no natural voice here — using the robot voice';
+    if (lateLines >= 3) return 'this device is too slow for the natural voice — using the robot voice';
+    return 'natural voice ready';
+  }
+  let lastStatus = '';
+  setInterval(() => { const s = status(); if (s !== lastStatus) { lastStatus = s; document.dispatchEvent(new CustomEvent('cf:voice', { detail: s })); } }, 500);
+
   /** Can the natural voice speak right now? (While it loads, lines wait for it.) */
   const naturalOn = () => voiceId !== 'classic' && engine !== 'none' && lateLines < 3;
 
@@ -222,12 +233,27 @@
     }
   }
 
+  /** The browser's own voice closest to the chosen narrator (accent, then female/male by name —
+   * browsers don't say which is which). Only used when the natural voice can't run. @param {boolean} fr */
+  function browserVoice(fr) {
+    const all = speechSynthesis.getVoices();
+    const lang = fr ? 'fr' : voiceId[0] === 'b' ? 'en-GB' : 'en-US';
+    const female = voiceId[1] !== 'm';
+    const FEMALE = /female|samantha|victoria|karen|moira|tessa|fiona|zira|hazel|susan|aria|jenny|libby|sonia|emma|amelie|denise|woman/i;
+    const MALE = /\bmale|daniel|alex|fred|george|david|mark|ryan|guy|thomas|oliver|arthur|henri|\bman\b/i;
+    const score = (/** @type {SpeechSynthesisVoice} */ v) => (v.lang.replace('_', '-').startsWith(lang) ? 4 : v.lang.startsWith(lang.slice(0, 2)) ? 2 : 0)
+      + ((female ? FEMALE : MALE).test(v.name) ? 1.5 : (female ? MALE : FEMALE).test(v.name) ? -1 : 0) + (v.localService ? 0.2 : 0);
+    return all.slice().sort((a, b) => score(b) - score(a))[0] || null;
+  }
+
   /** espeak-ng (server) or the browser's voice. @param {string} t @param {boolean} fr */
   function classic(t, fr) {
     if (C && 'speechSynthesis' in window) {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(t);
-      u.lang = fr ? 'fr-FR' : 'en-US';
+      u.lang = fr ? 'fr-FR' : voiceId[0] === 'b' ? 'en-GB' : 'en-US';
+      const v = browserVoice(fr);
+      if (v) u.voice = v;
       speechSynthesis.speak(u);
       return;
     }
@@ -287,6 +313,7 @@
     /** @param {boolean} on */
     show(on) { el.hidden = !on; },
     voices: () => VOICES,
+    voiceStatus: status,
     voice: () => voiceId,
     /** @param {string} id */
     setVoice(id) { voiceId = id; lateLines = 0; R.store('rumpus.voice', id); },

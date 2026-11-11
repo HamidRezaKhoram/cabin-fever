@@ -8,21 +8,29 @@
  */
 'use strict';
 
-/** Reload at most once per tab for isolation (a browser that won't isolate must not loop). */
-function reloaded() {
+/** Reloads are spaced out (a browser that can't take the new version must not loop). */
+function mayReload() {
   try {
-    if (sessionStorage.getItem('cf.isolate')) return true;
-    sessionStorage.setItem('cf.isolate', '1');
-  } catch (e) { return true; }
-  return false;
+    const last = Number(sessionStorage.getItem('cf.reloadAt') || 0);
+    if (Date.now() - last < 15000) return false;
+    sessionStorage.setItem('cf.reloadAt', String(Date.now()));
+  } catch (e) { return false; }
+  return true;
 }
+/** People are playing on this page right now (set by host.js / play.js): don't reload under them. */
+const busy = () => { try { return !!(/** @type {any} */ (window).cfBusy && /** @type {any} */ (window).cfBusy()); } catch (e) { return false; } };
 
 /** @param {'tv' | 'phone'} role */
 function offline(role) {
   if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
   // Nothing saved on this device yet. (Only the TV and phone pages show the bar; /admin and
   // /highlights save quietly.)
-  const first = !navigator.serviceWorker.controller && /\/(host|play)(\.html)?$/.test(location.pathname);
+  const page = /\/(host|play)(\.html)?$/.test(location.pathname);
+  const hadController = !!navigator.serviceWorker.controller;
+  let saved = false;
+  try { saved = localStorage.getItem('cf.saved') === role; } catch (e) { saved = hadController; }
+  const first = !saved && page;
+  const markSaved = () => { try { localStorage.setItem('cf.saved', role); } catch (e) { /* private mode */ } };
   const bar = document.createElement('div');
   bar.className = 'cf-offline';
   bar.hidden = true;
@@ -35,6 +43,7 @@ function offline(role) {
   const fill = /** @type {(el: Element) => HTMLElement} */ (el) => /** @type {HTMLElement} */ (el.querySelector('i'));
   /** @type {number | null} */
   let failSafe = null;
+  let updateNote = false;
   if (first) {
     bar.hidden = false;
     /** @type {HTMLElement} */ (bar.querySelector('.cf-offline-title')).textContent = 'Loading Cabin Fever…';
@@ -57,22 +66,44 @@ function offline(role) {
       /** @type {HTMLElement} */ (bar.querySelector('.cf-offline-title')).textContent = `Loading Cabin Fever… ${pct}%`;
       if (m.done >= m.total) {
         if (failSafe) clearTimeout(failSafe);
-        // The TV's very first visit wasn't served by the worker, so it isn't cross-origin isolated
-        // yet (the narrator's voice needs that for speed). Nobody has joined while the bar was up:
-        // reload once, now from the saved copy, with the headers.
-        if (role === 'tv' && first && !bar.hidden && !window.crossOriginIsolated && !reloaded()) { location.reload(); return; }
+        markSaved();
         setTimeout(() => { bar.hidden = true; }, 400);
       }
     } else if (m.stage === 'media') {
+      if (updateNote) return;
       corner.hidden = m.done >= m.total;
       corner.textContent = `💾 Saving music & voice for offline · ${pct}%`;
     }
   });
-  navigator.serviceWorker.register('sw.js').catch(() => { bar.hidden = true; });
+  // A new worker took over this page. Two cases need the page loaded again:
+  //  - an update: this page is still running the OLD saved files (the new ones load next time);
+  //  - the TV's first visit: it wasn't served by the worker, so it isn't cross-origin isolated
+  //    (the narrator's voice needs that to be fast).
+  // Reload right away — unless people are already playing here; then say so and leave it to them.
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!page) return;
+    const need = hadController || (role === 'tv' && !window.crossOriginIsolated);
+    if (!need) return;
+    if (busy()) {
+      if (role === 'tv') { updateNote = true; corner.hidden = false; corner.textContent = '🔄 Update ready — reload this page between games'; }
+      return;
+    }
+    if (mayReload()) location.reload();
+  });
+  navigator.serviceWorker.register('sw.js').then((reg) => { void reg.update().catch(() => {}); }).catch(() => { bar.hidden = true; });
   void navigator.serviceWorker.ready.then(() => {
     // Phone: an active worker means its files are saved. TV: now save the whole game.
-    if (role === 'tv') { askTv(); return; }
+    if (role === 'tv') {
+      // The worker is in charge but this page wasn't served by it (it took over before we could
+      // hear about it, or this was a hard reload): load again, once per tab, to be isolated.
+      let tried = true;
+      try { tried = !!sessionStorage.getItem('cf.isoTried'); sessionStorage.setItem('cf.isoTried', '1'); } catch (e) { /* no storage: don't loop */ }
+      if (page && !window.crossOriginIsolated && !tried && !busy() && mayReload()) { location.reload(); return; }
+      askTv();
+      return;
+    }
     if (failSafe) clearTimeout(failSafe);
+    markSaved();
     setTimeout(() => { bar.hidden = true; }, 300);
     /** @type {any} */ (window).cfSaved = { core: 100, .../** @type {any} */ (window).cfSaved };
   });

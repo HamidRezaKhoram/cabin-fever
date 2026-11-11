@@ -69,6 +69,9 @@ async function check(name, fn) {
 
   await check('the TV page hosts a room in the browser (no server), with a QR code drawn in the page', async () => {
     await tv.goto(BASE + 'host.html?net=local&debug=1');
+    // First visit: the page reloads itself once the service worker is in charge, so that it is
+    // cross-origin isolated (the narrator's voice needs that for speed).
+    await tv.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 30000 });
     await tv.waitForFunction(() => /^[A-Z]{4}$/.test((document.getElementById('start-code') || {}).textContent || ''), null, { timeout: 15000 });
     code = await tv.textContent('#start-code');
     const qr = await tv.getAttribute('#start-qr', 'src');
@@ -179,6 +182,12 @@ async function check(name, fn) {
     const cached = await tv.evaluate(async () => (await (await caches.open('cabin-fever-files')).keys()).length);
     const listed = await tv.evaluate(async () => { const t = await (await fetch('sw.js')).text(); return Object.keys(JSON.parse(/const FILES = (\{.*?\});/.exec(t)[1])).length; });
     assert.ok(cached >= listed, `all ${listed} files cached (${cached})`);
+    // An idle TV tab (nobody in its room): it must pick the update up by itself.
+    const idle = await ctx.newPage();
+    watch(idle, 'tv-idle');
+    await idle.goto(BASE + 'host.html?net=local');
+    await idle.waitForFunction(() => !!window.Rumpus && self.crossOriginIsolated === true, null, { timeout: 15000 });
+    await idle.evaluate(() => { window.beforeUpdate = true; });
     // "Deploy" a change to one file.
     const sw = path.join(DIST, 'sw.js');
     const clock = path.join(DIST, 'clock.js');
@@ -192,6 +201,46 @@ async function check(name, fn) {
     });
     const fetched = [...hits.keys()].filter((k) => k !== 'sw.js');
     assert.deepStrictEqual(fetched, ['clock.js'], `only the changed file was downloaded (got ${fetched.join(', ')})`);
+    // The busy TV (players in its room) was left alone, with a note; the idle one reloaded into the new files.
+    assert.strictEqual(await tv.evaluate(() => /^[A-Z]{4}$/.test((document.getElementById('room-code') || {}).textContent || '')), true, 'the room in use was not reloaded');
+    await tv.waitForFunction(() => /Update ready/.test((document.querySelector('.cf-offline-corner') || {}).textContent || ''), null, { timeout: 5000 });
+    await idle.waitForFunction(() => !window.beforeUpdate && !!window.Rumpus, null, { timeout: 15000 });
+    const fresh = await idle.evaluate(async () => (await (await fetch('clock.js')).text()).includes('// new deploy'));
+    assert.ok(fresh, 'the idle TV now runs the new files');
+    await idle.close();
+  });
+
+  await check('the fast WebRTC channel: unordered, never retransmitted, and it carries messages between two browsers\' ends', async () => {
+    // Two real RTCPeerConnections in the TV page, joined by hand (no broker), the way PeerJS joins a
+    // phone and the TV: one normal channel first, then our negotiated fast channel on both ends.
+    const r = await tv.evaluate(async () => {
+      const a = new RTCPeerConnection(), b = new RTCPeerConnection();
+      a.onicecandidate = (e) => { if (e.candidate) void b.addIceCandidate(e.candidate); };
+      b.onicecandidate = (e) => { if (e.candidate) void a.addIceCandidate(e.candidate); };
+      const main = a.createDataChannel('peerjs-main', { ordered: true });
+      /** @type {string[]} */ const surprise = [];
+      b.ondatachannel = (e) => { surprise.push(e.channel.label); }; // PeerJS listens here on the TV side
+      const open = new Promise((res) => { main.onopen = res; });
+      await a.setLocalDescription(await a.createOffer());
+      await b.setRemoteDescription(a.localDescription);
+      await b.setLocalDescription(await b.createAnswer());
+      await a.setRemoteDescription(b.localDescription);
+      await Promise.race([open, new Promise((_, rej) => setTimeout(() => rej(new Error('WebRTC did not connect')), 15000))]);
+      /** @type {any[]} */ const gotA = [];
+      /** @type {any[]} */ const gotB = [];
+      const fa = window.CABIN.fastChannel(a, (m) => gotA.push(m));
+      const fb = window.CABIN.fastChannel(b, (m) => gotB.push(m));
+      for (let i = 0; i < 100 && !(fa.ready() && fb.ready()); i++) await new Promise((res) => setTimeout(res, 50));
+      for (let i = 0; i < 20; i++) { fa.send({ t: 'e', ev: 'tilt', args: [i] }); fb.send({ t: 'e', ev: 'back', args: [i] }); }
+      await new Promise((res) => setTimeout(res, 500));
+      const out = { ready: fa.ready() && fb.ready(), props: fa.props(), toB: gotB.length, toA: gotA.length, last: gotB.length ? gotB[gotB.length - 1].ev : null, surprise };
+      a.close(); b.close();
+      return out;
+    });
+    assert.strictEqual(r.ready, true, 'both ends opened it');
+    assert.deepStrictEqual(r.props, { ordered: false, maxRetransmits: 0 });
+    assert.ok(r.toB >= 15 && r.toA >= 15, `messages arrive both ways (${r.toB}, ${r.toA} of 20)`);
+    assert.deepStrictEqual(r.surprise, ['peerjs-main'], 'the fast channel is not announced (PeerJS would mistake it for its own)');
   });
 
   await check('no page errors anywhere', async () => { assert.deepStrictEqual(errors, []); });

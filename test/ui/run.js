@@ -496,11 +496,13 @@ async function check(name, fn) {
     await tv.waitForFunction(() => Rumpus.frame && Rumpus.frame.boats && Rumpus.frame.boats[0], null, { timeout: 10000 });
     const x0 = await tv.evaluate(() => Rumpus.frame.boats[0][0]);
     const box = await phones[0].locator('.ll-pad').boundingBox();
-    // Hold a finger to the right edge of the circle for a second.
+    // Hold a finger to one edge of the circle: towards the middle of the lake (a boat that starts by
+    // the right shore has no room to go further right; the lake is 320 wide).
+    const dir = x0 > 160 ? -1 : 1;
     await phones[0].mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await phones[0].mouse.down();
-    await phones[0].mouse.move(box.x + box.width * 0.95, box.y + box.height / 2, { steps: 4 });
-    await tv.waitForFunction((x) => Rumpus.frame.boats[0][0] > x + 15, x0, { timeout: 4000 });
+    await phones[0].mouse.move(box.x + box.width * (0.5 + 0.45 * dir), box.y + box.height / 2, { steps: 4 });
+    await tv.waitForFunction(([x, d]) => (Rumpus.frame.boats[0][0] - x) * d > 15, [x0, dir], { timeout: 6000 });
     await phones[0].mouse.up();
     const lit = await tv.evaluate(() => { const c = document.querySelector('canvas.ll-lake'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4 * 97) if (d[i] + d[i + 1] + d[i + 2] > 60) n++; return n; });
     assert.ok(lit > 50, 'the lake is drawn');
@@ -556,7 +558,9 @@ async function check(name, fn) {
         // The TV never scrolls during a game: every screen fits the stage (8 players' worth).
         if (!err && sn.kind === 'host' && !['lobby', 'gameover'].includes(sn.state.phase)) {
           await snapTv.waitForFunction(() => !new Function('return wiping')() && [...document.querySelectorAll('#phase-view img')].every((i) => /** @type {HTMLImageElement} */ (i).complete), null, { timeout: 5000 }).catch(() => {});
-          await snapTv.waitForTimeout(80); // the re-fit after images load
+          // The re-fit after images/fonts settle can take a few frames: a real overflow is one that stays.
+          await snapTv.waitForFunction(() => { const st = /** @type {HTMLElement} */ (document.getElementById('stage')); return st.scrollHeight - st.clientHeight <= 2; }, null, { timeout: 1500, polling: 50 }).catch(() => {});
+          await snapTv.waitForTimeout(80);
           const over = await snapTv.evaluate(() => {
             const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
             const pv = /** @type {HTMLElement} */ (document.getElementById('phase-view'));

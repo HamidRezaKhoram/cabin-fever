@@ -130,6 +130,8 @@ reactBar.addEventListener('click', (e) => {
 
 /** @type {{ playerId: string } | null} */
 let me = null;
+// The browser build asks before reloading for an update (web/offline.js): not once you have a seat.
+/** @type {any} */ (window).cfBusy = () => !!me;
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
 /** @type {string | null} */
@@ -445,6 +447,12 @@ function send(/** @type {any} */ payload) {
   });
 }
 
+/** Newest-wins input (tilt): no ack, no "Sending…", and it may be dropped — the next one replaces
+ * it. In the browser build it rides the unordered WebRTC channel (web/net.js). */
+function sendFast(/** @type {any} */ payload) {
+  if (socket.connected) socket.volatile.emit('player:submit', { payload });
+}
+
 function render() {
   window.Rumpus.i18n.setLang(state && state.settings && state.settings.lang);
   if (!state || !me) return;
@@ -585,5 +593,5 @@ function bind(/** @type {any} */ g) {
   const impl = games[g.gameId];
   // rerender(): a renderer changed local UI state (e.g. picked a spell, now picks a target).
   const rerender = () => { lastHtml = null; render(); };
-  if (impl && impl.bind) impl.bind(gameView, { send, state, rerender, onCleanup: (/** @type {() => void} */ fn) => cleanups.push(fn) });
+  if (impl && impl.bind) impl.bind(gameView, { send, sendFast, state, rerender, onCleanup: (/** @type {() => void} */ fn) => cleanups.push(fn) });
 }

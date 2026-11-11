@@ -17,6 +17,8 @@ const timerbar = /** @type {HTMLElement} */ (document.getElementById('timerbar')
 
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
+// The browser build asks before reloading for an update (web/offline.js): not while people are in the room.
+/** @type {any} */ (window).cfBusy = () => !!(state && state.players && state.players.length);
 /** @type {string | null} */
 let roomCode = null;
 /** Games with French content (others use English question banks). */
@@ -377,7 +379,7 @@ function gamePicker(/** @type {any} */ label) {
           <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
           <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
           <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator voice</label>
-          <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => opt(v[0], window.Rumpus.host.voice(), v[1])).join('')}</select></label>
+          <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => opt(v[0], window.Rumpus.host.voice(), v[1])).join('')}</select> <small id="voice-status" class="voice-status">${window.Rumpus.host.voiceStatus()}</small></label>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((/** @type {any} */ p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
         </div>
@@ -722,3 +724,9 @@ function shake() {
   const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
   st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
 }
+
+// The lobby shows what the narrator will really sound like (loading / ready / too slow → robot).
+document.addEventListener('cf:voice', (e) => {
+  const el = document.getElementById('voice-status');
+  if (el) el.textContent = /** @type {CustomEvent} */ (e).detail || '';
+});
