@@ -194,7 +194,7 @@ class LoonCallGame extends BaseGame {
     this.phraseLog = [];
     this.gained = new Map();
     this.phraseTimers.forEach(clearTimeout);
-    this.phraseTimers = phrases.map((p, i) => setTimeout(() => { if (!this.destroyed) guarded(() => this.scorePhrase(i), 'loon call scoring'); }, Math.max(0, p.echoAt + barMs + GRACE_MS - Date.now())));
+    this.phraseTimers = phrases.map((p, i) => setTimeout(() => { if (!this.destroyed) guarded(() => this.scorePhrase(i), 'loon call scoring', this); }, Math.max(0, p.echoAt + barMs + GRACE_MS - Date.now())));
     // Push when each echo bar ends, so bots (and the TV) see the phrase is done.
     for (const at of [...phrases.map((p) => p.echoAt + barMs), endAt]) this.phraseTimers.push(setTimeout(() => { if (!this.destroyed) this.push(); }, Math.max(0, at - Date.now() + 5)));
     return this.sched;

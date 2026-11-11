@@ -22,14 +22,15 @@ const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
 // How long a dropped phone / TV keeps its seat before being removed. Phones go to sleep in a
 // pocket all the time, so a seat is held for half an hour (the TV can kick anyone sooner).
 const PLAYER_GRACE_MS = parseInt(process.env.PLAYER_GRACE_MS || '1800000', 10);
-const HOST_GRACE_MS = parseInt(process.env.HOST_GRACE_MS || '300000', 10);
+// How long a room waits for its TV (asleep, lid closed, reloading) — as long as phones keep their seats.
+const HOST_GRACE_MS = parseInt(process.env.HOST_GRACE_MS || '1800000', 10);
 const DEBUG = process.env.RUMPUS_DEBUG === '1';
 const dlog = (/** @type {unknown[]} */ ...a) => { if (DEBUG) console.log('[debug]', new Date().toISOString().slice(11, 23), ...a); };
 const AVATAR_COUNT = 17; // must match public/sprites.js
 
 // Order here = order on the TV's game picker. (Static requires so the browser build can bundle them.)
 /** @type {Record<string, any>} game classes by id (BaseGame subclasses and two legacy games) */
-const GAMES = {};
+const GAMES = Object.create(null); // no prototype: a game id like "constructor" finds nothing
 for (const G of [
   require('../games/quiplash'), require('../games/fibbage'), require('../games/trivia'), require('../games/closest'),
   require('../games/majority'), require('../games/mostlikely'), require('../games/imposter'), require('../games/twotruths'),
@@ -72,12 +73,13 @@ function snapshot(room) {
     interrupted: g && !(g instanceof NightGame) && g.phase !== 'gameover' ? /** @type {any} */ (g.constructor).meta.name : room.interrupted || null,
   };
 }
-function writeRooms() {
+/** @param {boolean} [force] write even if nothing changed (refreshes savedAt) */
+function writeRooms(force = false) {
   roomsTimer = null;
   if (!SAVE_ROOMS) return;
   const list = [...rooms.values()].filter((r) => !r.closed).map(snapshot);
   const json = JSON.stringify(list);
-  if (json === roomsSaved) return;
+  if (json === roomsSaved && !force) return;
   roomsSaved = json;
   try {
     fs.mkdirSync(path.dirname(ROOMS_FILE), { recursive: true });
@@ -91,8 +93,16 @@ function saveRooms() {
   roomsTimer = setTimeout(writeRooms, 400);
   if (roomsTimer.unref) roomsTimer.unref();
 }
-/** Shutting down: write now. */
-function flushRooms() { if (roomsTimer) clearTimeout(roomsTimer); writeRooms(); }
+/** Shutting down: write now (with a fresh savedAt, so a long quiet lobby still comes back). */
+function flushRooms() { if (roomsTimer) clearTimeout(roomsTimer); writeRooms(true); }
+// A room in use but unchanged (a long dinner in the lobby) must not look abandoned: restoreRooms
+// drops a save older than ROOM_KEEP_MS, so re-stamp it every few minutes while anyone is connected.
+const KEEPALIVE_MS = parseInt(process.env.RUMPUS_ROOM_KEEPALIVE_MS || '300000', 10);
+const keepalive = setInterval(() => {
+  const inUse = [...rooms.values()].some((r) => !r.closed && ((r.hostSocket && r.hostSocket.connected) || [...r.players.values()].some((p) => p.connected && !p.bot)));
+  if (inUse) writeRooms(true);
+}, KEEPALIVE_MS);
+if (keepalive.unref) keepalive.unref();
 
 /** Bring saved rooms back: everyone is "away" until their phone (and the TV) reconnects. */
 function restoreRooms() {
@@ -294,16 +304,40 @@ function playerPayload(room, p, base = baseState(room)) {
   };
 }
 
+/** A game threw (timer, answer, skip, bot): log it and tell the TV, at most once every few seconds
+ * (a real-time game's tick could throw 30 times a second), so the room isn't left waiting in
+ * silence. The TV shows "Something went wrong — press Skip". @param {Room} room @param {string} what @param {unknown} e */
+function glitch(room, what, e) {
+  console.error(`[room ${room.code}] ${what} failed:`, e);
+  const now = Date.now();
+  if (room.lastGlitch && now - room.lastGlitch < GLITCH_GAP_MS) return;
+  room.lastGlitch = now;
+  if (room.hostSocket && room.hostSocket.connected) room.hostSocket.emit('room:event', { type: 'glitch' });
+}
+const GLITCH_GAP_MS = 5000;
+/** Run game code for a room; a throw becomes a glitch instead of a silent log. @param {Room} room @param {string} what @param {() => void} fn */
+function safely(room, what, fn) {
+  try { fn(); } catch (e) { glitch(room, what, e); }
+}
+/** Hook a new game up to the room's glitch reporting. @param {Room} room @param {GameLike} game */
+function watchGlitches(room, game) {
+  // Reported for whichever game is on screen now: a game-night vote's timer that starts the next
+  // game hands any error from that game's start() here.
+  game.onGlitch = (what, e) => glitch(room, what, e);
+}
+
 /** @param {Room} room @param {any} GameClass */
 function startGame(room, GameClass) {
   if (room.game) room.game.destroy();
   for (const p of room.players.values()) p.score = 0;
+  library.replayReset(); // RUMPUS_REPLAY=1: same seed → same questions (games/library.js)
   const game = new GameClass(room, () => broadcast(room));
   // Real-time frames (positions at 30 Hz) go to the TV only and may be dropped when it's busy.
   game.frame = (/** @type {Record<string, any>} */ data) => { if (room.hostSocket && room.hostSocket.connected) room.hostSocket.volatile.emit('room:frame', data); };
+  watchGlitches(room, game);
   room.game = game;
   console.log(`[room ${room.code}] starting game: ${GameClass.meta.id}`);
-  game.start();
+  safely(room, 'game start', () => game.start());
 }
 
 // --- game night -------------------------------------------------------------
@@ -322,7 +356,9 @@ function nightVote(room, final) {
     final,
     onPick: (/** @type {string} */ id) => { const G = /** @type {Record<string, any>} */ (GAMES)[id]; if (room.night && G) startGame(room, G); },
   });
-  room.game.start();
+  watchGlitches(room, room.game);
+  const vote = room.game;
+  safely(room, 'game night vote', () => vote.start());
 }
 /** A game of the night just ended: add placings, then queue the next vote (or the final table). @param {Room} room */
 function countNight(room) {
@@ -426,7 +462,7 @@ function botTick(room, p, speed) {
     if (!room.game || !room.players.has(p.id) || room.closed) return;
     const now = botBrain.decide(view()); // re-check: the screen may have moved on
     if (!now) return;
-    try { room.game.handleSubmit(p.id, now.payload); } catch (e) { console.error(`[room ${room.code}] bot error:`, e); }
+    const g = room.game; safely(room, 'bot answer', () => g.handleSubmit(p.id, now.payload));
     // Some screens have a follow-up (bet after answering, likes, mashing): think again.
     setImmediate(() => botTick(room, p, speed));
   }, botBrain.thinkMs(first.kind) / speed);
@@ -444,7 +480,7 @@ function removePlayer(room, playerId) {
     endNight(room);
     room.game.destroy();
     room.game = null;
-  } else if (room.game) room.game.onPlayerLeft(playerId);
+  } else if (room.game) { const g = room.game; safely(room, 'player left', () => g.onPlayerLeft(playerId)); }
   console.log(`[room ${room.code}] player left: ${p.nickname}`);
   broadcast(room);
 }
@@ -606,7 +642,8 @@ function connection(socket) {
 
   socket.on('host:skip', () => {
     const room = hostRoom(socket);
-    if (room && room.game && typeof room.game.skip === 'function') room.game.skip();
+    const game = room && room.game;
+    if (room && game && typeof game.skip === 'function') safely(room, 'skip', () => game.skip());
   });
 
   socket.on('host:endGame', () => {
@@ -643,7 +680,9 @@ function connection(socket) {
     if (sock && sock.connected) {
       sock.emit('player:kicked');
       sock.data.room = null;
-      sock.disconnect(true);
+      // A moment before closing, so the message gets out first (the browser build's WebRTC link
+      // drops anything still queued when it closes).
+      setTimeout(() => { if (sock.connected) sock.disconnect(true); }, 300);
     }
   });
 
@@ -673,7 +712,11 @@ function connection(socket) {
       }
       return void socket.emit('player:joinError', { reason: 'That nickname is taken.', taken: !existing.bot });
     }
-    if (roomPhase(room) !== 'lobby' && roomPhase(room) !== 'gameover') {
+    // Mid-game joins (todo 3.4): only games where a newcomer can act on any screen (trivia-style,
+    // the game-night vote) take them; role/turn games say when to come back.
+    const between = roomPhase(room) === 'lobby' || roomPhase(room) === 'gameover';
+    const meta = room.game ? /** @type {any} */ (room.game.constructor).meta : null;
+    if (!between && !(meta && meta.lateJoin)) {
       return void socket.emit('player:joinError', { reason: 'Game in progress — join when this one ends.' });
     }
     if (room.players.size >= MAX_PLAYERS) {
@@ -721,13 +764,13 @@ function connection(socket) {
       room.pace[kind].clear();
       const game = room.game;
       const tellHost = (/** @type {string} */ type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
-      if (kind === 'ready') { tellHost('ready'); game.skip(); }
-      else if (kind === 'hurry') { if (flow.hurry(game)) tellHost('hurry'); }
-      else if (kind === 'wrap') { tellHost('wrap'); game.skip(); }
+      if (kind === 'ready') { tellHost('ready'); safely(room, 'skip', () => game.skip()); }
+      else if (kind === 'hurry') safely(room, 'hurry', () => { if (flow.hurry(game)) tellHost('hurry'); });
+      else if (kind === 'wrap') { tellHost('wrap'); safely(room, 'skip', () => game.skip()); }
       else if (kind === 'skipq') {
         if (game.poolName && game.item && game.item.id) library.recordSkip(game.poolName, game.item.id); // retire it
         tellHost('skipped');
-        game.skipQuestion();
+        safely(room, 'skip question', () => { if (game.skipQuestion) game.skipQuestion(); });
       }
     }
     broadcast(room);
@@ -798,11 +841,8 @@ function connection(socket) {
     if (!room || socket.data.role !== 'player' || room.closed || !room.game) return void done(false);
     if (!room.players.has(socket.data.playerId)) return void done(false);
     const payload = msg && typeof msg.payload === 'object' && msg.payload !== null ? msg.payload : {};
-    try {
-      room.game.handleSubmit(socket.data.playerId, payload);
-    } catch (e) {
-      console.error(`[room ${room.code}] game error:`, e);
-    }
+    const game = room.game;
+    safely(room, 'answer', () => game.handleSubmit(socket.data.playerId, payload));
     done(true);
   });
 
@@ -813,12 +853,16 @@ function connection(socket) {
       if (room.hostSocket !== socket) return;
       room.hostSocket = null;
       console.log(`[room ${room.code}] host disconnected — holding room ${HOST_GRACE_MS / 1000}s`);
+      if (room.closeTimer) clearTimeout(room.closeTimer); // a second disconnect must not orphan the first timer
       room.closeTimer = setTimeout(() => closeRoom(room), HOST_GRACE_MS);
       broadcast(room);
     } else if (socket.data.role === 'player') {
       const p = room.players.get(socket.data.playerId);
       if (!p || p.socket !== socket) return;
       p.connected = false;
+      // The browser build can report one link down twice (stale, revived, down again): an orphaned
+      // first timer would remove this player 30 min later, mid-game.
+      if (p.dropTimer) clearTimeout(p.dropTimer);
       p.dropTimer = setTimeout(() => removePlayer(room, p.id), PLAYER_GRACE_MS);
       broadcast(room);
     }

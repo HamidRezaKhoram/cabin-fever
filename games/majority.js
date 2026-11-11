@@ -259,6 +259,8 @@ class MajorityGame extends BaseGame {
 
 MajorityGame.meta = {
   id: 'majority',
+  /** Anyone can act on any screen: phones may join mid-game (core/rooms.js join, todo 3.4). */
+  lateJoin: true,
   name: 'Campfire Consensus',
   blurb: 'Answer what you think everyone else will. Matching the herd pays.',
   minPlayers: 3,

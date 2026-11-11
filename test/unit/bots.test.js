@@ -6,16 +6,7 @@ const assert = require('node:assert');
 const { startServer, until, makeHost } = require('../helpers');
 const { decide } = require('../../games/bot-brain');
 
-// Short real-time timers so bots can finish every game quickly.
-const QUICK = {
-  RUMPUS_MG_INTRO_MS: '200', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_TUG_MS: '1500', RUMPUS_MG_ROAST_MS: '3000',
-  RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
-  RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000', RUMPUS_CR_REVEAL_STEP_MS: '150',
-  RUMPUS_LC_TEMPO: '4', RUMPUS_LC_PHRASES: '2', RUMPUS_LC_LEAD_MS: '300', RUMPUS_LC_RESULT_MS: '200',
-  RUMPUS_ST_ROLES_MS: '2000', RUMPUS_ST_VOTE_SHOW_MS: '150', RUMPUS_ST_CARD_MS: '100', RUMPUS_ST_FINAL_MS: '200',
-  RUMPUS_TT_STEP_MS: '60', RUMPUS_MG_PLAY_MS: '1500', RUMPUS_MG_SHOW_MS: '40',
-  RUMPUS_LL_INTRO_MS: '300', RUMPUS_LL_PLAY_MS: '2500', RUMPUS_LL_RESULT_MS: '200',
-};
+const { QUICK } = require('../helpers');
 let srv;
 test.before(async () => {
   srv = await startServer({ ...QUICK, ...(process.env.SNAP_DIR ? { RUMPUS_DEBUG: '1' } : {}) });

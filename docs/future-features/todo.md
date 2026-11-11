@@ -27,13 +27,8 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 | 2.1 | **A reload/restart loses the game in progress** (room, seats, scores, game night are kept). | Per-game `save()` / `resume()`: timers are closures today, so each game needs its phases restartable. Start with the simple ones (trivia, Closest Cast). | L |
 | 2.2 | **Website version needs internet to join** (free PeerJS service introduces phone and TV). | Bundle a tiny PeerJS server in Docker for LAN use, or QR-code signalling (phone scans TV, TV scans phone) for a fully offline join. | L |
 | 2.3 | **Weak TVs can't run the natural voice in the browser** (2 cores: 5–7 s per line → robot voice). | Try WebGPU (`device: 'webgpu'`, fp16 model) and pick whichever is faster at start-up; needs a real GPU to test. | M |
-| 2.4 | **Natural voices are English only**; French rooms get the robot. | Another model for French (Piper has French voices) behind the same `speak` interface. | M |
-| 2.5 | **Docker image is ~1.4 GB and uses ~1 GB of memory** (full-size voice model). Too much for a small Raspberry Pi. | Ship a "lite" image tag without the server voice (`RUMPUS_SERVER_VOICE=0` already makes the TV do it). | S |
 | 2.6 | **Docker phones have no fast channel** (WebSocket = TCP). | WebTransport needs HTTP/3 and real certificates; only worth it if 1.4 shows a clear win. | L |
 | 2.7 | **Locked phones disconnect.** Browsers don't allow background connections. | Nothing in a web page; a wrapped app (Capacitor) could. Out of scope unless it hurts. | L |
-| 2.8 | **Second TV tab in one browser** gets its own unsaved room (by design, so it can't take the first one's). | Show a line on that tab: "another tab is hosting". | S |
-| 2.9 | **A game error is logged, not shown.** The game may sit until its timer or Skip. | Send the TV a `room:event {type:'glitch'}` from the guarded timer and show "Something went wrong — press Skip". | S |
-| 2.10 | **No login anywhere** (admin page, kicking). Fine on cottage Wi-Fi; never expose to the internet. | Optional host PIN for `/admin`. | S |
 | 2.11 | **Phones are trusted for some results** (hold time, balance, tap times). Accepted for friends. | — | — |
 
 ## 3. Features not built yet
@@ -41,12 +36,8 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 | # | Feature | Notes | Size |
 |---|---|---|---|
 | 3.1 | **Message in a Bottle: scribble pad** for players waiting on others. | Doodles could float across the TV. | M |
-| 3.2 | **Rainy Day Cards: room-favourite vote** before the Czar picks (bonus points). | Fills the Czar's thinking time. | M |
-| 3.3 | **Storm Watch: private "hunch" tap** during the talk (who do you suspect?), revealed at the end. | Gives quiet players something to do. | M |
-| 3.4 | **Join mid-game** (today: only between games). | Easy for trivia-style games; role games need a "next round" queue. | M |
-| 3.5 | **Wake-lock failure hint** on the phone ("your screen may sleep — turn off low-power mode"). | `keepAwake()` already knows when both methods fail. | S |
+| 3.4 | **Join mid-game, role games** — trivia-style games and the game-night vote take newcomers now (`meta.lateJoin`); Quips, Fish Tales, Storm Watch, Crush, Message in a Bottle… still say "join when this one ends". | Needs a per-game "next round" queue: the newcomer waits on a lobby-like screen and is dealt in when the round restarts. | M |
 | 3.6 | **Cottage Crush: remaining agendas** (see `dating-game.md`). | | M |
-| 3.7 | **More French content**: trivia, Fish Tales, Closest Cast and Rainy Day Cards are English only (marked EN). | Needs sourced French packs (`content-research.md`). | L |
 | 3.8 | **Send only what changed** in state updates (~2 KB → a few hundred bytes). | Not needed on a LAN; revisit only if 1.3/1.4 show lag. | M |
 
 ## 4. Tests and tooling
@@ -54,15 +45,38 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 | # | What | Size |
 |---|---|---|
 | 4.1 | **Speed test for the website version** with real browser-to-browser links (today only the Docker server is timed). | M |
-| 4.2 | **Put `scripts/load-harsh.sh` in CI** (bad Wi-Fi + ¼-CPU server; ~2 min) — nightly rather than per push. | S |
 | 4.3 | **TV-fit check tolerance**: it now waits up to 1.5 s for a screen to settle; a screen that overflows briefly then fits passes. Tighten once the cause of the late re-fit (fonts? images?) is found. | S |
 | 4.4 | **Real-broker test** for 1.1 (two browsers through the PeerJS service; needs internet, so keep it out of the default suite). | M |
-| 4.5 | **Bots don't misbehave**: they always answer sensibly and never vote. Add a "chaos bot" (late, empty, repeated, wrong-phase input; random pace votes). | M |
-| 4.6 | **Strict TypeScript ratchet** to zero (`types/strict-baseline.json`). | M |
-| 4.7 | **Seeded replays end to end**: prompts come from what the house has already played, so a seed fixes the dice but not the questions. A `RUMPUS_SEED` mode that also ignores history would replay a whole game for debugging. | S |
+
+## 4b. Game bug reports
+
+- **Per-game review findings** (Nov 11 2026): `game-bug-reports.md` — the medium/low ones are not fixed yet; pick which to do. Shared: tied players don't share placings on the podium/phones (`standings()`).
 
 ## 5. Housekeeping
 
 - **Content licences**: card packs and one trivia source are non-commercial. Personal use is fine; list them in the README before sharing the repo widely.
-- **Unknown container** `c63a6ec77669` (node:20-alpine, up since Nov 10) on the dev machine: not from this work — check it.
+- **Hung test container** `c63a6ec77669` (node:20-alpine, up since Nov 10): it is ours — a `node --test test/unit/lantern.test.js` run from this repo that never exited (its output piped through `head`). Stop it with `podman rm -f c63a6ec77669`; worth checking whether the lantern test leaves a handle open when run alone.
 - **Docs to refresh** after the next playtest: `playtest-findings.md`, `game-improvement-plans.md`.
+
+## Not doing / on hold (owner's call, Nov 11 2026)
+
+- **2.10 Admin PIN**: not needed.
+- **French** (2.4 French voice, 3.7 French content packs): on hold for now. New screens still get their few French UI lines.
+
+## Done
+
+- **2.9 Game errors are shown** (Nov 11 2026): a throw in a game's timer, answer, skip or bot move sends the TV `room:event {type:'glitch'}` (at most one per 5 s) → banner "Something went wrong — press Skip, or End if it stays stuck". `glitch`/`safely` in `core/rooms.js`, `guarded(fn, what, game)` in `games/base.js`; `/api/debug/glitch` (debug only) fakes one for tests.
+- **2.5 Lite image** (Nov 11 2026): `docker build --target lite` (or `target: lite` in compose.yaml) leaves out the voice model and sets `RUMPUS_SERVER_VOICE=0`; the default build is unchanged (`full`).
+- **2.8 Second TV tab says so** (Nov 11 2026): `secondTabNote()` in `web/host-entry.js`; checked in `test/ui/pages.js` (offline check opens a second TV tab).
+- **3.5 Wake-lock hint** (Nov 11 2026): when neither the Wake Lock nor the silent video works, the phone shows a one-time "turn off low-power mode" line (`wakeHint` in `public/play.js`; browser test in `test/ui/run.js`).
+- **4.2 Harsh load nightly** (Nov 11 2026): `.github/workflows/nightly.yml` runs `scripts/load-harsh.sh` every night and on demand.
+- **Fix: "Now playing" toast blocked clicks** (Nov 11 2026): it sat over the lobby's bottom-left buttons (+1 bot); with short tracks it never left. Now `pointer-events: none`.
+- **3.2 Rainy Day Cards room favourite** (Nov 11 2026): everyone but the Czar ❤ one card (not their own) while the Czar judges; most-liked card(s) +200 × stakes, shown on the reveal. Playtest: 2.9 → 4.5 actions/min.
+- **3.3 Storm Watch hunch** (Nov 11 2026): a private, changeable "who's a raccoon?" tap during the talk (not the leader), revealed with ✔/✘ on the final screen. No points.
+- **4.5 Chaos bots** (Nov 11 2026): `test/unit/chaos.test.js` — 3 chaos phones (late, repeated, empty, junk, wrong-screen input, random pace votes) + 2 bots play the changed games (all in CI); fails on any game error or a screen that lasts > 90 s.
+- **4.6 Strict TypeScript** (Nov 11 2026): already at 0 everywhere (`types/strict-baseline.json`).
+- **4.7 Seeded replays** (Nov 11 2026): `RUMPUS_REPLAY=1 RUMPUS_SEED=<n>` ignores (and never writes) question history and telemetry, and draws prompts from the seed, reset at each game start.
+- **Review fixes** (Nov 11 2026): a timer that throws stays pending, so Skip / the phones' vote retry it; `hurry` undoes the house per-game timer multiplier (and keeps unscaled timers unscaled); game start, skip-question, hurry and player-left are guarded too; `host:startGame` with `constructor`/`toString` no longer throws; trivia's speed bonus uses the real (scaled) clock; the wake hint shows only on a real refusal after a tap; the second-tab note goes away after 15 s.
+- **3.4 Join mid-game (trivia-style)** (Nov 11 2026): `lateJoin: true` in trivia, Closest Cast, Cabin Superlatives, Campfire Consensus and the game-night vote; the newcomer plays the current screen at once.
+- **Fix: Campfire Sequence buttons dead on real phones** and **Loon Call song kept playing after Skip** (Nov 11 2026): the two HIGH findings from the per-game reviews.
+- **Connection fixes** (Nov 11 2026): saved rooms re-stamped while in use (no 30-min expiry of a quiet lobby); no orphaned drop/close timers; the TV keeps retrying its room name after a crash and says so; a replaced TV tab keeps the saved key; a phone with no internet is told so; reload lock wait; boot flag; kicked phones see the message; TV grace 5 → 30 min.

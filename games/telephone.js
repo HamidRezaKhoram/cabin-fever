@@ -24,6 +24,9 @@ const DRAW_MS = parseInt(process.env.RUMPUS_TEL_DRAW_MS || '45000', 10); // play
 const DESCRIBE_MS = parseInt(process.env.RUMPUS_TEL_DESCRIBE_MS || '40000', 10);
 const ENTRY_SHOW_MS = parseInt(process.env.RUMPUS_TEL_ENTRY_MS || '3500', 10);
 const VOTE_MS = parseInt(process.env.RUMPUS_TEL_VOTE_MS || '30000', 10);
+/** Scribble pad: doodles per player per step, and how many float on the TV at once. */
+const SCRIBBLES_PER_STEP = 3;
+const SCRIBBLES_SHOWN = 6;
 // After each chain is shown, everyone taps their favourite step (not their own): +50 to its author.
 const FAV_MS = parseInt(process.env.RUMPUS_TEL_FAV_MS || '10000', 10);
 const FAV_PTS = 50;
@@ -53,6 +56,12 @@ class TelephoneGame extends BaseGame {
     /** @type {Chain[]} */
     this.chains = this.order.map((owner) => ({ owner, entries: /** @type {Entry[]} */ ([]) }));
     this.doubleFinal = false;
+    /** Scribble pad (todo 3.1): doodles from players who are done with a step float across the TV.
+     * @type {{ key: number, by: string, image: string }[]} */
+    this.scribbles = [];
+    /** @type {Map<string, number>} scribbles sent this step, per player */
+    this.scribbled = new Map();
+    this.scribbleSeq = 0;
     const ideas = library.draw('telephone', this.order.length, { spicy: this.spicy(), lang: this.room.settings.lang });
     /** @type {Map<string, string>} */
     this.suggestions = new Map(this.order.map((id, i) => [id, (ideas[i] && ideas[i].text) || FALLBACK[i % FALLBACK.length]]));
@@ -93,6 +102,8 @@ class TelephoneGame extends BaseGame {
     this.round = this.step + 1;
     if (this.step >= this.steps) return this.beginReveal();
     this.done = new Map();
+    this.scribbled = new Map();
+    this.scribbles = []; // last step's doodles have floated by: don't replay them (keys keep counting)
     const type = this.stepType(this.step);
     this.phase = 'tel-' + type;
     const ms = type === 'write' ? WRITE_MS : type === 'draw' ? DRAW_MS : DESCRIBE_MS;
@@ -123,6 +134,7 @@ class TelephoneGame extends BaseGame {
     if (this.phase === 'tel-vote') return this.handleVote(id, payload);
     if (this.phase === 'tel-reveal') return this.handleFav(id, payload);
     if (!['tel-write', 'tel-draw', 'tel-describe'].includes(this.phase)) return;
+    if (payload.scribble !== undefined) return this.handleScribble(id, payload.scribble);
     if (this.done.has(id)) return;
     const ci = this.chainFor(id);
     if (ci == null) return;
@@ -142,6 +154,18 @@ class TelephoneGame extends BaseGame {
     this.done.set(id, true);
     if (this.allIn(this.done)) this.finishStep();
     else this.push();
+  }
+
+  /** A doodle from someone who already passed their step on: a few per step, the last few shown.
+   * @param {string} id @param {unknown} image */
+  handleScribble(id, image) {
+    if (!this.done.has(id) || !validImage(image)) return;
+    const n = this.scribbled.get(id) || 0;
+    if (n >= SCRIBBLES_PER_STEP) return;
+    this.scribbled.set(id, n + 1);
+    this.scribbles.push({ key: ++this.scribbleSeq, by: id, image: /** @type {string} */ (image) });
+    if (this.scribbles.length > SCRIBBLES_SHOWN) this.scribbles.shift();
+    this.push();
   }
 
   beginReveal() {
@@ -289,6 +313,7 @@ class TelephoneGame extends BaseGame {
       totalPlayers: this.room.players.size,
       // Who the room is waiting for — shown on the TV so it's never a silent counter.
       waitingOn: this.order.filter((id) => this.room.players.has(id) && !this.done.has(id)).map((id) => this.nick(id)),
+      scribbles: this.scribbles.map((d) => ({ key: d.key, image: d.image, by: this.nick(d.by) })),
     };
   }
 
@@ -321,7 +346,8 @@ class TelephoneGame extends BaseGame {
         step: this.step,
         prev: prev ? { type: prev.type, content: prev.content } : null,
       },
-      you: { submitted: this.done.has(id), suggestion: this.suggestions.get(id) },
+      you: { submitted: this.done.has(id), suggestion: this.suggestions.get(id),
+        scribblesLeft: this.done.has(id) ? SCRIBBLES_PER_STEP - (this.scribbled.get(id) || 0) : 0 },
     };
   }
 }

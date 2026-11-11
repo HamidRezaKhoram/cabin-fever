@@ -83,6 +83,13 @@ if (DEBUG) {
     if (!room) return res.status(404).json({ error: 'no room' });
     res.json({ host: hostPayload(room), players: [...room.players.values()].map((p) => playerPayload(room, p)) });
   });
+  // Test tool: make the game's next timer throw, as a game bug would (the TV should say so).
+  app.get('/api/debug/glitch', (/** @type {any} */ req, /** @type {any} */ res) => {
+    const room = rooms.get(String(req.query.room || '').toUpperCase());
+    if (!room || !room.game) return res.status(404).json({ error: 'no game' });
+    room.game.setTimer(10, () => { throw new Error('debug glitch'); }, false);
+    res.json({ ok: true });
+  });
 }
 
 app.get('/api/info', (req, res) => {

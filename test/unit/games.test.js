@@ -294,6 +294,38 @@ test('Fish Tales: lies matching the truth are bounced; truth 1000, each fooled 5
 });
 
 // ------------------------------------------------------------------ Rainy Day Cards
+test('Rainy Day Cards: while the Czar judges, the others pick a room favourite (+200; never their own card; one each)', async () => {
+  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat', 'Dan'], { rounds: 3 });
+  h.emit('host:startGame', { gameId: 'cah' });
+  await h.phase('cah-submit');
+  const czar = ps.find((p) => p.nickname === h.state.gameState.czarNickname);
+  const others = ps.filter((p) => p !== czar);
+  await until(() => others.every((p) => p.state.you.hand && p.state.you.hand.length === 7), 'hands');
+  for (const p of others) p.submit({ cardIndex: 0 });
+  await h.phase('cah-czar');
+  await until(() => others.every((p) => p.state.phase === 'cah-czar' && p.state.gameState.submissions.length === 3), 'players see the cards');
+  assert.strictEqual(h.state.gameState.favNeeded, 3);
+  const cardOf = (/** @type {any} */ p) => p.state.gameState.submissions.find((/** @type {any} */ s) => s.mine).index;
+  const [a, b, c] = others;
+  a.submit({ fav: cardOf(a) }); // own card: ignored
+  a.submit({ fav: 99 }); a.submit({ fav: '1' }); // junk: ignored
+  // a and c both love b's card; b loves a's card.
+  a.submit({ fav: cardOf(b) });
+  a.submit({ fav: cardOf(c) }); // second vote: ignored
+  c.submit({ fav: cardOf(b) });
+  b.submit({ fav: cardOf(a) });
+  await until(() => h.state.gameState.favCount === 3, 'three favourites in');
+  assert.strictEqual(a.state.you.fav, cardOf(b));
+  // The Czar picks a's card: a gets the win, b gets the room favourite.
+  czar.submit({ choice: cardOf(a) });
+  const rev = await h.phase('cah-reveal');
+  assert.strictEqual(rev.gameState.winner.nickname, a.nickname);
+  assert.deepStrictEqual(rev.gameState.favourites.map((/** @type {any} */ f) => [f.nickname, f.votes]), [[b.nickname, 2]]);
+  assert.strictEqual(score(a.nickname), 500);
+  assert.strictEqual(score(b.nickname), 200);
+  assert.strictEqual(score(c.nickname), 0);
+});
+
 test('Rainy Day Cards: 7-card hands, czar sits out and picks, winner +500; czar chooses the next prompt', async () => {
   const { h, ps, score } = await room(['Ann', 'Ben', 'Cat'], { rounds: 3 });
   h.emit('host:startGame', { gameId: 'cah' });
@@ -622,4 +654,13 @@ test('18+ off: games never draw adult content', async () => {
       await h.phase('ml-reveal');
     }
   } finally { await s2.stop(); }
+});
+
+test('Odd Duck Out ends when fewer than 3 players are left (a lone player can never be voted)', async () => {
+  const { h, ps } = await room(['Ann', 'Ben', 'Cat']);
+  h.emit('host:startGame', { gameId: 'imposter' });
+  await until(() => h.state.phase && h.state.phase.startsWith('imp-'), 'started');
+  const kicked = ps.find((p) => p.nickname === 'Cat');
+  h.emit('host:kickPlayer', { playerId: kicked.id });
+  await h.phase('gameover', 5000);
 });

@@ -15,6 +15,18 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const house = require('./house');
+const { makeRng } = require('./rng');
+
+// Replay mode (todo 4.7, for debugging): RUMPUS_REPLAY=1 with RUMPUS_SEED=<n> ignores (and never
+// writes) the house's question history and telemetry, and draws prompts from the seed, so every
+// game started after `replayReset()` (each startGame) gets the same questions as last time.
+const REPLAY_SEED = Number(process.env.RUMPUS_SEED);
+const REPLAY = process.env.RUMPUS_REPLAY === '1' && Number.isInteger(REPLAY_SEED) && REPLAY_SEED > 0;
+let replayRng = REPLAY ? makeRng((REPLAY_SEED ^ 0x5bd1e995) >>> 0) : null;
+/** A random index below n (seeded in replay mode). @param {number} n */
+function randInt(n) { return replayRng ? Math.floor(replayRng.next() * n) : crypto.randomInt(n); }
+/** A float in [0, 1) (seeded in replay mode). */
+function rand() { return replayRng ? replayRng.next() : Math.random(); }
 
 const POOL_DIR = path.join(__dirname, 'data', 'pools');
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
@@ -35,7 +47,7 @@ function writeStats() {
   try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STATS_FILE, JSON.stringify(itemStats)); } catch (e) { /* best effort */ }
 }
 function saveStats() {
-  if (statsTimer) return;
+  if (statsTimer || REPLAY) return;
   statsTimer = setTimeout(() => { statsTimer = null; writeStats(); }, 1500);
   if (statsTimer.unref) statsTimer.unref();
 }
@@ -60,6 +72,7 @@ function recordAnswers(pool, id, correct, answers) {
  * majority voted to skip. @param {string} pool @param {string} id
  */
 function retired(pool, id) {
+  if (REPLAY) return false;
   const s = itemStats[pool] && itemStats[pool][id];
   if (!s) return false;
   if ((s.skips || 0) >= 1) return true;
@@ -75,7 +88,7 @@ function retired(pool, id) {
 const pools = new Map();
 /** @type {Record<string, string[]>} pool → ids played, oldest first */
 let history = {};
-try { history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch (e) { history = {}; }
+if (!REPLAY) { try { history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch (e) { history = {}; } }
 /** @type {Map<string, Set<string>>} pool → ids played (mirrors history[pool]) */
 const seenSets = new Map();
 
@@ -99,7 +112,7 @@ function flush() {
   if (statsTimer) { clearTimeout(statsTimer); statsTimer = null; writeStats(); }
 }
 function saveSoon() {
-  if (saveTimer) return;
+  if (saveTimer || REPLAY) return;
   saveTimer = setTimeout(() => { saveTimer = null; writeHistory(); }, 1500);
   if (saveTimer.unref) saveTimer.unref();
 }
@@ -178,7 +191,7 @@ function markUsed(name, items) {
 function pickFrom(name, candidates, exclude) {
   const s = seen(name);
   const fresh = candidates.filter((i) => !s.has(i.id) && !exclude.has(i.id));
-  if (fresh.length) return fresh[crypto.randomInt(fresh.length)];
+  if (fresh.length) return fresh[randInt(fresh.length)];
   // Everything has been seen: take the least-recently used.
   const list = history[name] || [];
   const order = new Map(list.map((id, i) => [id, i]));
@@ -218,7 +231,7 @@ function draw(name, n = 1, opts = {}) {
   const s = seen(name);
   const hasFresh = (/** @type {PoolItem[]} */ list) => list.some((x) => !s.has(x.id) && !taken.has(x.id));
   for (let i = 0; i < n; i++) {
-    const wantAdult = adult.length && (Math.random() < house.get().spicyShare || !fam.length);
+    const wantAdult = adult.length && (rand() < house.get().spicyShare || !fam.length);
     const [first, second] = wantAdult ? [adult, fam] : [fam, adult];
     // Unseen items from the preferred side, then unseen from the other side,
     // and only when everything has been played: the least-recently used.
@@ -249,4 +262,12 @@ function stats() {
   return out;
 }
 
-module.exports = { draw, drawOne, load, stats, recordSkip, recordAnswers, retired, flush };
+/** Replay mode: start the next game from a clean history and the same seed. No-op otherwise. */
+function replayReset() {
+  if (!REPLAY) return;
+  history = {};
+  seenSets.clear();
+  replayRng = makeRng((REPLAY_SEED ^ 0x5bd1e995) >>> 0);
+}
+
+module.exports = { draw, drawOne, load, stats, recordSkip, recordAnswers, retired, flush, replayReset, REPLAY };

@@ -34,7 +34,15 @@ function claimRoom() {
   if (!IS_TV || !locks) return Promise.resolve();
   return new Promise((resolve) => {
     locks.request('cf-tv-room', { ifAvailable: true }, (/** @type {unknown} */ lock) => {
-      if (!lock) { secondTab = true; resolve(); return undefined; }
+      if (!lock) {
+        // Taken — but a reload's old page may still be letting go of it: wait up to 2 s before
+        // deciding this is a second tab (which would start a new, unsaved room).
+        const ac = new AbortController();
+        const t = setTimeout(() => ac.abort(), 2000);
+        locks.request('cf-tv-room', { signal: ac.signal }, () => { clearTimeout(t); resolve(); return new Promise(() => {}); })
+          .catch(() => { secondTab = true; resolve(); });
+        return undefined;
+      }
       resolve();
       return new Promise(() => {}); // held until this tab closes or reloads
     }).catch(() => resolve());
@@ -43,6 +51,8 @@ function claimRoom() {
 
 /** @type {Promise<void> | null} */
 let ready = null;
+/** boot() has finished (pools loaded, second-tab flag set): only then may core modules load. */
+let booted = false;
 /** Content pools come with the build (one JSON file); everything waits for them. */
 function boot() {
   if (!ready) {
@@ -50,9 +60,23 @@ function boot() {
       fsShim.preload(/** @type {Record<string, string>} */ (map));
       // Read by core/rooms.js when it loads (after this): don't save or restore rooms here.
       if (secondTab) /** @type {any} */ (globalThis).CF_SECOND_TAB = true;
+      if (secondTab && IS_TV) secondTabNote();
+      booted = true;
     });
   }
   return ready;
+}
+/** A second TV tab gets its own room that isn't saved (so it can't take the first tab's): say so,
+ * or a reload here looks like it "lost" the room. */
+function secondTabNote() {
+  const show = () => {
+    const el = document.createElement('div');
+    el.className = 'second-tab-note';
+    el.textContent = 'Another tab is hosting your saved room. This tab has its own room, and it won\'t be kept after a reload.';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 15000); // said once; then it gets out of the way of the room code
+  };
+  if (document.body) show(); else document.addEventListener('DOMContentLoaded', show, { once: true });
 }
 // The game modules are required lazily so they read the pools only after boot().
 const core = () => /** @type {typeof import('../core/rooms')} */ (require('../core/rooms'));
@@ -91,9 +115,14 @@ function listen(code, attempt = 0) {
       }, 2000);
     }
   }, (err) => {
-    if (err === 'unavailable-id' && attempt < 8) { setTimeout(() => listen(code, attempt + 1), 1500); return; }
+    // After a crash the broker can hold the room's name for about a minute: keep trying (capped
+    // backoff, no limit) and tell the TV once, so it doesn't sit there looking ready.
+    if (err === 'unavailable-id') {
+      if (attempt === 8) document.dispatchEvent(new CustomEvent('cf:room-taken', { detail: code }));
+      setTimeout(() => listen(code, attempt + 1), Math.min(5000, 1500 + attempt * 300));
+      return;
+    }
     console.warn('[cabin fever] could not open the room for phones:', err);
-    if (err === 'unavailable-id') document.dispatchEvent(new CustomEvent('cf:room-taken', { detail: code }));
   });
 }
 
@@ -160,13 +189,13 @@ window.fetch = async (input, init) => {
 
 // ---- keep tonight's highlights readable from the /highlights tab; follow /admin edits
 setInterval(() => {
-  if (!ready) return;
+  if (!booted) return;
   for (const room of /** @type {Map<string, any>} */ (core().rooms).values()) {
     try { localStorage.setItem('cf.tonight.' + room.code, JSON.stringify(stats().summary(room))); } catch (e) { /* full */ }
   }
 }, 5000);
 addEventListener('storage', (e) => {
-  if (e.key && e.key.endsWith('/house-rules.json') && ready) house().reload();
+  if (e.key && e.key.endsWith('/house-rules.json') && booted) house().reload();
 });
 
 /** @type {any} */ (window).io = io;

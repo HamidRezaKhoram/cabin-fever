@@ -35,12 +35,12 @@ test('room codes are case-insensitive and nicknames are trimmed to 16 chars', as
   assert.strictEqual(p.state.you.nickname, 'A very very long');
 });
 
-test('cannot join a game in progress, but can rejoin with your token any time', async () => {
+test('cannot join a role/writing game in progress (Fish Tales), but can rejoin with your token any time', async () => {
   const h = await makeHost(srv);
   const a = await makePlayer(srv, h.code, 'Ann');
   await makePlayer(srv, h.code, 'Ben');
-  h.emit('host:startGame', { gameId: 'closest' });
-  await h.phase('cg-guess');
+  h.emit('host:startGame', { gameId: 'fibbage' });
+  await h.phase('fib-bluff');
   assert.match(await joinError(srv, h.code, 'Late'), /in progress/);
   a.sock.disconnect();
   await until(() => h.state.players.find((p) => p.nickname === 'Ann' && !p.connected), 'Ann offline');
@@ -306,4 +306,28 @@ test('a burst of taps is coalesced into a few state updates, and unchanged views
   ps[0].submit({ number: 1 });
   await sleep(150);
   assert.ok(n - before <= 1, 'no flood of identical updates');
+});
+
+test('join mid-game: trivia-style games take a new phone (it can answer at once); role games say "join when this one ends"', { timeout: 30000 }, async () => {
+  const { startServer, makeHost, makePlayer, joinError, until } = require('../helpers');
+  const srv = await startServer({ RUMPUS_TRIVIA_QUESTION_MS: '20000', RUMPUS_TRIVIA_ROUNDS: '2' });
+  try {
+    const h = await makeHost(srv);
+    const ps = [];
+    for (const n of ['Ann', 'Ben', 'Cat']) ps.push(await makePlayer(srv, h.code, n));
+    for (const p of ps) p.sock.on('room:stateUpdate', (/** @type {any} */ s) => { if (s.phase === 'trivia-category' && s.you.isChooser) p.submit({ choice: 0 }); });
+    h.emit('host:startGame', { gameId: 'trivia' });
+    await h.phase('trivia-question', 10000);
+    const late = await makePlayer(srv, h.code, 'Dee');
+    await until(() => late.state && late.state.phase === 'trivia-question', 'the newcomer sees the question');
+    late.submit({ choice: 0 });
+    for (const p of ps) p.submit({ choice: 1 });
+    await h.phase('trivia-reveal', 5000); // everyone, newcomer included, answered → reveal right away
+    assert.ok(h.state.gameState.scored.some((/** @type {any} */ s) => s.nickname === 'Dee'), 'the newcomer is scored');
+    h.emit('host:endGame');
+    await h.phase('lobby', 5000);
+    h.emit('host:startGame', { gameId: 'quiplash' });
+    await h.phase('answering', 5000);
+    assert.match(String(await joinError(srv, h.code, 'Eve')), /join when this one ends/);
+  } finally { await srv.stop(); }
 });

@@ -179,7 +179,7 @@ class QuiplashGame extends BaseGame {
       const p = this.room.players.get(author);
       let pts;
       if (won) pts = this.award(author, bet.win);
-      else { pts = -(p ? Math.min(p.score, bet.lose) : 0); if (p) p.score += pts; }
+      else { pts = -(p ? Math.min(p.score, bet.lose * this.mult()) : 0); if (p) p.score += pts; } // same stakes as a win
       sd.bet = { kind, label: bet.label, won, pts };
       sd.gained += pts;
     });

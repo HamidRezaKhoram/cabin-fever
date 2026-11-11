@@ -36,11 +36,13 @@ test('malformed host and player messages are ignored, not fatal', { timeout: 300
     for (const bad of ['x', 5, true, null, [], { rounds: 'lots' }]) h.emit('host:settings', bad);
     for (const ev of ['player:submit', 'player:vote', 'player:look', 'player:avatar', 'player:react', 'player:team']) for (const bad of ['x', 5, null, [], { payload: 'x' }]) a.sock.emit(ev, bad);
     h.emit('host:startGame', 'quiplash');
+    for (const gameId of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) h.emit('host:startGame', { gameId }); // not games
     h.emit('host:kickPlayer', 'nobody');
     h.emit('host:startNight', 'x');
     await sleep(200);
     assert.strictEqual((await get(srv.url, '/api/info')).status, 200, 'server still up');
     assert.strictEqual(h.state.players.length, 3);
+    assert.doesNotMatch(srv.log(), /socket\] host:startGame failed/, 'and nothing threw');
   } finally { await srv.stop(); }
 });
 
@@ -180,5 +182,68 @@ test('"That\'s me": a name that is in use and online can be taken over on reques
     assert.strictEqual(joined.playerId, ann.id, 'same seat');
     await replaced;
     await until(() => h.state.players.length === 1 && h.state.players[0].connected, 'still one Ann, connected');
+  } finally { await srv.stop(); }
+});
+
+test('a game error reaches the TV as a glitch banner (once, not a flood) and Skip still works', { timeout: 30000 }, async () => {
+  const srv = await startServer({ RUMPUS_DEBUG: '1' });
+  try {
+    const h = await makeHost(srv);
+    for (const n of ['Ann', 'Bob', 'Cy']) await makePlayer(srv, h.code, n);
+    /** @type {any[]} */ const events = [];
+    h.sock.on('room:event', (/** @type {any} */ e) => events.push(e));
+    h.emit('host:startGame', { gameId: 'quiplash' });
+    await h.phase('answering', 5000);
+    assert.strictEqual((await get(srv.url, `/api/debug/glitch?room=${h.code}`)).status, 200);
+    await until(() => events.some((e) => e.type === 'glitch'), 'the TV is told something went wrong');
+    // A second error right after (a real-time tick can throw 30 times a second) is not repeated.
+    await get(srv.url, `/api/debug/glitch?room=${h.code}`);
+    await sleep(200);
+    assert.strictEqual(events.filter((e) => e.type === 'glitch').length, 1, 'one banner, not a flood');
+    assert.strictEqual((await get(srv.url, '/api/info')).status, 200, 'server still up');
+    // The broken timer stays pending, so the banner's advice works: Skip is there and tries again.
+    await until(() => h.state.canSkip === true, 'Skip is still offered after the error');
+    assert.ok(h.state.pace.allowed.length > 0, 'the phones still have a vote');
+    h.emit('host:skip'); // throws again (same broken timer) — caught, never fatal
+    await sleep(100);
+    assert.strictEqual((await get(srv.url, '/api/info')).status, 200, 'server still up after Skip');
+    // And End takes the room back to the menu.
+    h.emit('host:endGame');
+    await h.phase('lobby', 5000);
+  } finally { await srv.stop(); }
+});
+
+test('guarded timer work tells its game, and a broken hook never throws', () => {
+  const { guarded } = require('../../games/base');
+  /** @type {string[]} */ const seen = [];
+  const err = console.error; console.error = () => {};
+  try {
+    guarded(() => { throw new Error('x'); }, 'tick', { onGlitch: (w) => seen.push(w) });
+    guarded(() => { throw new Error('x'); }, 'tick', { onGlitch: () => { throw new Error('hook'); } });
+    guarded(() => { throw new Error('x'); }, 'tick');
+    guarded(() => seen.push('ran'), 'ok', { onGlitch: () => seen.push('wrong') });
+  } finally { console.error = err; }
+  assert.deepStrictEqual(seen, ['tick', 'ran']);
+});
+
+test('a room in use but unchanged for longer than the keep window still survives a restart (its save is re-stamped)', { timeout: 30000 }, async () => {
+  const dir = require('../helpers').tmpDir();
+  const env = { RUMPUS_DATA_DIR: dir, RUMPUS_ROOM_KEEP_MS: '1500', RUMPUS_ROOM_KEEPALIVE_MS: '300' };
+  let srv = await startServer(env);
+  /** @type {any} */ let h;
+  try {
+    h = await makeHost(srv);
+    await makePlayer(srv, h.code, 'Ann');
+    await sleep(2500); // nothing changes for longer than the keep window, but the TV is connected
+  } finally { srv.proc.kill('SIGKILL'); await sleep(200); } // a crash: no final save
+  srv = await startServer(env);
+  try {
+    const tv = srv.connect();
+    /** @type {any} */ let state = null;
+    tv.on('room:stateUpdate', (s) => { state = s; });
+    await new Promise((r) => tv.once('connect', r));
+    tv.emit('host:resume', { code: h.code, hostToken: h.hostToken });
+    await until(() => state && state.code === h.code, 'the same room came back');
+    assert.deepStrictEqual(state.players.map((/** @type {any} */ p) => p.nickname), ['Ann']);
   } finally { await srv.stop(); }
 });

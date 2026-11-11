@@ -1,0 +1,15 @@
+# Nightly (and on demand): the harsh load run — bad Wi-Fi (netem delay + loss) and a server
+# starved to 1/4 CPU (scripts/load-harsh.sh, ~2 min). Too slow and noisy for every push.
+name: nightly
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+jobs:
+  load-harsh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Harsh load (bad Wi-Fi, starved server)
+        run: ./scripts/load-harsh.sh

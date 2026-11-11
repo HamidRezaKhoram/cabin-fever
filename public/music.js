@@ -727,16 +727,34 @@
     award: () => sfx((t, d) => { voice(d, 784, t, 0.12, { vol: 0.1 }); voice(d, 1175, t + 0.12, 0.3, { vol: 0.1 }); }),
   };
 
+  // A rhythm song is booked on the audio clock all at once; it plays through its own pair of gains
+  // so stop() can cut it off (Skip / "end the round" mid-song must not leave it playing on).
+  /** @type {GainNode | null} */ let rMusic = null;
+  /** @type {GainNode | null} */ let rSfx = null;
+  const rM = () => { if (!rMusic) { rMusic = ctx.createGain(); rMusic.connect(musicBus); } return rMusic; };
+  const rS = () => { if (!rSfx) { rSfx = ctx.createGain(); rSfx.connect(sfxBus); } return rSfx; };
   /** Sample-accurate instruments for rhythm games: `t` is AudioContext time. */
   const rhythm = {
     ready: () => !!ctx && enabled,
     now: () => (ctx ? ctx.currentTime : 0),
-    /** @param {number} t */ kick: (t) => { voice(musicBus, 150, t, 0.16, { type: 'sine', vol: 0.5, slide: 0.35, release: 0.1 }); },
-    /** @param {number} t */ hat: (t) => noise(musicBus, t, 0.04, 0.05, 7000),
-    /** @param {number} t @param {boolean} accent */ click: (t, accent) => voice(sfxBus, accent ? 1568 : 1175, t, 0.05, { wave: 0.5, vol: 0.12 }),
+    /** @param {number} t */ kick: (t) => { voice(rM(), 150, t, 0.16, { type: 'sine', vol: 0.5, slide: 0.35, release: 0.1 }); },
+    /** @param {number} t */ hat: (t) => noise(rM(), t, 0.04, 0.05, 7000),
+    /** @param {number} t @param {boolean} accent */ click: (t, accent) => voice(rS(), accent ? 1568 : 1175, t, 0.05, { wave: 0.5, vol: 0.12 }),
     /** The lead loon's "hoo" — a short sliding call. @param {number} t @param {number} f */
-    call: (t, f) => { voice(sfxBus, f, t, 0.16, { wave: 0.25, vol: 0.16, slide: 1.12, attack: 0.008 }); voice(sfxBus, f * 2, t, 0.08, { type: 'sine', vol: 0.05 }); },
-    /** @param {number} t @param {number} f */ bass: (t, f) => voice(musicBus, f, t, 0.22, { wave: 0.5, vol: 0.12 }),
+    call: (t, f) => { voice(rS(), f, t, 0.16, { wave: 0.25, vol: 0.16, slide: 1.12, attack: 0.008 }); voice(rS(), f * 2, t, 0.08, { type: 'sine', vol: 0.05 }); },
+    /** @param {number} t @param {number} f */ bass: (t, f) => voice(rM(), f, t, 0.22, { wave: 0.5, vol: 0.12 }),
+    /** Silence everything booked so far (a quick fade, then the nodes are dropped). */
+    stop: () => {
+      if (!ctx) return;
+      for (const g of [rMusic, rSfx]) {
+        if (!g) continue;
+        g.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+        setTimeout(() => g.disconnect(), 250);
+      }
+      rMusic = rSfx = null;
+    },
+    /** Test/debug: is a song booked right now? */
+    busy: () => !!(rMusic || rSfx),
   };
 
   window.Rumpus.music = {

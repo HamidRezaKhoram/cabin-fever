@@ -85,7 +85,7 @@ const RULES = {
   imposter: ['Everyone gets a secret word — except one', 'Give a one-word clue', 'Vote out the imposter!'],
   twotruths: ['Your phone secretly says TRUTH or LIE', 'Answer the confession — real or made up', 'Call everyone else\'s: points for right calls and for fooling people'],
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
-  cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
+  cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner — everyone else ❤ a favourite'],
   storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win — unless the Raccoons unmask the Lookout'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
   lantern: ['Tilt your phone to glide (or drag on the circle)', 'Four scenes: fireflies, moonbeam, tag, lily pad, ducklings…', 'One of them: everyone steers the same raft'],
@@ -195,6 +195,7 @@ window.addEventListener('beforeunload', (e) => {
 
 socket.on('connect', () => {
   document.body.classList.remove('offline');
+  if (replaced) return;
   const saved = hostSeat();
   if (saved && saved.code && saved.hostToken) socket.emit('host:resume', saved);
   else socket.emit('host:createRoom');
@@ -206,9 +207,12 @@ socket.on('host:roomCreated', (/** @type {any} */ msg) => {
   if (msg.code) hostSeat({ code: msg.code, hostToken: msg.hostToken });
   updateJoinInfo();
 });
+// Another TV screen took this room over. Leave the saved room key alone (that screen uses it now)
+// and stop asking for rooms here until a reload.
+let replaced = false;
 socket.on('host:replaced', () => {
+  replaced = true;
   phaseView.innerHTML = '<h1>This room was opened on another screen.</h1><p>Reload to start a new room here.</p>';
-  hostSeat(null);
 });
 socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; window.Rumpus.setState(msg); render(); });
 socket.on('room:reaction', (/** @type {any} */ r) => {
@@ -216,6 +220,8 @@ socket.on('room:reaction', (/** @type {any} */ r) => {
   sfx.pop();
 });
 socket.on('disconnect', () => document.body.classList.add('offline'));
+// Browser build: the broker still holds this room's name (the last TV page crashed); web/host-entry.js keeps trying.
+document.addEventListener('cf:room-taken', () => fx.banner('PHONES CAN\'T JOIN YET\nStill opening the room — give it a minute'));
 socket.on('room:event', (/** @type {any} */ ev) => {
   if (ev.type === 'skipped') { fx.banner('QUESTION SKIPPED!\nFresh one coming up'); sfx.whoosh(); }
   else if (ev.type === 'hurry') { fx.banner('HURRY UP!\n10 SECONDS LEFT'); sfx.boo(); }
@@ -223,6 +229,8 @@ socket.on('room:event', (/** @type {any} */ ev) => {
   // Back after a TV reload / server restart: the room and seats were kept, the game was not.
   else if (ev.type === 'interrupted') fx.banner(`WE'RE BACK!\n${String(ev.game || 'The game').toUpperCase()} was cut short — pick it again`);
   else if (ev.type === 'ready') sfx.whoosh();
+  // A game bug was caught on the server: say so rather than sit silently (see core/rooms.js glitch).
+  else if (ev.type === 'glitch') { fx.banner('SOMETHING WENT WRONG!\nPress Skip — or End if it stays stuck'); sfx.boo(); }
 });
 
 // --- loading card (TV) ---------------------------------------------------------
@@ -480,12 +488,14 @@ function legacyHost(/** @type {any} */ phase, /** @type {any} */ g) {
         <p class="count">${g.submittedCount} / ${g.neededCount} cards in</p>`;
     case 'cah-czar':
       return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}</p>
-        <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">${esc(g.czarNickname)} is picking a winner…</p>
-        <ol class="answers">${g.submissions.map((/** @type {any} */ s) => `<li>${esc(s.text)}</li>`).join('')}</ol>`;
+        <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">${esc(g.czarNickname)} is picking a winner…</p><p class="big-sub">Everyone else: ❤ your favourite on your phone!</p>
+        <ol class="answers">${g.submissions.map((/** @type {any} */ s) => `<li>${esc(s.text)}</li>`).join('')}</ol>
+        <p class="count">${g.favCount || 0} / ${g.favNeeded || 0} favourites in</p>`;
     case 'cah-reveal':
       return `${roundTag}<h1 class="prompt">${esc(g.blackCard)}</h1>
         <p class="big-answer">${esc(g.winner.text)}</p>
-        <p class="big-sub winner-line">${av(g.winner.nickname, 'avatar big bob')} ${esc(g.winner.nickname)} wins the round!</p>`;
+        <p class="big-sub winner-line">${av(g.winner.nickname, 'avatar big bob')} ${esc(g.winner.nickname)} wins the round!</p>
+        ${(g.favourites || []).length ? `<p class="big-sub fav-line"><span>❤ Room favourite</span> ${g.favourites.map((/** @type {any} */ f) => `${av(f.nickname)} ${esc(f.nickname)} “${esc(f.text)}”`).join(' · ')} <span class="votes">+${g.favPoints}</span></p>` : ''}`;
     case 'fib-bluff':
       return `${roundTag}<h1 class="prompt">${esc(g.prompt)}</h1>
         <p class="big-sub">Write a believable LIE on your phone! ${T}</p><p class="count">${g.submittedCount} / ${g.totalPlayers} lies in</p>`;

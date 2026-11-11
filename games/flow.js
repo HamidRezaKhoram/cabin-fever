@@ -14,6 +14,8 @@
  */
 'use strict';
 
+const house = require('./house');
+
 const HURRY_MS = parseInt(process.env.RUMPUS_HURRY_MS || '10000', 10);
 
 /** @param {number} round @param {number} total @returns {1 | 2 | 3} */
@@ -54,8 +56,12 @@ function allowedVotes(game) {
 function hurry(game) {
   if (!game.timerFn || !game.endsAt || game.endsAt - Date.now() <= HURRY_MS) return false;
   const fn = game.timerFn;
-  const scale = (game.room.settings && game.room.settings.timerScale) || 1;
-  game.setTimer(HURRY_MS / scale, fn); // setTimer re-applies the scale
+  // setTimer re-applies the room's timer speed AND the house's per-game multiplier, unless the
+  // pending timer was an unscaled one (reveal pauses): undo the same factor so it's really 10 s.
+  if (game.timerScaled === false) { game.setTimer(HURRY_MS, fn, false); return true; }
+  const id = game.constructor && game.constructor.meta ? game.constructor.meta.id : '';
+  const scale = ((game.room.settings && game.room.settings.timerScale) || 1) * house.timerFor(id);
+  game.setTimer(HURRY_MS / scale, fn);
   return true;
 }
 
