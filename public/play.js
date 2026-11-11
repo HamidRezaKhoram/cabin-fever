@@ -204,10 +204,16 @@ if (codeInput.value && !nickInput.value) setTimeout(() => nickInput.focus(), 50)
 /** Ask for a seat. `takeover`: "that name is me" — move my seat here from wherever it is open
  * (a private window or another browser has no saved seat to show for it). @param {boolean} [takeover] */
 function askToJoin(takeover) {
+  if (joinBtn.disabled) return;
   joinError.textContent = '';
   store('rumpus.nick', nickInput.value.trim());
   joinBtn.disabled = true;
   joinBtn.textContent = 'Joining…';
+  joinForm.setAttribute('aria-busy', 'true');
+  joinTimer = window.setTimeout(() => {
+    resetJoinBtn();
+    joinError.textContent = 'The TV did not respond. Check the room code and try again.';
+  }, 10000);
   socket.emit('player:joinRoom', {
     code: codeInput.value, nickname: nickInput.value, avatar: myAvatar, device: DEVICE,
     look: avatarMode === 'make' ? myLook : undefined, ...(takeover ? { takeover: true } : {}),
@@ -217,7 +223,15 @@ function askToJoin(takeover) {
 joinForm.addEventListener('submit', (e) => { e.preventDefault(); askToJoin(); });
 joinError.addEventListener('click', (e) => { if (hit(e.target, '[data-thats-me]')) askToJoin(true); });
 const joinBtn = /** @type {HTMLButtonElement} */ (joinForm.querySelector('button[type="submit"]'));
-const resetJoinBtn = () => { joinBtn.disabled = false; joinBtn.textContent = 'Join'; };
+/** @type {number | null} */
+let joinTimer = null;
+const resetJoinBtn = () => {
+  if (joinTimer !== null) clearTimeout(joinTimer);
+  joinTimer = null;
+  joinForm.setAttribute('aria-busy', 'false');
+  joinBtn.disabled = false;
+  joinBtn.textContent = 'Join';
+};
 
 leaveBtn.addEventListener('click', () => {
   if (!confirm('Leave this room? Your score in this game is lost.')) return;
@@ -362,6 +376,10 @@ socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; render(
 socket.on('disconnect', () => {
   if (ended) return;
   setConn('wait');
+  if (joinTimer !== null) {
+    resetJoinBtn();
+    joinError.textContent = 'Connection lost. Try joining again when the TV reconnects.';
+  }
   // Brief blips heal by themselves; only say something if it lasts.
   if (lostTimer) clearTimeout(lostTimer);
   lostTimer = window.setTimeout(() => {
@@ -476,13 +494,15 @@ let sendSeq = 0;
  * confirmation never comes (the link dropped) the buttons come back so it can be tapped again. */
 function send(/** @type {any} */ payload) {
   const seq = ++sendSeq;
-  const slow = window.setTimeout(() => { if (seq === sendSeq) document.body.classList.add('sending'); }, 250);
+  const screen = lastScreenKey;
+  const slow = window.setTimeout(() => { if (seq === sendSeq && screen === lastScreenKey) document.body.classList.add('sending'); }, 250);
   socket.timeout(6000).emit('player:submit', { payload }, (/** @type {any} */ err, /** @type {any} */ res) => {
     clearTimeout(slow);
     if (seq !== sendSeq) return;
     document.body.classList.remove('sending');
+    if (screen !== lastScreenKey || ended) return;
     if (!err && res && res.ok) return;
-    for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) x.disabled = false;
+    for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) { x.disabled = false; x.classList.remove('sent'); }
     banner.textContent = 'That didn\'t reach the TV — tap again';
     banner.hidden = false;
     setTimeout(() => { if (socket.connected) banner.hidden = true; }, 3000);
@@ -552,6 +572,7 @@ function render() {
     morph(gameView, html);
     lastHtml = html;
   } else if (html !== lastHtml) {
+    document.body.classList.remove('sending');
     lastScreenKey = screenKey;
     cleanups.forEach((fn) => fn());
     cleanups = [];

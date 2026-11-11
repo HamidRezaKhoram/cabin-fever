@@ -82,8 +82,8 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
       last = left;
       if (left <= 0) { if (cdTimer) clearInterval(cdTimer); cdTimer = null; }
     };
-    tick();
     cdTimer = setInterval(tick, 250);
+    tick();
   }
 
   // Avatar <img> for a nickname, looked up in the latest room state.
