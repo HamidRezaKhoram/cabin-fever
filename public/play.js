@@ -271,6 +271,8 @@ socket.on('player:rejoinFailed', () => {
 });
 // A role game is on: this phone is queued and is dealt in (player:joined) when the game ends.
 socket.on('player:queued', (/** @type {any} */ msg) => {
+  // The TV did answer: no "did not respond" timeout while we wait in line (the button stays off).
+  if (joinTimer !== null) { clearTimeout(joinTimer); joinTimer = null; }
   joinError.textContent = `You're next! ${String(msg.game || 'A game')} is on right now — you'll join as soon as it ends. Keep this page open.`;
 });
 socket.on('player:joinError', (/** @type {any} */ msg) => {
