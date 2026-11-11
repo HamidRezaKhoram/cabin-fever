@@ -89,7 +89,7 @@ async function main() {
   const hasVoice = fs.existsSync(path.join(voice, 'model', 'config.json'));
   if (hasVoice) fs.cpSync(voice, path.join(OUT, 'tts'), { recursive: true });
   else console.warn('narrator voice not fetched (node tools/fetch-kokoro.js): the browser voice will be used');
-  write(path.join(OUT, 'api', 'voice'), JSON.stringify({ available: hasVoice }));
+  write(path.join(OUT, 'api', 'voice'), JSON.stringify({ available: hasVoice, server: false, dtype: hasVoice ? require('../core/voice').dtypeOf(voice) : null }));
 
   // 3. Content pools in one file (preloaded into the browser stand-in for fs).
   /** @type {Record<string, string>} */

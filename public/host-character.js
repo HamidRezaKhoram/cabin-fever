@@ -8,7 +8,10 @@
  *     (public/tts-worker.js), English, 4 voices (US/UK × female/male) — when its files are in tts/;
  *  2. the server's /api/tts (espeak-ng in the container; offline, robotic, also French);
  *  3. the browser's speechSynthesis (the GitHub Pages build without the model, or no server voice).
- * A line that Kokoro can't finish in time falls back to 2/3, so the narrator never goes quiet.
+ * Kokoro speaks a line part by part (sentences / clauses), so it starts after the first part; a new
+ * line cuts the old one off, so it never lags behind the screen. It needs the TV page to be
+ * cross-origin isolated (multi-threaded: server.js headers, sw.js on GitHub Pages). A TV too slow
+ * for it (3 lines in a row late) switches to the classic voice.
  * Animation runs on the shared 30 fps clock. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -29,60 +32,194 @@
   let voiceId = R.store('rumpus.voice') || 'af_heart';
   const VOICES = [['af_heart', 'Natural — US female'], ['am_michael', 'Natural — US male'], ['bf_emma', 'Natural — UK female'], ['bm_george', 'Natural — UK male'], ['classic', 'Classic robot']];
 
-  // ---- Kokoro in a worker (only if the build/server has the model files)
+  // ---- Kokoro: made by the server when it can (Docker: native, fast), else in a worker on this TV
   /** @type {Worker | null} */
   let worker = null;
-  let workerOk = false;
+  /** 'server' / 'worker' once a natural voice is ready; 'none' if there isn't one. */
+  let engine = /** @type {'loading' | 'server' | 'worker' | 'none'} */ ('loading');
   let seq = 0;
-  /** @type {Map<number, (r: { rate?: number, samples?: Float32Array, error?: string }) => void>} */
-  const pending = new Map();
   const C = /** @type {any} */ (window).CABIN;
   const base = C ? '' : '/';
-  // Ask whether this server/build has the model (a missing file would log a 404 on the TV).
-  void fetch(base + 'api/voice').then((r) => r.json()).then((/** @type {{ available?: boolean }} */ v) => {
-    if (!v || !v.available || typeof Worker === 'undefined') return;
+  /** The line being spoken: its id, what to do with each part, and how to drop it. */
+  /** @type {{ id: number, onPart: (k: number, buf: AudioBuffer) => void, onError: () => void, abort: () => void } | null} */
+  let line = null;
+  /** A line asked for while the model was still loading: spoken once it's ready (if still fresh). */
+  /** @type {{ t: string, at: number } | null} */
+  let waiting = null;
+  /** How the natural voice is doing (the debug panel and tests). */
+  const info = { engine: 'loading', threads: 0, firstMs: /** @type {number | null} */ (null) };
+
+  const ready = (/** @type {'server' | 'worker'} */ e) => {
+    engine = e; info.engine = e;
+    const w = waiting; waiting = null;
+    if (w && Date.now() - w.at < 2500 && enabled) speakNatural(w.t);
+  };
+  /** The model in a worker on this TV (GitHub Pages, or a server without the native runtime). @param {string | null} dtype */
+  function startWorker(dtype) {
     try {
       worker = new Worker(base + 'tts-worker.js', { type: 'module' });
-      worker.onmessage = (e) => { const f = pending.get(e.data.id); pending.delete(e.data.id); if (e.data.ready) workerOk = true; if (f) f(e.data); };
-      worker.onerror = () => { worker = null; };
-      worker.postMessage({ id: 0, text: '' }); // load the model now, while the room fills up
-    } catch (e) { worker = null; }
-  }).catch(() => {});
+      worker.onmessage = (e) => {
+        const d = e.data || {};
+        if (d.ready) {
+          info.threads = d.threads || 1;
+          if (info.threads < 2) console.info('[narrator] natural voice on 1 thread (page not cross-origin isolated): it may lag');
+          return ready('worker');
+        }
+        if (!line || d.id !== line.id) return; // an old line: dropped
+        if (d.error || !d.samples) { line.onError(); return; }
+        const ctx = audio();
+        if (!ctx) return;
+        const buf = ctx.createBuffer(1, d.samples.length, d.rate);
+        buf.copyToChannel(d.samples, 0);
+        line.onPart(d.k, buf);
+      };
+      worker.onerror = () => { worker = null; engine = 'none'; info.engine = 'none'; };
+      worker.postMessage({ id: 0, text: '', dtype }); // load the model now, while the room fills up
+    } catch (e) { worker = null; engine = 'none'; info.engine = 'none'; }
+  }
+  // Ask what this server/build has (a missing file would log a 404 on the TV).
+  void fetch(base + 'api/voice').then((r) => r.json()).then((/** @type {{ available?: boolean, server?: boolean, dtype?: string }} */ v) => {
+    if (v && v.server) return ready('server');
+    if (!v || !v.available || typeof Worker === 'undefined') { engine = 'none'; info.engine = 'none'; return; }
+    startWorker(v.dtype || null);
+  }).catch(() => { engine = 'none'; info.engine = 'none'; });
 
-  /** Float samples → a WAV blob URL (so it plays through the same <audio> path). @param {Float32Array} samples @param {number} rate */
-  function wavUrl(samples, rate) {
-    const buf = new ArrayBuffer(44 + samples.length * 2);
-    const v = new DataView(buf);
-    const str = (/** @type {number} */ o, /** @type {string} */ t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
-    str(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true);
-    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true);
-    v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, samples.length * 2, true);
-    for (let i = 0; i < samples.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 0x7fff, true);
-    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  /** Cut a line into short parts so the first one is ready fast: sentences, then clauses of long
+   * sentences; tiny bits ride along with a neighbour. @param {string} t */
+  function parts(t) {
+    const out = [];
+    for (const sentence of t.split(/(?<=[.!?…])\s+/)) {
+      // Clauses of longer sentences: the first sound waits only for the first clause.
+      if (sentence.length <= 50) { out.push(sentence); continue; }
+      out.push(...sentence.split(/(?<=[,;:])\s+|\s+(?=—)/));
+    }
+    /** @type {string[]} */
+    const merged = [];
+    for (const p of out.map((x) => x.trim()).filter(Boolean)) {
+      if (merged.length && (p.length < 14 || merged[merged.length - 1].length < 14) && merged[merged.length - 1].length + p.length < 60) merged[merged.length - 1] += ' ' + p;
+      else merged.push(p);
+    }
+    return merged;
   }
 
-  /** Speak with Kokoro; resolves false if it can't (not loaded, too slow, error). @param {string} t @param {number} [ms] */
-  function kokoro(t, ms = 6000) {
-    return new Promise((/** @type {(ok: boolean) => void} */ done) => {
-      if (!worker || !workerOk || voiceId === 'classic') { done(false); return; }
-      const id = ++seq;
-      const timer = setTimeout(() => { pending.delete(id); done(false); }, ms); // too slow on this TV: fall back
-      pending.set(id, (r) => {
-        clearTimeout(timer);
-        if (!r.samples || !r.rate) { done(false); return; }
-        const src = wavUrl(r.samples, r.rate);
-        const a = new Audio(src);
-        // Each line is a fresh WAV in memory: release it once it's done (a night is hundreds of lines).
-        const free = () => URL.revokeObjectURL(src);
-        a.addEventListener('ended', free, { once: true });
-        a.addEventListener('error', free, { once: true });
-        a.addEventListener('pause', () => { if (a !== voice) free(); });
-        if (voice) voice.pause();
-        voice = a;
-        a.play().then(() => done(true), () => { free(); done(false); });
-      });
-      /** @type {Worker} */ (worker).postMessage({ id, text: t, voice: voiceId });
-    });
+  // Natural-voice audio plays through Web Audio: parts are scheduled back to back (no gaps, no
+  // files), and a new line stops the old one at once.
+  /** @type {AudioContext | null} */
+  let actx = null;
+  function audio() {
+    if (!actx) { try { actx = new AudioContext(); } catch (e) { return null; } }
+    if (actx.state !== 'running') void actx.resume();
+    return actx;
+  }
+  /** @type {AudioBufferSourceNode[]} */
+  let playing = [];
+  let nextAt = 0;
+  /** Recently made parts by voice + text: repeated lines ("Time's up!") start instantly. */
+  /** @type {Map<string, AudioBuffer>} */
+  const made = new Map();
+  /** Lines in a row whose first part came too late: this TV can't keep up → classic voice. */
+  let lateLines = 0;
+  const FIRST_PART_MS = 3500;
+
+  function stopNatural() {
+    for (const n of playing) { try { n.stop(); } catch (e) { /* not started */ } }
+    playing = [];
+    if (line) line.abort();
+    line = null;
+  }
+
+  /** @param {AudioBuffer} buf */
+  function schedule(buf) {
+    const ctx = /** @type {AudioContext} */ (actx);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    const at = Math.max(ctx.currentTime + 0.03, nextAt);
+    src.start(at);
+    nextAt = at + buf.duration;
+    playing.push(src);
+    src.onended = () => { playing = playing.filter((x) => x !== src); };
+    talkUntil = Math.max(talkUntil, Date.now() + (nextAt - ctx.currentTime) * 1000);
+  }
+
+  /** Can the natural voice speak right now? (While it loads, lines wait for it.) */
+  const naturalOn = () => voiceId !== 'classic' && engine !== 'none' && lateLines < 3;
+
+  /** Speak with Kokoro, part by part. Falls back to the classic voice only if it fails.
+   * @param {string} t @param {{ patience?: number, done?: (ok: boolean) => void }} [opt] */
+  function speakNatural(t, opt = {}) {
+    stopNatural();
+    const done = opt.done || (() => {});
+    if (engine === 'loading') { waiting = { t, at: Date.now() }; done(false); return; } // say it when ready
+    const ctx = audio();
+    if (!ctx || engine === 'none') { done(false); classic(t, false); return; }
+    nextAt = 0;
+    const list = parts(t);
+    const key = (/** @type {string} */ p) => voiceId + '|' + p;
+    const id = ++seq;
+    const t0 = Date.now();
+    let got = 0;
+    let started = false;
+    /** Parts that arrived early, waiting for the ones before them. @type {Map<number, AudioBuffer>} */
+    const early = new Map();
+    const late = setTimeout(() => {
+      if (started || !line || line.id !== id) return;
+      // Too slow on this TV: skip this line (the text is on screen) rather than talk over the next.
+      lateLines++;
+      if (lateLines >= 3) console.warn('[narrator] this TV is too slow for the natural voice — using the classic one');
+      stopNatural();
+      done(false);
+    }, opt.patience || FIRST_PART_MS);
+    const play = (/** @type {number} */ k, /** @type {AudioBuffer} */ buf) => {
+      early.set(k, buf);
+      while (early.has(got)) {
+        const b = /** @type {AudioBuffer} */ (early.get(got));
+        early.delete(got);
+        if (!started) { started = true; clearTimeout(late); lateLines = 0; info.firstMs = Date.now() - t0; done(true); }
+        schedule(b);
+        got++;
+      }
+    };
+    // Parts already made come from memory; only the rest are asked for.
+    const todo = [];
+    for (let k = 0; k < list.length; k++) {
+      const hit = made.get(key(list[k]));
+      if (hit && todo.length === 0) play(k, hit); else todo.push(k);
+    }
+    if (!todo.length) { clearTimeout(late); return; }
+    const offset = todo[0];
+    /** @type {AbortController[]} */
+    const requests = [];
+    line = {
+      id,
+      onPart: (k, buf) => {
+        made.set(key(list[k]), buf);
+        if (made.size > 80) made.delete(/** @type {string} */ (made.keys().next().value));
+        play(k, buf);
+      },
+      onError: () => { clearTimeout(late); if (line && line.id === id) { stopNatural(); done(false); classic(t, false); } },
+      abort: () => { clearTimeout(late); requests.forEach((r) => r.abort()); if (engine === 'worker' && worker) worker.postMessage({ cancel: true }); },
+    };
+    const mine = line;
+    if (engine === 'worker') {
+      // The worker numbers parts from 0: map them back to their place in the line.
+      const onPart = mine.onPart;
+      mine.onPart = (k, buf) => onPart(k + offset, buf);
+      /** @type {Worker} */ (worker).postMessage({ id, parts: list.slice(offset), voice: voiceId });
+      return;
+    }
+    // Server: one request per part, all at once; the server makes them in order and the first
+    // plays as soon as it arrives. A newer line aborts these (the server skips what it hasn't started).
+    for (let k = offset; k < list.length; k++) {
+      const ac = new AbortController();
+      requests.push(ac);
+      const part = k;
+      void fetch(`${base}api/voice/say?v=${encodeURIComponent(voiceId)}&t=${encodeURIComponent(list[k])}`, { signal: ac.signal })
+        .then((r) => { if (!r.ok) throw new Error('voice ' + r.status); return r.arrayBuffer(); })
+        .then((ab) => ctx.decodeAudioData(ab))
+        .then((buf) => { if (line === mine) mine.onPart(part, buf); })
+        .catch((e) => { if (line === mine && !(e && e.name === 'AbortError')) mine.onError(); });
+    }
   }
 
   /** espeak-ng (server) or the browser's voice. @param {string} t @param {boolean} fr */
@@ -129,11 +266,15 @@
     talkUntil = Date.now() + Math.min(ms, 600 + t.length * 55);
     if (!enabled) return;
     if (voice) { voice.pause(); voice = null; }
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    stopNatural();
+    waiting = null;
     const fr = !!(R.i18n && R.i18n.lang() === 'fr');
     if (R.music && R.music.duck) R.music.duck(Math.min(8000, 800 + t.length * 70), 0.45);
-    // Kokoro speaks English only; French rooms (and fallbacks) use the classic voice.
-    if (fr) { classic(t, fr); return; }
-    void kokoro(t).then((ok) => { if (!ok) classic(t, fr); });
+    // Kokoro speaks English only; French rooms, the "Classic robot" choice and TVs without the
+    // model (or too slow for it) use the classic voice.
+    if (fr || !naturalOn()) { classic(t, fr); return; }
+    speakNatural(t);
   }
 
   function cheer() { cheerUntil = Date.now() + 1500; }
@@ -142,16 +283,18 @@
     say, cheer,
     isEnabled: () => enabled,
     /** @param {boolean} on */
-    setEnabled(on) { enabled = on; R.store('rumpus.narrator', on); if (!on && voice) voice.pause(); },
+    setEnabled(on) { enabled = on; R.store('rumpus.narrator', on); if (!on) { if (voice) voice.pause(); stopNatural(); waiting = null; } },
     /** @param {boolean} on */
     show(on) { el.hidden = !on; },
     voices: () => VOICES,
     voice: () => voiceId,
     /** @param {string} id */
-    setVoice(id) { voiceId = id; R.store('rumpus.voice', id); },
+    setVoice(id) { voiceId = id; lateLines = 0; R.store('rumpus.voice', id); },
     /** True once the natural voice is loaded (tests / the debug panel). */
-    natural: () => !!worker && workerOk,
+    natural: () => engine === 'server' || engine === 'worker',
     /** Speak with the natural voice only; resolves whether it worked (tests). */
-    testNatural: (/** @type {string} */ t, /** @type {number} */ ms) => kokoro(speakable(t), ms),
+    testNatural: (/** @type {string} */ t, /** @type {number} */ ms) => new Promise((/** @type {(ok: boolean) => void} */ res) => speakNatural(speakable(t), { patience: ms, done: res })),
+    /** Threads the voice runs on, and how long the last line took to start (ms). */
+    voiceInfo: () => ({ ...info, isolated: !!window.crossOriginIsolated }),
   };
 })();

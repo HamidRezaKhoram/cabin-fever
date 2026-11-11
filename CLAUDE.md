@@ -107,6 +107,11 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   game (Wi-Fi power save). `test/unit/load.test.js` is the budget (tap storm, 60/s tilt, reconnect
   storm; `LOAD_REPORT=1` prints numbers); `scripts/load-harsh.sh` reruns it on bad Wi-Fi and a ¼-CPU
   server. Research and numbers: `docs/design/networking.md`.
+- **Narrator voice** (`public/host-character.js`): lines are cut into sentence/clause parts and
+  played as each arrives (Web Audio); a new line cancels the old. Docker makes the voice on the
+  server (`core/voice.js`, native fp32 Kokoro in a worker thread — needs the Debian image, not
+  Alpine); otherwise the TV runs `public/tts-worker.js` (uint8). The TV page is cross-origin
+  isolated (server.js / sw.js headers) so that worker gets threads. `Rumpus.host.voiceInfo()`.
 - **Browser build links** (`web/net.js`): 2 s heartbeat; silent 7 s = asleep; the TV keeps a phone's
   WebRTC link 45 s so a short nap resumes without the broker (`net:resync`). JSON serialization.
 - **Offline after first load** (`web/offline.js` + `sw-template.js`): the TV shows a progress bar
