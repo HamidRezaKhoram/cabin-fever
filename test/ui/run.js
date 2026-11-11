@@ -633,10 +633,12 @@ async function check(name, fn) {
         if (err) failures.push(`${f} ${sn.kind} ${sn.state.phase}: ${err}`);
         // The TV never scrolls during a game: every screen fits the stage (8 players' worth).
         if (!err && sn.kind === 'host' && !['lobby', 'gameover'].includes(sn.state.phase)) {
-          await snapTv.waitForFunction(() => !new Function('return wiping')() && [...document.querySelectorAll('#phase-view img')].every((i) => /** @type {HTMLImageElement} */ (i).complete), null, { timeout: 5000 }).catch(() => {});
-          // The re-fit after images/fonts settle can take a few frames: a real overflow is one that stays.
-          await snapTv.waitForFunction(() => { const st = /** @type {HTMLElement} */ (document.getElementById('stage')); return st.scrollHeight - st.clientHeight <= 2; }, null, { timeout: 1500, polling: 50 }).catch(() => {});
-          await snapTv.waitForTimeout(80);
+          // Measure once the TV says nothing can still change the layout (no pending re-fit, fonts and
+          // images in, no wipe) plus two frames for the last re-fit to apply. No "wait until it fits"
+          // grace: a screen that overflows here overflows on the real TV.
+          const idle = await snapTv.waitForFunction(() => /** @type {any} */ (window).cfLayoutIdle(), null, { timeout: 10000, polling: 20 }).then(() => '', async () => snapTv.evaluate(() => /** @type {any} */ (window).cfLayoutBusy()));
+          if (idle) failures.push(`${f} host ${sn.state.phase}: layout never settled (${idle})`);
+          await snapTv.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))));
           const over = await snapTv.evaluate(() => {
             const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
             const pv = /** @type {HTMLElement} */ (document.getElementById('phase-view'));

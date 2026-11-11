@@ -35,13 +35,19 @@ test('room codes are case-insensitive and nicknames are trimmed to 16 chars', as
   assert.strictEqual(p.state.you.nickname, 'A very very long');
 });
 
-test('cannot join a role/writing game in progress (Fish Tales), but can rejoin with your token any time', async () => {
+test('a newcomer during a role/writing game (Fish Tales) is queued, not seated; a seated player can rejoin with their token any time', async () => {
   const h = await makeHost(srv);
   const a = await makePlayer(srv, h.code, 'Ann');
   await makePlayer(srv, h.code, 'Ben');
   h.emit('host:startGame', { gameId: 'fibbage' });
   await h.phase('fib-bluff');
-  assert.match(await joinError(srv, h.code, 'Late'), /in progress/);
+  const late = srv.connect();
+  await once(late, 'connect');
+  late.emit('player:joinRoom', { code: h.code, nickname: 'Late' });
+  const q = await once(late, 'player:queued');
+  assert.match(q.game, /Fish Tales/);
+  await until(() => h.state.queued && h.state.queued.includes('Late'), 'the TV knows who is waiting');
+  assert.strictEqual(h.state.players.length, 2, 'not seated mid-game');
   a.sock.disconnect();
   await until(() => h.state.players.find((p) => p.nickname === 'Ann' && !p.connected), 'Ann offline');
   const s2 = srv.connect();
@@ -308,7 +314,7 @@ test('a burst of taps is coalesced into a few state updates, and unchanged views
   assert.ok(n - before <= 1, 'no flood of identical updates');
 });
 
-test('join mid-game: trivia-style games take a new phone (it can answer at once); role games say "join when this one ends"', { timeout: 30000 }, async () => {
+test('join mid-game: trivia-style games take a new phone (it can answer at once); role games queue it and deal it in when the game ends', { timeout: 30000 }, async () => {
   const { startServer, makeHost, makePlayer, joinError, until } = require('../helpers');
   const srv = await startServer({ RUMPUS_TRIVIA_QUESTION_MS: '20000', RUMPUS_TRIVIA_ROUNDS: '2' });
   try {
@@ -328,6 +334,15 @@ test('join mid-game: trivia-style games take a new phone (it can answer at once)
     await h.phase('lobby', 5000);
     h.emit('host:startGame', { gameId: 'quiplash' });
     await h.phase('answering', 5000);
-    assert.match(String(await joinError(srv, h.code, 'Eve')), /join when this one ends/);
+    const eve = srv.connect();
+    /** @type {any} */ let joined = null;
+    eve.on('player:joined', (j) => { joined = j; });
+    await new Promise((r) => eve.once('connect', r));
+    eve.emit('player:joinRoom', { code: h.code, nickname: 'Eve' });
+    await new Promise((r) => eve.once('player:queued', r));
+    assert.ok(!h.state.players.some((/** @type {any} */ p) => p.nickname === 'Eve'), 'queued, not in the game');
+    assert.match(String(await joinError(srv, h.code, 'eve')), /taken/, 'a queued name is taken');
+    h.emit('host:endGame'); // the game ends → the queue is dealt in
+    await until(() => joined && h.state.players.some((/** @type {any} */ p) => p.nickname === 'Eve'), 'Eve is seated once the game is over');
   } finally { await srv.stop(); }
 });

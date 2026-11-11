@@ -24,7 +24,7 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 
 | # | Limit | Idea | Size |
 |---|---|---|---|
-| 2.1 | **A reload/restart loses the game in progress** (room, seats, scores, game night are kept). | Per-game `save()` / `resume()`: timers are closures today, so each game needs its phases restartable. Start with the simple ones (trivia, Closest Cast). | L |
+| 2.1 | **A reload/restart picks up trivia and Closest Cast; other games are still cut short.** | Add `save()`/`resume(data)` to each game (see `games/trivia.js`, `games/closest.js`): resume restarts the current phase with a fresh clock. Next: Cabin Superlatives, Campfire Consensus, Fish Tales. | L |
 | 2.2 | **Website version needs internet to join** (free PeerJS service introduces phone and TV). | Bundle a tiny PeerJS server in Docker for LAN use, or QR-code signalling (phone scans TV, TV scans phone) for a fully offline join. | L |
 | 2.3 | **Weak TVs can't run the natural voice in the browser** (2 cores: 5–7 s per line → robot voice). | Try WebGPU (`device: 'webgpu'`, fp16 model) and pick whichever is faster at start-up; needs a real GPU to test. | M |
 | 2.6 | **Docker phones have no fast channel** (WebSocket = TCP). | WebTransport needs HTTP/3 and real certificates; only worth it if 1.4 shows a clear win. | L |
@@ -36,7 +36,6 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 | # | Feature | Notes | Size |
 |---|---|---|---|
 | 3.1 | **Message in a Bottle: scribble pad** for players waiting on others. | Doodles could float across the TV. | M |
-| 3.4 | **Join mid-game, role games** — trivia-style games and the game-night vote take newcomers now (`meta.lateJoin`); Quips, Fish Tales, Storm Watch, Crush, Message in a Bottle… still say "join when this one ends". | Needs a per-game "next round" queue: the newcomer waits on a lobby-like screen and is dealt in when the round restarts. | M |
 | 3.6 | **Cottage Crush: remaining agendas** (see `dating-game.md`). | | M |
 | 3.8 | **Send only what changed** in state updates (~2 KB → a few hundred bytes). | Not needed on a LAN; revisit only if 1.3/1.4 show lag. | M |
 
@@ -44,8 +43,6 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 
 | # | What | Size |
 |---|---|---|
-| 4.1 | **Speed test for the website version** with real browser-to-browser links (today only the Docker server is timed). | M |
-| 4.3 | **TV-fit check tolerance**: it now waits up to 1.5 s for a screen to settle; a screen that overflows briefly then fits passes. Tighten once the cause of the late re-fit (fonts? images?) is found. | S |
 | 4.4 | **Real-broker test** for 1.1 (two browsers through the PeerJS service; needs internet, so keep it out of the default suite). | M |
 
 ## 4b. Game bug reports
@@ -61,6 +58,7 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 ## Not doing / on hold (owner's call, Nov 11 2026)
 
 - **2.10 Admin PIN**: not needed.
+- **2.2 offline PeerJS** and **2.3 WebGPU voice**: judged not high priority (Docker already works offline; WebGPU needs a real GPU to test). Still open above.
 - **French** (2.4 French voice, 3.7 French content packs): on hold for now. New screens still get their few French UI lines.
 
 ## Done
@@ -80,3 +78,7 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 - **3.4 Join mid-game (trivia-style)** (Nov 11 2026): `lateJoin: true` in trivia, Closest Cast, Cabin Superlatives, Campfire Consensus and the game-night vote; the newcomer plays the current screen at once.
 - **Fix: Campfire Sequence buttons dead on real phones** and **Loon Call song kept playing after Skip** (Nov 11 2026): the two HIGH findings from the per-game reviews.
 - **Connection fixes** (Nov 11 2026): saved rooms re-stamped while in use (no 30-min expiry of a quiet lobby); no orphaned drop/close timers; the TV keeps retrying its room name after a crash and says so; a replaced TV tab keeps the saved key; a phone with no internet is told so; reload lock wait; boot flag; kicked phones see the message; TV grace 5 → 30 min.
+- **2.1 Resume after a reload/restart (first games)** (Nov 11 2026): rooms save the game's `save()` state; when the TV is back the game's `resume()` restarts the current question/category pick (TV: "WE'RE BACK! … picks up where it left off"). Trivia and Closest Cast; the rest still report "cut short".
+- **3.4 Join queue for role games** (Nov 11 2026): a phone joining mid-Quips/Storm Watch/… gets "You're next!" and is dealt in when the game ends (`room.queue`, `admitQueue`; `hostPayload.queued` lists who's waiting).
+- **4.1 Website speed test** (Nov 11 2026): `?net=rtc-local` = real WebRTC data channels between tabs (offer/answer over a BroadcastChannel, no broker); `test/ui/pages.js` times 3 phones' round trips (p50 < 25 ms, p95 < 80 ms).
+- **4.3 TV-fit check without grace** (Nov 11 2026): the late re-fit came from images/fonts loading (host.js re-fits 50 ms after each image `load`). The TV now reports `cfLayoutIdle()` (no re-fit pending, fonts and images in, no wipe); the snapshot test measures once then, with no "wait until it fits" window.
