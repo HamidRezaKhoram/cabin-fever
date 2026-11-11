@@ -116,3 +116,28 @@ test('a full game: tune-up calibrates each phone, echoes score, the trailing pla
     await srv.stop();
   }
 });
+
+test('judging lines taps up with the notes as a whole (a greedy nearest-note match would miss both)', () => {
+  // Both taps are 100 ms late. Nearest-note matching would give tap 1100 to note 1150 and call the
+  // other tap an extra; the alignment sees two "a bit late" hits.
+  const j = LoonCall.judge([1000, 1150], [1100, 1250]);
+  assert.deepStrictEqual(j.hits.map((h) => h.kind), ['good', 'good']);
+  assert.deepStrictEqual(j.hits.map((h) => h.d), [100, 100]);
+  assert.strictEqual(j.extras, 0);
+});
+
+test('songs: every pattern fits its grid; a game plays one easy, one medium and one hard song, fixed by its seed', () => {
+  for (const s of LoonCall.SONGS) {
+    assert.ok([6, 8, 12, 16].includes(s.steps) && [3, 4].includes(s.beats) && s.steps % s.beats === 0, s.name);
+    for (const p of s.patterns) {
+      assert.ok(p.length >= 2 && p.every((x, i) => Number.isInteger(x) && x >= 0 && x < s.steps && (i === 0 || x > p[i - 1])), `${s.name}: ${p}`);
+    }
+  }
+  assert.ok(new Set(LoonCall.SONGS.map((s) => s.steps)).size >= 4, 'straight, triplet, 16th and waltz grids');
+  const room = { players: new Map(), settings: {} };
+  const a = new LoonCall(/** @type {any} */ (room), () => {});
+  const b = new LoonCall(/** @type {any} */ (room), () => {});
+  b.seed = a.seed; b.rng = require('../../games/rng').makeRng(a.seed);
+  assert.deepStrictEqual(a.playlist().map((s) => s.tier), [1, 2, 3]);
+  assert.deepStrictEqual(a.playlist().map((s) => s.name), b.playlist().map((s) => s.name), 'same seed, same songs');
+});

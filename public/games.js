@@ -97,92 +97,287 @@
 
   // ---------------------------------------------------------------- Cottage Olympics
   const teamName = (/** @type {string | null | undefined} */ t) => (t === 'red' ? '🔴 RED' : t === 'blue' ? '🔵 BLUE' : '');
+  /** Campfire Sequence colours (stones by the fire). */
+  const MG_COLOURS = ['#ff5e5e', '#ffd23f', '#4fc3f7', '#7ed957'];
+  const MG_COLOUR_NAMES = ['RED', 'YELLOW', 'BLUE', 'GREEN'];
+  /** Skip Stones: where the arrow is (0–1) at a time (same maths as the server). @param {number} t @param {number} period */
+  const mgSwing = (t, period) => { const x = (((t % period) + period) % period) / period; return x < 0.5 ? x * 2 : 2 - x * 2; };
+  /** A canvas sized to its box (pixel-crisp), drawn on the shared 30 fps clock. @param {HTMLCanvasElement} cv @param {(g: CanvasRenderingContext2D, w: number, h: number) => void} draw */
+  function mgCanvas(cv, draw) {
+    const g = cv.getContext('2d');
+    return window.Rumpus.clock.add(() => {
+      if (!g || !cv.isConnected) return;
+      const w = cv.clientWidth, h = cv.clientHeight;
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      g.imageSmoothingEnabled = false;
+      draw(g, w, h);
+    });
+  }
   register('minigames', {
     host(s) {
       const g = s.gameState;
       const tag = `<p class="round-tag">Minigame ${g.round} of ${g.totalRounds}</p>`;
+      const secs = (/** @type {number} */ ms) => (ms / 1000).toFixed(1) + ' s';
       if (s.phase === 'mg-intro') {
-        return `${tag}<h1 class="prompt mg-title">${esc(g.miniName)}</h1><p class="big-sub mg-rule">${esc(g.rule)}</p>`;
+        return `${tag}<h1 class="prompt mg-title">${esc(g.miniName)}</h1><p class="big-sub mg-rule">${esc(g.rule)}</p>${g.mini === 'roast' ? `<p class="big-answer">Target: ${secs(g.target)}</p>` : ''}`;
       }
       if (s.phase === 'mg-result') {
         const r = g.result;
-        const head = r.winnerTeam ? (r.winnerTeam === 'tie' ? 'TIE!' : `${teamName(r.winnerTeam)} WINS!`) : `${esc((r.rows[0] || {}).nickname || '')} WINS!`;
+        const head = r.winnerTeam ? (r.winnerTeam === 'tie' ? 'TIE!' : `${teamName(r.winnerTeam)} WINS!`) : r.rows[0] && r.rows[0].gained ? `${esc(r.rows[0].nickname)} WINS!` : 'NOBODY!';
         return `${tag}<h1 class="prompt">${esc(g.miniName)}: ${head}</h1>
-          ${r.answer != null ? `<p class="big-answer">${g.mini === 'fireflies' ? r.answer + ' fireflies' : 'Target: 3.0 s'}</p>` : ''}
+          ${r.answer != null ? `<p class="big-answer">${g.mini === 'fireflies' ? r.answer + ' fireflies' : 'Target: ' + secs(r.answer)}</p>` : ''}
           <ol class="answers results">${r.rows.map((/** @type {any} */ row) => `<li class="${row.gained ? 'winner' : ''} ${row.team ? 'team-' + row.team : ''}">
             ${av(row.nickname)} ${esc(row.nickname)} — ${esc(row.burnt ? 'BURNT 🔥' : row.value)}${typeof row.value === 'number' && row.unit ? ' ' + row.unit : ''}
             ${row.gained ? `<span class="votes">+${row.gained}</span>` : ''}</li>`).join('')}</ol>`;
       }
+      const bars = (/** @type {{ nickname: string, n: number }[]} */ list, /** @type {string} */ unit) => {
+        const max = Math.max(1, ...list.map((t) => t.n));
+        return `<div class="bars">${list.map((t) => `<div class="bar-row"><span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
+          <span class="bar" style="width:${(t.n / max) * 100}%;animation:none"></span><span class="bar-n">${t.n}${unit}</span></div>`).join('')}</div>`;
+      };
       // mg-play
-      if (g.mini === 'tug') {
-        if (g.tug) {
-          const diff = g.tug.red - g.tug.blue;
-          const pos = Math.max(-1, Math.min(1, diff / g.tug.goal)); // -1..1 (red pulls left)
-          return `${tag}<h1 class="prompt">TAP! TAP! TAP!</h1>
-            <div class="tug"><div class="tug-team red">🔴 ${g.tug.red}</div>
-              <div class="tug-lake"><div class="tug-rope"><div class="tug-flag" style="left:${50 - pos * 45}%"></div></div></div>
-              <div class="tug-team blue">${g.tug.blue} 🔵</div></div>`;
+      switch (g.mini) {
+        case 'tug': case 'paddle': {
+          if (g.tug) {
+            const diff = g.tug.red - g.tug.blue;
+            const pos = Math.max(-1, Math.min(1, diff / g.tug.goal)); // -1..1 (red pulls left)
+            return `${tag}<h1 class="prompt">TAP! TAP! TAP!</h1>
+              <div class="tug"><div class="tug-team red">🔴 ${g.tug.red}</div>
+                <div class="tug-lake"><div class="tug-rope"><div class="tug-flag" style="left:${50 - pos * 45}%"></div></div></div>
+                <div class="tug-team blue">${g.tug.blue} 🔵</div></div>`;
+          }
+          return `${tag}<h1 class="prompt">${g.mini === 'paddle' ? '🛶 PADDLE! LEFT · RIGHT' : 'TAP RACE!'}</h1>${bars(g.taps.map((/** @type {any} */ t) => ({ nickname: t.nickname, n: t.taps })), '')}`;
         }
-        const max = Math.max(1, ...g.taps.map((/** @type {any} */ t) => t.taps));
-        return `${tag}<h1 class="prompt">TAP RACE!</h1><div class="bars">${g.taps.map((/** @type {any} */ t) => `
-          <div class="bar-row"><span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
-          <span class="bar" style="width:${(t.taps / max) * 100}%;animation:none"></span><span class="bar-n">${t.taps}</span></div>`).join('')}</div>`;
-      }
-      if (g.mini === 'quickdraw') {
-        return g.sub === 'go' ? `<div class="qd go">GO!</div>` : `<div class="qd wait">WAIT…</div>`;
-      }
-      if (g.mini === 'fireflies') {
-        if (g.sub === 'show') {
-          return `<div class="fly-field">${g.flies.map((/** @type {any} */ f) => `<i style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
+        case 'quickdraw': return g.sub === 'go' ? `<div class="qd go">GO!</div>` : `<div class="qd wait">WAIT…</div>`;
+        case 'fireflies':
+          if (g.sub === 'show') return `<div class="fly-field">${g.flies.map((/** @type {any} */ f) => `<i style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
+          return `${tag}<h1 class="prompt">How many fireflies?</h1><p class="big-sub">Guess on your phones! ${T}</p>${count(g.doneCount, g.totalPlayers, 'guesses in')}`;
+        case 'roast': // no clock on screen: feel the seconds
+          return `${tag}<h1 class="prompt">🔥 ROAST! 🍡</h1><p class="big-answer">Let go at ${secs(g.target)}</p><p class="big-sub">No clock to help you — count it in your head…</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
+        case 'skip': return `${tag}<h1 class="prompt">🪨 Skip those stones!</h1><p class="big-sub">Tap when the arrow is in the green · 3 throws ${T}</p>${bars(g.board, ' skips')}`;
+        case 'spot': {
+          const u = window.Rumpus.sprites && window.Rumpus.sprites.iconUrl('looncall');
+          const DUCKS = ['🦆', '🦆', '🦢'];
+          return `${tag}<h1 class="prompt">Where's the loon? 🔎</h1><div class="spot-grid">${Array.from({ length: 12 }, (_, i) =>
+            `<div class="spot-cell"><b>${i + 1}</b>${i === g.loon && u ? `<img src="${u}" alt="">` : `<span>${DUCKS[(g.ducks || [])[i] || 0]}</span>`}</div>`).join('')}</div>
+            ${count(g.doneCount, g.totalPlayers, 'spotters')}`;
         }
-        return `${tag}<h1 class="prompt">How many fireflies?</h1><p class="big-sub">Guess on your phones! ${T}</p>${count(g.doneCount, g.totalPlayers, 'guesses in')}`;
+        case 'swat': return `${tag}<h1 class="prompt">🦟 SWAT!</h1><p class="big-sub">Squash the mosquitoes on your phone ${T}</p>${bars(g.board, '')}`;
+        case 'balance': return `${tag}<h1 class="prompt">⚓ Dock Balance</h1><p class="big-sub">Keep your finger inside the drifting ring ${T}</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
+        case 'simon':
+          if (g.sub === 'show') {
+            return `${tag}<h1 class="prompt">Watch the sparks!</h1><div class="simon-stage">${(g.seq || []).map((/** @type {number} */ c, /** @type {number} */ i) =>
+              `<i class="simon-spark" style="--c:${MG_COLOURS[c]};animation-delay:${(i * (g.showMs || 600)) / 1000}s"><span>${MG_COLOUR_NAMES[c]}</span></i>`).join('')}</div>`;
+          }
+          return `${tag}<h1 class="prompt">Repeat it on your phone!</h1><p class="big-sub">${g.length} sparks · right and fast wins ${T}</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
+        case 'stack': return `${tag}<h1 class="prompt">🪵 Stack the woodpile!</h1><p class="big-sub">Tap to drop each log on the pile ${T}</p>${count(g.doneCount, g.totalPlayers, 'piles done')}`;
+        default: return tag;
       }
-      return `${tag}<h1 class="prompt">🔥 ROAST! 🍡</h1><p class="big-sub">Hold the button and let go at exactly 3 seconds… ${T}</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
       const badge = you.team ? `<p class="team-badge team-${you.team}">${teamName(you.team)}</p>` : '';
-      if (s.phase === 'mg-intro') return `${badge}<h1>${esc(g.miniName)}</h1><p class="prompt">${esc(g.rule)}</p><p>Get ready…</p>`;
+      if (s.phase === 'mg-intro') return `${badge}<h1>${esc(g.miniName)}</h1><p class="prompt">${esc(g.rule)}</p>${g.mini === 'roast' ? `<p class="big-answer">Let go at ${(g.target / 1000).toFixed(1)} s</p>` : ''}<p>Get ready…</p>`;
       if (s.phase === 'mg-result') return `<h1>${you.gained ? `+${you.gained}! 🎉` : 'Next one! 💪'}</h1>`;
-      if (g.mini === 'tug') return `${badge}<button class="mg-big tap" data-mg="tap">TAP!</button><p class="mg-count">0</p>`;
-      if (g.mini === 'quickdraw') {
-        if (you.early) return `<h1>SPLASH! 💦</h1><p>Too early!</p>`;
-        if (you.done) return waiting('Tapped');
-        return `<button class="mg-big ${g.sub === 'go' ? 'go' : 'wait'}" data-mg="draw">${g.sub === 'go' ? 'GO!' : 'WAIT…'}</button>`;
+      if (you.early) return g.mini === 'quickdraw' ? '<h1>SPLASH! 💦</h1><p>Too early!</p>' : g.mini === 'spot' ? '<h1>Wrong bird! 🦆</h1><p>That was a duck.</p>' : '<h1>Oops! ✗</h1><p>Not quite the right order.</p>';
+      switch (g.mini) {
+        case 'tug': return `${badge}<button class="mg-big tap" data-mg="tap">TAP!</button><p class="mg-count">0</p>`;
+        case 'quickdraw':
+          if (you.done) return waiting('Tapped');
+          return `<button class="mg-big ${g.sub === 'go' ? 'go' : 'wait'}" data-mg="draw">${g.sub === 'go' ? 'GO!' : 'WAIT…'}</button>`;
+        case 'fireflies':
+          if (you.done) return waiting('Guess locked');
+          return `<h2>${g.sub === 'show' ? 'Count the fireflies on the TV!' : 'How many fireflies?'}</h2><form class="number-form"><input name="number" inputmode="numeric" autocomplete="off" required><button type="submit">Lock it in</button></form>`;
+        case 'roast':
+          if (you.done) return waiting('Roasted');
+          return `<p class="mg-count">Let go at ${(g.target / 1000).toFixed(1)} s</p><button class="mg-big roast" data-mg="roast">HOLD TO ROAST</button>`;
+        case 'skip':
+          if (you.done) return waiting(`${you.skips} skips`, 'Nice throwing!');
+          return `<p class="mg-count">${you.lastSkips != null ? `Last throw: ${you.lastSkips} skip${you.lastSkips === 1 ? '' : 's'} · ` : ''}Total ${you.skips || 0}</p>
+            <canvas class="mg-canvas mg-meter" data-mg-skip></canvas>
+            <button class="mg-big go" data-mg="skip">THROW! <small>(${3 - you.throws} left)</small></button>`;
+        case 'spot':
+          if (you.done) return waiting('Spotted!');
+          return `<h2>Which spot is the loon in? (look at the TV)</h2><div class="spot-pad">${Array.from({ length: g.cells || 12 }, (_, i) => sendBtn({ cell: i }, String(i + 1), 'vote-btn spot-btn')).join('')}</div>`;
+        case 'swat': return `<p class="mg-count" data-mg-swats>0 swatted</p><canvas class="mg-canvas mg-field" data-mg-swat></canvas>`;
+        case 'balance':
+          if (you.done) return waiting('Balanced');
+          return `<p class="mg-count" data-mg-bal>Put your finger in the ring</p><canvas class="mg-canvas mg-field" data-mg-balance></canvas>`;
+        case 'paddle': return `${badge}<p class="mg-count" data-mg-strokes>0 strokes</p><div class="paddle-pad"><button class="mg-big paddle" data-mg-side="L">⬅ LEFT</button><button class="mg-big paddle" data-mg-side="R">RIGHT ➡</button></div>`;
+        case 'simon':
+          if (you.done) return waiting('Sequence in');
+          if (g.sub !== 'go') return watchTv('<p>Remember the colours of the sparks…</p>');
+          return `<p class="mg-count" data-mg-seq>${'○ '.repeat(g.length || 0)}</p><div class="simon-pad">${MG_COLOURS.map((c, i) => `<button class="mg-big simon" style="--c:${c}" data-mg-colour="${i}">${MG_COLOUR_NAMES[i]}</button>`).join('')}</div>`;
+        case 'stack':
+          if (you.done) return waiting('Pile done');
+          return `<p class="mg-count" data-mg-height>0 logs</p><canvas class="mg-canvas mg-field" data-mg-stack></canvas><p class="hint">Tap anywhere on the pile to drop the log</p>`;
+        default: return watchTv();
       }
-      if (g.mini === 'fireflies') {
-        if (you.done) return waiting('Guess locked');
-        return `<h2>${g.sub === 'show' ? 'Count the fireflies on the TV!' : 'How many fireflies?'}</h2><form class="number-form"><input name="number" inputmode="numeric" autocomplete="off" required><button type="submit">Lock it in</button></form>`;
-      }
-      if (you.done) return waiting('Roasted');
-      return `<button class="mg-big roast" data-mg="roast">HOLD TO ROAST</button><p class="mg-count">Let go at 3.0 s</p>`;
     },
     bind(root, api) {
+      const g = api.state.gameState || {};
+      const now = () => window.Rumpus.time.now();
       const btn = /** @type {HTMLElement | null} */ (root.querySelector('[data-mg]'));
-      if (!btn) return;
-      const kind = btn.dataset.mg;
-      if (kind === 'tap') {
+      const kind = btn ? btn.dataset.mg : '';
+      if (btn && kind === 'tap') {
         let pending = 0, total = 0;
         const label = /** @type {HTMLElement} */ (root.querySelector('.mg-count'));
-        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); pending++; total++; label.textContent = String(total); if (navigator.vibrate) navigator.vibrate(8); });
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); pending++; total++; label.textContent = String(total); window.Rumpus.haptic(8); });
         const t = setInterval(() => { if (pending) { api.send({ tap: pending }); pending = 0; } }, 150);
         api.onCleanup(() => clearInterval(t));
-      } else if (kind === 'draw') {
-        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); api.send({ tap: 1 }); });
-      } else if (kind === 'roast') {
+      } else if (btn && kind === 'draw') {
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); window.Rumpus.haptic(20); api.send({ tap: 1 }); });
+      } else if (btn && kind === 'roast') {
+        // No live readout while holding — that would be the clock the game takes away.
         let t0 = 0;
         const label = /** @type {HTMLElement} */ (root.querySelector('.mg-count'));
-        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); t0 = performance.now(); btn.classList.add('holding'); });
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); t0 = performance.now(); btn.classList.add('holding'); btn.textContent = 'ROASTING…'; window.Rumpus.haptic(15); });
         const release = () => {
           if (!t0) return;
           const ms = Math.round(performance.now() - t0);
           t0 = 0;
           btn.classList.remove('holding');
-          label.textContent = (ms / 1000).toFixed(2) + ' s';
+          label.textContent = `You held ${(ms / 1000).toFixed(2)} s`;
+          window.Rumpus.haptic(25);
           api.send({ hold: ms });
         };
         btn.addEventListener('pointerup', release);
         btn.addEventListener('pointercancel', release);
+      } else if (btn && kind === 'skip') {
+        const cv = /** @type {HTMLCanvasElement} */ (root.querySelector('[data-mg-skip]'));
+        api.onCleanup(mgCanvas(cv, (c, w, h) => {
+          c.fillStyle = '#123d4f'; c.fillRect(0, 0, w, h);
+          const z0 = (g.sweet - g.zone) * w, z1 = (g.sweet + g.zone) * w;
+          c.fillStyle = '#2e7d32'; c.fillRect(z0, 0, z1 - z0, h);
+          c.fillStyle = '#7ed957'; c.fillRect((g.sweet - g.zone / 3) * w, 0, (g.zone * 2 / 3) * w, h);
+          const x = mgSwing(now() - g.playStart, g.period) * w;
+          c.fillStyle = '#fff'; c.fillRect(Math.round(x) - 3, 0, 6, h);
+        }));
+        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); window.Rumpus.haptic(20); api.send({ throw: now() }); });
+      }
+      // Mosquito Swat: bugs appear on a schedule (server time); tap them while they're there.
+      const swat = /** @type {HTMLCanvasElement | null} */ (root.querySelector('[data-mg-swat]'));
+      if (swat) {
+        const hit = new Set(/** @type {number[]} */ ((api.state.you || {}).swats || []));
+        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-swats]'));
+        /** @type {{ x: number, y: number, t: number }[]} */
+        const splats = [];
+        const live = () => { const t = now() - g.playStart; return (g.bugs || []).map((/** @type {any} */ b, /** @type {number} */ i) => ({ ...b, i })).filter((/** @type {any} */ b) => !hit.has(b.i) && t >= b.at && t <= b.at + b.life); };
+        api.onCleanup(mgCanvas(swat, (c, w, h) => {
+          c.fillStyle = '#1b3c2a'; c.fillRect(0, 0, w, h);
+          for (const sp of splats) { c.fillStyle = '#5a1e1e'; c.fillRect(sp.x - 6, sp.y - 6, 12, 12); }
+          const f = window.Rumpus.clock.frame();
+          for (const b of live()) {
+            const x = (b.x / 100) * w, y = (b.y / 100) * h, k = 4;
+            c.fillStyle = '#222'; c.fillRect(x - k, y - k, k * 2, k * 2);
+            c.fillStyle = f % 4 < 2 ? '#cfd8dc' : '#90a4ae'; c.fillRect(x - k * 3, y - k * 2, k * 2, k); c.fillRect(x + k, y - k * 2, k * 2, k);
+          }
+        }));
+        swat.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const r = swat.getBoundingClientRect();
+          const px = e.clientX - r.left, py = e.clientY - r.top;
+          const best = live().find((/** @type {any} */ b) => Math.hypot((b.x / 100) * r.width - px, (b.y / 100) * r.height - py) < 44);
+          if (!best) { window.Rumpus.haptic(5); return; }
+          hit.add(best.i);
+          splats.push({ x: px, y: py, t: 0 });
+          label.textContent = `${hit.size} swatted`;
+          window.Rumpus.haptic(25);
+          api.send({ swat: best.i });
+        });
+      }
+      // Dock Balance: the ring drifts on a fixed path; count the time the finger is inside it.
+      const bal = /** @type {HTMLCanvasElement | null} */ (root.querySelector('[data-mg-balance]'));
+      if (bal) {
+        let inside = 0, frames = 0, sent = false;
+        /** @type {{ x: number, y: number } | null} */
+        let finger = null;
+        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-bal]'));
+        const ring = (/** @type {number} */ t) => ({ x: 0.5 + 0.32 * Math.sin((t / 1000) * g.ax + g.px), y: 0.5 + 0.32 * Math.sin((t / 1000) * g.ay + g.py) });
+        const send = () => { if (sent) return; sent = true; api.send({ balance: frames ? Math.round((100 * inside) / frames) : 0 }); };
+        api.onCleanup(mgCanvas(bal, (c, w, h) => {
+          const t = now() - g.playStart;
+          const p = ring(t);
+          const R = g.radius * Math.min(w, h);
+          c.fillStyle = '#13284a'; c.fillRect(0, 0, w, h);
+          const cx = p.x * w, cy = p.y * h;
+          const isIn = !!finger && Math.hypot(finger.x - cx, finger.y - cy) <= R;
+          if (t >= 0 && !sent) { frames++; if (isIn) inside++; }
+          c.strokeStyle = isIn ? '#7ed957' : '#ffd23f'; c.lineWidth = 8; c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
+          if (finger) { c.fillStyle = '#fff'; c.fillRect(finger.x - 5, finger.y - 5, 10, 10); }
+          if (frames % 10 === 0) label.textContent = `${frames ? Math.round((100 * inside) / frames) : 0}% inside`;
+          if (g.endsAt && now() > g.endsAt - 400) send();
+        }));
+        const move = (/** @type {PointerEvent} */ e) => { const r = bal.getBoundingClientRect(); finger = { x: e.clientX - r.left, y: e.clientY - r.top }; };
+        bal.addEventListener('pointerdown', (e) => { e.preventDefault(); bal.setPointerCapture(e.pointerId); move(e); });
+        bal.addEventListener('pointermove', move);
+        bal.addEventListener('pointerup', () => { finger = null; });
+      }
+      // Canoe Sprint: only LEFT/RIGHT alternation counts.
+      const sides = root.querySelectorAll('[data-mg-side]');
+      if (sides.length) {
+        let last = '', pending = 0, total = 0;
+        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-strokes]'));
+        sides.forEach((b) => b.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const side = /** @type {HTMLElement} */ (b).dataset.mgSide || '';
+          if (side === last) { window.Rumpus.haptic([5, 30, 5]); return; } // same side twice: no stroke
+          last = side; pending++; total++;
+          label.textContent = `${total} strokes`;
+          window.Rumpus.haptic(10);
+        }));
+        const t = setInterval(() => { if (pending) { api.send({ strokes: pending }); pending = 0; } }, 150);
+        api.onCleanup(() => clearInterval(t));
+      }
+      // Campfire Sequence: tap the colours in order.
+      const stones = root.querySelectorAll('[data-mg-colour]');
+      if (stones.length) {
+        /** @type {number[]} */
+        const seq = [];
+        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-seq]'));
+        stones.forEach((b) => b.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (seq.length >= g.length) return;
+          seq.push(Number(/** @type {HTMLElement} */ (b).dataset.mgColour));
+          label.textContent = '● '.repeat(seq.length) + '○ '.repeat(Math.max(0, g.length - seq.length));
+          window.Rumpus.haptic(12);
+          if (seq.length === g.length) api.send({ seq });
+        }));
+      }
+      // Woodpile Stack: a log slides back and forth; tap to drop it; the overhang is cut off.
+      const st = /** @type {HTMLCanvasElement | null} */ (root.querySelector('[data-mg-stack]'));
+      if (st) {
+        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-height]'));
+        /** @type {{ x: number, w: number }[]} pile, in fractions of the width */
+        const pile = [{ x: 0.2, w: 0.6 }];
+        let pos = 0, dir = 1, speed = g.speed || 1, over = false;
+        let lastT = performance.now();
+        const finish = () => { if (over) return; over = true; api.send({ stack: pile.length - 1 }); };
+        api.onCleanup(mgCanvas(st, (c, w, h) => {
+          const t = performance.now(), dt = Math.min(0.1, (t - lastT) / 1000);
+          lastT = t;
+          const top = pile[pile.length - 1];
+          if (!over) { pos += dir * speed * dt * 0.6; if (pos + top.w > 1) { pos = 1 - top.w; dir = -1; } if (pos < 0) { pos = 0; dir = 1; } }
+          c.fillStyle = '#0f2a3d'; c.fillRect(0, 0, w, h);
+          const lh = Math.max(14, Math.round(h / 18));
+          const base = h - lh, shift = Math.max(0, pile.length - 12) * lh;
+          pile.forEach((p, i) => { c.fillStyle = i % 2 ? '#8a5a3b' : '#a86f45'; c.fillRect(p.x * w, base - i * lh + shift, p.w * w, lh - 2); });
+          if (!over) { c.fillStyle = '#ffd23f'; c.fillRect(pos * w, base - pile.length * lh + shift, top.w * w, lh - 2); }
+          if (g.endsAt && now() > g.endsAt - 400) finish();
+        }));
+        st.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (over) return;
+          const top = pile[pile.length - 1];
+          const l = Math.max(pos, top.x), r = Math.min(pos + top.w, top.x + top.w);
+          if (r - l < 0.02) { window.Rumpus.haptic([10, 50, 10]); finish(); return; }
+          pile.push({ x: l, w: r - l });
+          speed *= g.speedUp || 1.08;
+          pos = 0; dir = 1;
+          label.textContent = `${pile.length - 1} logs`;
+          window.Rumpus.haptic(Math.abs(r - l - top.w) < 0.01 ? 30 : 15);
+          if (pile.length > 40) finish();
+        });
       }
     },
   });
@@ -222,6 +417,22 @@
 
   // ---------------------------------------------------------------- Campfire Consensus
   register('majority', {
+    // Herd call: tap answers on/off locally, then lock the set in.
+    bind(root, api) {
+      const onClick = (/** @type {Event} */ e) => {
+        const b = window.Rumpus.hit(e.target, '[data-herd]');
+        if (!b) return;
+        const on = b.getAttribute('aria-pressed') !== 'true';
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('on', on);
+        window.Rumpus.haptic(10);
+        const picked = [...root.querySelectorAll('[data-herd][aria-pressed="true"]')].map((x) => Number(/** @type {HTMLElement} */ (x).dataset.herd));
+        const lock = /** @type {HTMLButtonElement | null} */ (root.querySelector('.herd-lock'));
+        if (lock) { lock.dataset.send = JSON.stringify({ herd: picked }); lock.disabled = !picked.length; }
+      };
+      root.addEventListener('click', onClick);
+      api.onCleanup(() => root.removeEventListener('click', onClick));
+    },
     host(s) {
       const g = s.gameState;
       if (s.phase === 'mr-answer') {
@@ -229,9 +440,15 @@
           <p class="big-sub">Type what <em>everyone else</em> will say — then bet how many will match you! ${T}</p>
           ${count(g.submittedCount, g.totalPlayers, 'answers in')}${count(g.betCount, g.totalPlayers, 'bets placed')}`;
       }
+      if (s.phase === 'mr-herd') {
+        return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
+          <p class="big-sub">🐑 The herd call: on your phones, tap every answer that counts as <b>the same herd</b>. ${T}</p>
+          <div class="herd-cards">${(g.answers || []).map((/** @type {string} */ a) => `<span class="herd-card">${esc(a)}</span>`).join('')}</div>
+          ${count(g.judgedCount, g.totalPlayers, 'herd calls in')}${waitingRow(g.waitingOn, 'deciding')}`;
+      }
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
         <ol class="answers results suspense">${g.result.groups.map((/** @type {any} */ gr, /** @type {any} */ i, /** @type {any} */ all) => `
-          <li class="${gr.top ? 'winner' : ''}" style="animation-delay:${(all.length - 1 - i) * 0.5}s">${esc(gr.label)}
+          <li class="${gr.top ? 'winner' : ''}${gr.herd ? ' herd' : ''}" style="animation-delay:${(all.length - 1 - i) * 0.5}s">${gr.herd ? '🐑 ' : ''}${esc(gr.label)}
             <span class="votes">×${gr.count}</span>
             <span class="voters">${gr.names.map((/** @type {any} */ n) => av(n)).join('')}</span></li>`).join('')}</ol>
         ${(g.result.bets || []).some((/** @type {any} */ b) => b.gained) ? `<p class="big-sub">🎯 Called it: ${g.result.bets.filter((/** @type {any} */ b) => b.gained).map((/** @type {any} */ b) => `${av(b.nickname)} ${esc(b.nickname)} (${b.bet})`).join(', ')}</p>` : ''}
@@ -248,6 +465,14 @@
         if (you.submitted) return waiting('Answer + bet locked', `You bet ${you.bet} will match you. Waiting for the others…`);
         return `${roundTag(g)}<h2 class="prompt">${esc(g.prompt)}</h2>
           <p>Say what you think most people will say.</p>${textForm('Your answer…', 40)}`;
+      }
+      if (s.phase === 'mr-herd') {
+        if (you.herdVoted) return waiting('Herd call in', 'The room decides which answers count as the same…');
+        const answers = /** @type {string[]} */ (g.answers || []);
+        return `<h2 class="prompt">${esc(g.prompt)}</h2>
+          <p>🐑 Which answers are <b>the herd</b>? Tap every one that means the same thing as the winning answer (a majority decides).</p>
+          <div class="vote-list herd-pick">${answers.map((a, i) => `<button type="button" class="vote-btn herd-opt" data-herd="${i}" aria-pressed="false">${esc(a)}${i === you.mine ? ' <small>(yours)</small>' : ''}</button>`).join('')}</div>
+          <button class="wide herd-lock" data-send='{"herd":[]}' disabled>Lock in my herd call</button>`;
       }
       return `<h1>${you.matched ? `Matched ${you.matched} other${you.matched === 1 ? '' : 's'}!` : 'All alone ✗'}</h1>
         <p class="prompt">${esc(you.answer || '(no answer)')}</p>
@@ -292,54 +517,77 @@
   });
 
   // ---------------------------------------------------------------- Porch Confessions
+  /** Porch Confessions phone: this phone's truth/lie calls while judging (author id → true = real). @type {Map<string, boolean>} */
+  const ttCalls = new Map();
+  let ttKey = '';
   register('twotruths', {
+    /** @param {any} s */
+    narrate(s) {
+      const g = s.gameState;
+      if (s.phase === 'tt-write') return `Confess: ${g.prompt}. Some of you are telling the truth. Some of you… are not.`;
+      if (s.phase === 'tt-judge') return 'Real, or made up? Call it.';
+      if (s.phase === 'tt-reveal' && g.current) return g.current.lie ? `${g.current.author} made that up!` : `That really happened to ${g.current.author}!`;
+      return null;
+    },
     host(s) {
       const g = s.gameState;
+      const head = `${roundTag(g)}<p class="big-sub tt-confess">Confess…</p><h1 class="prompt">${esc(g.prompt)}</h1>`;
       if (s.phase === 'tt-write') {
-        return `<h1>Porch Confessions &amp; a Lie</h1>
-          <p class="big-sub">On your phone: write two true things about yourself and one convincing lie. ${T}</p>
-          ${count(g.submittedCount, g.totalPlayers, 'ready')}
-          ${waitingRow(g.waitingOn, 'writing')}`;
+        return `${head}<p class="big-sub">Check your phone: it says <b>TRUTH</b> or <b>LIE</b>. Write your answer! ${T}</p>
+          ${count(g.submittedCount, g.totalPlayers, 'confessions in')}${waitingRow(g.waitingOn, 'writing')}`;
       }
-      const r = g.result;
-      return `${roundTag(g, 'Player')}<h1 class="prompt">${av(g.subject, 'avatar big bob')} ${esc(g.subject)}</h1>
-        <p class="big-sub">${r ? 'The lie was…' : `Which one is the lie? ${T}`}</p>
-        <ol class="answers ${r ? 'results' : ''}">${g.statements.map((/** @type {any} */ st, /** @type {any} */ i) => `
-          <li class="${r && r.lieIndex === i ? 'lie' : ''}">${esc(st)}
-            ${r && r.picks[i].length ? `<span class="voters">${r.picks[i].map((/** @type {any} */ n) => av(n)).join('')}</span>` : ''}</li>`).join('')}</ol>
-        ${r ? `<p>${r.subjectGained ? `${esc(g.subject)} fooled ${r.fooled.length} and gets +${r.subjectGained}!` : `Nobody was fooled by ${esc(g.subject)}.`}</p>`
-            : count(g.guessedCount, g.needed, 'guesses in')}`;
+      if (s.phase === 'tt-judge') {
+        return `${head}<ul class="tt-wall">${g.answers.map((/** @type {{ nickname: string, text: string }} */ x) => `<li>${av(x.nickname, 'avatar')} <b>${esc(x.nickname)}</b> ${esc(x.text)}</li>`).join('')}</ul>
+          <p class="big-sub">Real or made up? Call each one on your phone ${T}</p>${count(g.judgedCount, g.totalPlayers, 'calls in')}${waitingRow(g.waitingOn, 'deciding')}`;
+      }
+      const c = g.current;
+      if (!c || g.done) {
+        return `${head}<ol class="answers results tt-done">${(g.revealed || []).map((/** @type {any} */ x) => `<li class="${x.lie ? 'lie' : 'winner'}">${av(x.author)} ${esc(x.author)}: ${esc(x.text)} <span class="votes">${x.lie ? '🤥 LIE' : '✅ TRUE'}</span></li>`).join('')}</ol>
+          ${scoredList(g.gained)}`;
+      }
+      const voters = (/** @type {string[]} */ list) => list.map((n) => av(n)).join('') || '<small>nobody</small>';
+      return `${head}<div class="tt-card">
+          <p class="tt-by">${av(c.author, 'avatar big bob')} ${esc(c.author)} confessed:</p>
+          <p class="big-answer">“${esc(c.text)}”</p>
+          <p class="tt-stamp ${c.lie ? 'lie' : 'true'}">${c.lie ? '🤥 MADE IT UP!' : '✅ IT\'S TRUE!'}</p>
+          <p class="tt-calls">Believed it: ${voters(c.believed)} · Doubted it: ${voters(c.doubted)}${c.gained ? ` · ${esc(c.author)} fooled them: +${c.gained}` : ''}</p>
+        </div><p class="count">${g.revealed.length} / ${g.total}</p>`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
+      const key = `${g.round}|${s.phase}`;
+      if (key !== ttKey) { ttKey = key; ttCalls.clear(); }
       if (s.phase === 'tt-write') {
-        if (you.submitted) return waiting('Ready');
-        return `<h2>About you</h2>
-          <form id="tt-form">
-            <label>True thing #1</label><input name="t1" maxlength="100" autocomplete="off" required>
-            <label>True thing #2</label><input name="t2" maxlength="100" autocomplete="off" required>
-            <label class="lie-label">Your lie 🤥</label><input name="lie" maxlength="100" autocomplete="off" required>
-            <button type="submit">Submit</button>
-          </form>`;
+        if (you.submitted) return waiting('Confession in', 'Poker face on 😐');
+        return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><p class="tt-confess">Confess…</p><h2 class="prompt">${esc(g.prompt)}</h2>
+          <p class="tt-role ${you.lie ? 'lie' : 'true'}">${you.lie ? '🤥 MAKE IT UP — a believable lie' : '✅ TELL THE TRUTH — the wilder the better'}</p>
+          ${textForm(you.lie ? 'Your best lie…' : 'What really happened…', 110, 'Confess')}
+          ${you.canSwitch ? `<button type="button" class="ghost-btn" data-send='{"switchToLie":true}'>Nothing true comes to mind → lie instead</button>` : ''}`;
       }
-      if (s.phase === 'tt-guess') {
-        if (you.isSubject) return `<h1>It's about you!</h1><p>Keep a straight face 😐</p>`;
-        if (you.guessed) return waiting('Guess locked');
-        return `<h2 class="prompt">Which is ${esc(g.subject)}'s lie?</h2><div class="vote-list">` +
-          g.statements.map((/** @type {any} */ st, /** @type {any} */ i) => sendBtn({ choice: i }, esc(st))).join('') + '</div>';
+      if (s.phase === 'tt-judge') {
+        if (you.judged) return waiting('Calls in', 'Let\'s see who was honest…');
+        const list = /** @type {{ id: string, nickname: string, text: string }[]} */ (g.answers || []);
+        return `<h2>Real or made up?</h2><p class="hint">+100 for every right call</p><ul class="tt-judge">${list.map((a) => {
+          const v = ttCalls.get(a.id);
+          return `<li><p>${av(a.nickname, 'avatar')} <b>${esc(a.nickname)}</b>: ${esc(a.text)}</p>
+            <div class="tt-pick"><button type="button" class="vote-btn ${v === true ? 'on' : ''}" data-tt="${esc(a.id)}" data-v="1">✅ Real</button>
+            <button type="button" class="vote-btn bad ${v === false ? 'on' : ''}" data-tt="${esc(a.id)}" data-v="0">🤥 Made up</button></div></li>`;
+        }).join('')}</ul><button class="wide" data-tt-lock ${ttCalls.size ? '' : 'disabled'}>Lock in ${ttCalls.size}/${list.length}</button>`;
       }
-      if (you.isSubject) return `<h1>You fooled ${g.result.fooled.length}</h1>`;
-      return `<h1>${you.correct ? 'Spotted it! +100' : you.guessed ? 'Fooled ✗' : 'No guess'}</h1>
-        <p class="prompt">${esc(g.statements[g.result.lieIndex])}</p>`;
+      const c = g.current;
+      if (!c || g.done) return `<h1>Round over</h1><p class="prompt">+${you.gained} this round</p>`;
+      if (you.isAuthor) return `<h1>${c.lie ? 'Your lie' : 'Your truth'} is up!</h1><p class="prompt">${c.gained ? `You fooled them: +${c.gained}` : 'Nobody fooled 😅'}</p>`;
+      return `<h1>${you.right === true ? 'Called it! +100' : you.right === false ? 'Fooled ✗' : '📺 Watch the TV'}</h1><p>${esc(c.author)}: ${c.lie ? 'made it up' : 'it really happened'}</p>`;
     },
     bind(root, api) {
-      const f = root.querySelector('#tt-form');
-      if (!f) return;
-      f.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const val = (/** @type {string} */ name) => /** @type {HTMLInputElement} */ (/** @type {HTMLFormElement} */ (f).elements.namedItem(name)).value;
-        api.send({ truths: [val('t1'), val('t2')], lie: val('lie') });
-      });
+      root.querySelectorAll('[data-tt]').forEach((b) => b.addEventListener('click', () => {
+        const el = /** @type {HTMLElement} */ (b);
+        ttCalls.set(el.dataset.tt || '', el.dataset.v === '1');
+        window.Rumpus.haptic(10);
+        api.rerender();
+      }));
+      const lock = root.querySelector('[data-tt-lock]');
+      if (lock) lock.addEventListener('click', () => { if (ttCalls.size) api.send({ calls: Object.fromEntries(ttCalls) }); });
     },
   });
 
@@ -406,6 +654,11 @@
   /** @param {{ nickname: string, agenda: string }[]} list */
   const exposedHtml = (list) => (list && list.length
     ? `<p class="crush-exposed">🕵️ Exposed: ${list.map((x) => `${av(x.nickname)} ${esc(x.nickname)} is the <b>${esc(x.agenda)}</b>`).join(' · ')}</p>` : '');
+  /** Cottage Crush phone: who the next note goes to (picked on a tile first, then the line). @type {string | null} */
+  let crTo = null;
+  let crKey = '';
+  /** The night's three steps, with the current one lit. @param {number} at 0 notes, 1 replies, 2 dates, 3 reveal */
+  const crSteps = (at) => `<ol class="crush-steps">${['💌 Notes', '✍️ Replies', '🌙 Dates'].map((t, i) => `<li class="${i === at ? 'on' : i < at ? 'done' : ''}">${t}</li>`).join('')}</ol>`;
   register('crush', {
     /** @param {any} s */
     narrate(s) {
@@ -451,32 +704,40 @@
           ${you.canPredict ? `<b>Bet on a couple (+200 if they date)</b>${pairForm('predict', 'Bet', gossipTargets)}` : you.prediction ? `<p>Your bet: ${esc(you.prediction[0])} &amp; ${esc(you.prediction[1])}</p>` : ''}</div>`;
       }
       // One free anonymous wink a night (+50 if it turns into a date) — for whoever is waiting.
+      // Extras fold away (roomy screens): a wink for whoever is waiting, the inbox, the agenda.
       const wink = you.winked ? '<p class="hint">😉 Wink sent</p>'
-        : `<div class="crush-side"><b>😉 Wink at someone (free, anonymous)</b><div class="crush-pair">${g.targets.map((/** @type {Target} */ t) => sendBtn({ wink: t.id }, esc(t.nickname))).join('')}</div></div>`;
+        : `<details class="crush-fold"><summary>😉 Wink at someone <small>(free, anonymous)</small></summary><div class="crush-people small">${g.targets.map((/** @type {Target} */ t) => sendBtn({ wink: t.id }, `${av(t.nickname, 'avatar')}<span>${esc(t.nickname)}</span>`, 'crush-person')).join('')}</div></details>`;
       const winksIn = you.winksIn ? `<p class="crush-exposed">😉 Someone winked at you${you.winksIn > 1 ? ` (${you.winksIn}×)` : ''}!</p>` : '';
-      const role = (you.agenda ? `<div class="role">Your secret agenda: <strong>${esc(you.agenda.name)}</strong><br><small>${esc(you.agenda.desc)}</small></div>` : '') + (s.phase === 'cr-reveal' ? '' : side);
+      const role = (you.agenda ? `<details class="crush-agenda"><summary>🎭 Secret agenda: <b>${esc(you.agenda.name)}</b></summary><p>${esc(you.agenda.desc)}</p>${s.phase === 'cr-reveal' ? '' : side}</details>` : '');
       /** @param {any[]} list @param {boolean} mine */
       const notes = (list, mine) => list.map((n) => `<li class="crush-note"><b>${mine ? '→ ' + esc(n.to) : esc(n.from)}:</b> ${esc(n.text)}${n.reply ? `<br><span class="byline">↩ ${esc(n.reply)}</span>` : ''}</li>`).join('');
+      const key = `${g.evening}|${s.phase}`;
+      if (key !== crKey) { crKey = key; crTo = null; }
       if (s.phase === 'cr-mingle') {
-        const inbox = you.inbox.length ? `<h3>💌 Your notes</h3><ul class="crush-list">${notes(you.inbox, false)}</ul>` : '';
-        if (you.notesLeft <= 0) return role + waiting('Notes sent', 'Watch the TV for gossip…') + wink + winksIn + inbox;
-        return `${role}<h2>💌 ${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left</h2>
-          <label>To <select class="crush-to">${g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => `<option value="${esc(t.id)}">${esc(t.nickname)}</option>`).join('')}</select></label>
+        const inbox = you.inbox.length ? `<details class="crush-fold" open><summary>💌 ${you.inbox.length} note${you.inbox.length === 1 ? '' : 's'} for you</summary><ul class="crush-list">${notes(you.inbox, false)}</ul></details>` : '';
+        if (you.notesLeft <= 0) return crSteps(0) + role + waiting('Notes sent', 'Watch the TV for gossip…') + winksIn + inbox + wink;
+        const to = crTo && g.targets.find((/** @type {Target} */ t) => t.id === crTo);
+        if (!to) {
+          return `${crSteps(0)}${role}<h2>💌 Who gets a note?</h2><p class="hint">${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left · they won't know who sent it until they reply</p>
+            <div class="crush-people">${g.targets.map((/** @type {Target} */ t) => `<button type="button" class="crush-person" data-cr-to="${esc(t.id)}">${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span></button>`).join('')}</div>${winksIn}${inbox}`;
+        }
+        return `${crSteps(0)}<p class="crush-to-line">To ${av(to.nickname, 'avatar')} <b>${esc(to.nickname)}</b> <button type="button" class="ghost-btn" data-cr-to="">change</button></p>
+          <h2>Pick a line</h2>
           <div class="vote-list">${you.cards.map((/** @type {string} */ c) => `<button type="button" class="vote-btn crush-card" data-text="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-          <form class="crush-form"><input name="text" maxlength="80" autocomplete="off" placeholder="…or write your own"><button type="submit">Send</button></form>${inbox}`;
+          <form class="crush-form"><input name="text" maxlength="80" autocomplete="off" placeholder="…or write your own"><button type="submit">Send</button></form>`;
       }
       if (s.phase === 'cr-reply') {
         const open = you.inbox.filter((/** @type {any} */ n) => !n.reply);
-        if (!open.length) return role + waiting(you.inbox.length ? 'All replied' : 'No notes tonight 😢', 'Waiting for the others…') + wink + winksIn + (you.outbox.length ? `<h3>Your sent notes</h3><ul class="crush-list">${notes(you.outbox, true)}</ul>` : '');
+        if (!open.length) return crSteps(1) + role + waiting(you.inbox.length ? 'All replied' : 'No notes tonight 😢', 'Waiting for the others…') + winksIn + (you.outbox.length ? `<details class="crush-fold"><summary>📤 Your sent notes</summary><ul class="crush-list">${notes(you.outbox, true)}</ul></details>` : '') + wink;
         const n = open[0];
-        return `<h2>${esc(n.from)} wrote:</h2><p class="prompt">“${esc(n.text)}”</p><p>Reply:</p>
+        return `${crSteps(1)}<p class="hint">${open.length > 1 ? `${open.length} notes to answer` : 'Last one!'}</p><h2>${av(n.from, 'avatar')} ${esc(n.from)} wrote:</h2><p class="prompt">“${esc(n.text)}”</p><p>Reply:</p>
           <div class="vote-list crush-replies">${you.replyCards.map((/** @type {string} */ r) => sendBtn({ reply: n.id, text: r }, esc(r))).join('')}</div>`;
       }
       if (s.phase === 'cr-pick') {
-        if (you.picked) return role + waiting('Date picked 🌙');
-        return `${role}${winksIn}<h2>Who will you ask out tonight?</h2><div class="vote-list">` +
-          g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('') +
-          sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>';
+        if (you.picked) return crSteps(2) + role + waiting('Date picked 🌙', 'If they picked you too, it\'s a date!');
+        return `${crSteps(2)}${role}${winksIn}<h2>Who will you ask out tonight?</h2><p class="hint">It's a date only if they pick you too.</p><div class="crush-people">` +
+          g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span>`, 'crush-person')).join('') +
+          '</div><div class="vote-list">' + sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>';
       }
       const d = you.date;
       return `<h1>${!d ? 'Watch the dock 📺' : d.mutual ? `❤️ A date with ${esc(d.with)}!` : d.with === null ? '🛋 A quiet night in' : d.askedBy ? `💘 ${esc(d.with)} asked you out!` : `💔 ${esc(d.with)} had other plans`}</h1>
@@ -489,23 +750,26 @@
         const pair = [/** @type {HTMLSelectElement} */ (form.elements.namedItem('a')).value, /** @type {HTMLSelectElement} */ (form.elements.namedItem('b')).value];
         if (pair[0] !== pair[1]) api.send({ [form.dataset.kind || 'setup']: pair });
       }));
-      const to = /** @type {HTMLSelectElement | null} */ (root.querySelector('.crush-to'));
-      if (!to) return;
-      root.querySelectorAll('.crush-card').forEach((b) => b.addEventListener('click', () => {
-        api.send({ to: to.value, text: /** @type {HTMLElement} */ (b).dataset.text });
+      // Pick who the note is for (a tile), then the line.
+      root.querySelectorAll('[data-cr-to]').forEach((b) => b.addEventListener('click', () => {
+        crTo = /** @type {HTMLElement} */ (b).dataset.crTo || null;
+        window.Rumpus.haptic(10);
+        api.rerender();
       }));
+      const sendNote = (/** @type {string} */ text) => { if (crTo) { api.send({ to: crTo, text }); crTo = null; } };
+      root.querySelectorAll('.crush-card').forEach((b) => b.addEventListener('click', () => sendNote(/** @type {HTMLElement} */ (b).dataset.text || '')));
       const f = /** @type {HTMLFormElement | null} */ (root.querySelector('.crush-form'));
       if (f) f.addEventListener('submit', (e) => {
         e.preventDefault();
         const input = /** @type {HTMLInputElement} */ (f.querySelector('input'));
-        if (input.value.trim()) api.send({ to: to.value, text: input.value });
+        if (input.value.trim()) sendNote(input.value);
       });
     },
   });
 
   // ---------------------------------------------------------------- Loon Call (rhythm)
   /** @typedef {{ steps: number[], by: string | null, callAt: number, echoAt: number }} LcPhrase */
-  /** @typedef {{ kind: string, name: string, bpm: number, root: number, startAt: number, barMs: number, countIn: number, endAt: number, clicks: number[], phrases: LcPhrase[], caller: string | null, steps: number }} LcSched */
+  /** @typedef {{ kind: string, name: string, bpm: number, root: number, startAt: number, barMs: number, countIn: number, endAt: number, clicks: number[], phrases: LcPhrase[], caller: string | null, steps: number, beats?: number, feel?: string }} LcSched */
   /** @type {LcSched | null} the schedule on screen (TV or phone) */
   let lcSched = null;
   let lcScheduledAt = 0;
@@ -521,41 +785,46 @@
     const ctxNow = r.now(), srvNow = window.Rumpus.time.now();
     const at = (/** @type {number} */ ms) => ctxNow + (ms - srvNow) / 1000;
     const future = (/** @type {number} */ ms) => ms > srvNow + 20;
-    s.clicks.forEach((c, i) => { if (future(c)) r.click(at(c), i % 4 === 0); });
+    const beats = s.beats || 4;
+    s.clicks.forEach((c, i) => { if (future(c)) r.click(at(c), i % beats === 0); });
     if (!s.phrases.length) return;
     const step = s.barMs / s.steps;
+    const perBeat = s.steps / beats; // 2 = 8ths, 3 = triplets (swing), 4 = 16ths
     s.phrases.forEach((p) => {
       for (const [bar, isCall] of /** @type {[number, boolean][]} */ ([[p.callAt, true], [p.echoAt, false]])) {
         for (let k = 0; k < s.steps; k++) {
           const t = bar + k * step;
           if (!future(t)) continue;
-          if (k % 4 === 0) r.kick(at(t));
-          r.hat(at(t));
+          const onBeat = k % perBeat === 0, beat = k / perBeat;
+          // Kick on 1 (and 3 in 4/4), hats on every beat plus the grid's off-beats (swing: the third triplet).
+          if (onBeat && (beat === 0 || (beats === 4 && beat === 2))) r.kick(at(t));
+          if (onBeat || (perBeat === 3 ? k % 3 === 2 : perBeat === 4 ? k % 2 === 0 : true)) r.hat(at(t));
           if (k === 0) r.bass(at(t), s.root / 4);
-          if (k === 4) r.bass(at(t), (s.root / 4) * 1.5);
+          if (onBeat && beat === 2) r.bass(at(t), (s.root / 4) * 1.5);
         }
-        if (isCall) for (const st of p.steps) { const t = bar + st * step; if (future(t)) r.call(at(t), s.root * LC_PITCH[st % 8]); }
+        if (isCall) for (const st of p.steps) { const t = bar + st * step; if (future(t)) r.call(at(t), s.root * LC_PITCH[Math.floor((st * 8) / s.steps) % 8]); }
       }
     });
   }
 
   /** Where are we in the schedule right now? @param {LcSched} s @param {number} t */
   function lcWhere(s, t) {
-    const beatMs = s.barMs / 4;
+    const beats = s.beats || 4;
+    const beatMs = s.barMs / beats;
     const first = s.startAt + s.countIn * s.barMs;
     if (!s.phrases.length) { // tune-up / caller's metronome: just the clicks
       const i = Math.floor((t - s.startAt) / beatMs);
       // A caller's metronome: the first bar counts in, the second is theirs to fill.
-      const mode = t < s.startAt ? 'ready' : t >= s.endAt ? 'done' : s.kind === 'call' && i < 4 ? 'count' : 'clicks';
-      return { mode, beat: i, bar: Math.floor(i / 4), callNote: false };
+      const mode = t < s.startAt ? 'ready' : t >= s.endAt ? 'done' : s.kind === 'call' && i < beats ? 'count' : 'clicks';
+      return { mode, beat: i, bar: Math.floor(i / beats), callNote: false, step: -1, phrase: -1 };
     }
-    if (t < first) return { mode: 'count', beat: Math.floor((t - s.startAt) / beatMs), bar: -1, callNote: false };
+    if (t < first) return { mode: 'count', beat: Math.floor((t - s.startAt) / beatMs), bar: -1, callNote: false, step: -1, phrase: -1 };
     const k = Math.floor((t - first) / s.barMs);
-    if (k >= s.phrases.length * 2) return { mode: 'done', beat: 0, bar: k, callNote: false };
+    if (k >= s.phrases.length * 2) return { mode: 'done', beat: 0, bar: k, callNote: false, step: -1, phrase: -1 };
     const p = s.phrases[Math.floor(k / 2)];
     const inBar = (t - first) % s.barMs;
     const callNote = k % 2 === 0 && p.steps.some((st) => { const d = inBar - (st * s.barMs) / s.steps; return d >= 0 && d < 140; });
-    return { mode: k % 2 === 0 ? 'call' : 'echo', beat: Math.floor(inBar / beatMs), bar: k, callNote };
+    return { mode: k % 2 === 0 ? 'call' : 'echo', beat: Math.floor(inBar / beatMs), bar: k, callNote, step: Math.floor((inBar * s.steps) / s.barMs), phrase: Math.floor(k / 2) };
   }
 
   // One 30 fps clock hook drives every live beat meter (TV and phone); it does nothing when none is on screen.
@@ -567,11 +836,20 @@
     const taps = document.querySelectorAll('[data-lc-label]');
     if (!meters.length && !leads.length && !taps.length) return;
     const w = lcWhere(s, window.Rumpus.time.now());
-    const dots = (/** @type {number} */ b) => [0, 1, 2, 3].map((i) => (i === ((b % 4) + 4) % 4 ? '●' : '○')).join(' ');
-    const label = w.mode === 'call' ? `🐦 ${s.caller ? esc(s.caller) : 'CALL'}` : w.mode === 'echo' ? '🎵 ECHO!' : w.mode === 'count' ? `${4 - (((w.beat % 4) + 4) % 4)}…` : w.mode === 'clicks' ? '🥁 TAP!' : w.mode === 'ready' ? 'GET READY' : '';
+    const nb = s.beats || 4;
+    const dots = (/** @type {number} */ b) => Array.from({ length: nb }, (_, i) => (i === ((b % nb) + nb) % nb ? '●' : '○')).join(' ');
+    const label = w.mode === 'call' ? `🐦 ${s.caller ? esc(s.caller) : 'CALL'}` : w.mode === 'echo' ? '🎵 ECHO!' : w.mode === 'count' ? `${nb - (((w.beat % nb) + nb) % nb)}…` : w.mode === 'clicks' ? '🥁 TAP!' : w.mode === 'ready' ? 'GET READY' : '';
+    // The rhythm lane: the bar's grid; the call's notes light up as the loon sings them, so a tricky
+    // rhythm (swing, 16ths) can be seen as well as heard. During the echo only the playhead moves.
+    const p = w.phrase >= 0 ? s.phrases[w.phrase] : null;
+    const lane = p && (w.mode === 'call' || w.mode === 'echo') ? `<span class="lc-lane" style="--n:${s.steps}">${Array.from({ length: s.steps }, (_, k) => {
+      const note = p.steps.includes(k);
+      const cls = [k === w.step ? 'now' : '', note && w.mode === 'call' && k <= w.step ? 'note' : '', k % (s.steps / nb) === 0 ? 'beat' : ''].filter(Boolean).join(' ');
+      return `<i class="${cls}"></i>`;
+    }).join('')}</span>` : '';
     meters.forEach((el) => {
       const modeCls = w.mode === 'echo' ? 'lc-echo' : w.mode === 'clicks' ? 'lc-clicks' : '';
-      const html = `<span class="lc-mode ${modeCls}">${label}</span><span class="lc-dots">${w.mode === 'done' || w.mode === 'ready' ? '' : dots(w.beat)}</span>`;
+      const html = `<span class="lc-mode ${modeCls}">${label}</span><span class="lc-dots">${w.mode === 'done' || w.mode === 'ready' ? '' : dots(w.beat)}</span>${lane}`;
       if (el.innerHTML !== html) el.innerHTML = html;
     });
     leads.forEach((el) => el.classList.toggle('singing', w.callNote));
@@ -584,7 +862,7 @@
   });
 
   /** @param {any} g */
-  const lcStageTag = (g) => `<p class="round-tag">${g.sched ? esc(g.sched.name) : 'Loon Call'} · Song ${Math.max(1, g.round)} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+  const lcStageTag = (g) => `<p class="round-tag">${g.sched ? esc(g.sched.name) : 'Loon Call'}${g.sched && g.sched.feel ? ` · <i>${esc(g.sched.feel)}</i>` : ''} · Song ${Math.max(1, g.round)} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
   const LC_HIT = /** @type {Record<string, string>} */ ({ perfect: 'hit-perfect', good: 'hit-good', miss: 'hit-miss', extra: 'hit-extra' });
   /** The choir: every player's loon, ringed by their last tap. @param {any[]} choir */
   const lcChoir = (choir) => `<ul class="lc-choir">${choir.map((c) => `<li class="lc-loon ${c.hit ? LC_HIT[c.hit] : ''} ${c.seq % 2 ? 'bob-a' : c.seq ? 'bob-b' : ''}">
@@ -635,17 +913,34 @@
       }
       if (s.phase === 'lc-compose' && !you.isCaller) return watchTv(`<p>${esc(g.composer)} is writing a call — get ready to echo it!</p>`);
       const sub = s.phase === 'lc-tune' ? 'Tap along with the clicks' : s.phase === 'lc-compose' ? 'Count-in, then tap your own rhythm for one bar!' : you.isCaller ? 'Your call! Echo it with everyone — you also score for every note they get right 🎤' : 'Listen to the call on the TV, then tap it back';
-      return `<p class="hint">${sub}</p><button class="mg-big lc-tap" data-live data-lc-label="" aria-label="Tap on the beat">TAP!</button>`;
+      return `<p class="hint">${sub}</p><button class="mg-big lc-tap" data-live data-lc-label="" aria-label="Tap on the beat">TAP!</button><p class="lc-fb" aria-live="off"></p>`;
     },
     bind(root, api) {
       const btn = /** @type {HTMLElement | null} */ (root.querySelector('.lc-tap'));
       if (!btn) return;
+      const calib = Number((api.state.you || {}).calib) || 0;
+      const fb = /** @type {HTMLElement | null} */ (root.querySelector('.lc-fb'));
       btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        api.send({ tap: window.Rumpus.time.now() });
+        const t = window.Rumpus.time.now();
+        api.send({ tap: t });
+        // Instant feedback on the phone itself (no round trip): judge against the nearest note of
+        // the echo bar we're in, with this phone's measured delay — and a buzz you can feel.
+        const s = lcSched;
+        let kind = 'tap', label = '';
+        if (s && s.phrases.length) {
+          const ct = t - calib;
+          const notes = s.phrases.flatMap((p) => p.steps.map((st) => p.echoAt + (st * s.barMs) / s.steps));
+          const near = notes.reduce((a, b) => (Math.abs(b - ct) < Math.abs(a - ct) ? b : a), Infinity);
+          const d = ct - near;
+          kind = Math.abs(d) <= 70 ? 'perfect' : Math.abs(d) <= 140 ? 'good' : Math.abs(d) <= 220 ? 'miss' : 'extra';
+          label = kind === 'perfect' ? 'PERFECT!' : kind === 'good' ? (d > 0 ? 'A bit late' : 'A bit early') : kind === 'miss' ? (d > 0 ? 'Too late' : 'Too early') : 'Oops — no note';
+        }
+        window.Rumpus.haptic(kind === 'perfect' ? 30 : kind === 'good' ? 18 : kind === 'tap' ? 12 : [10, 50, 10]);
         window.Rumpus.sfx.tick();
-        if (navigator.vibrate) navigator.vibrate(12);
+        btn.dataset.hit = kind;
         btn.classList.remove('hit'); void btn.offsetWidth; btn.classList.add('hit');
+        if (fb) { fb.textContent = label; fb.dataset.hit = kind; fb.classList.remove('pop'); void fb.offsetWidth; fb.classList.add('pop'); }
       });
     },
   });
@@ -711,6 +1006,25 @@
         R(mx - w / 2 + sh, my + y, w, 1, (y / 2) % 2 ? 'rgba(244,241,232,0.30)' : 'rgba(255,240,190,0.20)');
       }
     }
+    // Shrinking Pad: a giant lily pad with a notch.
+    if (f.pad) {
+      const [px, py, pr] = f.pad;
+      for (let k = -pr; k <= pr; k += 1) {
+        const w = Math.sqrt(Math.max(0, pr * pr - k * k)) * 2;
+        R(px - w / 2, py + k, w, 1, (Math.round(k / 3) % 2) ? '#3f7d3a' : '#4a8f43');
+      }
+      R(px, py - pr, pr * 0.2, pr, '#17325a'); // the notch
+    }
+    // Duckling Herding: the nest in the middle, ducklings paddling.
+    if (f.nest) {
+      const [nx, ny, nr] = f.nest;
+      for (let k = -nr; k <= nr; k += 2) { const w = Math.sqrt(Math.max(0, nr * nr - k * k)) * 2; R(nx - w / 2, ny + k, w, 2, k % 4 ? '#8a6a3b' : '#a07c46'); }
+      R(nx - nr / 2, ny - 1, nr, 2, '#c9a15e');
+    }
+    for (const d of f.ducks || []) {
+      const [x, y] = d; const bob = Math.round(Math.sin((tick + x) / 6));
+      R(x - 3, y - 1 + bob, 6, 4, '#ffd23f'); R(x + 1, y - 4 + bob, 3, 3, '#ffd23f'); R(x + 4, y - 3 + bob, 2, 1, '#ff8a3d'); R(x + 2, y - 3 + bob, 1, 1, '#1a1423');
+    }
     for (const r of f.rocks || []) { const [x, y, rr] = r; for (let k = -rr; k <= rr; k++) { const w = Math.sqrt(rr * rr - k * k) * 2; R(x - w / 2, y + k, w, 1, k < 0 ? '#7d8597' : '#5c6373'); } R(x - rr / 2, y - rr / 2, rr / 3, 1, '#a9b0bf'); }
     // Wakes
     llTrails.forEach((tr) => tr.forEach((p) => { const age = (tick - p[2]) / 30; if (age < 1.2) { const w = 4 + age * 8; R(p[0] - w / 2, p[1], w, 1, `rgba(200,230,255,${0.35 * (1 - age / 1.2)})`); } }));
@@ -728,7 +1042,9 @@
     // Boats: a little paper boat in the player's colour, a lantern glow, their face on board.
     (f.boats || []).forEach((/** @type {number[] | null} */ b, /** @type {number} */ i) => {
       if (!b) return;
+      if (f.out && f.out[i]) { const [x, y] = b; R(x - 6, y, 12, 1, 'rgba(200,230,255,0.4)'); return; } // splashed off the pad
       const [x, y] = b; const c = LL_COLOURS[i % LL_COLOURS.length]; const bob = Math.round(Math.sin((tick + i * 9) / 7));
+      if (f.it === i) { const p = 13 + (tick % 10 < 5 ? 1 : 0); for (let k = 0; k < 16; k++) R(x + Math.cos(k * 0.39) * p, y + Math.sin(k * 0.39) * p, 2, 2, '#ff5e5e'); }
       R(x - 9, y - 8 + bob, 18, 18, 'rgba(255,200,120,0.10)');
       R(x - 7, y + 2 + bob, 14, 2, c); R(x - 6, y + 4 + bob, 12, 1, c); R(x - 5, y + 5 + bob, 10, 1, '#1a1423');
       const im = llImg(llNames[i] || '');
@@ -813,7 +1129,9 @@
         const ang = Math.atan2(you.target[1] - you.pos[1], you.target[0] - you.pos[0]) * 180 / Math.PI;
         arrow = `<span class="ll-arrow" style="transform:rotate(${Math.round(ang / 15) * 15}deg)">➤</span>`;
       }
-      return `<p class="round-tag">${esc(g.sceneName)}</p>
+      const status = you.out ? '<p class="ll-status out">💦 SPLASH! You fell off the pad — cheer the others on</p>'
+        : you.it ? '<p class="ll-status it">🔴 You\'re IT! Bump someone to pass it on</p>' : '';
+      return `<p class="round-tag">${esc(g.sceneName)}</p>${status}
         <p class="ll-you" style="--c:${colour}">⛵ Your boat · <b>${you.gained}</b> pts ${arrow}</p>
         <div class="ll-pad" data-live style="--c:${colour}"><div class="ll-knob"></div></div>
         <div class="ll-modes">
@@ -937,10 +1255,10 @@
       else if (s.phase === 'st-reveal') {
         const r = g.reveal;
         mid = `<h1>${esc(g.choreNames[r.index] || 'The chore')}</h1>
-          <div class="storm-cards">${r.cards.map((/** @type {string} */ c, /** @type {number} */ i) => `<div class="storm-card ${c === 'sabotage' ? 'bad' : 'good'}" style="animation-delay:${(i * g.cardMs) / 1000}s">${c === 'sabotage' ? '🦝 SABOTAGE' : '🔨 HELP'}</div>`).join('')}</div>
+          <div class="storm-cards">${r.cards.map((/** @type {string} */ c, /** @type {number} */ i) => `<div class="storm-card ${c === 'help' ? 'good' : 'bad'}" style="animation-delay:${(i * g.cardMs) / 1000}s">${c === 'double' ? '🦝🦝 DOUBLE TROUBLE' : c === 'sabotage' ? '🦝 SABOTAGE' : '🔨 HELP'}</div>`).join('')}</div>
           <p class="big-sub storm-result" style="animation-delay:${(r.cards.length * g.cardMs) / 1000}s">${r.ok ? '✔ Done!' : '✘ Ruined!'}${r.fixed ? ' (the Handyman fixed one sabotage)' : ''}${r.needed > 1 ? ' — a Big Chore needs two sabotages' : ''}</p>
           ${g.winReason ? `<p class="prompt storm-result" style="animation-delay:${(r.cards.length * g.cardMs) / 1000}s">${esc(g.winReason)}</p>` : ''}`;
-      } else if (s.phase === 'st-accuse') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win!' : '🦝 The raccoons win!'}</h1><p class="big-sub">${esc(g.winReason || '')}</p>
+      } else if (s.phase === 'st-accuse') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win… for now!' : '🦝 The raccoons win!'}</h1><p class="big-sub">${esc(g.winReason || '')}${g.hunt ? ' — but the raccoons get one last chance: unmask the Lookout and they steal it!' : ''}</p>
           <p class="prompt">Before the roles flip: who was a raccoon? Accuse on your phone. ${T}</p>${count(g.accusedCount, g.totalPlayers, 'accused')}`;
       else if (s.phase === 'st-final') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win!' : '🦝 The raccoons win!'}</h1>
           <div class="storm-roles">${(g.roles || []).map((/** @type {any} */ x, /** @type {number} */ i) => `<div class="storm-role ${x.side}" style="animation-delay:${i * 0.4}s">${av(x.nickname, 'avatar big')}<b>${esc(x.nickname)}</b><span>${esc(x.role)}</span><span class="votes">+${x.gained}</span></div>`).join('')}</div>`;
@@ -949,7 +1267,7 @@
     player(s) {
       const g = s.gameState, you = s.you;
       const allies = you.allies && you.allies.length ? `<p>🦝 Your fellow raccoons: <b>${you.allies.map(esc).join(', ')}</b></p>` : '';
-      const spotted = you.spotted ? `<p>👀 You saw <b>${esc(you.spotted)}</b> sneaking around — a raccoon.</p>` : '';
+      const spotted = (you.sighting || []).length ? `<p>👀 You saw <b>${you.sighting.map(esc).join('</b> and <b>')}</b> sneaking around the bins — one of them is a raccoon.</p>` : '';
       const card = `<button type="button" class="storm-rolecard ${you.role.side}" data-hold>
           <span class="storm-cover">🃏 Press and hold to see your role</span>
           <span class="storm-secret"><b>${esc(you.role.name)}</b>${you.role.side === 'raccoon' ? ' 🦝' : ' 🏡'}<small>${esc(you.role.desc)}</small>${allies}${spotted}</span></button>`;
@@ -972,11 +1290,13 @@
         if (!you.onCrew) return `<h2>The crew is at work…</h2><p>${g.crew.map(esc).join(', ')}</p>${peek}${card}`;
         if (you.played) return waiting('Card played');
         const fix = you.canFix ? '<label class="toggle"><input type="checkbox" id="st-fix"> 🔧 Fix It (cancel one sabotage, once per game)</label>' : '';
-        return `<h2>You're on the crew</h2>${fix}<div class="vote-list storm-yesno">
+        const dbl = you.canDouble ? '<label class="toggle"><input type="checkbox" id="st-double"> 🦝🦝 Double Trouble (once per game: your sabotage counts twice and can\'t be fixed)</label>' : '';
+        return `<h2>You're on the crew</h2>${fix}${dbl}<div class="vote-list storm-yesno">
             <button type="button" class="vote-btn" data-st-card="help">🔨 Help</button>
             ${you.canSabotage ? '<button type="button" class="vote-btn bad" data-st-card="sabotage">🦝 Sabotage</button>' : ''}</div>${card}`;
       }
       if (s.phase === 'st-reveal') return watchTv(`<p>${g.reveal && g.reveal.ok ? 'Chore done?' : 'Chore ruined?'} Watch the cards flip…</p>`) + peek + snoop;
+      if (s.phase === 'st-accuse' && you.hunting) return you.accused ? waiting('Guess in', 'Did you find the Lookout?') : `<h2>🦝 Last chance!</h2><p>The cottage won — but if you raccoons can name the <b>Lookout</b>, you steal the win.</p><div class="vote-list">${you.accuseTargets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ accuse: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('')}</div>`;
       if (s.phase === 'st-accuse') return you.accused ? waiting('Accused') : `<h2>Who was a raccoon?</h2><div class="vote-list">${you.accuseTargets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ accuse: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('')}</div>`;
       if (s.phase === 'st-final') return `<h1>${you.won ? 'Your side won! 🎉' : 'Your side lost'}</h1><p class="prompt">+${you.gained} points</p>${card}`;
       return watchTv();
@@ -1002,7 +1322,8 @@
       if (sendBtnEl) sendBtnEl.addEventListener('click', () => api.send({ crew: [...stPick] }));
       root.querySelectorAll('[data-st-card]').forEach((b) => b.addEventListener('click', () => {
         const fix = /** @type {HTMLInputElement | null} */ (root.querySelector('#st-fix'));
-        api.send({ card: /** @type {HTMLElement} */ (b).dataset.stCard, fix: !!(fix && fix.checked) });
+        const dbl = /** @type {HTMLInputElement | null} */ (root.querySelector('#st-double'));
+        api.send({ card: /** @type {HTMLElement} */ (b).dataset.stCard, fix: !!(fix && fix.checked), double: !!(dbl && dbl.checked) });
       }));
     },
     /** @param {any} s */
@@ -1019,156 +1340,8 @@
       if (s.phase === 'st-talk') return `${g.choreNames[g.choreIndex]}. ${g.event.name}: ${g.event.desc} ${g.leader}, choose ${g.crewSize} for your crew.`;
       if (s.phase === 'st-votes') return g.votes && g.votes.approved ? 'The crew heads out into the wind.' : g.storm >= 3 ? 'Too much arguing. The storm is here.' : 'Voted down! The storm creeps closer.';
       if (s.phase === 'st-reveal') return g.reveal ? (g.reveal.ok ? 'The chore is done!' : 'Sabotage! Someone ruined it.') : null;
-      if (s.phase === 'st-accuse') return g.winner === 'cottage' ? 'The cottage is ready. But who were the raccoons?' : 'The raccoons win! Now — who were they?';
+      if (s.phase === 'st-accuse') return g.winner === 'cottage' ? 'The cottage is ready. But the raccoons are hunting for the Lookout…' : 'The raccoons win! Now — who were they?';
       if (s.phase === 'st-final') return 'The masks come off.';
-      return null;
-    },
-  });
-
-  // ---------------------------------------------------------------- Campfire Wizards (spell duel)
-  /** @typedef {{ nickname: string, hearts: number, sparks: number, ghost: boolean, frosted: boolean, bounty: boolean, picked: boolean }} WzWizard */
-  /** @typedef {{ kind: string, from: string | null, to: string | null, amount: number }} WzBeat */
-  /** @type {{ wizards: WzWizard[], beats: WzBeat[], start: number, key: string, stepMs: number }} */
-  const wzView = { wizards: [], beats: [], start: 0, key: '', stepMs: 1200 };
-  const WZ_COL = /** @type {Record<string, string>} */ ({ bolt: '#ff8a3d', frost: '#7fd8ff', meteor: '#ff5e3a', shield: '#6fa8ff', mirror: '#e8eeff', mend: '#7ed957', charge: '#ffd23f', haunt: '#b39ddb', bless: '#ff9ecb', ember: '#ff6b3d', reflect: '#ffffff', blocked: '#6fa8ff', ko: '#8e8fa3' });
-  /** Seat positions around the fire (world 320×180). @param {number} i @param {number} n */
-  const wzSeat = (i, n) => { const a = -Math.PI / 2 + (i / Math.max(1, n)) * Math.PI * 2; return [160 + Math.cos(a) * 118, 92 + Math.sin(a) * 62]; };
-
-  function wzDraw(/** @type {HTMLCanvasElement} */ cv, /** @type {number} */ tick) {
-    const g = cv.getContext('2d');
-    if (!g) return;
-    const S = 3;
-    const R = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ w, /** @type {number} */ h, /** @type {string} */ c) => { g.fillStyle = c; g.fillRect(Math.round(x) * S, Math.round(y) * S, Math.max(1, Math.round(w)) * S, Math.max(1, Math.round(h)) * S); };
-    // Night clearing + the campfire, flickering on the 30 fps clock.
-    R(0, 0, 320, 180, '#120d1c'); R(0, 120, 320, 60, '#1b2416');
-    for (let r = 60; r > 0; r -= 6) R(160 - r, 92 - r / 2, r * 2, r, `rgba(255,140,60,${(0.05 * (60 - r) / 60).toFixed(3)})`);
-    R(146, 100, 28, 4, '#5d3a22'); R(150, 96, 20, 4, '#4a2d1a');
-    for (let k = 0; k < 7; k++) {
-      const h = 10 + ((tick * 3 + k * 7) % 9), x = 151 + k * 3;
-      R(x, 98 - h, 3, h, k % 2 ? '#ff8a3d' : '#ffd23f');
-    }
-    for (let k = 0; k < 5; k++) { const y = 80 - ((tick * 1.5 + k * 17) % 50); R(156 + Math.sin(tick / 6 + k) * 6, y, 1, 1, '#ffd23f'); }
-    const n = wzView.wizards.length;
-    /** @type {Record<string, number[]>} */
-    const pos = {};
-    wzView.wizards.forEach((w, i) => { pos[w.nickname] = wzSeat(i, n); });
-    // Which beat is playing?
-    const t = Date.now() - wzView.start;
-    const step = wzView.stepMs;
-    const bi = wzView.beats.length ? Math.floor(t / step) : -1;
-    const frac = (t % step) / step;
-    // Wizards
-    wzView.wizards.forEach((w, i) => {
-      const [x, y] = wzSeat(i, n);
-      const bob = Math.round(Math.sin((tick + i * 11) / 8) * (w.ghost ? 2 : 1));
-      g.globalAlpha = w.ghost ? 0.45 : 1;
-      const im = llImg(w.nickname);
-      if (im.complete && im.naturalWidth) { g.imageSmoothingEnabled = false; g.drawImage(im, Math.round(x - 8) * S, Math.round(y - 14 + bob) * S, 16 * S, 16 * S); }
-      R(x - 6, y + 3 + bob, 12, 2, w.ghost ? '#b39ddb' : '#6b4c8a'); // robe hem
-      g.globalAlpha = 1;
-      for (let h = 0; h < 5; h++) R(x - 9 + h * 4, y + 7, 3, 2, h < w.hearts ? '#ff5e6b' : '#3a2a3a');
-      for (let s = 0; s < w.sparks; s++) R(x - 9 + s * 4, y + 10, 2, 2, '#ffd23f');
-      if (w.bounty) { R(x - 2, y - 20 + bob, 4, 3, '#ffd23f'); R(x - 3, y - 21 + bob, 1, 2, '#ffd23f'); R(x + 2, y - 21 + bob, 1, 2, '#ffd23f'); }
-      if (w.frosted) R(x - 8, y - 14 + bob, 16, 1, '#7fd8ff');
-    });
-    // The current beat's effect.
-    const b = bi >= 0 && bi < wzView.beats.length ? wzView.beats[bi] : null;
-    if (b) {
-      const c = WZ_COL[b.kind] || '#fff';
-      const A = b.from ? pos[b.from] : null, B = b.to ? pos[b.to] : null;
-      if ((b.kind === 'bolt' || b.kind === 'frost' || b.kind === 'haunt' || b.kind === 'bless' || b.kind === 'mend' || b.kind === 'reflect') && A && B) {
-        const p = Math.min(1, frac * 1.6);
-        const x = A[0] + (B[0] - A[0]) * p, y = A[1] - 6 + (B[1] - A[1]) * p - Math.sin(p * Math.PI) * 14;
-        for (let k = 0; k < 5; k++) R(x - (B[0] - A[0]) * 0.03 * k, y - (B[1] - A[1]) * 0.03 * k, 3 - k * 0.5, 3 - k * 0.5, c);
-        if (p >= 1) for (let k = 0; k < 8; k++) R(B[0] + Math.cos(k + tick) * frac * 12, B[1] - 6 + Math.sin(k + tick) * frac * 8, 1, 1, c);
-      } else if (b.kind === 'meteor' && A) {
-        for (const w of wzView.wizards) { if (w.nickname === b.from || w.ghost) continue; const P = pos[w.nickname]; const y = P[1] - 60 + frac * 60; R(P[0] - 2 + (1 - frac) * 20, y - 6, 5, 5, c); R(P[0] + (1 - frac) * 24, y - 10, 2, 2, '#ffd23f'); }
-      } else if ((b.kind === 'shield' || b.kind === 'blocked') && (b.kind === 'shield' ? A : B)) {
-        const P = /** @type {number[]} */ (b.kind === 'shield' ? A : B); const r = 12 + Math.sin(tick / 2) * 1;
-        for (let k = 0; k < 24; k++) R(P[0] + Math.cos(k * 0.26) * r, P[1] - 6 + Math.sin(k * 0.26) * r, 1, 1, c);
-      } else if (b.kind === 'mirror' && A) {
-        R(A[0] - 10, A[1] - 16, 2, 14, c); if (tick % 4 < 2) R(A[0] - 9, A[1] - 15, 1, 3, '#fff');
-      } else if (b.kind === 'charge' && A) {
-        for (let k = 0; k < 6; k++) R(A[0] + Math.cos(k * 1.05 + tick / 3) * 10, A[1] - 6 + Math.sin(k * 1.05 + tick / 3) * 10, 2, 2, c);
-      } else if (b.kind === 'ember' && B) {
-        for (let k = 0; k < 4; k++) R(B[0] - 6 + k * 4, B[1] - 30 + ((frac * 30 + k * 7) % 30), 1, 2, c);
-      } else if (b.kind === 'ko' && B) {
-        for (let k = 0; k < 10; k++) R(B[0] + Math.cos(k) * frac * 18, B[1] - 6 + Math.sin(k) * frac * 10, 2, 2, c);
-      }
-    }
-  }
-  window.Rumpus.clock.add((tick) => {
-    const cv = /** @type {HTMLCanvasElement | null} */ (document.querySelector('canvas.wz-fire'));
-    if (cv) wzDraw(cv, tick);
-  });
-  /** A beat in words (TV log + narrator). @param {WzBeat} b */
-  const wzLine = (b) => ({
-    bolt: `🔥 ${b.from}'s firebolt hits ${b.to} (−${b.amount})`, frost: `❄️ ${b.from} freezes ${b.to} (−${b.amount})`, meteor: `☄️ ${b.from}'s meteor hits ${b.to}`,
-    shield: `🛡 ${b.from} raises a shield`, blocked: `🛡 ${b.to}'s shield holds!`, mirror: `🪞 ${b.from} holds up a mirror to ${b.to}`, reflect: `🪞 ${b.from}'s mirror bounces it back at ${b.to}!`,
-    mend: `💚 ${b.from} mends ${b.to} (+${b.amount})`, charge: `✨ ${b.from} charges up`, haunt: `👻 ${b.from} haunts ${b.to}`, bless: `👻 ${b.from} blesses ${b.to}`,
-    ember: `🌋 Embers singe ${b.to}`, ko: `💥 ${b.to} is knocked out — and rises as a ghost!`,
-  }[b.kind] || '');
-  /** Phone: the spell you tapped, waiting for a target. */
-  let wzSpell = '';
-  let wzSpellKey = '';
-
-  register('wizards', {
-    host(s) {
-      const g = s.gameState;
-      const key = `${g.round}|${s.phase}`;
-      if (key !== wzView.key) { wzView.key = key; wzView.start = Date.now(); }
-      wzView.wizards = g.wizards || []; wzView.beats = g.beats || []; wzView.stepMs = g.stepMs || 1200;
-      const tag = `<p class="round-tag">Round ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
-      const ev = `<p class="wz-event"><b>${esc(g.event.name)}</b> — ${esc(g.event.desc)}</p>`;
-      if (s.phase === 'wz-final') {
-        return `<h1>🏆 The tournament is over</h1><ol class="answers">${(g.finalRows || []).map((/** @type {{ nickname: string, place: number, gained: number, ghost: boolean }} */ r) => `<li class="${r.place === 1 ? 'winner' : ''}">${av(r.nickname)} ${esc(r.nickname)}${r.ghost ? ' 👻' : ' 🧙'} <span class="votes">+${r.gained}</span></li>`).join('')}</ol>`;
-      }
-      const sub = s.phase === 'wz-pick' ? `<p class="big-sub">Choose your spell on your phone ${T} · ${g.pickedCount}/${g.totalPlayers}</p>` : '';
-      const log = s.phase === 'wz-reveal' ? `<ol class="wz-log">${wzView.beats.map((b, i) => `<li style="animation-delay:${(i * wzView.stepMs) / 1000}s">${esc(wzLine(b))}</li>`).join('')}</ol>` : '';
-      return `${tag}${ev}<canvas class="wz-fire" width="960" height="540"></canvas>${sub}${log}`;
-    },
-    player(s) {
-      const g = s.gameState, you = s.you;
-      if (s.phase === 'wz-final') { const r = (g.finalRows || []).find((/** @type {{ nickname: string }} */ x) => x.nickname === you.nickname); return `<h1>${r && r.place === 1 ? '🏆 Champion wizard!' : `You placed #${r ? r.place : '?'}`}</h1><p>+${r ? r.gained : 0} points</p>`; }
-      const stats = `<p class="wz-stats">${you.ghost ? '👻 Ghost' : `❤️ ${you.hearts} · ✨ ${you.sparks}${you.frosted ? ' · ❄️ frosted (+1 cost)' : ''}`}${you.bounty ? ' · 👑 bounty on you!' : ''}</p>`;
-      if (s.phase === 'wz-reveal') return `${stats}${watchTv('<p>The spells go off…</p>')}`;
-      if (you.picked) return `${stats}${waiting('Spell ready', 'Everyone casts together…')}`;
-      const key = `${g.round}`;
-      if (key !== wzSpellKey) { wzSpell = ''; wzSpellKey = key; }
-      const chosen = (you.spells || []).find((/** @type {{ id: string }} */ x) => x.id === wzSpell);
-      if (chosen && chosen.target !== 'none') {
-        const list = chosen.target === 'any' ? you.any : you.others;
-        return `${stats}<h2>${esc(chosen.name)} — on whom?</h2><div class="vote-list">${list.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ spell: chosen.id, target: t.id }, `${av(t.nickname)} ${esc(t.nickname)}${t.id === you.playerId ? ' (you)' : ''}`)).join('')}</div>
-          <button type="button" class="ghost-btn" data-wz-spell="">← another spell</button>`;
-      }
-      return `${stats}<p class="hint">${esc(g.event.name)}: ${esc(g.event.desc)}</p><div class="vote-list wz-spells">${(you.spells || []).map((/** @type {{ id: string, name: string, cost: number, desc: string, ok: boolean, target: string }} */ sp) =>
-        sp.target === 'none'
-          ? `<button class="vote-btn" data-send="${esc(JSON.stringify({ spell: sp.id }))}" ${sp.ok ? '' : 'disabled'}><b>${esc(sp.name)}</b> ✨${sp.cost}<br><small>${esc(sp.desc)}</small></button>`
-          : `<button type="button" class="vote-btn" data-wz-spell="${esc(sp.id)}" ${sp.ok ? '' : 'disabled'}><b>${esc(sp.name)}</b> ✨${sp.cost}<br><small>${esc(sp.desc)}</small></button>`).join('')}</div>`;
-    },
-    bind(root, api) {
-      root.querySelectorAll('[data-wz-spell]').forEach((b) => b.addEventListener('click', () => {
-        wzSpell = /** @type {HTMLElement} */ (b).dataset.wzSpell || '';
-        api.rerender();
-      }));
-    },
-    /** Shake on the first knockout or meteor, timed to its beat. @param {any} s */
-    moment(s) {
-      const g = s.gameState;
-      if (s.phase === 'wz-final') return { confettiAt: 300 };
-      if (s.phase !== 'wz-reveal') return null;
-      const i = (g.beats || []).findIndex((/** @type {WzBeat} */ b) => b.kind === 'ko' || b.kind === 'meteor');
-      return i >= 0 ? { shakeAt: i * (g.stepMs || 900) + 300 } : null;
-    },
-    /** Rocco calls the big moments. @param {any} s */
-    narrate(s) {
-      const g = s.gameState;
-      if (s.phase === 'wz-pick') return g.round === 1 ? 'Wizards, to the fire! Choose your spells.' : `${g.event.name}! ${g.event.desc}`;
-      if (s.phase === 'wz-reveal') {
-        const big = (g.beats || []).filter((/** @type {WzBeat} */ b) => ['ko', 'reflect', 'meteor', 'blocked'].includes(b.kind)).slice(0, 2);
-        return big.length ? big.map((/** @type {WzBeat} */ b) => wzLine(b).replace(/^\S+\s/, '').replace(/\(.*?\)/g, '')).join('. ') : 'The spells fly!';
-      }
-      if (s.phase === 'wz-final') { const w = (g.finalRows || [])[0]; return w ? `${w.nickname} is the champion wizard!` : null; }
       return null;
     },
   });
@@ -1296,7 +1469,7 @@
       }
       // Time's up: send whatever they have so it isn't lost.
       if (autoFn && endsAt) {
-        const t = setTimeout(autoFn, Math.max(0, endsAt - Date.now() - 300));
+        const t = setTimeout(autoFn, Math.max(0, endsAt - window.Rumpus.time.now() - 300));
         api.onCleanup(() => clearTimeout(t));
       }
     },

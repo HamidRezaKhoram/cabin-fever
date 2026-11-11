@@ -68,7 +68,7 @@ module.exports = [
   // The Pages service worker template (the build fills in the file lists).
   {
     files: ['web/sw-template.js'],
-    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __FILES__: 'readonly', __MEDIA__: 'readonly' } },
+    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __FILES__: 'readonly', __MEDIA__: 'readonly', __PHONE__: 'readonly' } },
     rules: COMMON,
   },
   // The narrator's voice worker: an ES module in a worker scope (loads the Kokoro build at runtime).

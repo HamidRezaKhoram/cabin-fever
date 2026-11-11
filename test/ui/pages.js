@@ -142,6 +142,37 @@ async function check(name, fn) {
     await a.close();
   });
 
+  await check('first visit saves the whole game (progress bar), then TV + phone pages load with NO internet', async () => {
+    // The TV showed its progress, and saved every game file, then the music + voice in the background.
+    await tv.waitForFunction(() => window.cfSaved && window.cfSaved.core === 100, null, { timeout: 60000 });
+    const want = await tv.evaluate(async () => {
+      const t = await (await fetch('sw.js')).text();
+      const n = (/** @type {string} */ name) => Object.keys(JSON.parse(new RegExp(`const ${name} = (\\{.*?\\});`).exec(t)[1])).length;
+      return n('FILES') + n('MEDIA');
+    });
+    for (let i = 0; i < 240; i++) {
+      const have = await tv.evaluate(async () => (await (await caches.open('cabin-fever-files')).keys()).length);
+      if (have >= want) break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    assert.strictEqual(await tv.evaluate(() => window.cfSaved.media), 100, 'music + voice saved');
+    // Pull the plug: both pages still load and the TV still makes a room (tab-to-tab here).
+    await ctx.setOffline(true);
+    try {
+      const tv2 = await ctx.newPage();
+      watch(tv2, 'tv-offline');
+      await tv2.goto(BASE + 'host.html?net=local');
+      await tv2.click('#start-overlay');
+      await tv2.waitForFunction(() => /^[A-Z]{4}$/.test((document.getElementById('room-code') || {}).textContent || ''), null, { timeout: 15000 });
+      const ph2 = await ctx.newPage();
+      watch(ph2, 'phone-offline');
+      await ph2.goto(BASE + 'play.html?net=local');
+      // The page itself loaded from the saved copy: its join screen (or "getting your seat back").
+      await ph2.waitForFunction(() => !!document.querySelector('#join-view:not([hidden]), #game-view:not([hidden])') && !!window.Rumpus, null, { timeout: 15000 });
+      await tv2.close(); await ph2.close();
+    } finally { await ctx.setOffline(false); }
+  });
+
   await check('the game is cached in the browser; a new deploy downloads only the files that changed', async () => {
     const reg = await tv.evaluate(async () => { const r = await navigator.serviceWorker.ready; return !!r.active; });
     assert.ok(reg, 'service worker active');

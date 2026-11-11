@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const flow = require('./flow');
+const { makeRng, newSeed } = require('./rng');
 
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
 
@@ -45,6 +46,12 @@ function loadContent(name, builtin) {
   return builtin;
 }
 
+/** Run a timer's work; a bug in one game is logged instead of crashing the server (a throw in a
+ * timer is an uncaught exception). @param {() => void} fn @param {string} what */
+function guarded(fn, what) {
+  try { fn(); } catch (e) { console.error(`[game] ${what} failed:`, e); }
+}
+
 /** Player text: trimmed, single-spaced, capped, house-rule banned words masked. */
 /** @param {unknown} v @param {number} [max] */
 function cleanText(v, max = 120) {
@@ -68,6 +75,9 @@ class BaseGame {
     this.timerFn = null;
     this.endsAt = null;
     this.destroyed = false;
+    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
+    this.seed = newSeed();
+    this.rng = makeRng(this.seed);
   }
 
   /** @param {number} def */
@@ -101,7 +111,7 @@ class BaseGame {
       if (this.destroyed) return;
       this.timer = null;
       this.timerFn = null;
-      fn();
+      guarded(fn, `${id} timer`);
     }, real + (scale ? 1200 : 0));
   }
 
@@ -220,4 +230,4 @@ class BaseGame {
   }
 }
 
-module.exports = { BaseGame, shuffle, pick, loadContent, cleanText };
+module.exports = { BaseGame, shuffle, pick, loadContent, cleanText, guarded };

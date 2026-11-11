@@ -403,16 +403,29 @@ async function check(name, fn) {
     await tv.waitForSelector('.game-pick');
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'lobby');
     await tv.click('[data-game-id="minigames"]');
-    // Play whatever minigame comes first by reacting to each phone's screen.
-    await phones[0].waitForSelector('[data-mg], .number-form', { timeout: 20000 });
-    const kind = await phones[0].evaluate(() => { const b = document.querySelector('[data-mg]'); return b ? b.dataset.mg : 'number'; });
+    // Play whatever minigame comes first (they're picked at random) by reacting to each phone's screen.
+    const ANY = '[data-mg], .number-form, [data-mg-side], [data-mg-swat], [data-mg-balance], [data-mg-stack], .spot-btn, [data-mg-colour]';
+    await phones[0].waitForSelector(ANY + ', .mg-count', { timeout: 20000 });
+    await phones[0].waitForSelector(ANY, { timeout: 20000 }); // (Campfire Sequence shows the sparks on the TV first)
+    const kind = await phones[0].evaluate(() => {
+      const b = /** @type {HTMLElement | null} */ (document.querySelector('[data-mg]'));
+      if (b) return b.dataset.mg;
+      return document.querySelector('.number-form') ? 'number' : document.querySelector('[data-mg-side]') ? 'paddle' : document.querySelector('.spot-btn') ? 'spot'
+        : document.querySelector('[data-mg-colour]') ? 'simon' : 'canvas';
+    });
+    const hold = async (p, sel, ms) => { const b = await p.$(sel); const box = await b.boundingBox(); await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await p.mouse.down(); await p.waitForTimeout(ms); await p.mouse.up(); };
     for (const p of phones) {
       if (kind === 'tap') { for (let i = 0; i < 10; i++) await p.click('[data-mg="tap"]'); }
-      else if (kind === 'roast') { const b = await p.$('[data-mg="roast"]'); const box = await b.boundingBox(); await p.mouse.move(box.x + 20, box.y + 20); await p.mouse.down(); await p.waitForTimeout(400); await p.mouse.up(); }
+      else if (kind === 'roast') await hold(p, '[data-mg="roast"]', 400);
       else if (kind === 'number') { await p.fill('.number-form input', '20'); await p.click('.number-form button'); }
+      else if (kind === 'skip') { for (let i = 0; i < 3; i++) { await p.click('[data-mg="skip"]'); await p.waitForTimeout(150); } }
+      else if (kind === 'paddle') { for (let i = 0; i < 6; i++) await p.click(`[data-mg-side="${i % 2 ? 'R' : 'L'}"]`); }
+      else if (kind === 'spot') await p.click('.spot-btn');
+      else if (kind === 'simon') { const n = await p.evaluate(() => (document.querySelector('[data-mg-seq]') || { textContent: '' }).textContent.split('○').length - 1); for (let i = 0; i < n; i++) await p.click('[data-mg-colour="0"]'); }
+      else if (kind === 'canvas') { const c = await p.$('[data-mg-swat], [data-mg-balance], [data-mg-stack]'); if (c) await c.click(); }
       else { await p.waitForSelector('[data-mg="draw"].go', { timeout: 10000 }); await p.click('[data-mg="draw"]'); }
     }
-    await tv.waitForFunction(() => /WINS|TIE/.test(document.getElementById('phase-view').textContent), null, { timeout: 25000 });
+    await tv.waitForFunction(() => /WINS|TIE|NOBODY/.test(document.getElementById('phase-view').textContent), null, { timeout: 30000 });
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'minigames');
     await shot(tv, '08-minigame-result');
   });
@@ -444,8 +457,11 @@ async function check(name, fn) {
     await tv.click('[data-act="bots"][data-n="1"]'); // 3 phones + 1 bot = 4 players
     await tv.waitForFunction(() => !document.querySelector('[data-game-id="crush"]').disabled);
     await tv.click('[data-game-id="crush"]');
-    for (const p of phones) await p.waitForSelector('.crush-to');
-    await phones[0].selectOption('.crush-to', { label: 'Ben' }); // phones are Ann, Ben, Cat
+    for (const p of phones) await p.waitForSelector('.crush-person');
+    // Pick who it's for on a big tile, then the line (phones are Ann, Ben, Cat).
+    await phones[0].click('.crush-person:has-text("Ben")');
+    await phones[0].waitForSelector('.crush-to-line');
+    assert.ok((await phones[0].textContent('.crush-to-line')).includes('Ben'));
     const text = await phones[0].textContent('.crush-card');
     await phones[0].click('.crush-card');
     await phones[1].waitForFunction((t) => [...document.querySelectorAll('.crush-note')].some((n) => n.textContent.includes(t.trim())), text);
@@ -512,6 +528,8 @@ async function check(name, fn) {
     await snapPhone.goto(`${BASE}/play`);
     let n = 0;
     const failures = [];
+    /** @type {string[]} */
+    const shrunk = [];
     for (const f of games) {
       const snaps = JSON.parse(fs.readFileSync(`${dir}/${f}`, 'utf8'));
       for (const sn of snaps) {
@@ -535,11 +553,25 @@ async function check(name, fn) {
         }, [sn.kind, sn.state]);
         n++;
         if (err) failures.push(`${f} ${sn.kind} ${sn.state.phase}: ${err}`);
+        // The TV never scrolls during a game: every screen fits the stage (8 players' worth).
+        if (!err && sn.kind === 'host' && !['lobby', 'gameover'].includes(sn.state.phase)) {
+          await snapTv.waitForFunction(() => !new Function('return wiping')() && [...document.querySelectorAll('#phase-view img')].every((i) => /** @type {HTMLImageElement} */ (i).complete), null, { timeout: 5000 }).catch(() => {});
+          await snapTv.waitForTimeout(80); // the re-fit after images load
+          const over = await snapTv.evaluate(() => {
+            const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
+            const pv = /** @type {HTMLElement} */ (document.getElementById('phase-view'));
+            return { over: st.scrollHeight - st.clientHeight, page: document.documentElement.scrollHeight - innerHeight, zoom: Number(pv.style.getPropertyValue('--shrink') || 1) };
+          });
+          if (over.over > 2 || over.page > 2) failures.push(`${f} host ${sn.state.phase}: TV screen overflows (${over.over}px stage, ${over.page}px page)`);
+          // Shrinking to fit is a safety net, not a layout: below 60% it's too small to read from the couch.
+          if (over.zoom < 0.6) failures.push(`${f} host ${sn.state.phase}: had to shrink to ${Math.round(over.zoom * 100)}% to fit — too much on one screen`);
+          if (over.zoom < 1) shrunk.push(`${f.replace('.json', '')}/${sn.state.phase} ${Math.round(over.zoom * 100)}%`);
+        }
       }
     }
     assert.deepStrictEqual(failures, []);
     assert.ok(n >= offered.length * 4, `rendered ${n} screens`);
-    console.log(`    (${n} recorded screens from ${games.length} games)`);
+    console.log(`    (${n} recorded screens from ${games.length} games${shrunk.length ? `; shrunk to fit: ${[...new Set(shrunk)].join(', ')}` : ''})`);
   });
 
   await check('no page errors anywhere', async () => {

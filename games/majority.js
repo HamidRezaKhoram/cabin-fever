@@ -47,6 +47,8 @@ const BET_PTS = 150;
 const BET_ZERO_PTS = 50; // calling "nobody" is easy to force with a weird answer, so it pays less
 // Once every answer is in, bets get a short window (playtest: fast players waited out the full timer).
 const BET_WINDOW_MS = parseInt(process.env.RUMPUS_MR_BET_WINDOW_MS || '8000', 10);
+// The herd call: players decide which answers count as the same (no fussy spelling rules).
+const HERD_MS = parseInt(process.env.RUMPUS_MR_HERD_MS || '20000', 10);
 
 // "The Bananas!" -> "banana"
 /** @param {string} s */
@@ -69,11 +71,15 @@ class MajorityGame extends BaseGame {
     this.answers = new Map();
     /** @type {Map<string, number>} id → how many others they expect to match them */
     this.bets = new Map();
-    /** @type {{ bets: { nickname: string, bet: number, actual: number, gained: number }[], groups: { label: string, count: number, names: string[], top: boolean }[], gained: { nickname: string, gained: number }[] } | null} */
+    /** @type {{ bets: { nickname: string, bet: number, actual: number, gained: number }[], groups: { label: string, count: number, names: string[], top: boolean, herd: boolean, votes: number }[], gained: { nickname: string, gained: number }[] } | null} */
     this.result = null;
     this.poolName = 'majority';
     /** @type {PoolItem | null} */
     this.item = null;
+    /** @type {{ label: string, ids: string[] }[]} answers grouped by spelling (the herd call's cards) */
+    this.groups = [];
+    /** @type {Map<string, number[]>} */
+    this.herdVotes = new Map();
   }
 
   start() { this.nextRound(); }
@@ -89,6 +95,8 @@ class MajorityGame extends BaseGame {
     this.prompt = (item && item.text) || BUILTIN[this.round % BUILTIN.length];
     this.answers = new Map();
     this.bets = new Map();
+    this.groups = [];
+    this.herdVotes = new Map();
     this.result = null;
     this.phase = 'mr-answer';
     this.setTimer(ANSWER_MS, () => this.reveal());
@@ -97,6 +105,16 @@ class MajorityGame extends BaseGame {
 
   /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
+    if (this.phase === 'mr-herd') {
+      const groups = this.groups;
+      const pick = Array.isArray(payload.herd) ? payload.herd : null;
+      if (!pick || this.herdVotes.has(id)) return;
+      const ix = [...new Set(pick.filter((/** @type {unknown} */ i) => Number.isInteger(i) && /** @type {number} */ (i) >= 0 && /** @type {number} */ (i) < groups.length))];
+      if (!ix.length) return;
+      this.herdVotes.set(id, /** @type {number[]} */ (ix));
+      if (this.allIn(this.herdVotes)) return this.score();
+      return this.push();
+    }
     if (this.phase !== 'mr-answer') return;
     if (this.answers.has(id)) {
       const n = payload.bet;
@@ -112,8 +130,8 @@ class MajorityGame extends BaseGame {
     this.push();
   }
 
-  reveal() {
-    if (this.phase !== 'mr-answer') return;
+  /** Answers grouped by spelling ("Bananas!" = "banana"): the starting point for the herd call. */
+  autoGroups() {
     /** @type {Map<string, { label: string, ids: string[] }>} */
     const groups = new Map();
     for (const [id, text] of this.answers) {
@@ -122,7 +140,42 @@ class MajorityGame extends BaseGame {
       g.ids.push(id);
       groups.set(k, g);
     }
-    const list = [...groups.values()].sort((a, b) => b.ids.length - a.ids.length);
+    return [...groups.values()].sort((a, b) => b.ids.length - a.ids.length || a.label.localeCompare(b.label));
+  }
+
+  /** Answers are in: if there's anything to judge, everyone picks which answers are THE HERD. */
+  reveal() {
+    if (this.phase !== 'mr-answer') return;
+    this.groups = this.autoGroups();
+    /** @type {Map<string, number[]>} voter → indexes of the answers they call the herd */
+    this.herdVotes = new Map();
+    if (this.groups.length < 2) return this.score();
+    this.phase = 'mr-herd';
+    this.setTimer(HERD_MS, () => this.score());
+    this.push();
+  }
+
+  /** Score the round: answers voted into the herd by a majority merge into one group. */
+  score() {
+    if (this.phase !== 'mr-answer' && this.phase !== 'mr-herd') return;
+    const auto = this.groups && this.groups.length ? this.groups : this.autoGroups();
+    const votes = this.herdVotes || new Map();
+    const tally = auto.map((_, i) => [...votes.values()].filter((v) => v.includes(i)).length);
+    const need = Math.floor(votes.size / 2) + 1;
+    let herdIx = votes.size ? tally.map((n, i) => (n >= need ? i : -1)).filter((i) => i >= 0) : [];
+    if (!herdIx.length && votes.size) {
+      // Nobody got a majority: the most-voted answer(s) are the herd.
+      const most = Math.max(...tally);
+      if (most > 0) herdIx = tally.map((n, i) => (n === most ? i : -1)).filter((i) => i >= 0);
+    }
+    /** @type {{ label: string, ids: string[], herd: boolean, labels: string[], votes: number }[]} */
+    const list = [];
+    if (herdIx.length) {
+      const ids = herdIx.flatMap((i) => auto[i].ids);
+      list.push({ label: auto[herdIx[0]].label, ids, herd: true, labels: herdIx.map((i) => auto[i].label), votes: Math.max(...herdIx.map((i) => tally[i])) });
+    }
+    auto.forEach((g, i) => { if (!herdIx.includes(i)) list.push({ label: g.label, ids: g.ids, herd: false, labels: [g.label], votes: tally[i] }); });
+    list.sort((a, b) => b.ids.length - a.ids.length || Number(b.herd) - Number(a.herd));
     const biggest = list.length ? list[0].ids.length : 0;
     /** @type {{ nickname: string, gained: number }[]} */
     const gained = [];
@@ -149,10 +202,12 @@ class MajorityGame extends BaseGame {
     this.result = {
       bets,
       groups: list.map((g) => ({
-        label: g.label,
+        label: g.labels.join(' = '),
         count: g.ids.length,
         names: g.ids.map((id) => this.nick(id)),
         top: g.ids.length === biggest && biggest > 1,
+        herd: g.herd,
+        votes: g.votes,
       })),
       gained,
     };
@@ -163,9 +218,14 @@ class MajorityGame extends BaseGame {
 
   onPlayerLeft() {
     if (this.phase === 'mr-answer' && this.room.players.size && this.allIn(this.answers) && this.allIn(this.bets)) this.reveal();
+    else if (this.phase === 'mr-herd' && this.room.players.size && this.allIn(this.herdVotes)) this.score();
   }
 
   hostView() {
+    if (this.phase === 'mr-herd') {
+      return { prompt: this.prompt, answers: (this.groups || []).map((g) => g.label), judgedCount: this.herdVotes.size, totalPlayers: this.room.players.size,
+        waitingOn: [...this.room.players.values()].filter((p) => p.connected && !this.herdVotes.has(p.id)).map((p) => p.nickname) };
+    }
     if (this.phase === 'mr-answer') {
       return { prompt: this.prompt, submittedCount: this.answers.size, betCount: this.bets.size, totalPlayers: this.room.players.size };
     }
@@ -174,6 +234,14 @@ class MajorityGame extends BaseGame {
 
   /** @param {string} id */
   playerOnly(id) {
+    if (this.phase === 'mr-herd') {
+      const groups = this.groups;
+      const mine = groups.findIndex((g) => g.ids.includes(id));
+      return {
+        gameState: { prompt: this.prompt, answers: groups.map((g) => g.label) },
+        you: { mine, herdVoted: this.herdVotes.has(id), herd: this.herdVotes.get(id) || null },
+      };
+    }
     if (this.phase === 'mr-answer') {
       return {
         gameState: { prompt: this.prompt, maxBet: this.room.players.size - 1 },

@@ -40,7 +40,7 @@ test('notes are private, budgets hold (Player gets 5), wallflowers are anonymous
     for (let i = 0; i <= left; i++) p.submit({ to: to.id, text: `note ${i}` });
   }
   await h.phase('cr-reply');
-  assert.ok(ps.every((p) => p.state.you.notesLeft === 0));
+  await until(() => ps.every((p) => p.state.phase === 'cr-reply' && p.state.you.notesLeft === 0), 'every budget spent');
   h.emit('host:skip');
   await h.phase('cr-pick');
   // Ann ↔ Ben mutual, Cat → Dan one-sided, Dan stays in.

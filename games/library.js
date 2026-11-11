@@ -31,12 +31,12 @@ let itemStats = {};
 try { itemStats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8')); } catch (e) { itemStats = {}; }
 /** @type {NodeJS.Timeout | null} */
 let statsTimer = null;
+function writeStats() {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STATS_FILE, JSON.stringify(itemStats)); } catch (e) { /* best effort */ }
+}
 function saveStats() {
   if (statsTimer) return;
-  statsTimer = setTimeout(() => {
-    statsTimer = null;
-    try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STATS_FILE, JSON.stringify(itemStats)); } catch (e) { /* best effort */ }
-  }, 1500);
+  statsTimer = setTimeout(() => { statsTimer = null; writeStats(); }, 1500);
   if (statsTimer.unref) statsTimer.unref();
 }
 /** @param {string} pool @param {string} id */
@@ -82,20 +82,25 @@ const seenSets = new Map();
 /** @type {NodeJS.Timeout | null} */
 let saveTimer = null;
 let warned = false;
+function writeHistory() {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(HISTORY_FILE + '.tmp', JSON.stringify(history));
+    fs.renameSync(HISTORY_FILE + '.tmp', HISTORY_FILE);
+  } catch (err) {
+    const e = /** @type {Error} */ (err);
+    if (!warned) console.warn(`[library] can't save question history (${e.message}) — repeats possible after restart`);
+    warned = true;
+  }
+}
+/** Shutting down: write pending saves now. */
+function flush() {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; writeHistory(); }
+  if (statsTimer) { clearTimeout(statsTimer); statsTimer = null; writeStats(); }
+}
 function saveSoon() {
   if (saveTimer) return;
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    try {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-      fs.writeFileSync(HISTORY_FILE + '.tmp', JSON.stringify(history));
-      fs.renameSync(HISTORY_FILE + '.tmp', HISTORY_FILE);
-    } catch (err) {
-      const e = /** @type {Error} */ (err);
-      if (!warned) console.warn(`[library] can't save question history (${e.message}) — repeats possible after restart`);
-      warned = true;
-    }
-  }, 1500);
+  saveTimer = setTimeout(() => { saveTimer = null; writeHistory(); }, 1500);
   if (saveTimer.unref) saveTimer.unref();
 }
 
@@ -244,4 +249,4 @@ function stats() {
   return out;
 }
 
-module.exports = { draw, drawOne, load, stats, recordSkip, recordAnswers, retired };
+module.exports = { draw, drawOne, load, stats, recordSkip, recordAnswers, retired, flush };

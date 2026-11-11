@@ -2,7 +2,7 @@
 'use strict';
 
 const { esc, store, sfx, countdown, games, av, sprites, music, fx, morph, clock, playerImg, playerUrl, fitAll , hit } = window.Rumpus;
-const socket = io();
+const socket = io({ transports: ['websocket', 'polling'], tryAllTransports: true, reconnectionDelay: 400, reconnectionDelayMax: 3000 });
 window.Rumpus.time.sync(socket);
 // Real-time games (Lantern Lake) stream positions to the TV 30×/s outside the normal state push.
 socket.on('room:frame', (/** @type {Record<string, any>} */ f) => { window.Rumpus.frame = f; });
@@ -76,18 +76,17 @@ const RULES = {
   fibbage: ['Write a believable fake answer', 'Find the TRUE answer among the lies', 'Points for every friend you fool'],
   trivia: ['Pick the right answer — fast!', 'Answer streaks add bonus points 🔥', 'Last place picks the next category'],
   closest: ['Guess the number', 'Closest gets the most points', 'Exact hit = BULLSEYE bonus'],
-  majority: ['Type what everyone ELSE will say', 'Match the crowd to score', 'Unique answers get nothing'],
+  majority: ['Type what everyone ELSE will say', 'Then the room votes which answers count as the herd', 'Match the herd to score — loners get nothing'],
   mostlikely: ['Vote which friend fits the prompt', 'Vote with the majority to score', 'No hard feelings… probably'],
   imposter: ['Everyone gets a secret word — except one', 'Give a one-word clue', 'Vote out the imposter!'],
-  twotruths: ['Write 2 truths and 1 lie about you', 'Spot everyone else\'s lie', 'Points for each person you fool'],
+  twotruths: ['Your phone secretly says TRUTH or LIE', 'Answer the confession — real or made up', 'Call everyone else\'s: points for right calls and for fooling people'],
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner'],
-  storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win. Three ruined: Raccoons win'],
-  wizards: ['Every round, everyone secretly picks a spell and a target', 'All spells go off together — shields first, then mirrors, bolts, heals', 'Knocked out? Haunt or bless the living as a ghost'],
+  storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win — unless the Raccoons unmask the Lookout'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
-  lantern: ['Tilt your phone to glide (or drag on the circle)', 'Catch fireflies, hog the moonbeam', 'Then steer one raft together'],
+  lantern: ['Tilt your phone to glide (or drag on the circle)', 'Four scenes: fireflies, moonbeam, tag, lily pad, ducklings…', 'One of them: everyone steers the same raft'],
   looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
-  minigames: ['Quick real-time challenges on your phone', 'Tap, react, count, roast — rules shown each time', 'Turn on Teams for Red vs Blue!'],
+  minigames: ['Quick real-time challenges on your phone', 'Eleven minis — the rules show before each one', 'Turn on Teams for Red vs Blue!'],
 };
 // --- narrator (Rocco reads prompts aloud and in a speech bubble) -------------
 let lastSpoken = '';
@@ -198,6 +197,27 @@ socket.on('room:event', (/** @type {any} */ ev) => {
   else if (ev.type === 'ready') sfx.whoosh();
 });
 
+// --- loading card (TV) ---------------------------------------------------------
+const loadingEl = document.createElement('div');
+loadingEl.id = 'tv-loading';
+loadingEl.className = 'tv-loading';
+loadingEl.hidden = true;
+document.body.appendChild(loadingEl);
+/** @type {number | null} */
+let loadingTimer = null;
+/** @param {string} text */
+function showLoading(text) {
+  loadingEl.innerHTML = `<div class="spinner" aria-hidden="true"></div><p>${esc(text)}</p>`;
+  loadingEl.hidden = false;
+  if (loadingTimer) clearTimeout(loadingTimer);
+  loadingTimer = window.setTimeout(hideLoading, 8000); // never hang on it
+}
+function hideLoading() {
+  loadingEl.hidden = true;
+  if (loadingTimer) clearTimeout(loadingTimer);
+  loadingTimer = null;
+}
+
 // --- input --------------------------------------------------------------------
 
 document.addEventListener('click', (e) => {
@@ -208,7 +228,12 @@ document.addEventListener('click', (e) => {
     return;
   }
   const pickBtn = hit(e.target, '.game-pick');
-  if (pickBtn && !pickBtn.disabled) return socket.emit('host:startGame', { gameId: pickBtn.dataset.gameId });
+  if (pickBtn && !pickBtn.disabled) {
+    // Show a loading card until the game's first screen arrives (content is being drawn).
+    const name = (pickBtn.querySelector('.game-name') || pickBtn).textContent || '';
+    showLoading(`Loading ${name.trim()}…`);
+    return socket.emit('host:startGame', { gameId: pickBtn.dataset.gameId });
+  }
   const act = hit(e.target, '[data-act]');
   if (!act) return;
   if (act.dataset.act === 'skip') socket.emit('host:skip');
@@ -306,7 +331,7 @@ const T = '<span class="timer"></span>';
 /** @type {Record<string, string>} */
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
-  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e', wizards: '#1d1430',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e',
 };
 const art = (/** @type {any} */ id) => {
   const u = sprites.iconUrl(id);
@@ -319,7 +344,8 @@ function gamePicker(/** @type {any} */ label) {
   const count = state.players.length;
   const st = state.settings || {};
   const opt = (/** @type {any} */ v, /** @type {any} */ cur, /** @type {any} */ text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
-  const fig = (/** @type {any} */ p) => `<figure class="${p.team ? 'team-' + p.team : ''}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}</figure>`;
+  // Each player in the lobby: their picture, an asleep/relay marker, and a ✕ to kick them.
+  const fig = (/** @type {any} */ p) => `<figure class="${[p.team ? 'team-' + p.team : '', p.connected ? '' : 'offline'].join(' ')}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}${p.connected ? '' : ' <small>💤</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower) — same Wi-Fi?">🌐</small>' : ''}<button class="kick lobby-kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}" aria-label="Kick ${esc(p.nickname)}">✕</button></figure>`;
   const crew = st.teams
     ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((/** @type {any} */ p) => p.team === t).map(fig).join('')}</div>`).join('')
     : state.players.map(fig).join('');
@@ -458,7 +484,7 @@ function renderSidebar(/** @type {any} */ phase) {
   morph(playerList, sorted.map((/** @type {any} */ p, /** @type {any} */ i) => {
     const cls = [!p.connected && 'offline', i === 0 && p.score > 0 && phase !== 'lobby' && 'leader'].filter(Boolean).join(' ');
     return `<li data-id="${esc(p.id)}" class="${cls}${p.team ? ' team-' + p.team : ''}">${playerImg(p)}` +
-      `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}</span>` +
+      `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower)">🌐</small>' : ''}</span>` +
       `<span class="pscore">${p.score}</span><button class="kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}">✕</button></li>`;
   }).join(''));
   // Score pop-ups
@@ -473,14 +499,14 @@ function renderSidebar(/** @type {any} */ phase) {
 
 function updateTimerBar(/** @type {any} */ endsAt) {
   if (!endsAt) { timerbar.hidden = true; return; }
-  if (timerTotal.endsAt !== endsAt) timerTotal = { endsAt, total: Math.max(1000, endsAt - Date.now()) };
+  if (timerTotal.endsAt !== endsAt) timerTotal = { endsAt, total: Math.max(1000, endsAt - window.Rumpus.time.now()) };
   timerbar.hidden = false;
 }
 // Timer bar drains smoothly on the shared 30 fps clock (transform, not width:
 // no layout work per frame).
 clock.add(() => {
   if (timerbar.hidden || !timerTotal.endsAt) return;
-  const left = Math.max(0, timerTotal.endsAt - Date.now());
+  const left = Math.max(0, timerTotal.endsAt - window.Rumpus.time.now());
   /** @type {HTMLElement} */ (timerbar.firstElementChild).style.transform = `scaleX(${(left / timerTotal.total).toFixed(4)})`;
   timerbar.classList.toggle('urgent', left < 5000);
 });
@@ -490,6 +516,7 @@ function render() {
   if (!state) return;
   const g = state.gameState || {};
   const phase = state.phase;
+  if (phase !== 'lobby' && phase !== 'gameover' && !loadingEl.hidden) hideLoading();
 
   renderSidebar(phase);
   if (state.players.length > lastPlayerCount && phase === 'lobby') { sfx.join(); music.play(cueFor(state)); }
@@ -645,7 +672,29 @@ function layoutStage() {
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = h.dataset.fit || '0.13,4'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.vs-card')).forEach((c) => { c.dataset.fit = '0.07,5'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.big-answer')).forEach((c) => { c.dataset.fit = '0.12,2'; });
+  phaseView.style.setProperty('--shrink', '1');
   fitAll(phaseView);
+  shrinkToStage();
+}
+
+/** Never scroll during a game: if the screen's content is taller than the stage (long answers,
+ * many players), scale it down until it fits (CSS zoom keeps it crisp and re-flows the text). */
+function shrinkToStage() {
+  const stage = /** @type {HTMLElement} */ (document.getElementById('stage'));
+  const fits = () => stage.scrollHeight - stage.clientHeight <= 1;
+  let z = 1;
+  if (!fits()) {
+    // Binary search for the biggest zoom that fits (gaps and padding don't scale, so ratios alone undershoot).
+    let lo = 0.45, hi = 1;
+    for (let i = 0; i < 8; i++) {
+      const mid = (lo + hi) / 2;
+      phaseView.style.setProperty('--shrink', mid.toFixed(3));
+      if (fits()) lo = mid; else hi = mid;
+    }
+    z = lo;
+    phaseView.style.setProperty('--shrink', z.toFixed(3));
+  }
+  phaseView.classList.toggle('shrunk', z < 1);
 }
 window.addEventListener('resize', () => layoutStage());
 // Refit when the stage changes size (sidebar sliding away, fonts loading, …).
@@ -655,6 +704,13 @@ new ResizeObserver(() => {
   if (Math.abs(w - lastStageW) > 4) { lastStageW = w; layoutStage(); }
 }).observe(phaseView);
 if (document.fonts) void document.fonts.ready.then(() => layoutStage());
+// Avatars and drawings load after the screen is laid out and make it taller: fit again once they're in.
+/** @type {number | null} */
+let refitTimer = null;
+phaseView.addEventListener('load', () => {
+  if (refitTimer) return;
+  refitTimer = window.setTimeout(() => { refitTimer = null; layoutStage(); }, 50);
+}, true);
 
 function tick(/** @type {any} */ left) {
   if (left > 0 && left <= 5) sfx.tick();

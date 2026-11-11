@@ -72,7 +72,7 @@ async function main() {
       const tags = (phone ? '<script src="vendor/peerjs.min.js"></script><script src="cf-client.js"></script>'
         : rel === 'host.html' ? '<script src="vendor/peerjs.min.js"></script><script src="cf-host.js"></script>'
           : '<script src="cf-host.js"></script>')
-        + (phone ? '' : '<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});</script>');
+        + (phone || rel === 'host.html' ? '' : '<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});</script>');
       s = s.includes('<script src="socket.io/socket.io.js"></script>')
         ? s.replace('<script src="socket.io/socket.io.js"></script>', tags)
         : s.replace(/<script /, tags + '<script ');
@@ -129,9 +129,16 @@ async function main() {
     if (rel.startsWith('music/') || rel.startsWith('tts/') || rel === 'sw.js' || rel === '.nojekyll') continue;
     files[rel] = hash(fs.readFileSync(path.join(OUT, rel)));
   }
+  // The narrator voice is saved in the background like music (big, optional).
+  if (hasVoice) for (const rel of walk(path.join(OUT, 'tts'))) media['tts/' + rel] = hash(fs.readFileSync(path.join(OUT, 'tts', rel)));
+  // A phone's files: what play.html references, plus fonts/icons and the page itself.
+  const playHtml = fs.readFileSync(path.join(OUT, 'play.html'), 'utf8');
+  const refs = [...playHtml.matchAll(/(?:src|href)="([^"#?:]+)"/g)].map((m) => m[1].replace(/^\.\//, ''));
+  const phoneFiles = [...new Set(['play.html', 'play/index.html', 'sw.js', ...refs, 'keep-awake.webm', 'keep-awake.mp4',
+    ...Object.keys(files).filter((f) => /^(fonts|icons)\//.test(f))])].filter((f) => files[f]);
   const version = hash(JSON.stringify(files) + JSON.stringify(media));
   const sw = fs.readFileSync(path.join(ROOT, 'web', 'sw-template.js'), 'utf8')
-    .replace('__VERSION__', version).replace('__FILES__', JSON.stringify(files)).replace('__MEDIA__', JSON.stringify(media));
+    .replace('__VERSION__', version).replace('__FILES__', JSON.stringify(files)).replace('__MEDIA__', JSON.stringify(media)).replace('__PHONE__', JSON.stringify(phoneFiles));
   write(path.join(OUT, 'sw.js'), sw);
   console.log(`built ${OUT}: ${Object.keys(files).length} files + ${Object.keys(media).length} music tracks (version ${version})`);
 }

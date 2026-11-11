@@ -74,8 +74,16 @@ function addContent(pool, body) {
   return { status: 200, body: { item: house.addCustom(pool, r.item) } };
 }
 /** @param {string} pool @param {string} id @param {boolean} disabled @returns {Reply} */
-function setDisabled(pool, id, disabled) { house.setDisabled(pool, id, disabled); return { status: 200, body: { ok: true } }; }
+function setDisabled(pool, id, disabled) {
+  if (!POOL_NAMES.includes(pool)) return { status: 404, body: { error: 'Unknown pool' } };
+  if (!library.load(pool).all.some((/** @type {Record<string, any>} */ x) => x.id === id)) return { status: 404, body: { error: 'Unknown item' } };
+  house.setDisabled(pool, id, disabled);
+  return { status: 200, body: { ok: true } };
+}
 /** @param {string} pool @param {string} id @returns {Reply} */
-function removeContent(pool, id) { return { status: 200, body: { ok: house.removeCustom(pool, id) } }; }
+function removeContent(pool, id) {
+  if (!POOL_NAMES.includes(pool)) return { status: 404, body: { error: 'Unknown pool' } };
+  return { status: 200, body: { ok: house.removeCustom(pool, id) } };
+}
 
 module.exports = { POOL_NAMES, getRules, setRules, listContent, addContent, setDisabled, removeContent };

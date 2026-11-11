@@ -129,3 +129,16 @@ test('Cottage Crush content: original opener and reply cards, family + 18+', () 
   for (const pool of [op, rep]) assert.ok(pool.some((x) => x.a) && pool.some((x) => !x.a));
   assert.ok(op.every((x) => x.text.length <= 80), 'openers fit a note (80 chars)');
 });
+
+test('trivia is diverse: at most 4 questions per franchise/title, and they are tagged for in-game variety', () => {
+  const items = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../games/data/pools/trivia.json'), 'utf8'));
+  /** @type {Record<string, number>} */
+  const per = {};
+  for (const q of items) if (q.topic) per[q.topic] = (per[q.topic] || 0) + 1;
+  const over = Object.entries(per).filter(([, n]) => n > 4);
+  assert.deepStrictEqual(over, [], 'topics over the cap');
+  const cod = items.filter((/** @type {{ q: string }} */ q) => /call of duty/i.test(q.q));
+  assert.ok(cod.length <= 4, `${cod.length} Call of Duty questions`);
+  const vg = items.filter((/** @type {{ cat: string }} */ q) => q.cat === 'Video Games').length;
+  assert.ok(vg / items.length < 0.03, `video games are ${(vg * 100 / items.length).toFixed(1)}% of trivia`);
+});

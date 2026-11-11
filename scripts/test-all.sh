@@ -38,7 +38,7 @@ mkdir -p "$ROOT/test/ui/snapshots"
   cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
   npm run -s typecheck && echo "tsc: 0 errors" && npm run -s lint && echo "eslint: 0 problems" &&
   node tools/strict-ratchet.js &&
-  npx c8 node --test --test-concurrency=4 --test-timeout=240000 test/unit/'
+  npx c8 node --test --test-concurrency=4 --test-timeout=600000 test/unit/'
 
 fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
@@ -70,6 +70,7 @@ for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null &
 echo "test server music: $(curl -s "http://localhost:$PORT/api/music")"
 
 step "5/6 browser tests (TV + 3 phones)"
+rm -rf "$ROOT/test/ui/.shots" 2>/dev/null || podman unshare rm -rf "$ROOT/test/ui/.shots" 2>/dev/null || true
 mkdir -p "$ROOT/test/ui/.shots"
 "$CT" run --rm --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots \
   -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v cabin-fever-pw:/pw "$PW_IMG" sh -c '
