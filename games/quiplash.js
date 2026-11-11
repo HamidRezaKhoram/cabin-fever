@@ -10,7 +10,7 @@
 const stats = require('./stats');
 
 const library = require('./library');
-const { BaseGame, shuffle, cleanText } = require('./base');
+const { BaseGame, cleanText } = require('./base');
 
 const PROMPTS = [
   'The worst thing to say on a first date', 'The real reason the dinosaurs went extinct',
@@ -66,7 +66,7 @@ class QuiplashGame extends BaseGame {
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
-    let ids = shuffle(this.playerIds());
+    let ids = this.rng.shuffleIn(this.playerIds());
     // Team mode: alternate red/blue around the circle so neighbours (= matchups) are rivals.
     if (this.room.settings && this.room.settings.teams) {
       const team = (/** @type {string} */ id) => (this.room.players.get(id) || {}).team;
@@ -84,7 +84,7 @@ class QuiplashGame extends BaseGame {
     }));
     this.todo = new Map(ids.map((id) => [id, []]));
     this.matchups.forEach((m, mi) => m.authors.forEach((a, side) => { const list = this.todo.get(a); if (list) list.push({ mi, side }); }));
-    for (const list of this.todo.values()) shuffle(list);
+    for (const list of this.todo.values()) this.rng.shuffleIn(list);
     this.matchIndex = -1;
     this.phase = 'answering';
     this.setTimer(ANSWER_MS, () => this.startVoting());

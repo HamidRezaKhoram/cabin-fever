@@ -38,6 +38,7 @@ interface PaceVotes {
   key: string | null;
   ready: Set<string>;
   hurry: Set<string>;
+  wrap: Set<string>;
   skipq: Set<string>;
 }
 
@@ -47,6 +48,8 @@ interface Room {
   hostSocket: any;
   players: Map<string, Player>;
   /** Tonight's best moments (games/stats.js). */
+  /** Set on a room restored after a restart: the game that was cut short (told to the TV once). */
+  interrupted?: string | null;
   highlights?: { game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }[];
   /** Game night playlist (server.js) or null. */
   night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
@@ -86,7 +89,8 @@ interface GameLike {
   skipSeq?: number;
   subject?: string;
   skippablePhases?: string[];
-  noPaceVotes?: boolean;
+  /** Real-time game (tap/tilt/rhythm): phones vote to end the round rather than hurry answers. */
+  realtime?: boolean;
   /** Content pool + item currently on screen (for skip/answer telemetry). */
   poolName?: string;
   item?: { id?: string; src?: string } | null;

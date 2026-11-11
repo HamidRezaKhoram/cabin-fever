@@ -5,6 +5,7 @@ an implementation plan that fits this codebase, the tests it needs, and a rough 
 
 | Doc | What | Size |
 |---|---|---|
+| [todo.md](todo.md) | **Start here: everything still open** — real-device checks, known limits, unbuilt features, test gaps | — |
 | [teams-and-minigames.md](teams-and-minigames.md) | Team mode + **Cottage Olympics** — ✅ shipped | L |
 | [dating-game.md](dating-game.md) | **Cottage Crush** speed-dating game — ✅ shipped (a few agendas still open) | L |
 | [playtest-findings.md](playtest-findings.md) | Bot playtests: dead air per game and the fix list — ✅ fix list done | M |

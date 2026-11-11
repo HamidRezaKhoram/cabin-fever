@@ -35,6 +35,7 @@ game with **8 players** in the test suite, and every recorded TV screen must fit
   Closest Cast and Cabin Superlatives 10 questions.
 
 ## Still open
+(The full, current list — with the real-device checks and known limits — is in [todo.md](todo.md).)
 - Message in a Bottle: waiting-room scribble ticker.
 - Rainy Day Cards: room-favourite pre-vote.
 - Storm Watch: a private "hunch" tap during the talk phase.

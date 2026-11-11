@@ -27,9 +27,10 @@ const playing = (h, mini, sub) => until(() => h.state.phase === 'mg-play' && h.s
 test('free-for-all series: tap race, quick draw, fireflies, roast — scoring and rules', async () => {
   const { h, ps, score } = await room(3);
   h.emit('host:startGame', { gameId: 'minigames' });
-  assert.deepStrictEqual((await h.phase('mg-intro')).pace.allowed, [], 'no skip/hurry in minigames');
+  assert.deepStrictEqual((await h.phase('mg-intro')).pace.allowed, ['ready'], 'the room can vote past the intro');
   // 1. Tap race: P0 taps most; a cheating {tap: 1000} is capped.
   await playing(h, 'tug');
+  assert.deepStrictEqual(h.state.pace.allowed, ['wrap'], 'real-time play: the room can vote to end the round');
   ps[1].submit({ tap: 1000 });
   for (let i = 0; i < 6; i++) { ps[0].submit({ tap: 5 }); await sleep(150); }
   ps[2].submit({ tap: 3 });

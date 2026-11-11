@@ -17,6 +17,8 @@ const timerbar = /** @type {HTMLElement} */ (document.getElementById('timerbar')
 
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
 let state = null;
+/** After a game: the scores are showing (false) or the game menu (true). */
+let pickNext = false;
 // The browser build asks before reloading for an update (web/offline.js): not while people are in the room.
 /** @type {any} */ (window).cfBusy = () => !!(state && state.players && state.players.length);
 /** @type {string | null} */
@@ -170,22 +172,43 @@ function updateJoinInfo() {
 
 // --- connection / room resume ------------------------------------------------
 
+/** This TV's room (code + key), kept so a reload — or closing and reopening the browser — takes
+ * the same room back. In the browser build a second TV tab keeps its own, per tab, so it can't
+ * take over the first tab's room. @param {{ code: string, hostToken: string } | null} [v] */
+function hostSeat(v) {
+  const cabin = /** @type {any} */ (window).CABIN;
+  if (!(cabin && cabin.secondTab && cabin.secondTab())) return v === undefined ? store('rumpus.host') : store('rumpus.host', v);
+  try {
+    if (v === undefined) return JSON.parse(sessionStorage.getItem('rumpus.host2') || 'null');
+    if (v === null) sessionStorage.removeItem('rumpus.host2'); else sessionStorage.setItem('rumpus.host2', JSON.stringify(v));
+  } catch (e) { return null; }
+  return v;
+}
+// Browser build: the game runs in this page, so leaving it mid-game ends that game (the room and
+// everyone's seat come back). Ask first. (Docker: the server keeps the game; reload freely.)
+window.addEventListener('beforeunload', (e) => {
+  const inGame = state && !['lobby', 'gameover'].includes(state.phase);
+  if (!(/** @type {any} */ (window).CABIN) || !inGame) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
 socket.on('connect', () => {
   document.body.classList.remove('offline');
-  const saved = store('rumpus.host');
+  const saved = hostSeat();
   if (saved && saved.code && saved.hostToken) socket.emit('host:resume', saved);
   else socket.emit('host:createRoom');
 });
-socket.on('host:resumeFailed', () => { store('rumpus.host', null); socket.emit('host:createRoom'); });
+socket.on('host:resumeFailed', () => { hostSeat(null); socket.emit('host:createRoom'); });
 socket.on('host:roomCreated', (/** @type {any} */ msg) => {
   roomCode = msg.code;
   codeEl.textContent = msg.code || 'ERR';
-  if (msg.code) store('rumpus.host', { code: msg.code, hostToken: msg.hostToken });
+  if (msg.code) hostSeat({ code: msg.code, hostToken: msg.hostToken });
   updateJoinInfo();
 });
 socket.on('host:replaced', () => {
   phaseView.innerHTML = '<h1>This room was opened on another screen.</h1><p>Reload to start a new room here.</p>';
-  store('rumpus.host', null);
+  hostSeat(null);
 });
 socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; window.Rumpus.setState(msg); render(); });
 socket.on('room:reaction', (/** @type {any} */ r) => {
@@ -196,6 +219,9 @@ socket.on('disconnect', () => document.body.classList.add('offline'));
 socket.on('room:event', (/** @type {any} */ ev) => {
   if (ev.type === 'skipped') { fx.banner('QUESTION SKIPPED!\nFresh one coming up'); sfx.whoosh(); }
   else if (ev.type === 'hurry') { fx.banner('HURRY UP!\n10 SECONDS LEFT'); sfx.boo(); }
+  else if (ev.type === 'wrap') { fx.banner('ROUND OVER!\nThe room voted to move on'); sfx.whoosh(); }
+  // Back after a TV reload / server restart: the room and seats were kept, the game was not.
+  else if (ev.type === 'interrupted') fx.banner(`WE'RE BACK!\n${String(ev.game || 'The game').toUpperCase()} was cut short — pick it again`);
   else if (ev.type === 'ready') sfx.whoosh();
 });
 
@@ -239,12 +265,13 @@ document.addEventListener('click', (e) => {
   const act = hit(e.target, '[data-act]');
   if (!act) return;
   if (act.dataset.act === 'skip') socket.emit('host:skip');
+  if (act.dataset.act === 'picknext' || act.dataset.act === 'scores') { pickNext = act.dataset.act === 'picknext'; render(); }
   if (act.dataset.act === 'night') socket.emit('host:startNight', { count: +act.dataset.n });
   if (act.dataset.act === 'bots') socket.emit('host:addBots', { count: +act.dataset.n, speed: +(act.dataset.speed || 1) });
   if (act.dataset.act === 'nobots') socket.emit('host:removeBots');
   if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
   if (act.dataset.act === 'newroom' && confirm('Close this room and make a new one? Everyone will need to rejoin.')) {
-    store('rumpus.host', null);
+    hostSeat(null);
     location.reload();
   }
 });
@@ -256,7 +283,7 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
   else if (t.id === 'set-lang') socket.emit('host:settings', { lang: t.value });
   else if (t.id === 'set-narrator') window.Rumpus.host.setEnabled(t.checked);
-  else if (t.id === 'set-voice') { window.Rumpus.host.setVoice(t.value); window.Rumpus.host.say(t.value === 'classic' ? 'Beep boop. Classic voice.' : 'Hi! I will be your host tonight.'); }
+  else if (t.id === 'set-voice') { window.Rumpus.host.setVoice(t.value); window.Rumpus.host.say(t.value === 'classic' ? 'Beep boop. Classic voice.' : t.value.startsWith('sys:') ? 'G\'day! I will be your host tonight.' : 'Hi! I will be your host tonight.'); }
   else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
 });
 fsBtn.addEventListener('click', () => {
@@ -267,7 +294,7 @@ fsBtn.addEventListener('click', () => {
 
 // --- music moods ----------------------------------------------------------------
 
-const isRevealPhase = (/** @type {any} */ p) => /reveal|results/.test(p);
+const isRevealPhase = (/** @type {any} */ p) => /reveal|result/.test(p);
 function cueFor(/** @type {any} */ st) {
   if (!st) return 'title';
   const p = st.phase;
@@ -363,31 +390,32 @@ function gamePicker(/** @type {any} */ label) {
         <span class="join-count">${count ? `${count}/${max} joined` : 'Nobody here yet'}</span>
       </div>
     </div>` : '';
-  return `<div class="lobby-head">
-      <div>
-        <h1>${label}</h1>
-        <div class="night-row">🎉 <b>Game night</b> — a playlist chosen by your phones, with a grand champion:
-          ${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}</div>
-        <div class="settings">
-          <a class="hl-link" href="/admin" target="_blank">⚙ House rules &amp; content</a> · <a class="hl-link" href="/highlights" target="_blank">🏆 Hall of fame</a>
+  // One screen, no scrolling: games fill the space left of the join card + players column; the
+  // settings sit in a compact bar underneath (public/style.css ".game-menu").
+  const settings = `<div class="settings">
           <label>Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
             ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
           <label>Timers <select id="set-timer">${opt(0.6, st.timerScale, 'Fast')}${opt(1, st.timerScale, 'Normal')}
             ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
-          <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ content</label>
+          <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
-          <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
+          <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind</label>
           <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
-          <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator voice</label>
-          <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => opt(v[0], window.Rumpus.host.voice(), v[1])).join('')}</select> <small id="voice-status" class="voice-status">${window.Rumpus.host.voiceStatus()}</small></label>
+          <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator</label>
+          <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => (v[2] ? `<option disabled>${esc(v[1])}</option>` : opt(esc(v[0]), esc(window.Rumpus.host.voice()), esc(v[1])))).join('')}</select> <small id="voice-status" class="voice-status">${window.Rumpus.host.voiceStatus()}</small></label>
+          <a class="hl-link" href="/admin" target="_blank">⚙ House rules</a> <a class="hl-link" href="/highlights" target="_blank">🏆 Hall of fame</a>
+          <button class="link-btn" data-act="newroom">Fresh room</button>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((/** @type {any} */ p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
-        </div>
-        ${crew ? `<div class="lobby-crew">${crew}</div>` : ''}
+        </div>`;
+  return `<div class="game-menu">
+      <div class="lobby-top">
+        <h1>${label}</h1>
+        <div class="night-row">🎉 <b>Game night</b> <span class="night-what">— a playlist your phones vote on:</span>
+          ${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}
+          ${state.phase === 'gameover' ? '<button data-act="scores" class="ghost">◀ Scores</button>' : ''}</div>
       </div>
-      ${joinCard}
-    </div>
-    <div class="game-grid">` +
+      <div class="game-grid">` +
     (state.availableGames || []).map((/** @type {any} */ gm) => {
       const disabled = count < gm.minPlayers;
       return `<button class="game-pick" data-game-id="${esc(gm.id)}" ${disabled ? 'disabled' : ''}>
@@ -400,7 +428,12 @@ function gamePicker(/** @type {any} */ label) {
         </span>
       </button>`;
     }).join('') + `</div>
-    <p class="hint footer-hint"><button class="link-btn" data-act="newroom">Start a fresh room</button></p>`;
+      <aside class="lobby-side">
+        ${joinCard}
+        <div class="lobby-crew ${st.teams ? 'teams' : ''}" style="--rows:${Math.max(1, st.teams ? Math.ceil(Math.max(...['red', 'blue'].map((t) => state.players.filter((/** @type {any} */ p) => p.team === t).length)) / 2) : Math.ceil(count / 4))}">${crew || '<p class="hint">Scan the code with your phone to join.</p>'}</div>
+      </aside>
+      ${settings}
+    </div>`;
 }
 
 function podium(/** @type {any} */ standings) {
@@ -538,6 +571,9 @@ function render() {
   // Storm Watch takes over the whole screen with its own frame.
   document.body.classList.toggle('mode-storm', inGame && g.gameId === 'storm');
   document.body.classList.toggle('lobby', phase === 'lobby'); // the lobby shows the players itself
+  if (phase !== 'gameover') pickNext = false;
+  // The game menu is on screen (lobby, or "choose the next game" after the scores): fixed layout, no scrolling.
+  document.body.classList.toggle('picking', phase === 'lobby' || (phase === 'gameover' && pickNext && !state.night));
   if (!inGame || !wasInGame) { if (sidebarTimer) clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
   // Someone joined, left or (re)connected → flash the player strip for 5 s.
   const roster = state.players.map((/** @type {any} */ p) => p.id + (p.connected ? '+' : '-')).sort().join(',');
@@ -545,8 +581,8 @@ function render() {
   rosterKey = roster;
   controls.hidden = !inGame;
   const pc = state.pace || { counts: {}, need: 0 };
-  const paceTxt = ['skipq', 'hurry', 'ready'].filter((k) => pc.counts[k]).map((k) =>
-    `<span class="pace-pill">${{ skipq: '🔄 skip', hurry: '⏩ hurry', ready: '▶ next' }[k]} ${pc.counts[k]}/${pc.need}</span>`).join('');
+  const paceTxt = ['skipq', 'hurry', 'wrap', 'ready'].filter((k) => pc.counts[k]).map((k) =>
+    `<span class="pace-pill">${{ skipq: '🔄 skip', hurry: '⏩ hurry', wrap: '⏭ end round', ready: '▶ next' }[k]} ${pc.counts[k]}/${pc.need}</span>`).join('');
   controls.innerHTML = inGame
     ? `${paceTxt}<button data-act="skip" ${state.canSkip ? '' : 'disabled'}>Skip ⏭</button><button data-act="end" class="danger">End</button>`
     : '';
@@ -569,7 +605,9 @@ function render() {
       (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
         ${av(a.name, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
       `<p class="hint">📸 Best moments &amp; hall of fame: <span class="hl-link">${esc(joinUrl(false).replace(/^https?:\/\//, '').replace(/\/play$/, '/highlights'))}</span></p>` +
-      (state.night ? window.Rumpus.nightTable(state.night, true) : gamePicker('Play again?'));
+      (state.night ? window.Rumpus.nightTable(state.night, true) : '<p class="next-row"><button data-act="picknext" class="next-game-btn">🎮 Choose the next game</button></p>');
+    // The picker takes the whole screen (it never scrolls): one press swaps the scores for it.
+    if (pickNext && !state.night) html = gamePicker('Play again?');
   } else if (games[g.gameId]) {
     html = games[g.gameId].host(state);
     if (g.multiplier > 1 && !/× POINTS/.test(html)) {
@@ -730,3 +768,5 @@ document.addEventListener('cf:voice', (e) => {
   const el = document.getElementById('voice-status');
   if (el) el.textContent = /** @type {CustomEvent} */ (e).detail || '';
 });
+// The browser's own voices arrive a moment after the page loads: refresh the 🎙 list when they do.
+document.addEventListener('cf:voices', () => { if (state && document.body.classList.contains('picking') && document.activeElement !== document.getElementById('set-voice')) render(); });

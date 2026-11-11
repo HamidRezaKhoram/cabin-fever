@@ -19,12 +19,38 @@ offline('tv');
 /** The page's folder ("/cabin-fever/" on GitHub Pages, "/" elsewhere). */
 const BASE = location.pathname.replace(/[^/]*$/, '');
 
+/** Is this the TV page (not /admin or /highlights, which share this file)? */
+const IS_TV = /\/host(\.html)?$/.test(location.pathname);
+/** True when this page must not own the saved room: /admin and /highlights, or a second TV tab. */
+let secondTab = !IS_TV;
+/**
+ * The room is saved (core/rooms.js) so a reload of the TV page brings it back. Only ONE tab may
+ * own that saved room: the first TV tab holds a browser lock for as long as it lives; a second TV
+ * tab starts its own, unsaved room instead of adopting the first one's.
+ * @returns {Promise<void>}
+ */
+function claimRoom() {
+  const locks = /** @type {any} */ (navigator).locks;
+  if (!IS_TV || !locks) return Promise.resolve();
+  return new Promise((resolve) => {
+    locks.request('cf-tv-room', { ifAvailable: true }, (/** @type {unknown} */ lock) => {
+      if (!lock) { secondTab = true; resolve(); return undefined; }
+      resolve();
+      return new Promise(() => {}); // held until this tab closes or reloads
+    }).catch(() => resolve());
+  });
+}
+
 /** @type {Promise<void> | null} */
 let ready = null;
 /** Content pools come with the build (one JSON file); everything waits for them. */
 function boot() {
   if (!ready) {
-    ready = fetch(BASE + 'content/pools.json').then((r) => r.json()).then((/** @type {Record<string, string>} */ map) => fsShim.preload(map));
+    ready = Promise.all([fetch(BASE + 'content/pools.json').then((r) => r.json()), claimRoom()]).then(([map]) => {
+      fsShim.preload(/** @type {Record<string, string>} */ (map));
+      // Read by core/rooms.js when it loads (after this): don't save or restore rooms here.
+      if (secondTab) /** @type {any} */ (globalThis).CF_SECOND_TAB = true;
+    });
   }
   return ready;
 }
@@ -40,8 +66,10 @@ const transport = pickTransport();
 let stopListening = null;
 let peerSeq = 0;
 
-/** Phones can join room `code` from now on. @param {string} code */
-function listen(code) {
+/** Phones can join room `code` from now on. After a reload the broker may still hold the room's
+ * name for the page that just went away: try again for a few seconds.
+ * @param {string} code @param {number} [attempt] */
+function listen(code, attempt = 0) {
   if (stopListening) stopListening();
   stopListening = transport.listen(code, (wire, path) => {
     const s = new Sock('phone-' + (++peerSeq));
@@ -63,6 +91,7 @@ function listen(code) {
       }, 2000);
     }
   }, (err) => {
+    if (err === 'unavailable-id' && attempt < 8) { setTimeout(() => listen(code, attempt + 1), 1500); return; }
     console.warn('[cabin fever] could not open the room for phones:', err);
     if (err === 'unavailable-id') document.dispatchEvent(new CustomEvent('cf:room-taken', { detail: code }));
   });
@@ -141,4 +170,10 @@ addEventListener('storage', (e) => {
 });
 
 /** @type {any} */ (window).io = io;
-/** @type {any} */ (window).CABIN = { p2p: true, prefix: PREFIX, qrDataUrl, boot, fastChannel };
+// Leaving the page: save the room as it is now, and free its name at the broker for the reload.
+addEventListener('pagehide', () => {
+  if (ready && !secondTab) { try { core().flushRooms(); } catch (e) { /* not booted */ } }
+  if (stopListening) { try { stopListening(); } catch (e) { /* gone */ } stopListening = null; }
+});
+
+/** @type {any} */ (window).CABIN = { p2p: true, prefix: PREFIX, qrDataUrl, boot, fastChannel, secondTab: () => secondTab };

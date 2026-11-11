@@ -107,6 +107,23 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   game (Wi-Fi power save). `test/unit/load.test.js` is the budget (tap storm, 60/s tilt, reconnect
   storm; `LOAD_REPORT=1` prints numbers); `scripts/load-harsh.sh` reruns it on bad Wi-Fi and a ¼-CPU
   server. Research and numbers: `docs/design/networking.md`.
+- **Rooms survive a restart** (`core/rooms.js` `snapshot`/`restoreRooms`): code, seats, scores,
+  settings and game-night standings are saved through `fs` as they change (a file in Docker,
+  localStorage in the browser build) and restored at start-up — a TV page reload or a container
+  restart keeps the room; phones rejoin by themselves. The game in progress is NOT saved: the room
+  returns to the lobby and the TV gets `room:event {type:'interrupted'}`. Browser build: one TV tab
+  owns the saved room (Web Lock in `web/host-entry.js`); `/admin`, `/highlights` and a second TV
+  tab set `CF_SECOND_TAB` (no save, no restore). `RUMPUS_ROOMS_SAVE=0` turns it off.
+- **Pace votes in every game** (`games/flow.js`): `hurry` (cut the clock to 10 s), `wrap` (real-time
+  games — `this.realtime = true` — end the round now), `ready` (intro/reveal/result screens), `skipq`.
+  Every phase needs a timer (`setTimer`): that is what gives the TV its Skip button and the phones
+  their vote; `bots.test.js` fails on a screen with neither.
+- **Game menu** (`.game-menu` in `public/style.css`, `gamePicker` in `host.js`): a fixed one-screen
+  grid sized in `vh` — it must never scroll (checked at 720p/768p/1080p with 12 players).
+- **Seeds**: every game's own dice use `this.rng` (old games too; `rng.shuffleIn` shuffles in place).
+  Which prompts come up is not seeded (it depends on what the house has played: `games/library.js`).
+- **What's left**: `docs/future-features/todo.md` is the one list of open work; update it when you finish or find something.
+- **Quick loop**: `scripts/quick.sh [unit test files]` = type check + lint (+ those tests) in seconds.
 - **Fast channel** (`web/net.js` `fastChannel`): browser build only — a second, unordered,
   no-retransmit WebRTC channel per phone. `socket.volatile.emit` / `api.sendFast` use it (Lantern
   Lake steering, keep-warm); never put anything on it that must arrive. Steering carries a counter `n`.

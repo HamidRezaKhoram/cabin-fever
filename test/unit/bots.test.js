@@ -42,6 +42,15 @@ test('bots play every game to the end (fast bots, 8 players)', { timeout: 480000
   const want = (process.env.BOT_GAMES || 'all').split(',').map((x) => x.trim()).filter(Boolean);
   const GAMES = want.includes('all') ? offered : offered.filter((/** @type {string} */ id) => want.includes(id));
   if (!GAMES.length) console.log('# bots: no game modules changed since HEAD — skipping (BOT_GAMES=all to play every game)');
+  // In every game, on every screen: the TV can Skip, and the phones have a majority vote to move
+  // things along (hurry / end the round / next / skip the question).
+  /** @type {Set<string>} */
+  const stuck = new Set();
+  h.sock.on('room:stateUpdate', (/** @type {any} */ s) => {
+    if (!s.gameState || !s.gameState.gameId || s.phase === 'lobby' || s.phase === 'gameover') return;
+    if (!s.canSkip) stuck.add(`${s.gameState.gameId}/${s.phase}: no Skip on the TV`);
+    if (!s.pace.allowed.length) stuck.add(`${s.gameState.gameId}/${s.phase}: no vote on the phones`);
+  });
   for (const gameId of GAMES) {
     h.emit('host:startGame', { gameId });
     await until(() => h.state.gameState && h.state.gameState.gameId === gameId && h.state.phase !== 'lobby', `${gameId} started`);
@@ -49,6 +58,7 @@ test('bots play every game to the end (fast bots, 8 players)', { timeout: 480000
     await until(() => h.state.phase === 'gameover', `${gameId} reached gameover with bots (stuck at ${h.state.phase})`, 60000);
     if (rec) await rec.stop();
   }
+  assert.deepStrictEqual([...stuck].sort(), [], 'screens with no way to move on');
 });
 
 /**

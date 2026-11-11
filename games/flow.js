@@ -6,9 +6,10 @@
  *   Round 2 (second half)                 ×2
  *   Final question                        ×3   (games with 3+ questions)
  *
- * Players also steer the pace with majority votes from their phones:
+ * Players also steer the pace with majority votes from their phones — in every game:
  *   hurry — after you've answered: cut everyone else's remaining time to 10 s
- *   ready — on reveal/results screens: move on now
+ *   wrap  — real-time games (no "answer" to wait for): end this round now
+ *   ready — on intro/reveal/results screens: move on now
  *   skipq — while answering: replace the question with a fresh one
  */
 'use strict';
@@ -30,7 +31,8 @@ const STAGE_LABEL = {
 
 /** @param {string | undefined | null} phase */
 function isReveal(phase) {
-  return /reveal|results/.test(phase || '');
+  // Screens you only watch: reveals, results, a game's intro card, Storm Watch's vote count and finale.
+  return /reveal|result|intro$|^st-votes$|^st-final$/.test(phase || '');
 }
 
 // Which pace votes make sense right now for this game.
@@ -39,7 +41,8 @@ function allowedVotes(game) {
   if (!game || game.phase === 'gameover') return [];
   const phase = game.phase;
   if (isReveal(phase)) return game.timerFn ? ['ready'] : [];
-  if (game.noPaceVotes) return []; // real-time minigames: no skipping/hurrying mid-play
+  // Real-time games (tapping, tilting, rhythm): nobody is "still answering", so the vote ends the round.
+  if (game.realtime) return game.timerFn ? ['wrap'] : [];
   const out = [];
   if (game.timerFn) out.push('hurry');
   if (typeof game.skipQuestion === 'function' && (game.skippablePhases || []).includes(phase)) out.push('skipq');

@@ -512,6 +512,34 @@ async function check(name, fn) {
     await tv.waitForSelector('.game-pick');
   });
 
+  await check('the game menu fits on one screen — no scrolling — on a 720p TV and a 1080p one, with a full room', async () => {
+    const size = tv.viewportSize();
+    await tv.evaluate(() => new Function('return socket')().emit('host:addBots', { count: 12 }));
+    await tv.waitForFunction(() => document.querySelectorAll('.lobby-crew figure').length === 12, null, { timeout: 8000 });
+    try {
+      for (const [w, h] of [[1280, 720], [1920, 1080], [1366, 768]]) {
+        await tv.setViewportSize({ width: w, height: h });
+        await tv.waitForTimeout(250);
+        const m = await tv.evaluate(() => {
+          const stage = /** @type {HTMLElement} */ (document.getElementById('stage')).getBoundingClientRect();
+          const inside = (/** @type {Element} */ e) => { const r = e.getBoundingClientRect(); return r.height > 20 && r.top >= stage.top - 1 && r.bottom <= stage.bottom + 1; };
+          const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
+          return {
+            scroll: st.scrollHeight - st.clientHeight, page: document.documentElement.scrollHeight - innerHeight,
+            games: [...document.querySelectorAll('.game-pick')].filter(inside).length, of: document.querySelectorAll('.game-pick').length,
+            players: [...document.querySelectorAll('.lobby-crew figure')].filter(inside).length,
+            settings: inside(/** @type {Element} */ (document.querySelector('.game-menu .settings'))), join: inside(/** @type {Element} */ (document.querySelector('.join-card'))),
+          };
+        });
+        assert.deepStrictEqual(m, { scroll: 0, page: 0, games: m.of, of: m.of, players: 12, settings: true, join: true }, `${w}×${h}`);
+        assert.ok(m.of >= 15);
+      }
+    } finally {
+      await tv.setViewportSize(size);
+      await tv.evaluate(() => new Function('return socket')().emit('host:removeBots'));
+    }
+  });
+
   // Every screen the bots ever reached (test/ui/snapshots, refreshed when a game changes), pushed
   // through the real TV and phone page code exactly like a server update.
   await check('every recorded screen of every game renders on the TV and on a phone', async () => {

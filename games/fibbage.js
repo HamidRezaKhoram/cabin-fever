@@ -17,10 +17,10 @@
 
 const house = require('./house');
 const { guarded } = require('./base');
+const { makeRng, newSeed } = require('./rng');
 
 const stats = require('./stats');
 
-const crypto = require('crypto');
 const { QUESTIONS } = require('./data/fibbage-questions');
 const library = require('./library');
 const flow = require('./flow');
@@ -32,15 +32,6 @@ const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_FIB_ROUNDS || '5', 10);
 const TRUTH_POINTS = 1000; // for finding the real answer
 const FOOL_POINTS = 500;   // per player your lie fools
 const LIKE_POINTS = 50;    // per 👍 on your lie (players like funny lies while waiting for the rest)
-
-/** @template T @param {T[]} arr @returns {T[]} */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
 
 // Loose match so a lie that's really the truth (or two identical lies) collapse
 // together regardless of casing / surrounding whitespace / trailing period.
@@ -54,12 +45,15 @@ function normalize(s) {
 class FibbageGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
+    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
+    this.seed = newSeed();
+    this.rng = makeRng(this.seed);
     this.room = room;
     this.push = push;
     this.phase = 'fib-bluff';
     this.round = 0;
     this.totalRounds = Math.min((room.settings && room.settings.rounds) || TOTAL_ROUNDS, QUESTIONS.length);
-    this.deck = shuffle(QUESTIONS.map((q, i) => i));
+    this.deck = this.rng.shuffleIn(QUESTIONS.map((q, i) => i));
     this.prompt = '';
     this.answer = '';
     /** @type {Map<string, string>} playerId → lie text */
@@ -225,7 +219,7 @@ class FibbageGame {
     }
     const opts = [...byText.values()].map((o) => ({ ...o, isTruth: false }));
     opts.push({ text: this.answer, authorIds: new Set(), isTruth: true });
-    shuffle(opts);
+    this.rng.shuffleIn(opts);
     this.options = opts.map((o, i) => ({ ...o, index: i }));
     this.picks = new Map();
     this.phase = 'fib-choose';

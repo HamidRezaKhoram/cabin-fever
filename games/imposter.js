@@ -6,8 +6,7 @@
  */
 'use strict';
 
-const crypto = require('crypto');
-const { BaseGame, shuffle, cleanText } = require('./base');
+const { BaseGame, cleanText } = require('./base');
 const library = require('./library');
 
 // { category, words: [8+] }
@@ -77,11 +76,12 @@ class ImposterGame extends BaseGame {
     const fallback = BUILTIN[this.round % BUILTIN.length];
     this.category = item ? item.category : fallback.category;
     this.word = item ? item.word : fallback.words[0];
-    const decoys = shuffle(/** @type {string[]} */ (item ? item.words : fallback.words).filter((w) => w !== this.word)).slice(0, 7);
-    this.options = shuffle([this.word, ...decoys]);
+    // Roles first: who the imposter is must not depend on how many words this card has.
     const ids = this.playerIds();
-    this.imposter = ids[crypto.randomInt(ids.length)] || '';
-    this.order = shuffle(ids.slice());
+    this.imposter = ids[this.rng.int(0, ids.length - 1)] || '';
+    this.order = this.rng.shuffleIn(ids.slice());
+    const decoys = this.rng.shuffleIn(/** @type {string[]} */ (item ? item.words : fallback.words).filter((w) => w !== this.word)).slice(0, 7);
+    this.options = this.rng.shuffleIn([this.word, ...decoys]);
     this.clues = new Map();
     this.votes = new Map();
     this.guess = null;

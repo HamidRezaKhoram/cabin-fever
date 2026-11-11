@@ -122,3 +122,63 @@ test('browser-build socket: volatile messages take the fast channel when the lin
   plain.close();
   assert.ok(only.some((m) => m.t === 'e' && m.ev === 'k'));
 });
+
+test('a server restart keeps the room: same code, same seats and scores; the game in progress is reported as cut short', { timeout: 60000 }, async () => {
+  const dir = require('../helpers').tmpDir();
+  let srv = await startServer({ RUMPUS_DATA_DIR: dir });
+  /** @type {any} */ let h; /** @type {any[]} */ const ps = [];
+  try {
+    h = await makeHost(srv);
+    for (const n of ['Ann', 'Bob', 'Cy']) ps.push(await makePlayer(srv, h.code, n, { device: `device-of-${n}` }));
+    h.emit('host:settings', { timerScale: 2 });
+    h.emit('host:startGame', { gameId: 'quiplash' });
+    await h.phase('answering');
+    await sleep(700); // the room is saved a moment after it changes
+  } finally { srv.proc.kill('SIGKILL'); await sleep(200); } // a crash: no goodbye, no final save
+  srv = await startServer({ RUMPUS_DATA_DIR: dir });
+  try {
+    // The TV comes back with its saved code + key and gets the same room.
+    const tv = srv.connect();
+    /** @type {any[]} */ const events = [];
+    /** @type {any} */ let state = null;
+    tv.on('room:event', (e) => events.push(e));
+    tv.on('room:stateUpdate', (s) => { state = s; });
+    await new Promise((r) => tv.once('connect', r));
+    tv.emit('host:resume', { code: h.code, hostToken: h.hostToken });
+    await until(() => state && state.code === h.code, 'the TV has its room back');
+    assert.strictEqual(state.phase, 'lobby', 'the game itself is gone');
+    assert.deepStrictEqual(state.players.map((/** @type {any} */ p) => p.nickname).sort(), ['Ann', 'Bob', 'Cy']);
+    assert.ok(state.players.every((/** @type {any} */ p) => !p.connected), 'everyone shows as away until their phone is back');
+    assert.strictEqual(state.settings.timerScale, 2, 'settings kept');
+    await until(() => events.some((e) => e.type === 'interrupted'), 'the TV is told what was cut short');
+    assert.match(events.find((e) => e.type === 'interrupted').game, /Quips/);
+    // A phone reconnects with its old token and is the same player; another only has its device id.
+    const a = srv.connect();
+    await new Promise((r) => a.once('connect', r));
+    a.emit('player:rejoin', { code: h.code, token: ps[0].token });
+    const back = await new Promise((r) => a.once('player:joined', r));
+    assert.strictEqual(back.playerId, ps[0].id);
+    const b = srv.connect();
+    await new Promise((r) => b.once('connect', r));
+    b.emit('player:joinRoom', { code: h.code, nickname: 'whatever', device: 'device-of-Bob' });
+    assert.strictEqual((await new Promise((r) => b.once('player:joined', r))).playerId, ps[1].id);
+    await until(() => state.players.filter((/** @type {any} */ p) => p.connected).length === 2, 'two phones back');
+  } finally { await srv.stop(); }
+});
+
+test('"That\'s me": a name that is in use and online can be taken over on request (the other screen is told)', { timeout: 30000 }, async () => {
+  const srv = await startServer();
+  try {
+    const h = await makeHost(srv);
+    const ann = await makePlayer(srv, h.code, 'Ann');
+    assert.strictEqual(await require('../helpers').joinError(srv, h.code, 'ann'), 'That nickname is taken.');
+    const s = srv.connect();
+    await new Promise((r) => s.once('connect', r));
+    const replaced = new Promise((r) => ann.sock.once('player:replaced', r));
+    s.emit('player:joinRoom', { code: h.code, nickname: 'ANN', takeover: true });
+    const joined = await new Promise((r) => s.once('player:joined', r));
+    assert.strictEqual(joined.playerId, ann.id, 'same seat');
+    await replaced;
+    await until(() => h.state.players.length === 1 && h.state.players[0].connected, 'still one Ann, connected');
+  } finally { await srv.stop(); }
+});

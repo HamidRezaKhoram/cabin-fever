@@ -10,39 +10,37 @@
 
 const house = require('./house');
 const { guarded } = require('./base');
+const { makeRng, newSeed } = require('./rng');
 
 const stats = require('./stats');
 
-const crypto = require('crypto');
 const library = require('./library');
 const flow = require('./flow');
 // Fallback deck if the pools are missing.
 const { WHITE, BLACK } = require('./data/cah-cards.sample');
 
 const REVEAL_MS = parseInt(process.env.RUMPUS_CAH_REVEAL_MS || '10000', 10);
+// Nobody waits forever on a phone that fell asleep: both steps have a (generous) clock, which also
+// gives the TV its Skip button and the phones their "hurry" vote here.
+const SUBMIT_MS = parseInt(process.env.RUMPUS_CAH_SUBMIT_MS || '75000', 10);
+const CZAR_MS = parseInt(process.env.RUMPUS_CAH_CZAR_MS || '60000', 10);
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_CAH_ROUNDS || '8', 10);
 const HAND_SIZE = 7;
 const POINTS_PER_WIN = 500;
 
-/** @template T @param {T[]} arr @returns {T[]} */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
 class CAHGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
+    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
+    this.seed = newSeed();
+    this.rng = makeRng(this.seed);
     this.room = room;
     this.push = push;
     this.phase = 'cah-submit';
     this.round = 0;
     this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
-    this.whiteDeck = shuffle(WHITE.slice());
-    this.blackDeck = shuffle(BLACK.slice());
+    this.whiteDeck = this.rng.shuffleIn(WHITE.slice());
+    this.blackDeck = this.rng.shuffleIn(BLACK.slice());
     this.hands = new Map(); // playerId -> [cardText]
     this.blackCard = null;
     this.czarCursor = 0;
@@ -66,7 +64,7 @@ class CAHGame {
   drawWhite(n) {
     const got = library.draw('cah-white', n, { spicy: this.spicy() }).map((c) => c.text || '').filter(Boolean);
     while (got.length < n) {
-      if (this.whiteDeck.length === 0) this.whiteDeck = shuffle(WHITE.slice());
+      if (this.whiteDeck.length === 0) this.whiteDeck = this.rng.shuffleIn(WHITE.slice());
       const card = this.whiteDeck.pop();
       if (card) got.push(card);
     }
@@ -76,7 +74,7 @@ class CAHGame {
   drawBlack() {
     const c = library.drawOne('cah-black', { spicy: this.spicy() });
     if (c) return c.text;
-    if (this.blackDeck.length === 0) this.blackDeck = shuffle(BLACK.slice());
+    if (this.blackDeck.length === 0) this.blackDeck = this.rng.shuffleIn(BLACK.slice());
     return this.blackDeck.pop();
   }
 
@@ -128,6 +126,7 @@ class CAHGame {
     this.submissions = new Map();
     this.blackCard = this.drawBlack();
     this.skipSeq = (this.skipSeq || 0) + 1;
+    this.setTimer(SUBMIT_MS, () => this.submitTimeUp());
     this.push();
   }
 
@@ -160,7 +159,7 @@ class CAHGame {
     // The previous czar picked this round's prompt from three while they waited.
     const prev = this.nextOptions;
     this.pickedBy = prev && this.nextPick != null ? this.czarNickname() : null;
-    this.blackCard = prev ? prev[this.nextPick != null ? this.nextPick : crypto.randomInt(prev.length)] : this.drawBlack();
+    this.blackCard = prev ? prev[this.nextPick != null ? this.nextPick : this.rng.int(0, prev.length - 1)] : this.drawBlack();
     this.czarId = this.currentCzar();
     this.czarCursor += 1;
     this.nextOptions = this.round < this.totalRounds ? [this.drawBlack(), this.drawBlack(), this.drawBlack()] : null;
@@ -169,9 +168,14 @@ class CAHGame {
     this.revealList = [];
     this.winner = null;
     this.phase = 'cah-submit';
-    this.timer = null;
-    this.endsAt = null;
+    this.setTimer(SUBMIT_MS, () => this.submitTimeUp());
     this.push();
+  }
+
+  /** Time's up (or the TV pressed Skip): judge the cards that are in; with none, a new round. */
+  submitTimeUp() {
+    if (this.phase !== 'cah-submit') return;
+    if (this.submissions.size) this.finishSubmitting(); else this.nextRound();
   }
 
   neededSubmissions() {
@@ -213,10 +217,12 @@ class CAHGame {
 
   finishSubmitting() {
     if (this.phase !== 'cah-submit') return;
-    this.revealList = shuffle(
+    this.revealList = this.rng.shuffleIn(
       [...this.submissions.entries()].map(([playerId, text]) => ({ playerId, text }))
     );
     this.phase = 'cah-czar';
+    // The Czar is taking too long (or the TV pressed Skip): a card wins at random.
+    this.setTimer(CZAR_MS, () => { if (this.revealList.length) this.pickWinner(this.rng.int(0, this.revealList.length - 1)); else this.nextRound(); });
     this.push();
   }
 
@@ -243,6 +249,7 @@ class CAHGame {
     this.phase = 'gameover';
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    this.timerFn = null;
     this.endsAt = null;
     this.push();
   }

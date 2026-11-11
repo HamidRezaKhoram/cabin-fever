@@ -7,7 +7,6 @@
  */
 'use strict';
 
-const crypto = require('crypto');
 const { BaseGame } = require('./base');
 
 const VOTE_MS = parseInt(process.env.RUMPUS_NIGHT_VOTE_MS || '20000', 10);
@@ -65,7 +64,7 @@ class NightGame extends BaseGame {
     const t = this.tally();
     const best = Math.max(...t);
     const top = t.map((n, i) => (n === best ? i : -1)).filter((i) => i >= 0);
-    this.chosen = top[crypto.randomInt(top.length)];
+    this.chosen = top[this.rng.int(0, top.length - 1)];
     this.phase = 'night-pick';
     this.setTimer(PICK_MS, () => this.onPick(this.options[/** @type {number} */ (this.chosen)].id), false);
     this.push();

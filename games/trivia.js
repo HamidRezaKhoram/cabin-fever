@@ -9,8 +9,8 @@
 
 const house = require('./house');
 const { guarded } = require('./base');
+const { makeRng, newSeed } = require('./rng');
 
-const crypto = require('crypto');
 const { QUESTIONS } = require('./data/trivia-questions');
 const library = require('./library');
 const flow = require('./flow');
@@ -24,15 +24,6 @@ const SPEED_BONUS = 500;
 const DOUBLE_RISK = 300; // lost on a wrong Double Down answer
 const MIN_PER_CATEGORY = 6;
 
-/** @template T @param {T[]} arr @returns {T[]} */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
 // "Entertainment: Video Games" -> "Video Games"
 /** @param {unknown} cat */
 function prettyCategory(cat) {
@@ -44,6 +35,9 @@ function prettyCategory(cat) {
 class TriviaGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
+    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
+    this.seed = newSeed();
+    this.rng = makeRng(this.seed);
     this.room = room;
     this.push = push;
     this.phase = 'trivia-question';
@@ -169,13 +163,13 @@ class TriviaGame {
     if (cats.length < 2) return false;
     const fresh = cats.filter((c) => !this.usedCategories.has(c));
     if (fresh.length >= 3) cats = fresh;
-    this.categoryOptions = shuffle(cats).slice(0, 3);
+    this.categoryOptions = this.rng.shuffleIn(cats).slice(0, 3);
     // Comeback mechanic: the player in last place chooses (ties: random).
-    const players = shuffle([...this.room.players.values()]);
+    const players = this.rng.shuffleIn([...this.room.players.values()]);
     players.sort((/** @type {Player} */ a, /** @type {Player} */ b) => a.score - b.score);
     this.chooserId = players.length ? players[0].id : null;
     this.phase = 'trivia-category';
-    this.setTimer(CATEGORY_MS, () => this.pickCategory(crypto.randomInt(this.categoryOptions.length), true));
+    this.setTimer(CATEGORY_MS, () => this.pickCategory(this.rng.int(0, this.categoryOptions.length - 1), true));
     this.push();
     return true;
   }
@@ -186,7 +180,7 @@ class TriviaGame {
     this.category = this.categoryOptions[index] || null;
     if (this.category) this.usedCategories.add(this.category);
     this.categoryAuto = auto;
-    this.segmentLeft = 3 + crypto.randomInt(3); // 3–5 questions per category
+    this.segmentLeft = this.rng.int(3, 5); // 3–5 questions per category
     this.askQuestion();
   }
 
@@ -283,7 +277,7 @@ class TriviaGame {
     this.answers.delete(playerId);
     if (this.room.players.size === 0) return;
     if (this.phase === 'trivia-category' && playerId === this.chooserId) {
-      this.pickCategory(crypto.randomInt(this.categoryOptions.length), true);
+      this.pickCategory(this.rng.int(0, this.categoryOptions.length - 1), true);
     } else if (this.phase === 'trivia-question' && this.answers.size >= this.room.players.size) {
       this.reveal();
     }

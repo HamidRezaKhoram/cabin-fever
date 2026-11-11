@@ -124,3 +124,40 @@ test('escalating points across a 4-question game: ×1, ×1, ×2, ×3', async () 
   }
   await h.phase('gameover');
 });
+
+test('wrap: in a real-time game a majority ends the round now (and tells the TV)', async () => {
+  const { h, ps } = await room(3);
+  /** @type {string[]} */
+  const events = [];
+  h.sock.on('room:event', (e) => events.push(e.type));
+  h.emit('host:startGame', { gameId: 'lantern' });
+  await h.phase('ll-play', 10000);
+  assert.deepStrictEqual(h.state.pace.allowed, ['wrap']);
+  const left = h.state.gameState.endsAt - Date.now();
+  assert.ok(left > 5000, `plenty of the scene left (${left} ms)`);
+  vote(ps[0], 'wrap');
+  await until(() => h.state.pace.counts.wrap === 1, 'one vote counted');
+  assert.strictEqual(h.state.phase, 'll-play', 'one vote is not a majority');
+  vote(ps[1], 'wrap');
+  await h.phase('ll-result', 3000);
+  assert.ok(events.includes('wrap'));
+  assert.deepStrictEqual(h.state.pace.allowed, ['ready'], 'results: the room can vote "next"');
+});
+
+test('Rainy Day Cards: the TV can always Skip — cards in go to the Czar, a slow Czar gets a random winner', async () => {
+  const { h, ps } = await room(3);
+  h.emit('host:startGame', { gameId: 'cah' });
+  await h.phase('cah-submit');
+  assert.strictEqual(h.state.canSkip, true, 'Skip is live while cards come in');
+  assert.ok(h.state.pace.allowed.includes('hurry'), 'phones can hurry the stragglers');
+  const czar = h.state.gameState.czarNickname;
+  const player = ps.find((p) => p.nickname !== czar);
+  player.submit({ cardIndex: 0 });
+  await until(() => h.state.gameState.submittedCount === 1, 'one card in');
+  h.emit('host:skip'); // the other player is asleep
+  await h.phase('cah-czar');
+  assert.strictEqual(h.state.canSkip, true, 'Skip is live while the Czar thinks');
+  h.emit('host:skip'); // …and so is the Czar
+  await h.phase('cah-reveal');
+  assert.strictEqual(h.state.gameState.winner.nickname, player.nickname);
+});

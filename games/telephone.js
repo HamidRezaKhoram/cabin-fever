@@ -7,7 +7,7 @@
 
 const stats = require('./stats');
 
-const { BaseGame, shuffle, cleanText } = require('./base');
+const { BaseGame, cleanText } = require('./base');
 const library = require('./library');
 
 const FALLBACK = ([
@@ -43,7 +43,7 @@ class TelephoneGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
-    this.order = shuffle(this.playerIds());
+    this.order = this.rng.shuffleIn(this.playerIds());
     this.n = this.order.length;
     // 6+ players: two groups pass chains among themselves, so chains stay short and
     // the reveal comes sooner (playtest: one long chain each left people idle for 80 s).
