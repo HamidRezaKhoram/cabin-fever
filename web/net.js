@@ -77,10 +77,18 @@ class Sock {
         const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
         if (!cb) return this.emit(ev, ...args);
         let done = false;
+        // emit reserves its ack id before notifying listeners. Arm the deadline first so even
+        // a transport that replies immediately can safely cancel it.
+        const id = this.seq + 1;
+        const t = setTimeout(() => {
+          if (done) return;
+          done = true;
+          this.acks.delete(id);
+          // A request that already failed must not turn into a late answer on reconnect.
+          this.queue = this.queue.filter((m) => m.t !== 'e' || m.ack !== id);
+          cb(new Error('timeout'));
+        }, ms);
         this.emit(ev, ...args, (/** @type {any[]} */ ...r) => { if (!done) { done = true; clearTimeout(t); cb(null, ...r); } });
-        const id = this.seq;
-        // No reply in time: report it and forget the callback (a lost reply must not linger forever).
-        const t = setTimeout(() => { this.acks.delete(id); if (!done) { done = true; cb(new Error('timeout')); } }, ms);
         return this;
       },
     };
