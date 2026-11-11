@@ -301,7 +301,8 @@ setInterval(() => {
 let wakeLock = null;
 /** @type {HTMLVideoElement | null} */
 let wakeVideo = null;
-async function keepAwake() {
+/** @param {boolean} [fromTap] called from a tap (only then can a refusal mean low-power mode) */
+async function keepAwake(fromTap = false) {
   try {
     const wl = /** @type {any} */ (navigator).wakeLock;
     if (wl && window.isSecureContext) {
@@ -318,9 +319,23 @@ async function keepAwake() {
     wakeVideo.innerHTML = '<source src="/keep-awake.webm" type="video/webm"><source src="/keep-awake.mp4" type="video/mp4">';
     document.body.appendChild(wakeVideo);
   }
-  if (wakeVideo.paused) wakeVideo.play().catch(() => {});
+  // A refusal right after a tap means the phone won't play it at all (low-power mode); other
+  // rejections (an interrupted play, a call from a non-tap) are not worth a warning.
+  if (wakeVideo.paused) wakeVideo.play().catch((/** @type {unknown} */ e) => { if (fromTap && e instanceof DOMException && e.name === 'NotAllowedError') wakeHint(); });
 }
-document.addEventListener('pointerdown', () => { if (me && !ended) void keepAwake(); }, { passive: true });
+/** Both keep-awake methods failed (often low-power mode): tell the player once, gently. */
+let wakeHinted = false;
+function wakeHint() {
+  if (wakeHinted) return;
+  wakeHinted = true;
+  const el = document.createElement('div');
+  el.className = 'wake-hint';
+  el.setAttribute('role', 'status');
+  el.textContent = 'Your screen may go to sleep during the game — turn off low-power mode, or tap now and then.';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 9000);
+}
+document.addEventListener('pointerdown', () => { if (me && !ended) void keepAwake(true); }, { passive: true });
 
 socket.on('player:joined', (/** @type {any} */ msg) => {
   resetJoinBtn();
@@ -413,11 +428,19 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
       return `<p class="round-tag">Card Czar: ${esc(g.czarNickname)}</p><h2 class="prompt">${esc(g.blackCard)}</h2><p>Pick a card:</p><div class="vote-list">` +
         (you.hand || []).map((/** @type {any} */ text, /** @type {any} */ i) => `<button class="hand-btn" data-send='{"cardIndex":${i}}'>${esc(text)}</button>`).join('') + '</div>';
     case 'cah-czar':
-      if (!you.isCzar) return `<h1>Card played ✓</h1><p>${esc(g.czarNickname)} is judging…</p>`;
+      if (!you.isCzar) {
+        // While the Czar judges: tap the room favourite (+bonus to its author; not your own card).
+        if (you.fav != null) return `<h1>Favourite locked in ❤</h1><p>${esc(g.czarNickname)} is judging…</p>`;
+        return `<h2 class="prompt">${esc(g.blackCard)}</h2><p>${esc(g.czarNickname)} is judging…</p><p>Tap your favourite: its author gets bonus points.</p><div class="vote-list">` +
+          g.submissions.map((/** @type {any} */ s) => (s.mine
+            ? `<button class="vote-btn" disabled>${esc(s.text)}</button>`
+            : `<button class="vote-btn" data-send='{"fav":${s.index}}'>❤ ${esc(s.text)}</button>`)).join('') + '</div>';
+      }
       return `<h2 class="prompt">${esc(g.blackCard)}</h2><p>Pick the winner:</p><div class="vote-list">` +
         g.submissions.map((/** @type {any} */ s) => `<button class="vote-btn" data-send='{"choice":${s.index}}'>${esc(s.text)}</button>`).join('') + '</div>';
     case 'cah-reveal':
-      return `<h1>Round winner</h1><p class="prompt">"${esc(g.winner.text)}" — ${esc(g.winner.nickname)}</p>`;
+      return `<h1>Round winner</h1><p class="prompt">"${esc(g.winner.text)}" — ${esc(g.winner.nickname)}</p>` +
+        ((g.favourites || []).length ? `<p>❤ Room favourite: ${g.favourites.map((/** @type {any} */ f) => `${esc(f.nickname)} “${esc(f.text)}”`).join(' · ')} (+${g.favPoints})</p>` : '');
     case 'fib-bluff': {
       if (you.submitted) return waiting('Lie submitted');
       const oops = you.collidedWithTruth
@@ -520,7 +543,7 @@ function render() {
   // Campfire Quips asks two prompts in one phase, and a skipped question keeps the phase.
   const screenKey = [state.phase, g.round, g.step, g.chainIndex, g.subject, g.promptNumber, g.matchIndex, g.revealIndex, g.skipSeq,
     typeof g.prompt === 'string' ? g.prompt : '', typeof g.question === 'string' ? g.question : ''].join('|');
-  if (html !== lastHtml && screenKey === lastScreenKey && lastHtml !== null && !gameView.querySelector('#pad')) {
+  if (html !== lastHtml && screenKey === lastScreenKey && lastHtml !== null && !gameView.querySelector('#pad, #scribble-pad')) {
     morph(gameView, html);
     lastHtml = html;
   } else if (html !== lastHtml) {

@@ -78,8 +78,10 @@ function decide(view, rnd = Math.random) {
     case 'tt-write': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
     case 'tt-judge': return !you.judged && (g.answers || []).length ? tap({ calls: Object.fromEntries(g.answers.map((/** @type {{ id: string }} */ a) => [a.id, rnd() < 0.5])) }) : null;
     // Message in a Bottle
-    case 'tel-write': case 'tel-describe': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
-    case 'tel-draw': return !you.submitted ? { payload: { image: PNG }, kind: 'draw' } : null;
+    case 'tel-write': case 'tel-describe': case 'tel-draw':
+      if (!you.submitted) return view.phase === 'tel-draw' ? { payload: { image: PNG }, kind: 'draw' } : write({ text: pick(LINES, rnd) });
+      // Done early: one doodle on the scribble pad, about half the time.
+      return you.scribblesLeft === 3 && rnd() < 0.5 ? { payload: { scribble: PNG }, kind: 'draw' } : null;
     case 'tel-reveal': {
       if (!g.favOpen || you.fav != null || !you.canFav) return null;
       const ok = (g.entries || []).map((/** @type {{ ok: boolean }} */ e, /** @type {number} */ i) => (e.ok ? i : -1)).filter((/** @type {number} */ i) => i >= 0);
@@ -90,7 +92,12 @@ function decide(view, rnd = Math.random) {
     case 'cah-submit':
       if (you.isCzar) return you.nextOptions && you.nextPick == null ? tap({ nextBlack: Math.floor(rnd() * you.nextOptions.length) }) : null;
       return !you.submitted && you.hand && you.hand.length ? tap({ cardIndex: Math.floor(rnd() * you.hand.length) }) : null;
-    case 'cah-czar': return you.isCzar && g.submissions && g.submissions.length ? tap({ choice: Math.floor(rnd() * g.submissions.length) }) : null;
+    case 'cah-czar': {
+      if (you.isCzar) return g.submissions && g.submissions.length ? tap({ choice: Math.floor(rnd() * g.submissions.length) }) : null;
+      // Everyone else: a room-favourite tap on someone else's card.
+      const others = (g.submissions || []).filter((/** @type {{ mine: boolean }} */ s) => !s.mine);
+      return you.fav == null && others.length ? tap({ fav: pick(others, rnd).index }) : null;
+    }
     // Cottage Crush: notes, replies, then a date
     case 'cr-mingle': {
       const t = g.targets || [];
@@ -117,7 +124,9 @@ function decide(view, rnd = Math.random) {
     }
     case 'st-roles': return you.ready ? null : tap({ ready: true });
     case 'st-talk': {
-      if (!you.isLeader || !(you.candidates || []).length) return null;
+      // Not leading: a private hunch about who's a raccoon (once; people rarely change it).
+      if (!you.isLeader) return you.hunch == null && (you.hunchTargets || []).length ? tap({ hunch: pick(you.hunchTargets, rnd).id }) : null;
+      if (!(you.candidates || []).length) return null;
       const me = you.candidates.find((/** @type {{ id: string }} */ c) => c.id === you.playerId);
       const rest = shuffleCopy(you.candidates.filter((/** @type {{ id: string }} */ c) => c !== me), rnd);
       const crew = [...(me ? [me] : []), ...rest].slice(0, g.crewSize).map((/** @type {{ id: string }} */ c) => c.id);

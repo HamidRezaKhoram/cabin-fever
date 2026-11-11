@@ -338,6 +338,24 @@ async function check(name, fn) {
     assert.strictEqual(await tv.$$eval('#player-list li', (l) => l.length), 3);
   });
 
+  await check('a phone whose screen can\'t be kept awake says so (once)', async () => {
+    const p = phones[2];
+    await p.evaluate(() => {
+      Object.defineProperty(navigator, 'wakeLock', { value: undefined, configurable: true });
+      const v = /** @type {HTMLVideoElement | null} */ (document.querySelector('video.keep-awake'));
+      if (v) v.pause();
+      window.__realPlay = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException('low-power mode', 'NotAllowedError'));
+    });
+    await p.mouse.click(5, 5);
+    await p.waitForSelector('.wake-hint', { timeout: 5000 });
+    assert.match(await p.textContent('.wake-hint') || '', /low-power mode/);
+    await p.mouse.click(5, 5);
+    await p.waitForTimeout(150);
+    assert.strictEqual(await p.$$eval('.wake-hint', (l) => l.length), 1, 'shown once, not on every tap');
+    await p.evaluate(() => { HTMLMediaElement.prototype.play = window.__realPlay; document.querySelectorAll('.wake-hint').forEach((e) => e.remove()); });
+  });
+
   await check('Message in a Bottle: drawing on a phone canvas reaches the TV', async () => {
     tv.once('dialog', (d) => d.accept());
     await tv.click('[data-act="end"]');
@@ -351,6 +369,26 @@ async function check(name, fn) {
       for (let k = 0; k < 10; k++) await p.mouse.move(box.x + 30 + k * 15, box.y + 30 + k * 10);
       await p.mouse.up();
       await p.click('#draw-done');
+      if (p === phones[0]) {
+        // The first one done gets the scribble pad: a doodle floats across the TV while the rest draw.
+        await p.waitForSelector('#scribble-pad canvas');
+        const sb = await (await p.$('#scribble-pad canvas')).boundingBox();
+        await p.mouse.move(sb.x + 20, sb.y + 20); await p.mouse.down();
+        for (let k = 0; k < 8; k++) await p.mouse.move(sb.x + 20 + k * 12, sb.y + 20 + k * 6);
+        await p.mouse.up();
+        await p.click('#scribble-send');
+        await tv.waitForSelector('.scribble-sea .scribble img');
+        // Keyed morph: the floating doodle is the same element on the next update (its drift keeps going).
+        const same = await tv.evaluate(() => {
+          const el = document.querySelector('.scribble');
+          const root = document.createElement('div');
+          root.innerHTML = '<i data-key="1">a</i><i data-key="2">b</i>';
+          const first = root.children[1];
+          window.Rumpus.morph(root, '<i data-key="2">b</i><i data-key="3">c</i>');
+          return { kept: root.children[0] === first, keys: [...root.children].map((c) => c.getAttribute('data-key')).join(','), live: !!el && el.isConnected };
+        });
+        assert.deepStrictEqual(same, { kept: true, keys: '2,3', live: true });
+      }
     }
     await phones[0].waitForSelector('.describe-img');
     const src = await phones[0].getAttribute('.describe-img', 'src');
@@ -484,6 +522,16 @@ async function check(name, fn) {
     await phones[0].tap('.lc-tap').catch(() => phones[0].click('.lc-tap'));
     await tv.waitForFunction(() => document.querySelector('.lc-loon.hit-good, .lc-loon.hit-perfect'), null, { timeout: 4000 });
     await shot(tv, '30-looncall');
+    // Skip mid-song: the rest of the booked song must not keep playing on the next screen.
+    await tv.waitForFunction(() => Rumpus.music.rhythm.busy(), null, { timeout: 4000 });
+    const phaseNow = () => tv.evaluate(() => new Function('return state')().phase);
+    for (let k = 0; k < 8 && (await phaseNow()) !== 'lc-result'; k++) {
+      const before = await phaseNow();
+      await tv.click('[data-act="skip"]');
+      await tv.waitForFunction((b) => new Function('return state')().phase !== b, before, { timeout: 4000 }).catch(() => {});
+    }
+    assert.strictEqual(await phaseNow(), 'lc-result', 'Skip got us to the result screen');
+    assert.strictEqual(await tv.evaluate(() => Rumpus.music.rhythm.busy()), false, 'the song stopped when it was skipped');
     tv.once('dialog', (d) => d.accept());
     await tv.click('[data-act="end"]');
     await tv.waitForSelector('.game-pick');

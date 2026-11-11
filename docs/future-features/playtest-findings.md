@@ -65,3 +65,9 @@ Tooling: `worstIdleAt` in the report names the stretch; a static test forces eve
 | Lantern Lake (new) | — | 2.5 min, worst idle 10 s | Continuous steering; phones' arrows/scores push 2×/s. |
 | Storm Watch (new) | — | bots: 2–3 min, 4 actions/min, worst idle 31–35 s (the talk phase) | Real play ≈ 10–12 min: talk 60 s × 5 chores. |
 | Campfire Wizards (new) | 28–30 s idle (1.2 s per spell) | 21 s (4p), 24 s (6p), 32 s (8p) | 0.9 s per spell, reveal capped at ~8 steps, 12 s picks. |
+
+## Round 4 (Nov 11 2026)
+| Game | Before | After | What changed |
+|---|---|---|---|
+| Rainy Day Cards | 2.9 actions/min, worst idle 29 s | 4.5 actions/min, 23 s (4p); 4.2 actions/min, 25 s (6p) | **Room favourite**: while the Czar judges, everyone else ❤ one card (not their own); the most-liked card(s) get +200 × stakes. Shown on the reveal. |
+| Storm Watch | worst idle 31–35 s (the talk phase) | 30 s (5p), 33 s (8p), 3.6–4.1 actions/min; worst stretch is now the vote | **Private hunch**: during the talk everyone but the leader taps who they suspect (changeable), shown with ✔/✘ on the final role reveal. |

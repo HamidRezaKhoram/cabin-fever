@@ -149,6 +149,8 @@ class MostLikelyGame extends BaseGame {
 
 MostLikelyGame.meta = {
   id: 'mostlikely',
+  /** Anyone can act on any screen: phones may join mid-game (core/rooms.js join, todo 3.4). */
+  lateJoin: true,
   name: 'Cabin Superlatives',
   blurb: 'Vote which friend fits the prompt. Score by agreeing with the crowd.',
   minPlayers: 3,

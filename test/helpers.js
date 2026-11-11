@@ -139,4 +139,15 @@ function contentDir(pools) {
 
 const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
-module.exports = { ROOT, startServer, once, until, sleep, makeHost, makePlayer, joinError, get, contentDir, tmpDir, PNG };
+/** Short real-time timers so bots can finish every game quickly (bots + chaos tests). */
+const QUICK = {
+  RUMPUS_MG_INTRO_MS: '200', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_TUG_MS: '1500', RUMPUS_MG_ROAST_MS: '3000',
+  RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
+  RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000', RUMPUS_CR_REVEAL_STEP_MS: '150',
+  RUMPUS_LC_TEMPO: '4', RUMPUS_LC_PHRASES: '2', RUMPUS_LC_LEAD_MS: '300', RUMPUS_LC_RESULT_MS: '200',
+  RUMPUS_ST_ROLES_MS: '2000', RUMPUS_ST_VOTE_SHOW_MS: '150', RUMPUS_ST_CARD_MS: '100', RUMPUS_ST_FINAL_MS: '200',
+  RUMPUS_TT_STEP_MS: '60', RUMPUS_MG_PLAY_MS: '1500', RUMPUS_MG_SHOW_MS: '40',
+  RUMPUS_LL_INTRO_MS: '300', RUMPUS_LL_PLAY_MS: '2500', RUMPUS_LL_RESULT_MS: '200',
+};
+
+module.exports = { QUICK, ROOT, startServer, once, until, sleep, makeHost, makePlayer, joinError, get, contentDir, tmpDir, PNG };

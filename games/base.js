@@ -32,9 +32,19 @@ function loadContent(name, builtin) {
 }
 
 /** Run a timer's work; a bug in one game is logged instead of crashing the server (a throw in a
- * timer is an uncaught exception). @param {() => void} fn @param {string} what */
-function guarded(fn, what) {
-  try { fn(); } catch (e) { console.error(`[game] ${what} failed:`, e); }
+ * timer is an uncaught exception). With a game, its `onGlitch` hook is told too, so the TV can say
+ * "something went wrong — press Skip" instead of sitting silently.
+ * @param {() => void} fn @param {string} what
+ * @param {{ onGlitch?: ((what: string, e: unknown) => void) | null, timerFn?: (() => void) | null, endsAt?: number | null }} [game]
+ * @param {boolean} [retry] a phase timer: on a throw, leave it pending so Skip can retry it */
+function guarded(fn, what, game, retry = false) {
+  try { fn(); } catch (e) {
+    console.error(`[game] ${what} failed:`, e);
+    // A phase timer threw before setting the next one: keep it as the pending timer, so the TV's
+    // Skip (and the phones' vote) can try it again instead of the screen sitting there for good.
+    if (retry && game && !game.timerFn) { game.timerFn = fn; game.endsAt = Date.now(); }
+    if (game && game.onGlitch) { try { game.onGlitch(what, e); } catch (e2) { /* never throw from here */ } }
+  }
 }
 
 /** Player text: trimmed, single-spaced, capped, house-rule banned words masked. */
@@ -60,6 +70,7 @@ class BaseGame {
     this.timerFn = null;
     this.endsAt = null;
     this.destroyed = false;
+    /** @type {((what: string, e: unknown) => void) | null} set by the room: a game error reached the TV */ this.onGlitch = null;
     /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
     this.seed = newSeed();
     this.rng = makeRng(this.seed);
@@ -91,12 +102,14 @@ class BaseGame {
     const real = Math.round(scale ? ms * (this.settings.timerScale || 1) * house.timerFor(id) : ms);
     this.endsAt = Date.now() + real;
     this.timerFn = fn;
+    /** whether the pending timer was scaled (flow.hurry keeps it that way) */
+    this.timerScaled = scale;
     // Small grace so phones that auto-submit at 0s still make it in.
     this.timer = setTimeout(() => {
       if (this.destroyed) return;
       this.timer = null;
       this.timerFn = null;
-      guarded(fn, `${id} timer`);
+      guarded(fn, `${id} timer`, this, true);
     }, real + (scale ? 1200 : 0));
   }
 

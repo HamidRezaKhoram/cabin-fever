@@ -52,6 +52,7 @@ class TriviaGame {
     /** @type {Map<string, number>} */
     this.streaks = new Map();
     this.roundStartedAt = 0;
+    this.questionWindow = 0;
     /** @type {NodeJS.Timeout | null} */
     this.timer = null;
     /** @type {(() => void) | null} */
@@ -59,6 +60,7 @@ class TriviaGame {
     /** @type {number | null} */
     this.endsAt = null;
     this.destroyed = false;
+    /** @type {((what: string, e: unknown) => void) | null} set by the room (see games/base.js guarded) */ this.onGlitch = null;
     /** @type {string | null} raw category of the current segment */
     this.category = null;
     this.segmentLeft = 0;       // questions left in this category segment
@@ -98,7 +100,7 @@ class TriviaGame {
     this.timerFn = fn;
     this.timer = setTimeout(() => {
       this.timerFn = null;
-      if (!this.destroyed) guarded(fn, 'trivia timer');
+      if (!this.destroyed) guarded(fn, 'trivia timer', this, true);
     }, ms);
   }
 
@@ -203,6 +205,8 @@ class TriviaGame {
     this.phase = 'trivia-question';
     this.roundStartedAt = Date.now();
     this.setTimer(QUESTION_MS, () => this.reveal());
+    /** The real answer window (timer speed + house multiplier applied): the speed bonus scale. */
+    this.questionWindow = Math.max(1, (this.endsAt || this.roundStartedAt + QUESTION_MS) - this.roundStartedAt);
     this.push();
   }
 
@@ -238,8 +242,9 @@ class TriviaGame {
       const p = this.room.players.get(playerId);
       if (!p) continue;
       if (a.choice === correct) {
-        const elapsed = Math.min(QUESTION_MS, a.answeredAt - this.roundStartedAt);
-        const speedFrac = Math.max(0, 1 - elapsed / QUESTION_MS);
+        const span = this.questionWindow || QUESTION_MS;
+        const elapsed = Math.min(span, a.answeredAt - this.roundStartedAt);
+        const speedFrac = Math.max(0, 1 - elapsed / span);
         const streak = (this.streaks.get(playerId) || 0) + 1;
         this.streaks.set(playerId, streak);
         // Streak bonus: +100 for every consecutive correct answer after the first.
@@ -380,6 +385,8 @@ class TriviaGame {
 
 TriviaGame.meta = {
   id: 'trivia',
+  /** Anyone can act on any screen: phones may join mid-game (core/rooms.js join, todo 3.4). */
+  lateJoin: true,
   name: 'Lakeside Quiz',
   blurb: 'Fast trivia in category rounds — last place picks the next category.',
   minPlayers: 2,

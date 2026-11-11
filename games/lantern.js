@@ -184,7 +184,7 @@ class LanternGame extends BaseGame {
     this.tickNo = 0;
     this.setTimer(PLAY_MS, () => this.finish(), false);
     this.stopLoop();
-    this.loop = setInterval(() => guarded(() => this.tick(), 'lantern tick'), TICK_MS);
+    this.loop = setInterval(() => guarded(() => this.tick(), 'lantern tick', this), TICK_MS);
     this.push();
   }
 

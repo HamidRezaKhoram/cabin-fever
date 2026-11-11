@@ -48,6 +48,10 @@ function io() {
       sock.fire('connect');
     }, (why) => {
       connecting = false;
+      if (want !== code) { connect(); return; } // the player typed another code meanwhile: open that one
+      // Many failures in a row that aren't "no such room": the phone can't reach the broker (no
+      // internet on this Wi-Fi?). Say so once — the join button comes back — and keep trying.
+      if (why !== 'no-room' && tries === 8 && !sock.data.everJoined) sock.fire('player:joinError', { reason: "Can't reach the TV — is this phone online? Still trying…" });
       // A room that vanished for good (the TV page was closed): give up after about a minute.
       if (why === 'no-room' && (!sock.data.everJoined || tries > 15)) {
         // Tell the page the same way the Docker server would.

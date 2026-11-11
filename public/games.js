@@ -79,7 +79,7 @@
         if (you.isAuthor) {
           if (you.bet) return `<h1>That's yours! 😬</h1><p>Side bet placed: <strong>${you.bet === 'landslide' ? 'Landslide' : "I'll win"}</strong>. Sweat it out…</p>`;
           return `<h1>That's yours! 😬</h1><p>Place a side bet while everyone votes:</p><div class="vote-list">
-            ${sendBtn({ bet: 'win' }, "🤞 I'll win · +100 / −50")}${sendBtn({ bet: 'landslide' }, '🔥 Landslide (75%+) · +250 / −100')}</div>`;
+            ${sendBtn({ bet: 'win' }, `🤞 I'll win · +${100 * (g.multiplier || 1)} / −${50 * (g.multiplier || 1)}`)}${sendBtn({ bet: 'landslide' }, `🔥 Landslide (75%+) · +${250 * (g.multiplier || 1)} / −${100 * (g.multiplier || 1)}`)}</div>`;
         }
         if (you.voted) return waiting('Vote cast');
         return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which is funnier?</p><div class="vote-list">` +
@@ -330,19 +330,25 @@
         api.onCleanup(() => clearInterval(t));
       }
       // Campfire Sequence: tap the colours in order.
-      const stones = root.querySelectorAll('[data-mg-colour]');
-      if (stones.length) {
+      // The pad only appears when the round moves from "watch" to "go" — the same screen, patched in
+      // place without a new bind() — so listen on the screen itself and read the state at tap time.
+      if (g.mini === 'simon') {
         /** @type {number[]} */
         const seq = [];
-        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-seq]'));
-        stones.forEach((b) => b.addEventListener('pointerdown', (e) => {
+        const onTap = (/** @type {Event} */ e) => {
+          const b = window.Rumpus.hit(e.target, '[data-mg-colour]');
+          if (!b) return;
           e.preventDefault();
-          if (seq.length >= g.length) return;
-          seq.push(Number(/** @type {HTMLElement} */ (b).dataset.mgColour));
-          label.textContent = '● '.repeat(seq.length) + '○ '.repeat(Math.max(0, g.length - seq.length));
+          const len = Number(api.state.gameState.length) || 0;
+          if (seq.length >= len) return;
+          seq.push(Number(b.dataset.mgColour));
+          const label = /** @type {HTMLElement | null} */ (root.querySelector('[data-mg-seq]'));
+          if (label) label.textContent = '● '.repeat(seq.length) + '○ '.repeat(Math.max(0, len - seq.length));
           window.Rumpus.haptic(12);
-          if (seq.length === g.length) api.send({ seq });
-        }));
+          if (seq.length === len) api.send({ seq });
+        };
+        root.addEventListener('pointerdown', onTap);
+        api.onCleanup(() => root.removeEventListener('pointerdown', onTap));
       }
       // Woodpile Stack: a log slides back and forth; tap to drop it; the overhang is cut off.
       const st = /** @type {HTMLCanvasElement | null} */ (root.querySelector('[data-mg-stack]'));
@@ -718,7 +724,7 @@
         if (you.notesLeft <= 0) return crSteps(0) + role + waiting('Notes sent', 'Watch the TV for gossip…') + winksIn + inbox + wink;
         const to = crTo && g.targets.find((/** @type {Target} */ t) => t.id === crTo);
         if (!to) {
-          return `${crSteps(0)}${role}<h2>💌 Who gets a note?</h2><p class="hint">${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left · they won't know who sent it until they reply</p>
+          return `${crSteps(0)}${role}<h2>💌 Who gets a note?</h2><p class="hint">${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left · ${you.agenda && you.agenda.id === 'wallflower' ? "you're the Wallflower: they won't see your name" : 'they’ll see it’s from you'}</p>
             <div class="crush-people">${g.targets.map((/** @type {Target} */ t) => `<button type="button" class="crush-person" data-cr-to="${esc(t.id)}">${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span></button>`).join('')}</div>${winksIn}${inbox}`;
         }
         return `${crSteps(0)}<p class="crush-to-line">To ${av(to.nickname, 'avatar')} <b>${esc(to.nickname)}</b> <button type="button" class="ghost-btn" data-cr-to="">change</button></p>
@@ -776,12 +782,19 @@
   // A little melody for the lead loon: the pitch follows the step in the bar.
   const LC_PITCH = [1, 1.125, 1.25, 1.333, 1.5, 1.333, 1.25, 1.125];
 
+  /** TV: cut off a booked song now. */
+  function lcStopAudio() {
+    const m = window.Rumpus.music;
+    if (lcScheduledAt && m && m.rhythm) m.rhythm.stop();
+    lcScheduledAt = 0;
+  }
   /** TV: schedule every sound of a schedule on the Web Audio clock (sample-accurate). @param {LcSched} s */
   function lcScheduleAudio(s) {
     const m = window.Rumpus.music;
     if (!m || !m.rhythm || !m.rhythm.ready() || lcScheduledAt === s.startAt) return;
     lcScheduledAt = s.startAt;
     const r = m.rhythm;
+    r.stop(); // a new schedule replaces whatever was still booked (a song cut short by Skip)
     const ctxNow = r.now(), srvNow = window.Rumpus.time.now();
     const at = (/** @type {number} */ ms) => ctxNow + (ms - srvNow) / 1000;
     const future = (/** @type {number} */ ms) => ms > srvNow + 20;
@@ -884,7 +897,9 @@
     host(s) {
       const g = s.gameState;
       lcSched = g.sched || null;
-      if (lcSched) lcScheduleAudio(lcSched);
+      // Off the song screens (result, game over, Skip/"end the round" mid-song): silence the song.
+      if (!['lc-tune', 'lc-song', 'lc-compose'].includes(s.phase)) lcStopAudio();
+      else if (lcSched) lcScheduleAudio(lcSched);
       if (s.phase === 'lc-result') {
         const r = g.result;
         return `${lcStageTag(g)}<h1>${esc(r.name)}</h1>
@@ -1268,7 +1283,7 @@
       } else if (s.phase === 'st-accuse') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win… for now!' : '🦝 The raccoons win!'}</h1><p class="big-sub">${esc(g.winReason || '')}${g.hunt ? ' — but the raccoons get one last chance: unmask the Lookout and they steal it!' : ''}</p>
           <p class="prompt">Before the roles flip: who was a raccoon? Accuse on your phone. ${T}</p>${count(g.accusedCount, g.totalPlayers, 'accused')}`;
       else if (s.phase === 'st-final') mid = `<h1>${g.winner === 'cottage' ? '🏡 The cottagers win!' : '🦝 The raccoons win!'}</h1>
-          <div class="storm-roles">${(g.roles || []).map((/** @type {any} */ x, /** @type {number} */ i) => `<div class="storm-role ${x.side}" style="animation-delay:${i * 0.4}s">${av(x.nickname, 'avatar big')}<b>${esc(x.nickname)}</b><span>${esc(x.role)}</span><span class="votes">+${x.gained}</span></div>`).join('')}</div>`;
+          <div class="storm-roles">${(g.roles || []).map((/** @type {any} */ x, /** @type {number} */ i) => `<div class="storm-role ${x.side}" style="animation-delay:${i * 0.4}s">${av(x.nickname, 'avatar big')}<b>${esc(x.nickname)}</b><span>${esc(x.role)}</span><span class="votes">+${x.gained}</span>${x.hunch ? `<small class="storm-hunch">🤔 ${esc(x.hunch)} ${x.hunchRight ? '✔' : '✘'}</small>` : ''}</div>`).join('')}</div>`;
       return `${rain}<div class="storm-board">${board}<div class="storm-mid">${mid}</div></div>`;
     },
     player(s) {
@@ -1282,7 +1297,9 @@
       const snoop = you.canSnoop && you.canSnoop.length ? `<div class="crush-side"><b>🔍 Snoop on one crew card (once per game)</b><div class="crush-pair">${you.canSnoop.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ snoop: t.id }, esc(t.nickname))).join('')}</div></div>` : '';
       if (s.phase === 'st-roles') return card + (you.ready ? waiting('Ready') : `<div class="vote-list">${sendBtn({ ready: true }, "I've seen my role")}</div>`);
       if (s.phase === 'st-talk') {
-        if (!you.isLeader) return `<h2>🏮 ${esc(g.leader)} is picking ${g.crewSize} for the crew</h2><p>Talk it over!</p>${peek}${snoop}${card}`;
+        // Private hunch (shown to nobody until the end): something to do while the leader decides.
+        const hunch = (you.hunchTargets || []).length ? `<div class="crush-side"><b>🤔 Your secret hunch: who's a raccoon?</b><div class="crush-pair">${you.hunchTargets.map((/** @type {{ id: string, nickname: string }} */ t) => `<button type="button" class="vote-btn" data-send='${esc(JSON.stringify({ hunch: t.id }))}' aria-pressed="${you.hunch === t.id}">${esc(t.nickname)}</button>`).join('')}</div></div>` : '';
+        if (!you.isLeader) return `<h2>🏮 ${esc(g.leader)} is picking ${g.crewSize} for the crew</h2><p>Talk it over!</p>${hunch}${peek}${snoop}${card}`;
         const key = `${g.choreIndex}|${g.leader}|${g.crewSize}`;
         if (key !== stPickKey) { stPick.clear(); stPickKey = key; }
         return `<h2>🏮 You lead! Pick ${g.crewSize} for “${esc(g.choreNames[g.choreIndex])}”</h2>
@@ -1422,9 +1439,12 @@
         describe: 'Describe the drawing on your phone!',
       })[g.stepType];
       const verb = /** @type {Record<string, string>} */ ({ write: 'writing', draw: 'drawing', describe: 'guessing' })[g.stepType];
+      // Doodles from people who are done float across the screen (keyed, so morph keeps them moving).
+      const sea = (g.scribbles || []).length ? `<div class="scribble-sea" aria-hidden="true">${g.scribbles.map((/** @type {any} */ d) =>
+        `<figure class="scribble" data-key="${d.key}" style="top:${8 + (d.key * 37) % 70}%"><img src="${d.image}" alt=""><figcaption>${esc(d.by)}</figcaption></figure>`).join('')}</div>` : '';
       return `${roundTag(g, 'Step')}<h1>${msg}</h1><p class="big-sub">${T}</p>
         ${count(g.submittedCount, g.totalPlayers, 'done')}
-        ${waitingRow(g.waitingOn, verb)}`;
+        ${waitingRow(g.waitingOn, verb)}${sea}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
@@ -1442,7 +1462,12 @@
         return `<h2>Best doodle?</h2><div class="doodle-pick">` +
           g.drawings.map((/** @type {any} */ d) => sendBtn({ key: d.key }, `<img src="${d.image}" alt="">`, 'doodle-btn')).join('') + '</div>';
       }
-      if (you.submitted) return waiting('Passed it on');
+      if (you.submitted) {
+        // Scribble pad while the others finish: up to 3 doodles a step float across the TV.
+        if (!you.scribblesLeft || g.stepType === 'spectate') return waiting('Passed it on');
+        return `${waiting('Passed it on')}<p class="hint">While you wait: doodle something and float it across the TV 🍾 (${you.scribblesLeft} left)</p>
+          <div id="scribble-pad"></div><button id="scribble-send" class="wide">Float it 🍾</button>`;
+      }
       if (g.stepType === 'write') {
         return `${roundTag(g, 'Step')}<h2>Write something to draw</h2>
           ${textForm('e.g. ' + you.suggestion, 80)}
@@ -1459,6 +1484,12 @@
     bind(root, api) {
       const fill = /** @type {HTMLElement | null} */ (root.querySelector('[data-fill]'));
       if (fill) fill.addEventListener('click', () => api.send({ text: fill.dataset.fill }));
+      const scribbleEl = root.querySelector('#scribble-pad');
+      if (scribbleEl) {
+        const sp = window.Rumpus.drawPad(scribbleEl);
+        const sendBtn = /** @type {HTMLButtonElement} */ (root.querySelector('#scribble-send'));
+        sendBtn.addEventListener('click', () => { if (sp.isEmpty() || sendBtn.disabled) return; sendBtn.disabled = true; api.send({ scribble: sp.toDataURL() }); });
+      }
       const padEl = root.querySelector('#pad');
       const endsAt = api.state.gameState.endsAt;
       let autoFn = null;

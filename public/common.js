@@ -131,16 +131,27 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     tpl.innerHTML = html;
     morphChildren(target, tpl.content);
   }
-  /** @param {Node} a @param {Node} b */
+  /** Children are matched by position, except elements with a `data-key`: those are matched by key
+   * (moved, not rebuilt), so a list that drops its first item keeps the rest animating.
+   * @param {Node} a @param {Node} b */
   function morphChildren(a, b) {
-    const an = [...a.childNodes], bn = [...b.childNodes];
-    const n = Math.max(an.length, bn.length);
-    for (let i = 0; i < n; i++) {
-      const x = an[i], y = bn[i];
+    const bn = [...b.childNodes];
+    // Keyed children that are gone go first, so the survivors don't all have to move past them
+    // (moving a node restarts its CSS animation).
+    const wanted = new Set(bn.filter((n) => n.nodeType === 1 && /** @type {Element} */ (n).hasAttribute('data-key')).map((n) => /** @type {Element} */ (n).getAttribute('data-key')));
+    for (const c of [...(/** @type {Element} */ (a).children || [])]) if (c.hasAttribute('data-key') && !wanted.has(c.getAttribute('data-key'))) c.remove();
+    for (let i = 0; i < bn.length; i++) {
+      const y = bn[i], x = a.childNodes[i];
+      const key = y.nodeType === 1 ? /** @type {Element} */ (y).getAttribute('data-key') : null;
+      if (key != null) {
+        const m = [...(/** @type {Element} */ (a).children || [])].find((c) => c.getAttribute('data-key') === key);
+        if (m) { if (m !== x) a.insertBefore(m, x || null); morphNode(m, y); } else a.insertBefore(y, x || null);
+        continue;
+      }
       if (!x) a.appendChild(y);
-      else if (!y) x.remove();
       else morphNode(x, y);
     }
+    while (a.childNodes.length > bn.length) /** @type {ChildNode} */ (a.lastChild).remove();
   }
   /** @param {any} x @param {any} y nodes of the same position (checked by type below) */
   function morphNode(x, y) {

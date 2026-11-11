@@ -75,6 +75,7 @@ class FibbageGame {
     /** @type {number | null} */
     this.endsAt = null;
     this.destroyed = false;
+    /** @type {((what: string, e: unknown) => void) | null} set by the room (see games/base.js guarded) */ this.onGlitch = null;
     this.skipSeq = 0;
     this.poolName = 'fibbage';
     /** @type {PoolItem | null} */
@@ -102,7 +103,7 @@ class FibbageGame {
     this.timerFn = fn;
     this.timer = setTimeout(() => {
       this.timerFn = null;
-      if (!this.destroyed) guarded(fn, 'fibbage timer');
+      if (!this.destroyed) guarded(fn, 'fibbage timer', this, true);
     }, ms);
   }
 
@@ -239,7 +240,9 @@ class FibbageGame {
       pickedBy[choice].push(playerId);
       const opt = this.options[choice];
       if (opt.isTruth) {
-        add(playerId, TRUTH_POINTS);
+        // Only the truth to pick from (yours was the only lie, or nobody lied): no free points.
+        const choices = this.options.filter((o) => !o.authorIds.has(playerId)).length;
+        if (choices >= 2) add(playerId, TRUTH_POINTS);
       } else {
         for (const authorId of opt.authorIds) add(authorId, FOOL_POINTS);
       }

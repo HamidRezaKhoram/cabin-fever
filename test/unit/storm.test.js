@@ -168,3 +168,57 @@ test('raccoon powers: Double Trouble beats a Big Chore and Fix It; if the cottag
     assert.ok(done <= 3);
   } finally { await srv.stop(); }
 });
+
+test('a private hunch during the talk: anyone but the leader, changeable, never shown to others, revealed (right or wrong) at the end', { timeout: 60000 }, async () => {
+  const { srv, h, ps } = await game(['Ann', 'Ben', 'Cat', 'Dan', 'Eve']);
+  try {
+    for (const p of ps) p.submit({ ready: true });
+    await until(() => ps.every((p) => p.state.phase === 'st-talk'), 'talk');
+    const leader = ps.find((p) => p.state.you.isLeader);
+    const others = ps.filter((p) => p !== leader);
+    assert.deepStrictEqual(leader.state.you.hunchTargets, [], 'the leader is busy picking');
+    const [a, b] = others;
+    assert.strictEqual(a.state.you.hunchTargets.length, 4, 'everyone but yourself');
+    const idOf = (/** @type {any} */ p) => a.state.you.hunchTargets.find((/** @type {any} */ t) => t.nickname === p.nickname).id;
+    a.submit({ hunch: a.state.you.hunchTargets.find((/** @type {any} */ t) => t.nickname === b.nickname).id });
+    a.submit({ hunch: 'nobody' }); // not a player: ignored
+    leader.submit({ hunch: idOf(b) }); // the leader can't
+    await until(() => a.state.you.hunch !== null, 'hunch stored');
+    const rac = ps.find((p) => sideOf(p) === 'raccoon');
+    const target = rac === a ? b : rac;
+    a.submit({ hunch: a.state.you.hunchTargets.find((/** @type {any} */ t) => t.nickname === target.nickname).id }); // changed mind
+    await until(() => a.state.you.hunch === a.state.you.hunchTargets.find((/** @type {any} */ t) => t.nickname === target.nickname).id, 'hunch changed');
+    assert.strictEqual(leader.state.you.hunch, null);
+    // Nobody else (TV included) sees it during the game.
+    assert.ok(!JSON.stringify(h.state.gameState).includes('hunch'), 'not on the TV');
+    for (const p of ps.filter((x) => x !== a)) assert.strictEqual(p.state.you.hunch, null);
+    // Play it out on timers (no crew picked → random crew; votes/cards time out) until the end.
+    h.emit('host:endGame');
+    await h.phase('lobby', 5000);
+  } finally { await srv.stop(); }
+});
+
+test('hunches are revealed on the final screen with whether they were right', () => {
+  const room = { players: new Map(), settings: {} };
+  for (const [i, n] of ['Ann', 'Ben', 'Cat', 'Dan'].entries()) room.players.set(`p${i}`, { id: `p${i}`, nickname: n, score: 0, connected: true });
+  const g = new Storm(/** @type {any} */ (room), () => {});
+  g.start();
+  const ids = [...room.players.keys()];
+  const rac = ids.find((id) => g.side(id) === 'raccoon');
+  const cot = ids.filter((id) => g.side(id) === 'cottage');
+  g.nextChore();
+  const voters = ids.filter((id) => id !== g.leader());
+  const right = voters.find((id) => id !== rac);
+  const wrong = voters.find((id) => id !== rac && id !== right);
+  g.handleSubmit(right, { hunch: rac });
+  g.handleSubmit(wrong, { hunch: cot.find((id) => id !== wrong) });
+  g.winner = 'cottage'; g.lookoutId = null;
+  g.toAccuse(); g.final();
+  const roles = g.hostView().roles;
+  const by = (/** @type {string} */ id) => roles.find((/** @type {any} */ r) => r.nickname === room.players.get(id).nickname);
+  assert.strictEqual(by(right).hunch, room.players.get(rac).nickname);
+  assert.strictEqual(by(right).hunchRight, true);
+  assert.strictEqual(by(wrong).hunchRight, false);
+  assert.strictEqual(by(g.leader()).hunch, null, 'no hunch, nothing shown');
+  g.destroy();
+});

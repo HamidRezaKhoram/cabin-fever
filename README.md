@@ -69,13 +69,26 @@ required.
 
 ## Known limitations
 
-No reconnect-on-refresh (a phone reload drops you from the room), rooms are
-in-memory only (a server restart wipes them), the host disconnecting closes
-the room, and there's no spectator mode.
+A phone reload or a TV reload / server restart keeps the room, the seats and the scores, but the
+game in progress is cut short (pick it again). Phones can only join between games, a locked phone
+drops out until it's unlocked, and there's no spectator mode. The full list of open work is
+`docs/future-features/todo.md`.
 
 ## License
 
-AGPLv3 — see `LICENSE`.
+The code is AGPLv3 — see `LICENSE`. **Some bundled content is non-commercial only**, so the
+project as shipped is for personal, non-commercial use:
+
+| Content | License |
+|---|---|
+| Rainy Day Cards cards, some Campfire Quips prompts (Cards Against Humanity packs) | CC BY-NC-SA 4.0 — non-commercial |
+| Trivia from The Trivia API | CC BY-NC 4.0 — non-commercial |
+| Trivia and Fish Tales questions from Open Trivia DB | CC BY-SA 4.0 |
+| Closest Cast / Fish Tales facts from Wikidata, music in `music/` | CC0 |
+| Narrator voice (Kokoro-82M) | Apache-2.0 |
+
+Sources, links and the rest (fonts, libraries): `CREDITS.md`. To share or sell a build, drop the
+non-commercial packs first.
 
 ## v2: what's new
 
@@ -109,7 +122,7 @@ Open `http://<this-machine>:8012/host` on the TV; phones scan the QR code.
 | `PORT` | 3000 (8012 in compose) | Listen port |
 | `MAX_PLAYERS` | 12 | Room size |
 | `PUBLIC_URL` | auto | Force the join URL shown on the TV |
-| `PLAYER_GRACE_MS` / `HOST_GRACE_MS` | 120000 / 300000 | Reconnect windows |
+| `PLAYER_GRACE_MS` / `HOST_GRACE_MS` | 1800000 / 1800000 | Reconnect windows: how long a seat / the room waits for its phone / TV (30 min) |
 | `RUMPUS_CONTENT_MODE` | append | `replace` = only use your content packs |
 
 ## v3: content, music & pixel art

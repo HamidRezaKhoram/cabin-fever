@@ -1,6 +1,8 @@
 services:
   rumpus:
-    build: .
+    build:
+      context: .
+      # target: lite   # small machine (Raspberry Pi): no server voice, the TV's browser speaks instead
     image: rumpus:local
     container_name: rumpus
     restart: unless-stopped

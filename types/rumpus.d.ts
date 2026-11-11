@@ -50,6 +50,8 @@ interface Room {
   /** Tonight's best moments (games/stats.js). */
   /** Set on a room restored after a restart: the game that was cut short (told to the TV once). */
   interrupted?: string | null;
+  /** When the TV was last told a game error happened (core/rooms.js `glitch`, rate limit). */
+  lastGlitch?: number;
   highlights?: { game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }[];
   /** Game night playlist (server.js) or null. */
   night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
@@ -98,6 +100,8 @@ interface GameLike {
   destroy(): void;
   skip(): void;
   skipQuestion?(): void;
+  /** Set by the room: a timer's work threw (games/base.js `guarded`); tells the TV. */
+  onGlitch?: ((what: string, e: unknown) => void) | null;
   setTimer(ms: number, fn: () => void, scale?: boolean): void;
   mult?(): number;
   handleSubmit(playerId: string, payload: Record<string, any>): void;

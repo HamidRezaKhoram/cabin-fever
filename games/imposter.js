@@ -174,6 +174,7 @@ class ImposterGame extends BaseGame {
 
   /** @param {string} id */
   onPlayerLeft(id) {
+    if (this.phase !== 'gameover' && this.room.players.size < (ImposterGame.meta.minPlayers || 3)) { this.clearTimer(); return this.gameOver(); }
     if (id === this.imposter && (this.phase === 'imp-clue' || this.phase === 'imp-vote' || this.phase === 'imp-guess')) {
       // Round can't continue without the imposter — reshuffle.
       this.clearTimer();

@@ -149,6 +149,8 @@ class ClosestGame extends BaseGame {
 
 ClosestGame.meta = {
   id: 'closest',
+  /** Anyone can act on any screen: phones may join mid-game (core/rooms.js join, todo 3.4). */
+  lateJoin: true,
   name: 'Closest Cast',
   blurb: 'Guess the number. Nearest wins — exact hits earn a bonus.',
   minPlayers: 2,

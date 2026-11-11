@@ -125,6 +125,8 @@ class StormGame extends BaseGame {
     this.lookoutId = lookoutId;
     /** @type {Map<string, string>} raccoon → who they think the Lookout is (only if the cottage won) */
     this.unmask = new Map();
+    /** @type {Map<string, string>} private hunch (todo 3.3): who each player suspects, revealed at the end */
+    this.hunches = new Map();
     /** @type {string | null} who played Double Trouble on this chore */
     this.doubledBy = null;
     this.stolen = false;
@@ -305,6 +307,12 @@ class StormGame extends BaseGame {
       this.cards.set(id, !raccoon ? 'help' : dbl ? 'double' : payload.card);
       if (payload.fix && this.roles.get(id) === 'handyman' && !this.used.has(id)) { this.used.add(id); this.fixedBy = id; }
       if (this.crew.every((c) => this.cards.has(c) || !this.room.players.has(c))) this.playChore(); else this.push();
+    } else if (this.phase === 'st-talk' && typeof payload.hunch === 'string' && id !== this.leader()) {
+      // A private hunch while the leader picks: any other player, changeable, shown at the very end.
+      const who = payload.hunch;
+      if (who === id || !this.room.players.has(who)) return void this.push(); // re-enable the phone's buttons
+      this.hunches.set(id, who);
+      this.push();
     } else if (payload.snoop && this.roles.get(id) === 'snoop' && !this.used.has(id) && this.lastPlayed && this.lastPlayed.crew.includes(String(payload.snoop)) && ['st-reveal', 'st-talk'].includes(this.phase)) {
       const who = String(payload.snoop);
       this.used.add(id);
@@ -368,9 +376,15 @@ class StormGame extends BaseGame {
       roles: this.phase === 'st-final' ? this.playerIds().map((id) => {
         const r = /** @type {RoleId} */ (this.roles.get(id));
         return { nickname: this.nick(id), role: ROLES[r].name, side: ROLES[r].side, gained: this.finalGains[id] || 0, accusedBy: [...this.accusations].filter(([, w]) => w === id).length,
-          unmaskedBy: [...this.unmask].filter(([, w]) => w === id).length };
+          unmaskedBy: [...this.unmask].filter(([, w]) => w === id).length, ...this.hunchView(id) };
       }) : null,
     };
+  }
+
+  /** The end screen: who this player privately suspected, and whether that was a raccoon. @param {string} id */
+  hunchView(id) {
+    const who = this.hunches.get(id);
+    return who ? { hunch: this.nick(who), hunchRight: this.side(who) === 'raccoon' } : { hunch: null, hunchRight: null };
   }
 
   /** @param {string} id */
@@ -387,6 +401,8 @@ class StormGame extends BaseGame {
         isLeader: this.leader() === id,
         candidates: this.phase === 'st-talk' && this.leader() === id ? this.allowed().map((x) => ({ id: x, nickname: this.nick(x) })) : [],
         ready: this.ready.has(id),
+        hunch: this.hunches.has(id) ? /** @type {string} */ (this.hunches.get(id)) : null,
+        hunchTargets: this.phase === 'st-talk' && this.leader() !== id ? this.playerIds().filter((x) => x !== id).map((x) => ({ id: x, nickname: this.nick(x) })) : [],
         voted: this.votes.has(id),
         onCrew: this.crew.includes(id),
         played: this.cards.has(id),

@@ -165,6 +165,10 @@ async function check(name, fn) {
       const tv2 = await ctx.newPage();
       watch(tv2, 'tv-offline');
       await tv2.goto(BASE + 'host.html?net=local');
+      // The first TV tab still owns the saved room: this one says it has its own, unsaved room.
+      await tv2.waitForSelector('.second-tab-note', { timeout: 15000 });
+      assert.match(await tv2.textContent('.second-tab-note') || '', /Another tab is hosting/);
+      assert.ok(!(await tv.isVisible('.second-tab-note')), 'the first tab shows no such note');
       await tv2.click('#start-overlay');
       await tv2.waitForFunction(() => /^[A-Z]{4}$/.test((document.getElementById('room-code') || {}).textContent || ''), null, { timeout: 15000 });
       const ph2 = await ctx.newPage();

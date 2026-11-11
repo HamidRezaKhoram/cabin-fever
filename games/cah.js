@@ -27,6 +27,9 @@ const CZAR_MS = parseInt(process.env.RUMPUS_CAH_CZAR_MS || '60000', 10);
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_CAH_ROUNDS || '8', 10);
 const HAND_SIZE = 7;
 const POINTS_PER_WIN = 500;
+/** Room favourite (todo 3.2): while the Czar judges, everyone else taps the card they like best
+ * (not their own); the most-liked card(s) earn this bonus — the Czar's pick is still the big win. */
+const FAV_POINTS = 200;
 
 class CAHGame {
   /** @param {Room} room @param {() => void} push */
@@ -51,9 +54,14 @@ class CAHGame {
     this.revealList = [];
     /** @type {{ playerId: string, nickname: string, text: string } | null} */
     this.winner = null;
+    /** @type {Map<string, number>} voter → index into revealList */
+    this.favVotes = new Map();
+    /** @type {{ nickname: string, text: string, votes: number }[]} the room's favourite card(s) last round */
+    this.favourites = [];
     this.timer = null;
     this.endsAt = null;
     this.destroyed = false;
+    /** @type {((what: string, e: unknown) => void) | null} set by the room (see games/base.js guarded) */ this.onGlitch = null;
 
     for (const p of room.players.values()) {
       this.hands.set(p.id, this.drawWhite(HAND_SIZE));
@@ -97,7 +105,7 @@ class CAHGame {
     this.timerFn = fn;
     this.timer = setTimeout(() => {
       this.timerFn = null;
-      if (!this.destroyed) guarded(fn, 'cah timer');
+      if (!this.destroyed) guarded(fn, 'cah timer', this, true);
     }, ms);
   }
 
@@ -208,7 +216,15 @@ class CAHGame {
         this.push();
       }
     } else if (this.phase === 'cah-czar') {
-      if (playerId !== this.czarId) return;
+      if (playerId !== this.czarId) {
+        // Room favourite: one tap each, any card but your own.
+        const f = payload.fav;
+        if (this.favVotes.has(playerId) || !Number.isInteger(f) || f < 0 || f >= this.revealList.length) return;
+        if (this.revealList[f].playerId === playerId) return;
+        this.favVotes.set(playerId, f);
+        this.push();
+        return;
+      }
       const choice = payload.choice;
       if (!Number.isInteger(choice) || choice < 0 || choice >= this.revealList.length) return;
       this.pickWinner(choice);
@@ -220,6 +236,8 @@ class CAHGame {
     this.revealList = this.rng.shuffleIn(
       [...this.submissions.entries()].map(([playerId, text]) => ({ playerId, text }))
     );
+    this.favVotes = new Map();
+    this.favourites = [];
     this.phase = 'cah-czar';
     // The Czar is taking too long (or the TV pressed Skip): a card wins at random.
     this.setTimer(CZAR_MS, () => { if (this.revealList.length) this.pickWinner(this.rng.int(0, this.revealList.length - 1)); else this.nextRound(); });
@@ -235,6 +253,7 @@ class CAHGame {
     if (p) p.score += POINTS_PER_WIN * this.mult();
     this.winner = { playerId: pick.playerId, nickname: p ? p.nickname : '(left the game)', text: pick.text };
     if (p) stats.highlight(this.room, { game: 'Rainy Day Cards', prompt: this.blackCard || '', text: pick.text, by: p.nickname, note: 'won the round' });
+    this.awardFavourites();
     // Replenish everyone who played a card back up to HAND_SIZE.
     for (const playerId of this.submissions.keys()) {
       const hand = this.hands.get(playerId);
@@ -243,6 +262,23 @@ class CAHGame {
     this.phase = 'cah-reveal';
     this.setTimer(REVEAL_MS, () => this.nextRound());
     this.push();
+  }
+
+  /** The card(s) with the most room votes (ties all count) get FAV_POINTS each. */
+  awardFavourites() {
+    /** @type {number[]} */
+    const counts = this.revealList.map(() => 0);
+    for (const i of this.favVotes.values()) if (counts[i] != null) counts[i] += 1;
+    const top = Math.max(0, ...counts);
+    this.favourites = [];
+    if (!top) return;
+    counts.forEach((n, i) => {
+      if (n !== top) return;
+      const entry = this.revealList[i];
+      const fp = this.room.players.get(entry.playerId);
+      if (fp) fp.score += FAV_POINTS * this.mult();
+      this.favourites.push({ nickname: fp ? fp.nickname : '(left the game)', text: entry.text, votes: n });
+    });
   }
 
   gameOver() {
@@ -307,9 +343,12 @@ class CAHGame {
         return {
           ...base,
           submissions: this.revealList.map((/** @type {{ text: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text })),
+          favCount: this.favVotes.size,
+          // Who can still vote: everyone but the Czar who has someone else's card to pick.
+          favNeeded: [...this.room.players.keys()].filter((id) => id !== this.czarId && this.revealList.some((e) => e.playerId !== id)).length,
         };
       case 'cah-reveal':
-        return { ...base, winner: this.winner };
+        return { ...base, winner: this.winner, favourites: this.favourites, favPoints: FAV_POINTS * this.mult() };
       case 'gameover':
         return { gameId: 'cah', standings: this.standings() };
       default:
@@ -347,14 +386,13 @@ class CAHGame {
         return {
           gameState: {
             ...base,
-            submissions: playerId === this.czarId
-              ? this.revealList.map((/** @type {{ text: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text }))
-              : [],
+            // The Czar judges them all; everyone else sees them too, to pick a room favourite.
+            submissions: this.revealList.map((/** @type {{ text: string, playerId: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text, mine: s.playerId === playerId })),
           },
-          you: { isCzar: playerId === this.czarId },
+          you: { isCzar: playerId === this.czarId, fav: this.favVotes.has(playerId) ? this.favVotes.get(playerId) : null },
         };
       case 'cah-reveal':
-        return { gameState: { ...base, winner: this.winner }, you: {} };
+        return { gameState: { ...base, winner: this.winner, favourites: this.favourites, favPoints: FAV_POINTS * this.mult() }, you: {} };
       case 'gameover':
         return { gameState: { gameId: 'cah', standings: this.standings() }, you: {} };
       default:

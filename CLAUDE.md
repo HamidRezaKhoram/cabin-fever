@@ -121,7 +121,10 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - **Game menu** (`.game-menu` in `public/style.css`, `gamePicker` in `host.js`): a fixed one-screen
   grid sized in `vh` — it must never scroll (checked at 720p/768p/1080p with 12 players).
 - **Seeds**: every game's own dice use `this.rng` (old games too; `rng.shuffleIn` shuffles in place).
-  Which prompts come up is not seeded (it depends on what the house has played: `games/library.js`).
+  Which prompts come up depends on what the house has played (`games/library.js`), except in replay
+  mode: `RUMPUS_REPLAY=1 RUMPUS_SEED=<n>` ignores the history and seeds the draws too (debugging).
+- **Game errors reach the TV**: `glitch`/`safely` in `core/rooms.js` → `room:event {type:'glitch'}`; a
+  phase timer that throws stays pending (`guarded(..., retry)`), so Skip retries it.
 - **What's left**: `docs/future-features/todo.md` is the one list of open work; update it when you finish or find something.
 - **Quick loop**: `scripts/quick.sh [unit test files]` = type check + lint (+ those tests) in seconds.
 - **Fast channel** (`web/net.js` `fastChannel`): browser build only — a second, unordered,
@@ -134,6 +137,8 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   server (`core/voice.js`, native fp32 Kokoro in a worker thread — needs the Debian image, not
   Alpine); otherwise the TV runs `public/tts-worker.js` (uint8). The TV page is cross-origin
   isolated (server.js / sw.js headers) so that worker gets threads. `Rumpus.host.voiceInfo()`.
+  `docker build --target lite` (Raspberry Pi): only the uint8 model, no native runtime,
+  `RUMPUS_SERVER_VOICE=0` → the TV speaks; ~0.7 GB image, ~40 MB idle.
 - **Browser build links** (`web/net.js`): 2 s heartbeat; silent 7 s = asleep; the TV keeps a phone's
   WebRTC link 45 s so a short nap resumes without the broker (`net:resync`). JSON serialization.
 - **Offline after first load** (`web/offline.js` + `sw-template.js`): the TV shows a progress bar

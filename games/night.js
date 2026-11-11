@@ -84,7 +84,7 @@ class NightGame extends BaseGame {
   }
 }
 
-NightGame.meta = { id: 'night', name: 'Game night', blurb: 'A playlist of games with a running leaderboard.', minPlayers: 2 };
+NightGame.meta = { id: 'night', name: 'Game night', blurb: 'A playlist of games with a running leaderboard.', minPlayers: 2, lateJoin: true };
 
 /**
  * Night points for one finished game. @param {{ id: string, score: number }[]} players
