@@ -29,9 +29,9 @@
       <form id="join-form">
         <label for="code-input">Room code</label>
         <input id="code-input" maxlength="4" autocomplete="off" autocapitalize="characters"
-               placeholder="ABCD" required>
+               placeholder="ABCD" pattern="[A-Za-z]{4}" aria-describedby="join-error" spellcheck="false" required>
         <label for="nick-input">Nickname</label>
-        <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Your name" required>
+        <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Your name" aria-describedby="join-error" required>
         <label>Your profile picture</label>
         <div class="avatar-mode">
           <button type="button" data-mode="make">🧑 Make your character</button>
@@ -41,7 +41,7 @@
         <div id="avatar-pick" class="avatar-pick"></div>
         <button type="submit">Join</button>
       </form>
-      <p id="join-error" class="error"></p>
+      <p id="join-error" class="error" role="alert"></p>
     </section>
 
     <section id="game-view" hidden aria-live="polite"></section>
