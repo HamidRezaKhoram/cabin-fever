@@ -34,6 +34,18 @@ const server = http.createServer(app);
 // asleep is noticed in ~10 s and its seat waits for it (core/rooms.js).
 const io = new Server(server, { maxHttpBufferSize: 2e6, pingInterval: 5000, pingTimeout: 5000 });
 
+// The TV page is cross-origin isolated so the narrator's natural voice can run on several CPU
+// cores (browsers only allow threads — SharedArrayBuffer — in isolated pages). Single-threaded it
+// is ~3× slower than speech and the narrator lags. Everything the TV loads is same-origin.
+// /admin and /highlights are opened from the TV, so they get the same headers.
+const ISOLATE = /^\/(host|admin|highlights)(\.html)?$|^\/tts-worker\.js$|^\/tts\//;
+app.use((/** @type {any} */ req, /** @type {any} */ res, /** @type {() => void} */ next) => {
+  if (ISOLATE.test(req.path)) {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  }
+  next();
+});
 app.get('/', (req, res) => res.redirect('/play'));
 app.get('/host', (req, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
 app.get('/play', (req, res) => res.sendFile(path.join(__dirname, 'public', 'play.html')));
@@ -127,7 +139,26 @@ app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
 // The narrator's natural voice (Kokoro model + runtime, fetched once by tools/fetch-kokoro.js;
 // the Docker image has it in /app/tts). Absent → the TV falls back to espeak / the browser voice.
 const TTS_DIR = process.env.RUMPUS_TTS_DIR || [path.join(__dirname, 'tts'), path.join(__dirname, 'vendor', 'kokoro')].find((d) => fs.existsSync(d)) || path.join(__dirname, 'tts');
-app.get('/api/voice', (req, res) => res.json({ available: fs.existsSync(path.join(TTS_DIR, 'model', 'config.json')) }));
+// The server makes the natural voice itself when it can (native, several times faster than the
+// TV's browser); otherwise the TV runs the model from /tts. See core/voice.js.
+const voice = require('./core/voice');
+voice.start(TTS_DIR);
+app.get('/api/voice', (req, res) => {
+  const available = fs.existsSync(path.join(TTS_DIR, 'model', 'config.json'));
+  res.json({ available, dtype: available ? voice.dtypeOf(TTS_DIR) : null, server: ['ready', 'loading'].includes(voice.status()) });
+});
+// One part of a narrator line (a sentence or clause) as WAV.
+app.get('/api/voice/say', (/** @type {any} */ req, /** @type {any} */ res) => {
+  const text = String(req.query.t || '').replace(/[^\p{L}\p{N}\p{P}\p{Zs}]/gu, '').trim().slice(0, 300);
+  if (!text) { res.status(400).end(); return; }
+  let gone = false;
+  res.on('close', () => { if (!res.writableEnded) gone = true; }); // the TV dropped this line
+  void voice.speak(text, String(req.query.v || ''), () => gone).then((w) => {
+    if (gone || res.headersSent) return;
+    if (!w) { res.status(503).end(); return; }
+    res.type('audio/wav').set('Cache-Control', 'no-store').send(w);
+  });
+});
 app.use('/tts', express.static(TTS_DIR, {
   maxAge: '30d',
   setHeaders: (/** @type {any} */ res, /** @type {string} */ file) => { if (file.endsWith('.mjs')) res.setHeader('Content-Type', 'text/javascript'); },

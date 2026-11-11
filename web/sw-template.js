@@ -67,6 +67,19 @@ self.addEventListener('activate', (/** @type {any} */ e) => {
   })());
 });
 
+// GitHub Pages can't send headers, so the worker adds them: the TV page (and the narrator's voice
+// worker) become cross-origin isolated, which lets the natural voice use several CPU cores.
+// Everything they load is from this site. (See server.js for the Docker side.)
+const ISOLATE = /^(host|admin|highlights)\.html$|^tts-worker\.js$|^tts\//;
+/** @param {string} rel @param {Response} res */
+function isolate(rel, res) {
+  if (!ISOLATE.test(rel) || res.type === 'opaque') return res;
+  const headers = new Headers(res.headers);
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 self.addEventListener('fetch', (/** @type {any} */ e) => {
   const req = e.request;
   if (req.method !== 'GET' || !req.url.startsWith(scope)) return;
@@ -93,10 +106,10 @@ self.addEventListener('fetch', (/** @type {any} */ e) => {
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const hit = await cache.match(key(rel, h));
-    if (hit) return hit;
+    if (hit) return isolate(rel, hit);
     const res = await fetch(scope + rel);
     if (res.ok) await cache.put(key(rel, h), res.clone());
-    return res;
+    return isolate(rel, res);
   })());
 });
 

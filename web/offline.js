@@ -8,6 +8,15 @@
  */
 'use strict';
 
+/** Reload at most once per tab for isolation (a browser that won't isolate must not loop). */
+function reloaded() {
+  try {
+    if (sessionStorage.getItem('cf.isolate')) return true;
+    sessionStorage.setItem('cf.isolate', '1');
+  } catch (e) { return true; }
+  return false;
+}
+
 /** @param {'tv' | 'phone'} role */
 function offline(role) {
   if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
@@ -48,6 +57,10 @@ function offline(role) {
       /** @type {HTMLElement} */ (bar.querySelector('.cf-offline-title')).textContent = `Loading Cabin Fever… ${pct}%`;
       if (m.done >= m.total) {
         if (failSafe) clearTimeout(failSafe);
+        // The TV's very first visit wasn't served by the worker, so it isn't cross-origin isolated
+        // yet (the narrator's voice needs that for speed). Nobody has joined while the bar was up:
+        // reload once, now from the saved copy, with the headers.
+        if (role === 'tv' && first && !bar.hidden && !window.crossOriginIsolated && !reloaded()) { location.reload(); return; }
         setTimeout(() => { bar.hidden = true; }, 400);
       }
     } else if (m.stage === 'media') {
