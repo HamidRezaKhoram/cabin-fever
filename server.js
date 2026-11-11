@@ -267,7 +267,7 @@ server.listen(PORT, () => {
 // Exit promptly on `docker stop` (node as PID 1 ignores SIGTERM by default), saving what's pending.
 for (const sig of ['SIGTERM', 'SIGINT']) {
   process.on(sig, () => {
-    try { stats.flush(); library.flush(); } catch (e) { /* exiting anyway */ }
+    try { stats.flush(); library.flush(); core.flushRooms(); } catch (e) { /* exiting anyway */ }
     process.exit(0);
   });
 }

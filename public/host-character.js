@@ -32,6 +32,29 @@
   let voiceId = R.store('rumpus.voice') || 'af_heart';
   const VOICES = [['af_heart', 'Natural — US female'], ['am_michael', 'Natural — US male'], ['bf_emma', 'Natural — UK female'], ['bm_george', 'Natural — UK male'], ['classic', 'Classic robot']];
 
+  // ---- Australian: the natural-voice model has American and British voices only. If this TV's
+  // browser has its own Australian English voice (macOS, Windows and Edge do; Chrome on Linux
+  // doesn't), it is offered as a choice and spoken by the browser.
+  const hasSpeech = 'speechSynthesis' in window;
+  /** @returns {SpeechSynthesisVoice[]} */
+  const aussies = () => (hasSpeech ? speechSynthesis.getVoices().filter((v) => /^en[-_]AU/i.test(v.lang)).slice(0, 4) : []);
+  /** The voice picker's list. Each: [id, label, disabled?]. */
+  function voiceList() {
+    const au = aussies().map((v) => ['sys:' + v.voiceURI, `Australian — ${v.name.replace(/\s*\(.*?\)\s*/g, ' ').trim()} (this TV's own voice)`]);
+    return [...VOICES.slice(0, -1), ...(au.length ? au : [['', 'Australian — this TV\'s browser has none', 'disabled']]), VOICES[VOICES.length - 1]];
+  }
+  if (hasSpeech) speechSynthesis.addEventListener('voiceschanged', () => document.dispatchEvent(new CustomEvent('cf:voices'))); // they load late
+  /** Speak with one of the browser's own voices. @param {string} t @returns {boolean} false if it's gone */
+  function speakSystem(t) {
+    const v = hasSpeech ? speechSynthesis.getVoices().find((x) => 'sys:' + x.voiceURI === voiceId) : null;
+    if (!v) return false;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    u.voice = v; u.lang = v.lang; u.rate = 1.05;
+    speechSynthesis.speak(u);
+    return true;
+  }
+
   // ---- Kokoro: made by the server when it can (Docker: native, fast), else in a worker on this TV
   /** @type {Worker | null} */
   let worker = null;
@@ -144,7 +167,7 @@
 
   /** One line for the lobby: what the 🎙 picker will actually sound like right now. */
   function status() {
-    if (voiceId === 'classic') return '';
+    if (voiceId === 'classic' || voiceId.startsWith('sys:')) return '';
     if (engine === 'loading') return 'natural voice loading…';
     if (engine === 'none') return 'no natural voice here — using the robot voice';
     if (lateLines >= 3) return 'this device is too slow for the natural voice — using the robot voice';
@@ -154,7 +177,7 @@
   setInterval(() => { const s = status(); if (s !== lastStatus) { lastStatus = s; document.dispatchEvent(new CustomEvent('cf:voice', { detail: s })); } }, 500);
 
   /** Can the natural voice speak right now? (While it loads, lines wait for it.) */
-  const naturalOn = () => voiceId !== 'classic' && engine !== 'none' && lateLines < 3;
+  const naturalOn = () => voiceId !== 'classic' && !voiceId.startsWith('sys:') && engine !== 'none' && lateLines < 3;
 
   /** Speak with Kokoro, part by part. Falls back to the classic voice only if it fails.
    * @param {string} t @param {{ patience?: number, done?: (ok: boolean) => void }} [opt] */
@@ -299,6 +322,7 @@
     if (R.music && R.music.duck) R.music.duck(Math.min(8000, 800 + t.length * 70), 0.45);
     // Kokoro speaks English only; French rooms, the "Classic robot" choice and TVs without the
     // model (or too slow for it) use the classic voice.
+    if (!fr && voiceId.startsWith('sys:') && speakSystem(t)) return;
     if (fr || !naturalOn()) { classic(t, fr); return; }
     speakNatural(t);
   }
@@ -312,7 +336,7 @@
     setEnabled(on) { enabled = on; R.store('rumpus.narrator', on); if (!on) { if (voice) voice.pause(); stopNatural(); waiting = null; } },
     /** @param {boolean} on */
     show(on) { el.hidden = !on; },
-    voices: () => VOICES,
+    voices: voiceList,
     voiceStatus: status,
     voice: () => voiceId,
     /** @param {string} id */

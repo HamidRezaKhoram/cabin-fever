@@ -59,7 +59,7 @@ class MinigamesGame extends BaseGame {
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(9);
-    this.noPaceVotes = true;
+    this.realtime = true; // phones vote to end a round (games/flow.js), not to hurry answers
     /** @type {MiniId[]} */
     this.queue = [];
     /** @type {MiniId | null} */

@@ -7,7 +7,7 @@
  */
 'use strict';
 
-const { BaseGame, shuffle, cleanText } = require('./base');
+const { BaseGame, cleanText } = require('./base');
 const library = require('./library');
 
 // Playtest-tuned: 60/30 s left fast note-senders idle for over a minute.
@@ -37,8 +37,8 @@ class CrushGame extends BaseGame {
   constructor(room, push) {
     super(room, push);
     this.totalRounds = this.rounds(4);
-    const ids = shuffle(this.playerIds());
-    const deck = /** @type {AgendaId[]} */ (shuffle(Object.keys(AGENDAS)));
+    const ids = this.rng.shuffleIn(this.playerIds());
+    const deck = /** @type {AgendaId[]} */ (this.rng.shuffleIn(Object.keys(AGENDAS)));
     /** @type {Map<string, AgendaId>} */
     this.agendas = new Map(ids.map((/** @type {string} */ id, /** @type {number} */ i) => [id, deck[i % deck.length]]));
     /** @type {Note[]} */

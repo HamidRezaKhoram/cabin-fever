@@ -74,7 +74,6 @@ class StormGame extends BaseGame {
   constructor(room, push) {
     super(room, push);
     this.doubleFinal = false; // points come from winning, not from rounds
-    this.noPaceVotes = true;
     const ids = this.rng.shuffle(this.playerIds());
     const deck = this.rng.shuffle(roleDeck(ids.length));
     /** @type {Map<string, RoleId>} */

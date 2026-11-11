@@ -40,6 +40,11 @@ function makeRng(seed) {
       for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(next() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
       return out;
     },
+    /** Shuffle the array itself and return it. @template T @param {T[]} arr @returns {T[]} */
+    shuffleIn: (arr) => {
+      for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(next() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+      return arr;
+    },
     /** True with probability p. @param {number} p */
     chance: (p) => next() < p,
     /** A child generator (its own stream, still fixed by this seed). */

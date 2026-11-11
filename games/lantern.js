@@ -105,7 +105,7 @@ class LanternGame extends BaseGame {
     this.out = new Set();
     /** @type {(Body & { last: string | null })[]} */
     this.ducks = [];
-    this.noPaceVotes = true;
+    this.realtime = true; // phones vote to end a round (games/flow.js), not to hurry answers
     /** @type {SceneId} */
     this.scene = 'fireflies';
     /** @type {string[]} boat order (frames refer to boats by index) */

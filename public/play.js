@@ -130,6 +130,8 @@ reactBar.addEventListener('click', (e) => {
 
 /** @type {{ playerId: string } | null} */
 let me = null;
+/** The seat this tab holds right now (code + key), for reconnecting as the same player. @type {{ code: string, token: string } | null} */
+let mySeat = null;
 // The browser build asks before reloading for an update (web/offline.js): not once you have a seat.
 /** @type {any} */ (window).cfBusy = () => !!me;
 /** Latest room:stateUpdate from the server (plain JSON, shape varies by game). @type {any} */
@@ -198,18 +200,21 @@ if (seatParam) {
 nickInput.value = store('rumpus.nick') || '';
 if (codeInput.value && !nickInput.value) setTimeout(() => nickInput.focus(), 50);
 
-joinForm.addEventListener('submit', (e) => {
-  e.preventDefault();
+/** Ask for a seat. `takeover`: "that name is me" — move my seat here from wherever it is open
+ * (a private window or another browser has no saved seat to show for it). @param {boolean} [takeover] */
+function askToJoin(takeover) {
   joinError.textContent = '';
   store('rumpus.nick', nickInput.value.trim());
   joinBtn.disabled = true;
   joinBtn.textContent = 'Joining…';
   socket.emit('player:joinRoom', {
     code: codeInput.value, nickname: nickInput.value, avatar: myAvatar, device: DEVICE,
-    look: avatarMode === 'make' ? myLook : undefined,
+    look: avatarMode === 'make' ? myLook : undefined, ...(takeover ? { takeover: true } : {}),
   });
   void keepAwake();
-});
+}
+joinForm.addEventListener('submit', (e) => { e.preventDefault(); askToJoin(); });
+joinError.addEventListener('click', (e) => { if (hit(e.target, '[data-thats-me]')) askToJoin(true); });
 const joinBtn = /** @type {HTMLButtonElement} */ (joinForm.querySelector('button[type="submit"]'));
 const resetJoinBtn = () => { joinBtn.disabled = false; joinBtn.textContent = 'Join'; };
 
@@ -233,21 +238,29 @@ socket.on('connect', () => {
   if (lostTimer) { clearTimeout(lostTimer); lostTimer = null; }
   banner.hidden = true;
   setConn('ok');
-  const seat = store('rumpus.seat');
+  // This tab's own seat first (two tabs of one browser share the saved one: each must come back as itself).
+  const seat = mySeat || store('rumpus.seat');
   if (ended) return;
   if (seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
 });
 // Browser build: the TV saw this phone's direct link come back after a nap — re-take the seat.
 socket.on('net:resync', () => {
-  const seat = store('rumpus.seat');
+  const seat = mySeat || store('rumpus.seat');
   if (!ended && seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
 });
 socket.on('player:rejoinFailed', () => {
+  mySeat = null;
   store('rumpus.seat', null);
   resetJoinBtn();
   showJoin();
 });
-socket.on('player:joinError', (/** @type {any} */ msg) => { resetJoinBtn(); joinError.textContent = msg.reason || 'Could not join.'; });
+socket.on('player:joinError', (/** @type {any} */ msg) => {
+  resetJoinBtn();
+  joinError.textContent = msg.reason || 'Could not join.';
+  // The name is in use by someone who is connected. If that's this person on another browser or
+  // tab, one tap moves the seat here (the other screen is told).
+  if (msg.taken) joinError.insertAdjacentHTML('beforeend', ' <button type="button" class="ghost-btn" data-thats-me>That\'s me — play here</button>');
+});
 // This seat was opened in another tab or window: that one plays now; this one can take it back.
 socket.on('player:replaced', () => {
   ended = true;
@@ -312,7 +325,8 @@ document.addEventListener('pointerdown', () => { if (me && !ended) void keepAwak
 socket.on('player:joined', (/** @type {any} */ msg) => {
   resetJoinBtn();
   me = { playerId: msg.playerId };
-  store('rumpus.seat', { code: msg.roomState.code, token: msg.token });
+  mySeat = { code: msg.roomState.code, token: msg.token };
+  store('rumpus.seat', mySeat);
   joinView.hidden = true;
   gameView.hidden = false;
   leaveBtn.hidden = false;
@@ -568,6 +582,7 @@ const paceBar = /** @type {HTMLElement} */ (document.getElementById('pace-bar'))
 const PACE = {
   skipq: { label: '🔄 Skip this question', done: 'Voted to skip' },
   hurry: { label: '⏩ Hurry them up', done: 'Voted to hurry' },
+  wrap: { label: '⏭ End this round', done: 'Voted to end it' },
   ready: { label: '▶ Next', done: 'Ready' },
 };
 function renderPace() {

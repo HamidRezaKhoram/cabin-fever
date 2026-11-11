@@ -124,7 +124,7 @@ class LoonCallGame extends BaseGame {
   constructor(room, push) {
     super(room, push);
     this.totalRounds = Math.min(3, this.rounds(3));
-    this.noPaceVotes = true;
+    this.realtime = true; // phones vote to end a round (games/flow.js), not to hurry answers
     /** @type {Map<string, number>} per-phone delay from the tune-up */
     this.calib = new Map();
     /** @type {Schedule | null} */

@@ -210,6 +210,29 @@ async function check(name, fn) {
     await idle.close();
   });
 
+  await check('the TV page reloads: same room code, everyone keeps their seat, phones find it again by themselves', async () => {
+    // (The offline check above opened a third phone tab, which took one of these seats for a moment:
+    // that phone says "playing in another tab" — take the seat back first.)
+    for (const p of phones) if (await p.isVisible('[data-takeback]')) await p.click('[data-takeback]');
+    await tv.waitForFunction(() => new Function('return state')().players.every((p) => p.connected), null, { timeout: 15000 });
+    const before = await tv.evaluate(() => ({ code: (document.getElementById('room-code') || {}).textContent, n: new Function('return state')().players.length }));
+    assert.match(before.code, /^[A-Z]{4}$/);
+    assert.ok(before.n >= 2, `players in the room (${before.n})`);
+    // A game is running (the round played above): the reload interrupts it, and the page asks "leave?" first.
+    assert.ok(!['lobby', 'gameover'].includes(await tv.evaluate(() => new Function('return state')().phase)), 'mid-game');
+    tv.once('dialog', (d) => d.accept());
+    await tv.reload();
+    await tv.waitForFunction(() => !!window.Rumpus && new Function('return state')() && new Function('return state')().code, null, { timeout: 20000 });
+    await tv.click('#start-overlay').catch(() => {});
+    const after = await tv.evaluate(() => { const st = new Function('return state')(); return { code: st.code, phase: st.phase, names: st.players.map((p) => p.nickname).sort() }; });
+    assert.strictEqual(after.code, before.code, 'same room code');
+    assert.strictEqual(after.phase, 'lobby', 'back in the lobby (the game in progress is not kept)');
+    assert.strictEqual(after.names.length, before.n, 'every seat kept');
+    // The phones reconnect on their own and are the same players.
+    await tv.waitForFunction((n) => new Function('return state')().players.filter((p) => p.connected).length === n, before.n, { timeout: 30000 });
+    await phones[0].waitForFunction(() => /You're in|Waiting|picking a game/i.test(document.getElementById('game-view').textContent || ''), null, { timeout: 15000 });
+  });
+
   await check('the fast WebRTC channel: unordered, never retransmitted, and it carries messages between two browsers\' ends', async () => {
     // Two real RTCPeerConnections in the TV page, joined by hand (no broker), the way PeerJS joins a
     // phone and the TV: one normal channel first, then our negotiated fast channel on both ends.

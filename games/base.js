@@ -8,25 +8,10 @@ const house = require('./house');
 
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const flow = require('./flow');
 const { makeRng, newSeed } = require('./rng');
 
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
-
-/** Shuffle in place (crypto-random) and return the same array. @template T @param {T[]} arr @returns {T[]} */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-/** @template T @param {T[]} arr @returns {T} */
-function pick(arr) {
-  return arr[crypto.randomInt(arr.length)];
-}
 
 // Merge a built-in list with an optional content/<name>.json array, so people
 // can add their own prompts without rebuilding the image (mount ./content).
@@ -230,4 +215,4 @@ class BaseGame {
   }
 }
 
-module.exports = { BaseGame, shuffle, pick, loadContent, cleanText, guarded };
+module.exports = { BaseGame, loadContent, cleanText, guarded };

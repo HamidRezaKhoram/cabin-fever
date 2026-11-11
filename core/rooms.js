@@ -8,6 +8,8 @@
 'use strict';
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const library = require('../games/library');
 const flow = require('../games/flow');
 const { cleanLook, LOOK_PARTS } = require('../games/avatar-schema');
@@ -41,6 +43,99 @@ const GAME_LIST = Object.values(GAMES).map((G) => G.meta);
 // ---------------------------------------------------------------------------
 
 const rooms = new Map(); // code -> room
+
+// --- rooms survive a restart ---------------------------------------------------------------
+// The room itself (code, players and their seats, scores, settings, game-night standings) is saved
+// as it changes and restored at start-up: a TV page reload (browser build — the server IS that
+// page), or a container restart (Docker), keeps everyone's seat. Phones find the room again by
+// themselves. The game in progress is not saved: the room comes back in the lobby and the TV says
+// which game was interrupted. (Through `fs`: a file in Docker, localStorage in the browser build.)
+const ROOMS_FILE = path.join(process.env.RUMPUS_DATA_DIR || path.join(__dirname, '..', 'data'), 'rooms.json');
+// A second TV tab in the same browser must not adopt the first tab's live room (web/host-entry.js).
+const SAVE_ROOMS = process.env.RUMPUS_ROOMS_SAVE !== '0' && !(/** @type {any} */ (globalThis).CF_SECOND_TAB);
+/** A saved room older than this is forgotten (nobody is coming back to it). */
+const ROOM_KEEP_MS = parseInt(process.env.RUMPUS_ROOM_KEEP_MS || '1800000', 10);
+/** @type {ReturnType<typeof setTimeout> | null} */
+let roomsTimer = null;
+let roomsSaved = '';
+
+/** @param {Room} room */
+function snapshot(room) {
+  const g = room.game;
+  return {
+    code: room.code, hostToken: room.hostToken, settings: room.settings, highlights: room.highlights || [],
+    players: [...room.players.values()].filter((p) => !p.bot).map((p) => ({
+      id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null,
+    })),
+    night: room.night ? { total: room.night.total, played: room.night.played, points: [...room.night.points] } : null,
+    // A real game was on (not the lobby, a finished game or the game-night vote).
+    interrupted: g && !(g instanceof NightGame) && g.phase !== 'gameover' ? /** @type {any} */ (g.constructor).meta.name : room.interrupted || null,
+  };
+}
+function writeRooms() {
+  roomsTimer = null;
+  if (!SAVE_ROOMS) return;
+  const list = [...rooms.values()].filter((r) => !r.closed).map(snapshot);
+  const json = JSON.stringify(list);
+  if (json === roomsSaved) return;
+  roomsSaved = json;
+  try {
+    fs.mkdirSync(path.dirname(ROOMS_FILE), { recursive: true });
+    fs.writeFileSync(ROOMS_FILE + '.tmp', JSON.stringify({ savedAt: Date.now(), rooms: list }));
+    fs.renameSync(ROOMS_FILE + '.tmp', ROOMS_FILE);
+  } catch (e) { /* read-only data folder: rooms just won't survive a restart */ }
+}
+/** Save soon (many changes in a burst become one write). */
+function saveRooms() {
+  if (!SAVE_ROOMS || roomsTimer) return;
+  roomsTimer = setTimeout(writeRooms, 400);
+  if (roomsTimer.unref) roomsTimer.unref();
+}
+/** Shutting down: write now. */
+function flushRooms() { if (roomsTimer) clearTimeout(roomsTimer); writeRooms(); }
+
+/** Bring saved rooms back: everyone is "away" until their phone (and the TV) reconnects. */
+function restoreRooms() {
+  if (!SAVE_ROOMS) return;
+  /** @type {any} */
+  let saved = null;
+  try { saved = JSON.parse(fs.readFileSync(ROOMS_FILE, 'utf8')); } catch (e) { return; }
+  if (!saved || !Array.isArray(saved.rooms) || Date.now() - Number(saved.savedAt) > ROOM_KEEP_MS) return;
+  for (const s of saved.rooms) {
+    if (!s || typeof s.code !== 'string' || !/^[A-Z]{4}$/.test(s.code) || typeof s.hostToken !== 'string' || rooms.has(s.code)) continue;
+    /** @type {Room} */
+    const room = {
+      code: s.code, hostToken: s.hostToken, hostSocket: null, players: new Map(), game: null, closed: false,
+      settings: { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en', ...(s.settings || {}) },
+      pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set(), wrap: new Set() },
+      highlights: Array.isArray(s.highlights) ? s.highlights : [],
+      interrupted: typeof s.interrupted === 'string' ? s.interrupted : null,
+    };
+    for (const sp of Array.isArray(s.players) ? s.players.slice(0, MAX_PLAYERS) : []) {
+      if (!sp || typeof sp.id !== 'string' || typeof sp.token !== 'string' || typeof sp.nickname !== 'string') continue;
+      /** @type {Player} */
+      const p = {
+        id: sp.id, token: sp.token, nickname: sp.nickname, score: Number(sp.score) || 0, connected: false,
+        avatar: Number.isInteger(sp.avatar) ? sp.avatar : 0, device: cleanDevice(sp.device),
+        // Nobody is connected yet: a stand-in socket until the phone is back.
+        socket: /** @type {any} */ ({ connected: false, data: {}, emit() {}, disconnect() {} }),
+      };
+      const look = cleanLook(sp.look);
+      if (look) p.look = look;
+      if (sp.team === 'red' || sp.team === 'blue') p.team = sp.team;
+      p.dropTimer = setTimeout(() => removePlayer(room, p.id), PLAYER_GRACE_MS);
+      if (p.dropTimer.unref) p.dropTimer.unref();
+      room.players.set(p.id, p);
+    }
+    if (s.night && Array.isArray(s.night.played) && s.night.played.length < Number(s.night.total)) {
+      room.night = { total: Number(s.night.total), played: s.night.played.filter((/** @type {unknown} */ x) => typeof x === 'string'), points: new Map(Array.isArray(s.night.points) ? s.night.points : []), timer: null };
+    }
+    room.closeTimer = setTimeout(() => closeRoom(room), HOST_GRACE_MS);
+    if (room.closeTimer.unref) room.closeTimer.unref();
+    rooms.set(room.code, room);
+    console.log(`[room ${room.code}] restored (${room.players.size} seats kept${room.interrupted ? `, "${room.interrupted}" was interrupted` : ''})`);
+  }
+}
 
 function makeRoomCode() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I/O — easier to read off a TV
@@ -114,12 +209,12 @@ function paceKey(game) {
 /** @param {Room} room */
 function paceState(room) {
   const key = paceKey(room.game);
-  if (room.pace.key !== key) room.pace = { key, ready: new Set(), hurry: new Set(), skipq: new Set() };
+  if (room.pace.key !== key) room.pace = { key, ready: new Set(), hurry: new Set(), skipq: new Set(), wrap: new Set() };
   const connected = [...room.players.values()].filter((p) => p.connected).length;
   return {
     allowed: flow.allowedVotes(room.game),
     need: Math.floor(connected / 2) + 1,
-    counts: { ready: room.pace.ready.size, hurry: room.pace.hurry.size, skipq: room.pace.skipq.size },
+    counts: { ready: room.pace.ready.size, hurry: room.pace.hurry.size, skipq: room.pace.skipq.size, wrap: room.pace.wrap.size },
   };
 }
 
@@ -163,6 +258,7 @@ function flush(room) {
     else sendState(p.socket, playerPayload(room, p, base));
   }
   if (room.hostSocket && room.hostSocket.connected) sendState(room.hostSocket, hostPayload(room, base));
+  saveRooms();
 }
 
 /** The part of the state every screen shares. @param {Room} room */
@@ -194,7 +290,7 @@ function playerPayload(room, p, base = baseState(room)) {
   return {
     ...shared,
     gameState: view.gameState,
-    you: { playerId: p.id, nickname: p.nickname, paceVotes: /** @type {('ready' | 'hurry' | 'skipq')[]} */ (['ready', 'hurry', 'skipq']).filter((k) => room.pace[k].has(p.id)), ...view.you },
+    you: { playerId: p.id, nickname: p.nickname, paceVotes: /** @type {('ready' | 'hurry' | 'skipq' | 'wrap')[]} */ (['ready', 'hurry', 'skipq', 'wrap']).filter((k) => room.pace[k].has(p.id)), ...view.you },
   };
 }
 
@@ -287,6 +383,7 @@ function closeRoom(room) {
     }
   }
   rooms.delete(room.code);
+  saveRooms();
   console.log(`[room ${room.code}] closed`);
 }
 
@@ -364,6 +461,12 @@ function attachHost(room, socket) {
   socket.data.role = 'host';
   socket.data.room = room;
   socket.emit('host:roomCreated', { code: room.code, hostToken: room.hostToken });
+  // Back after a restart: say what was lost, and pick a game night up where it stopped.
+  if (room.interrupted) {
+    socket.emit('room:event', { type: 'interrupted', game: room.interrupted });
+    room.interrupted = null;
+    if (room.night && !room.game) nightVote(room, false);
+  }
   broadcast(room);
 }
 
@@ -437,7 +540,7 @@ function connection(socket) {
       game: null,
       closed: false,
       settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false', teams: false, lang: process.env.RUMPUS_LANG === 'fr' ? 'fr' : 'en' },
-      pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set() },
+      pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set(), wrap: new Set() },
     };
     rooms.set(code, room);
     console.log(`[room ${code}] created`);
@@ -561,13 +664,14 @@ function connection(socket) {
     const existing = [...room.players.values()].find((p) => p.nickname.toLowerCase() === nickname.toLowerCase());
     if (existing) {
       // Same name while that seat is offline = probably the same person on a
-      // new browser/cleared storage. Let them reclaim it.
-      if (!existing.connected) {
+      // new browser/cleared storage. Let them reclaim it. (While it's online they must say so:
+      // "That's me" on the phone — a private window or another browser has no saved seat.)
+      if (!existing.connected || (msg.takeover === true && !existing.bot)) {
         console.log(`[room ${room.code}] ${nickname} reclaimed seat by name`);
         if (device) existing.device = device;
         return void attachPlayer(room, existing, socket);
       }
-      return void socket.emit('player:joinError', { reason: 'That nickname is taken.' });
+      return void socket.emit('player:joinError', { reason: 'That nickname is taken.', taken: !existing.bot });
     }
     if (roomPhase(room) !== 'lobby' && roomPhase(room) !== 'gameover') {
       return void socket.emit('player:joinError', { reason: 'Game in progress — join when this one ends.' });
@@ -604,7 +708,7 @@ function connection(socket) {
     attachPlayer(room, p, socket);
   });
 
-  // Majority vote from phones: hurry / ready / skipq.
+  // Majority vote from phones: hurry / wrap / ready / skipq (games/flow.js says which fit right now).
   socket.on('player:vote', (msg) => {
     const room = socket.data.room;
     if (!room || socket.data.role !== 'player' || room.closed || !room.game) return;
@@ -619,6 +723,7 @@ function connection(socket) {
       const tellHost = (/** @type {string} */ type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
       if (kind === 'ready') { tellHost('ready'); game.skip(); }
       else if (kind === 'hurry') { if (flow.hurry(game)) tellHost('hurry'); }
+      else if (kind === 'wrap') { tellHost('wrap'); game.skip(); }
       else if (kind === 'skipq') {
         if (game.poolName && game.item && game.item.id) library.recordSkip(game.poolName, game.item.id); // retire it
         tellHost('skipped');
@@ -720,4 +825,6 @@ function connection(socket) {
   });
 }
 
-module.exports = { connection, rooms, hostPayload, playerPayload, GAME_LIST, GAMES, DEBUG };
+restoreRooms();
+
+module.exports = { connection, rooms, hostPayload, playerPayload, flushRooms, GAME_LIST, GAMES, DEBUG };
