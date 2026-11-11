@@ -131,7 +131,9 @@ class CrushGame extends BaseGame {
   /** @param {string} id @param {Record<string, any>} payload */
   sideAction(id, payload) {
     if (!['cr-mingle', 'cr-reply', 'cr-pick'].includes(this.phase)) return;
-    const pair = /** @type {unknown[]} */ (payload.setup || payload.predict).map(String);
+    const raw = payload.setup || payload.predict;
+    if (!Array.isArray(raw)) return;
+    const pair = raw.slice(0, 3).map(String);
     const [a, b] = pair;
     if (pair.length !== 2 || !a || !b || a === b || !this.room.players.has(a) || !this.room.players.has(b)) return;
     const ag = this.agendas.get(id);
@@ -236,12 +238,12 @@ class CrushGame extends BaseGame {
   }
 
   hostView() {
-    /** @type {Record<string, number>} admirers: notes received (never their content) */
-    const admirers = {};
-    for (const n of this.notes) admirers[this.nick(n.to)] = (admirers[this.nick(n.to)] || 0) + 1;
+    /** @type {Map<string, number>} admirers: notes received (never their content) */
+    const admirers = new Map();
+    for (const n of this.notes) admirers.set(this.nick(n.to), (admirers.get(this.nick(n.to)) || 0) + 1);
     return {
       evening: this.round,
-      admirers: Object.entries(admirers).map(([nickname, count]) => ({ nickname, count })).sort((x, y) => y.count - x.count),
+      admirers: [...admirers].map(([nickname, count]) => ({ nickname, count })).sort((x, y) => y.count - x.count),
       notesSent: this.notes.length,
       winks: this.winks.size,
       repliesSent: this.notes.filter((n) => n.reply).length,

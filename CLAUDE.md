@@ -95,12 +95,38 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - CLI: `./scripts/bots.sh CODE [count] [speed] [url]` joins bot phones to a real room over the LAN.
 - Pacing report: `GAMES=trivia PLAYERS=6 node test/playtest.js` (in the node container).
 
+## Connection, randomness, feel (Nov 2026 playtest fixes)
+
+- **Seats follow the phone**: `play.js` keeps a device id (`cf.device`, localStorage; per tab only
+  with `?net=local`). Join/rejoin with it returns the same player from any tab; the old tab gets
+  `player:replaced`. Seats are held 30 min (`PLAYER_GRACE_MS`); the TV can kick (✕ in the lobby).
+- **Broadcasts are coalesced** (`core/rooms.js` `broadcast` → `flush`, ≤1 per `RUMPUS_BROADCAST_MS`=30 ms)
+  and a socket whose view didn't change gets nothing. Tests must wait for state (`until`), never
+  assume an update arrives synchronously. `player:submit` is acked `{ok}` (phones show "Sending…").
+- **Speed**: phones get no `availableGames` (TV only) and send a `k` keep-warm every 200 ms in a
+  game (Wi-Fi power save). `test/unit/load.test.js` is the budget (tap storm, 60/s tilt, reconnect
+  storm; `LOAD_REPORT=1` prints numbers); `scripts/load-harsh.sh` reruns it on bad Wi-Fi and a ¼-CPU
+  server. Research and numbers: `docs/design/networking.md`.
+- **Browser build links** (`web/net.js`): 2 s heartbeat; silent 7 s = asleep; the TV keeps a phone's
+  WebRTC link 45 s so a short nap resumes without the broker (`net:resync`). JSON serialization.
+- **Offline after first load** (`web/offline.js` + `sw-template.js`): the TV shows a progress bar
+  while every game file is saved, then music + voice save in the background; phones save their
+  own files. `test/ui/pages.js` reloads both pages with the network off.
+- **Every random choice in a game comes from `this.rng`** (`games/rng.js`, seeded per game,
+  `RUMPUS_SEED` replays one) and stays inside set bounds (`rng.int(lo, hi)`, `rng.range`).
+- **Feel**: `Rumpus.haptic(ms | pattern)` on every tap (Android vibrate, iPhone switch-tick). Phones
+  can't pinch/double-tap zoom or select text; the status line under the header always says what's
+  happening; timers use server time (`Rumpus.time.now()`), never `Date.now()`.
+
 ## Screen layout (10-foot UI)
 
 - Design against 1080p and size relative to screen height: body ≥ 3.2vh (~35px), secondary ≥ 2.6vh,
   never below 28px on the TV. Few elements, big, centred vertically during play.
 - Main prompts/answers get `data-fit` and are grown by `Rumpus.fit()` to fill their box.
 - A browser test asserts the TV prompt is ≥ 5% of the screen height.
+- **The TV never scrolls in a game**: `host.js` `shrinkToStage()` zooms the screen's content down
+  to fit; the snapshot test renders every recorded screen (bots play with 8 players) and fails on
+  any overflow.
 
 ## Music
 

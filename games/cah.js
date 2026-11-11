@@ -9,6 +9,7 @@
 'use strict';
 
 const house = require('./house');
+const { guarded } = require('./base');
 
 const stats = require('./stats');
 
@@ -98,7 +99,7 @@ class CAHGame {
     this.timerFn = fn;
     this.timer = setTimeout(() => {
       this.timerFn = null;
-      if (!this.destroyed) fn();
+      if (!this.destroyed) guarded(fn, 'cah timer');
     }, ms);
   }
 

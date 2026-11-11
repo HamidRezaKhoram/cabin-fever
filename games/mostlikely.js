@@ -47,7 +47,7 @@ class MostLikelyGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
-    this.totalRounds = this.rounds(6);
+    this.totalRounds = this.rounds(10);
     this.prompt = '';
     this.spicyRound = false;
     /** @type {Map<string, string>} voter → target */

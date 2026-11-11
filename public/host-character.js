@@ -70,10 +70,16 @@
       pending.set(id, (r) => {
         clearTimeout(timer);
         if (!r.samples || !r.rate) { done(false); return; }
-        const a = new Audio(wavUrl(r.samples, r.rate));
+        const src = wavUrl(r.samples, r.rate);
+        const a = new Audio(src);
+        // Each line is a fresh WAV in memory: release it once it's done (a night is hundreds of lines).
+        const free = () => URL.revokeObjectURL(src);
+        a.addEventListener('ended', free, { once: true });
+        a.addEventListener('error', free, { once: true });
+        a.addEventListener('pause', () => { if (a !== voice) free(); });
         if (voice) voice.pause();
         voice = a;
-        a.play().then(() => done(true), () => done(false));
+        a.play().then(() => done(true), () => { free(); done(false); });
       });
       /** @type {Worker} */ (worker).postMessage({ id, text: t, voice: voiceId });
     });

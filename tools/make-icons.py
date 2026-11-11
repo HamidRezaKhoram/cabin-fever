@@ -261,21 +261,10 @@ def storm() -> Canvas:                 # a cottage under a storm cloud, a raccoo
     c.rect(20, 23, 7, 2, 'G'); c.rect(26, 22, 2, 1, 'C')                                      # body, ringed tail
     c.outline(); return c
 
-def wizards() -> Canvas:               # two wizards casting over a campfire
-    c = Canvas(32, 26)
-    c.rect(0, 22, 32, 4, 'F')                                    # grass
-    c.rect(12, 19, 8, 2, 'B'); c.tri([(13, 19), (19, 19), (16, 11)], 'O'); c.tri([(14, 19), (18, 19), (16, 14)], 'Y')  # fire
-    for cx, hat in ((5, 'M'), (27, 'U')):
-        c.tri([(cx - 3, 9), (cx + 3, 9), (cx, 2)], hat); c.set(cx, 4, 'Y')                    # pointy hat + star
-        c.disc(cx, 11, 2.2, 'Z'); c.rect(cx - 3, 13, 7, 8, hat)                               # face, robe
-    c.line(8, 15, 11, 12, 'B'); c.line(24, 15, 21, 12, 'B')                                    # wands
-    for x, y in ((12, 10), (13, 8), (20, 10), (19, 8), (16, 6)): c.set(x, y, 'Y')              # sparks
-    c.outline(); return c
-
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
-    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'lantern': lantern, 'storm': storm, 'wizards': wizards, 'crush': crush,
+    'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'lantern': lantern, 'storm': storm, 'crush': crush,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

@@ -8,6 +8,7 @@
 'use strict';
 
 const house = require('./house');
+const { guarded } = require('./base');
 
 const crypto = require('crypto');
 const { QUESTIONS } = require('./data/trivia-questions');
@@ -74,6 +75,8 @@ class TriviaGame {
     /** @type {Set<string>} */
     this.usedCategories = new Set();
     this.categoryAuto = false;
+    /** @type {Set<string>} franchises/titles already asked about this game */
+    this.usedTopics = new Set();
     this.skipSeq = 0;
     this.poolName = 'trivia';
     /** @type {TriviaQ | null} */
@@ -101,7 +104,7 @@ class TriviaGame {
     this.timerFn = fn;
     this.timer = setTimeout(() => {
       this.timerFn = null;
-      if (!this.destroyed) fn();
+      if (!this.destroyed) guarded(fn, 'trivia timer');
     }, ms);
   }
 
@@ -191,9 +194,14 @@ class TriviaGame {
     this.round += 1;
     const spicy = this.spicy();
     const cat = this.category;
-    this.question = /** @type {TriviaQ} */ (/** @type {unknown} */ ((cat && library.drawOne('trivia', { spicy, filter: (/** @type {PoolItem} */ q) => q.cat === cat }))
+    // Never two questions on the same franchise/title in one game (the pool tags them by topic).
+    const fresh = (/** @type {PoolItem} */ q) => !q.topic || !this.usedTopics.has(String(q.topic));
+    this.question = /** @type {TriviaQ} */ (/** @type {unknown} */ ((cat && library.drawOne('trivia', { spicy, filter: (/** @type {PoolItem} */ q) => q.cat === cat && fresh(q) }))
+      || library.drawOne('trivia', { spicy, filter: fresh })
       || library.drawOne('trivia', { spicy })
       || QUESTIONS[this.round % QUESTIONS.length]));
+    const tp = /** @type {any} */ (this.question).topic;
+    if (tp) this.usedTopics.add(String(tp));
     this.segmentLeft -= 1;
     this.poolName = 'trivia';
     this.item = this.question;

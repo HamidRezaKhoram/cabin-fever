@@ -16,6 +16,7 @@
 'use strict';
 
 const house = require('./house');
+const { guarded } = require('./base');
 
 const stats = require('./stats');
 
@@ -24,9 +25,9 @@ const { QUESTIONS } = require('./data/fibbage-questions');
 const library = require('./library');
 const flow = require('./flow');
 
-const BLUFF_MS = parseInt(process.env.RUMPUS_FIB_BLUFF_MS || '45000', 10);
+const BLUFF_MS = parseInt(process.env.RUMPUS_FIB_BLUFF_MS || '40000', 10);
 const CHOOSE_MS = parseInt(process.env.RUMPUS_FIB_CHOOSE_MS || '30000', 10);
-const REVEAL_MS = parseInt(process.env.RUMPUS_FIB_REVEAL_MS || '10000', 10);
+const REVEAL_MS = parseInt(process.env.RUMPUS_FIB_REVEAL_MS || '8000', 10);
 const TOTAL_ROUNDS = parseInt(process.env.RUMPUS_FIB_ROUNDS || '5', 10);
 const TRUTH_POINTS = 1000; // for finding the real answer
 const FOOL_POINTS = 500;   // per player your lie fools
@@ -107,7 +108,7 @@ class FibbageGame {
     this.timerFn = fn;
     this.timer = setTimeout(() => {
       this.timerFn = null;
-      if (!this.destroyed) fn();
+      if (!this.destroyed) guarded(fn, 'fibbage timer');
     }, ms);
   }
 

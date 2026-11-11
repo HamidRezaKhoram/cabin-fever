@@ -20,7 +20,7 @@ const FALLBACK = ([
 ]);
 
 const WRITE_MS = parseInt(process.env.RUMPUS_TEL_WRITE_MS || '45000', 10);
-const DRAW_MS = parseInt(process.env.RUMPUS_TEL_DRAW_MS || '60000', 10); // playtest: 80 s left the fast drawers idle
+const DRAW_MS = parseInt(process.env.RUMPUS_TEL_DRAW_MS || '45000', 10); // playtests: 80 s, then 60 s, left the fast drawers idle
 const DESCRIBE_MS = parseInt(process.env.RUMPUS_TEL_DESCRIBE_MS || '40000', 10);
 const ENTRY_SHOW_MS = parseInt(process.env.RUMPUS_TEL_ENTRY_MS || '3500', 10);
 const VOTE_MS = parseInt(process.env.RUMPUS_TEL_VOTE_MS || '30000', 10);

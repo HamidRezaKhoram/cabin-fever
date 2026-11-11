@@ -30,8 +30,9 @@ const { rooms, hostPayload, playerPayload, GAME_LIST } = core;
 
 const app = express();
 const server = http.createServer(app);
-// Drawings travel as data URLs; allow up to 2 MB per message.
-const io = new Server(server, { maxHttpBufferSize: 2e6, pingInterval: 10000, pingTimeout: 8000 });
+// Drawings travel as data URLs; allow up to 2 MB per message. Short pings: a phone that fell
+// asleep is noticed in ~10 s and its seat waits for it (core/rooms.js).
+const io = new Server(server, { maxHttpBufferSize: 2e6, pingInterval: 5000, pingTimeout: 5000 });
 
 app.get('/', (req, res) => res.redirect('/play'));
 app.get('/host', (req, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
@@ -56,6 +57,15 @@ function lanAddresses() {
 // Debug only (RUMPUS_DEBUG=1): the exact payloads the TV and each phone (bots included) would get
 // right now. The bots test records these as screen snapshots; the browser test renders them all.
 if (DEBUG) {
+  // How busy the server is: event-loop delay (how late timers and messages get handled) + memory.
+  const loop = require('perf_hooks').monitorEventLoopDelay({ resolution: 5 });
+  loop.enable();
+  app.get('/api/debug/perf', (/** @type {any} */ req, /** @type {any} */ res) => {
+    const ms = (/** @type {number} */ ns) => Math.round(ns / 1e4) / 100;
+    const out = { loopP50: ms(loop.percentile(50)), loopP99: ms(loop.percentile(99)), loopMax: ms(loop.max), rssMb: Math.round(process.memoryUsage().rss / 1048576) };
+    if (req.query.reset) loop.reset();
+    res.json(out);
+  });
   app.get('/api/debug/views', (/** @type {any} */ req, /** @type {any} */ res) => {
     const room = rooms.get(String(req.query.room || '').toUpperCase());
     if (!room) return res.status(404).json({ error: 'no room' });
@@ -135,25 +145,43 @@ app.post('/api/admin/content/:pool/:id/disabled', (/** @type {any} */ req, /** @
 app.delete('/api/admin/content/:pool/:id', (/** @type {any} */ req, /** @type {any} */ res) => reply(res, admin.removeContent(String(req.params.pool), String(req.params.id))));
 
 // Narrator: text → WAV with espeak-ng (installed in the container; fully offline).
+/** @type {Map<string, Buffer>} */
 const ttsCache = new Map();
+const TTS_CACHE_BYTES = 24 * 1024 * 1024;
+let ttsBytes = 0;
+let ttsBusy = 0;
 app.get('/api/tts', (/** @type {any} */ req, /** @type {any} */ res) => {
   const text = String(req.query.text || '').replace(/[^\p{L}\p{N}\p{P}\p{Zs}]/gu, '').trim().slice(0, 240);
   if (!text) { res.status(400).end(); return; }
   const cacheKey = (req.query.lang === 'fr' ? 'fr:' : 'en:') + text;
   if (ttsCache.has(cacheKey)) { res.type('audio/wav').send(ttsCache.get(cacheKey)); return; }
+  // Only a few voices render at once (each is a process); the TV only ever wants the next line.
+  if (ttsBusy >= 3) { res.status(503).end(); return; }
+  ttsBusy++;
+  let released = false;
+  const release = () => { if (!released) { released = true; ttsBusy--; } };
   /** @type {Buffer[]} */
   const chunks = [];
   // A cheery game-show voice: US English, male variant 3, a bit fast and high.
   const voice = req.query.lang === 'fr' ? 'fr+m3' : 'en-us+m3';
   const p = require('child_process').spawn('espeak-ng', ['-v', voice, '-s', '165', '-p', '60', '--stdout', text]);
-  p.on('error', () => { if (!res.headersSent) res.status(501).json({ error: 'no narrator voice installed' }); });
+  p.on('error', () => { release(); if (!res.headersSent) res.status(501).json({ error: 'no narrator voice installed' }); });
   p.stdout.on('data', (/** @type {Buffer} */ d) => chunks.push(d));
   p.on('close', (/** @type {number} */ code) => {
+    release();
     if (res.headersSent) return;
     if (code !== 0 || !chunks.length) { res.status(501).json({ error: 'narrator failed' }); return; }
     const wav = Buffer.concat(chunks);
+    const had = ttsCache.get(cacheKey);
+    if (had) ttsBytes -= had.length; // two requests for the same line raced
     ttsCache.set(cacheKey, wav);
-    if (ttsCache.size > 120) ttsCache.delete(ttsCache.keys().next().value);
+    ttsBytes += wav.length;
+    // Capped by size (a long line is ~0.5 MB of WAV): oldest out first.
+    while (ttsBytes > TTS_CACHE_BYTES && ttsCache.size > 1) {
+      const [k, v] = /** @type {[string, Buffer]} */ (ttsCache.entries().next().value);
+      ttsCache.delete(k);
+      ttsBytes -= v.length;
+    }
     res.type('audio/wav').send(wav);
   });
 });
@@ -205,5 +233,14 @@ server.listen(PORT, () => {
   for (const ip of lanAddresses()) console.log(`  LAN: http://${ip}:${port}/host`);
 });
 
-// Exit promptly on `docker stop` (node as PID 1 ignores SIGTERM by default).
-for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => process.exit(0));
+// Exit promptly on `docker stop` (node as PID 1 ignores SIGTERM by default), saving what's pending.
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.on(sig, () => {
+    try { stats.flush(); library.flush(); } catch (e) { /* exiting anyway */ }
+    process.exit(0);
+  });
+}
+// Last line of defence: socket handlers and game timers are guarded already (core/rooms.js,
+// games/base.js); anything else that slips through is logged instead of ending everyone's night.
+process.on('uncaughtException', (e) => console.error('[server] uncaught error (kept running):', e));
+process.on('unhandledRejection', (e) => console.error('[server] unhandled rejection (kept running):', e));

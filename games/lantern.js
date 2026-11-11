@@ -1,14 +1,15 @@
 /*
  * "Lantern Lake" — tilt your phone to glide a paper lantern-boat across the lake at dusk.
- * Three scenes: Firefly Catch, Moonbeam (king of the hill), Raft Run (everyone steers one raft
- * with the average of their tilts). Design: docs/design/tilt-game-plan.md.
+ * Six scenes (a game plays four, picked by its seed): Firefly Catch, Moonbeam (king of the hill),
+ * Raft Run (everyone steers one raft with the average of their tilts), Lily Pad Tag (bump to pass
+ * "it"), Shrinking Pad (stay on, bump others off) and Duckling Herding (nudge ducklings home).
+ * Design: docs/design/tilt-game-plan.md.
  * The server runs the physics at a fixed 30 Hz and streams compact frames to the TV only.
  * Original game; genre mechanics only. AGPLv3 — see LICENSE.
  */
 'use strict';
 
-const crypto = require('crypto');
-const { BaseGame } = require('./base');
+const { BaseGame, guarded } = require('./base');
 
 const env = (/** @type {string} */ k, /** @type {number} */ d) => Number(process.env[k] || d);
 const INTRO_MS = env('RUMPUS_LL_INTRO_MS', 4000);
@@ -21,19 +22,25 @@ const BOAT_R = 7, ACCEL = 0.42, FRICTION = 0.9, MAX_V = 4.2;
 const FLY_R = 4, MAX_FLIES = 6, FLY_PTS = 20, GOLD_PTS = 60;
 const MOON_R = 26, MOON_PTS_PER_S = 10;
 const RAFT_R = 14, RAFT_ACCEL = 0.3, LANTERN_PTS = 30, ROCKS = 5;
+const FREE_PTS_PER_S = 6, TAG_IMMUNE = 30;                 // tag: points while you're not "it"; no tag-backs for 1 s
+const PAD_START = 82, PAD_END = 26, PAD_PTS_PER_S = 5, PAD_SURVIVOR = 60;
+const DUCK_R = 5, DUCKS = 5, NEST_R = 20, DUCK_PTS = 40;
 
-/** @typedef {'fireflies' | 'moonbeam' | 'raft'} SceneId */
+/** @typedef {'fireflies' | 'moonbeam' | 'raft' | 'tag' | 'sumo' | 'herd'} SceneId */
 /** @type {Record<SceneId, { name: string, rule: string }>} */
 const SCENES = {
   fireflies: { name: 'Firefly Catch', rule: 'Glide into the fireflies — gold ones are worth triple!' },
   moonbeam: { name: 'Moonbeam', rule: 'Stay in the moon’s reflection. Bump the others out!' },
   raft: { name: 'Raft Run', rule: 'One raft, everyone steers. Tilt together to catch the lanterns!' },
+  tag: { name: 'Lily Pad Tag', rule: 'The glowing boat is IT. Bump someone to pass it on — points for every second you’re not it!' },
+  sumo: { name: 'Shrinking Pad', rule: 'Stay on the giant lily pad as it shrinks. Bump the others off!' },
+  herd: { name: 'Duckling Herding', rule: 'Nudge the ducklings into the nest. Last boat to touch one scores it!' },
 };
-const ORDER = /** @type {SceneId[]} */ (['fireflies', 'moonbeam', 'raft']);
+/** RUMPUS_LL_ORDER=a,b,c fixes the scenes (tests); otherwise each game picks its own. */
+const ORDER = /** @type {SceneId[]} */ ((process.env.RUMPUS_LL_ORDER || '').split(',').filter((x) => x in SCENES));
 
 /** @typedef {{ x: number, y: number, vx: number, vy: number }} Body */
 
-const rnd = () => crypto.randomInt(1e6) / 1e6;
 /** @param {number} v @param {number} lo @param {number} hi */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -82,7 +89,22 @@ class LanternGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
-    this.totalRounds = 3;
+    this.totalRounds = ORDER.length || Math.min(6, this.rounds(4));
+    /** @type {SceneId[]} this game's scenes (always one co-op raft run, the rest by seed) */
+    this.scenes = ORDER.length ? ORDER : (() => {
+      const others = this.rng.shuffle(/** @type {SceneId[]} */ (['fireflies', 'moonbeam', 'tag', 'sumo', 'herd'])).slice(0, Math.max(0, this.totalRounds - 1));
+      // The raft (everyone together) comes second-to-last: a breather before the finale.
+      others.splice(Math.max(0, others.length - 1), 0, 'raft');
+      return others;
+    })();
+    /** @type {string | null} tag: who is "it" */
+    this.it = null;
+    this.tagCooldown = 0;
+    this.pad = { x: W / 2, y: H / 2, r: PAD_START };
+    /** @type {Set<string>} sumo: who fell off */
+    this.out = new Set();
+    /** @type {(Body & { last: string | null })[]} */
+    this.ducks = [];
     this.noPaceVotes = true;
     /** @type {SceneId} */
     this.scene = 'fireflies';
@@ -116,7 +138,8 @@ class LanternGame extends BaseGame {
     this.result = null;
   }
 
-  mult() { return this.round >= 3 ? 3 : this.round === 2 ? 2 : 1; }
+  mult() { return this.totalRounds === 3 ? (this.round >= 3 ? 3 : this.round === 2 ? 2 : 1) : super.mult(); }
+  rnd() { return this.rng.next(); }
 
   destroy() { this.stopLoop(); super.destroy(); }
   stopLoop() { if (this.loop) clearInterval(this.loop); this.loop = null; }
@@ -126,7 +149,7 @@ class LanternGame extends BaseGame {
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
-    this.scene = ORDER[(this.round - 1) % ORDER.length];
+    this.scene = this.scenes[(this.round - 1) % this.scenes.length];
     this.order = this.playerIds();
     // Boats start spread around the shore.
     this.boats = new Map(this.order.map((id, i) => {
@@ -140,7 +163,12 @@ class LanternGame extends BaseGame {
     this.raft = { x: 40, y: H / 2, vx: 0, vy: 0 };
     this.raftHaul = 0;
     this.lanterns = [];
-    this.rocks = this.scene === 'raft' ? Array.from({ length: ROCKS }, (_, i) => ({ x: 90 + i * 45 + rnd() * 20, y: 25 + rnd() * (H - 50), r: 8 + rnd() * 6 })) : [];
+    this.rocks = this.scene === 'raft' ? Array.from({ length: ROCKS }, (_, i) => ({ x: 90 + i * 45 + this.rnd() * 20, y: 25 + this.rnd() * (H - 50), r: 8 + this.rnd() * 6 })) : [];
+    this.it = this.scene === 'tag' && this.order.length ? this.rng.pick(this.order) : null;
+    this.tagCooldown = TAG_IMMUNE;
+    this.pad = { x: W / 2, y: H / 2, r: PAD_START };
+    this.out = new Set();
+    this.ducks = this.scene === 'herd' ? Array.from({ length: DUCKS }, () => this.duckAtShore()) : [];
     this.result = null;
     this.phase = 'll-intro';
     this.setTimer(INTRO_MS, () => this.play(), false);
@@ -152,7 +180,7 @@ class LanternGame extends BaseGame {
     this.tickNo = 0;
     this.setTimer(PLAY_MS, () => this.finish(), false);
     this.stopLoop();
-    this.loop = setInterval(() => this.tick(), TICK_MS);
+    this.loop = setInterval(() => guarded(() => this.tick(), 'lantern tick'), TICK_MS);
     this.push();
   }
 
@@ -170,12 +198,21 @@ class LanternGame extends BaseGame {
   }
 
   spawnFly() {
-    this.flies.push({ x: 20 + rnd() * (W - 40), y: 20 + rnd() * (H - 40), gold: rnd() < 0.15, ph: rnd() * 6.28 });
+    this.flies.push({ x: 20 + this.rnd() * (W - 40), y: 20 + this.rnd() * (H - 40), gold: this.rnd() < 0.15, ph: this.rnd() * 6.28 });
+  }
+
+  /** A duckling paddling in from somewhere along the shore. */
+  duckAtShore() {
+    const side = this.rng.int(0, 3);
+    const t = this.rnd();
+    const x = side === 0 ? 12 : side === 1 ? W - 12 : 20 + t * (W - 40);
+    const y = side === 2 ? 12 : side === 3 ? H - 12 : 20 + t * (H - 40);
+    return { x, y, vx: 0, vy: 0, last: null };
   }
 
   spawnLantern() {
     for (let k = 0; k < 20; k++) {
-      const l = { x: 30 + rnd() * (W - 60), y: 20 + rnd() * (H - 40) };
+      const l = { x: 30 + this.rnd() * (W - 60), y: 20 + this.rnd() * (H - 40) };
       if (this.rocks.every((r) => Math.hypot(r.x - l.x, r.y - l.y) > r.r + 12) && Math.hypot(this.raft.x - l.x, this.raft.y - l.y) > 50) { this.lanterns.push(l); return; }
     }
   }
@@ -188,15 +225,27 @@ class LanternGame extends BaseGame {
     const zero = [0, 0];
     if (this.scene === 'raft') this.tickRaft();
     else {
-      for (const [id, b] of this.boats) stepBody(b, this.tilt.get(id) || zero, ACCEL, BOAT_R);
-      const list = [...this.boats.values()];
+      for (const [id, b] of this.boats) if (!this.out.has(id)) stepBody(b, this.tilt.get(id) || zero, ACCEL, BOAT_R);
+      const list = [...this.boats.entries()].filter(([id]) => !this.out.has(id));
+      if (this.tagCooldown > 0) this.tagCooldown--;
       for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
-        const a = list[i], b = list[j];
+        const [ia, a] = list[i], [ib, b] = list[j];
         const speed = Math.hypot(a.vx - b.vx, a.vy - b.vy);
-        if (collide(a, b, BOAT_R) && speed > 1.2) this.bumps.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        if (!collide(a, b, BOAT_R)) continue;
+        if (speed > 1.2) this.bumps.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        // Tag: touching "it" passes it on (after a second, so there are no instant tag-backs).
+        if (this.scene === 'tag' && this.tagCooldown === 0 && (ia === this.it || ib === this.it)) {
+          this.it = ia === this.it ? ib : ia;
+          this.tagCooldown = TAG_IMMUNE;
+          this.caught.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, who: this.order.indexOf(this.it), gold: false });
+          this.push();
+        }
       }
       if (this.scene === 'fireflies') this.tickFlies();
-      else this.tickMoon();
+      else if (this.scene === 'moonbeam') this.tickMoon();
+      else if (this.scene === 'tag') this.tickTag();
+      else if (this.scene === 'sumo') this.tickSumo();
+      else this.tickHerd();
     }
     this.frame(this.frameData());
   }
@@ -232,6 +281,61 @@ class LanternGame extends BaseGame {
       if (whole) this.give(id, whole);
     }
     if (this.tickNo % 15 === 0) this.push(); // scores tick up on the phones twice a second
+  }
+
+  /** Points trickle in (whole points, fractions carried) for everyone `who` says. @param {(id: string) => boolean} who @param {number} perS */
+  trickle(who, perS) {
+    for (const id of this.boats.keys()) {
+      if (!who(id)) continue;
+      const a = (this.acc.get(id) || 0) + perS / 30;
+      const whole = Math.floor(a);
+      this.acc.set(id, a - whole);
+      if (whole) this.give(id, whole);
+    }
+  }
+
+  tickTag() {
+    if (this.it && !this.room.players.has(this.it)) this.it = this.rng.pick(this.playerIds());
+    this.trickle((id) => id !== this.it, FREE_PTS_PER_S);
+    if (this.tickNo % 15 === 0) this.push();
+  }
+
+  tickSumo() {
+    // The pad shrinks from PAD_START to PAD_END over the scene; off the pad = splash (out).
+    const t = Math.min(1, (this.tickNo * TICK_MS) / PLAY_MS);
+    this.pad.r = PAD_START - (PAD_START - PAD_END) * t;
+    for (const [id, b] of this.boats) {
+      if (this.out.has(id)) continue;
+      if (Math.hypot(b.x - this.pad.x, b.y - this.pad.y) > this.pad.r + BOAT_R * 0.4) {
+        this.out.add(id);
+        this.bumps.push({ x: b.x, y: b.y });
+        this.push();
+      }
+    }
+    this.trickle((id) => !this.out.has(id), PAD_PTS_PER_S);
+    const left = [...this.boats.keys()].filter((id) => !this.out.has(id) && this.room.players.has(id));
+    if (left.length <= 1 && this.boats.size > 1) { for (const id of left) this.give(id, PAD_SURVIVOR); return this.finish(); }
+    if (this.tickNo % 15 === 0) this.push();
+  }
+
+  tickHerd() {
+    const zero = [0, 0];
+    const nest = { x: W / 2, y: H / 2 };
+    for (const d of this.ducks) {
+      // Ducklings drift a little on their own, and get pushed by boats.
+      stepBody(d, zero, 0, DUCK_R);
+      d.vx *= 0.97; d.vy *= 0.97;
+      for (const [id, b] of this.boats) {
+        if (collide(b, d, (BOAT_R + DUCK_R) / 2)) { d.last = id; d.vx += b.vx * 0.3; d.vy += b.vy * 0.3; }
+      }
+    }
+    let got = false;
+    this.ducks = this.ducks.map((d) => {
+      if (Math.hypot(d.x - nest.x, d.y - nest.y) > NEST_R) return d;
+      if (d.last) { this.give(d.last, DUCK_PTS); this.caught.push({ x: d.x, y: d.y, who: this.order.indexOf(d.last), gold: true }); got = true; }
+      return this.duckAtShore();
+    });
+    if (got || this.tickNo % 15 === 0) this.push();
   }
 
   tickRaft() {
@@ -287,6 +391,11 @@ class LanternGame extends BaseGame {
       rocks: this.rocks.map((r) => [q(r.x), q(r.y), q(r.r)]),
       lanterns: this.lanterns.map((l) => [q(l.x), q(l.y)]),
       tilts: this.order.map((id) => this.tilt.get(id) || [0, 0]),
+      it: this.scene === 'tag' && this.it ? this.order.indexOf(this.it) : -1,
+      pad: this.scene === 'sumo' ? [q(this.pad.x), q(this.pad.y), q(this.pad.r)] : null,
+      out: this.scene === 'sumo' ? this.order.map((id) => (this.out.has(id) ? 1 : 0)) : null,
+      ducks: this.ducks.map((d) => [q(d.x), q(d.y)]),
+      nest: this.scene === 'herd' ? [W / 2, H / 2, NEST_R] : null,
       bumps: this.bumps.map((b) => [q(b.x), q(b.y)]),
       caught: this.caught.map((c) => [q(c.x), q(c.y), c.who, c.gold ? 1 : 0]),
     };
@@ -330,6 +439,21 @@ class LanternGame extends BaseGame {
       const f = this.flies.reduce((a, x) => (Math.hypot(x.x - b.x, x.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? x : a));
       target = [f.x, f.y];
     } else if (this.scene === 'moonbeam') target = [this.moon.x, this.moon.y];
+    else if (this.scene === 'sumo') target = [this.pad.x, this.pad.y];
+    else if (this.scene === 'tag' && b && this.it && this.it !== id) {
+      // Run away from "it": point the arrow the other way.
+      const it = this.boats.get(this.it);
+      if (it) target = [clamp(b.x * 2 - it.x, 0, W), clamp(b.y * 2 - it.y, 0, H)];
+    } else if (this.scene === 'tag' && b && this.it === id) {
+      const others = [...this.boats.entries()].filter(([x]) => x !== id).map(([, o]) => o);
+      if (others.length) { const o = others.reduce((a, x) => (Math.hypot(x.x - b.x, x.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? x : a)); target = [o.x, o.y]; }
+    } else if (this.scene === 'herd' && b && this.ducks.length) {
+      // Get behind the nearest duckling (on the far side from the nest) and push it in.
+      const d = this.ducks.reduce((a, x) => (Math.hypot(x.x - b.x, x.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? x : a));
+      const away = Math.hypot(d.x - W / 2, d.y - H / 2) || 1;
+      const bx = d.x + ((d.x - W / 2) / away) * 12, by = d.y + ((d.y - H / 2) / away) * 12;
+      target = Math.hypot(b.x - bx, b.y - by) > 10 ? [bx, by] : [W / 2, H / 2];
+    }
     else if (this.scene === 'raft' && this.lanterns.length) {
       const r = this.raft;
       const l = this.lanterns.reduce((a, x) => (Math.hypot(x.x - r.x, x.y - r.y) < Math.hypot(a.x - r.x, a.y - r.y) ? x : a));
@@ -341,6 +465,8 @@ class LanternGame extends BaseGame {
       gameState: { ...this.sceneView(), result: this.phase === 'll-result' ? this.result : null },
       you: {
         colour: this.order.indexOf(id),
+        it: this.scene === 'tag' && this.it === id,
+        out: this.out.has(id),
         gained: this.gained.get(id) || 0,
         pos: from ? from.map((v) => Math.round(v)) : null,
         target: target ? target.map((v) => Math.round(v)) : null,
@@ -353,7 +479,7 @@ class LanternGame extends BaseGame {
 LanternGame.meta = {
   id: 'lantern',
   name: 'Lantern Lake',
-  blurb: 'Tilt your phone to glide a lantern-boat at dusk: catch fireflies, hog the moonbeam, steer one raft together.',
+  blurb: 'Tilt your phone to glide a lantern-boat at dusk: fireflies, moonbeams, tag, a shrinking lily pad, ducklings — and one raft steered together.',
   minPlayers: 2,
 };
 LanternGame.cleanTilt = cleanTilt;

@@ -75,7 +75,7 @@ SRC_LABEL = {
 def write(name: str, items: list[Item], min_count: int = 300) -> None:
     items = [it for it in items if benign(' '.join(str(it.get(k, '')) for k in ('text', 'q', 'answer', 'word')))]
     for it in items:
-        it.setdefault('id', sid(name, json.dumps({k: v for k, v in it.items() if k != 'a'}, sort_keys=True)))
+        it.setdefault('id', sid(name, json.dumps({k: v for k, v in it.items() if k not in ('a', 'topic')}, sort_keys=True)))
     adult = sum(1 for i in items if i['a'])
     (OUT / f'{name}.json').write_text(json.dumps(items, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     flag = '' if len(items) >= min_count else '   <-- below target'
@@ -300,7 +300,50 @@ try:
 except Exception:
     pass
 
-write('trivia', dedupe(trivia, lambda x: x['q']))
+# Topic diversity: a party doesn't want ten deep-cut questions about one game series. Each question
+# gets a topic (a franchise or the title it quotes); a pool keeps at most TOPIC_CAP per topic, and a
+# game never asks two questions on the same topic (games/trivia.js).
+FRANCHISES = [
+    'call of duty', 'pok[eé]mon', 'zelda', 'mario', 'minecraft', 'halo', 'final fantasy', 'sonic', 'fallout',
+    'elder scrolls', 'skyrim', 'grand theft auto', 'gta', 'overwatch', 'league of legends', 'team fortress',
+    'half-life', 'borderlands', 'kingdom hearts', 'metal gear', 'resident evil', 'street fighter',
+    'mortal kombat', 'star wars', 'harry potter', 'doctor who', 'star trek', 'lord of the rings', 'hobbit',
+    'marvel', 'simpsons', 'game of thrones', 'world of warcraft', 'warcraft', 'starcraft', 'diablo',
+    'counter-strike', 'fortnite', 'battlefield', 'tomb raider', 'kirby', 'metroid', 'donkey kong',
+    'animal crossing', 'splatter?n', 'dark souls', 'bioshock', 'mass effect', 'dota', 'tetris',
+    'pac-man', 'james bond', 'batman', 'superman', 'spider-man', 'x-men', 'avengers', 'disney', 'pixar',
+    'the sims', 'undertale', 'five nights', 'gears of war', 'uncharted', 'god of war',
+]
+FRANCHISE_RE = re.compile(r'\b(' + '|'.join(FRANCHISES) + r')', re.I)
+TOPIC_CAP = 4
+
+
+def topic(q: str) -> str:
+    """The franchise or quoted title a question is about ('' = general)."""
+    m = FRANCHISE_RE.search(q)
+    if m:
+        return re.sub(r'[^a-z]', '', m.group(1).lower().replace('é', 'e'))[:16]
+    t = re.search(r'"([^"]{4,60})"', q)
+    if t:
+        return re.sub(r'[^a-z0-9]', '', t.group(1).split(':')[0].lower())[:16]
+    return ''
+
+
+def cap_topics(items: list[Item]) -> list[Item]:
+    kept: list[Item] = []
+    count: dict[str, int] = {}
+    for it in sorted(items, key=lambda x: sid(x['q'])):  # stable, source-independent order
+        tp = topic(str(it['q']))
+        if tp:
+            if count.get(tp, 0) >= TOPIC_CAP:
+                continue
+            count[tp] = count.get(tp, 0) + 1
+            it['topic'] = tp
+        kept.append(it)
+    return kept
+
+
+write('trivia', cap_topics(dedupe(trivia, lambda x: x['q'])))
 
 # ----------------------------------------------------------------- Closest Cast
 ELEMENTS = ('Hydrogen Helium Lithium Beryllium Boron Carbon Nitrogen Oxygen Fluorine Neon Sodium Magnesium Aluminium Silicon '
@@ -421,6 +464,10 @@ ml = [m for m in ml if not MUNDANE.search(m['text'])]
 for tpl, fills in json.loads((SRC / 'mostlikely-templates.json').read_text(encoding='utf-8')).items():
     ml += [{'text': fill(tpl, f), 'a': False} for f in fills]
 write('mostlikely', dedupe(ml + french('mostlikely.txt'), lambda x: x['text']))
+
+# ----------------------------------------------------------------- Porch Confessions
+fam, adult = read_txt('confessions.txt')
+write('confessions', dedupe([{'text': t, 'a': False} for t in fam] + [{'text': t, 'a': True} for t in adult], lambda x: x['text']), min_count=100)
 
 # ----------------------------------------------------------------- Odd Duck Out
 fam, adult = read_txt('imposter.txt')

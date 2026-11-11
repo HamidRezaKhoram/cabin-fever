@@ -55,7 +55,7 @@ class ClosestGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
-    this.totalRounds = this.rounds(6);
+    this.totalRounds = this.rounds(10);
     /** @type {{ q: string, answer: number, unit?: string, src?: string }} */
     this.q = BUILTIN[0];
     /** @type {Map<string, number>} */

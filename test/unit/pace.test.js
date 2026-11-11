@@ -54,6 +54,7 @@ test('skip question: needs a majority, then swaps in a fresh question (same roun
   vote(ps[0], 'skipq'); // double votes don't count twice
   await until(() => h.state.pace.counts.skipq === 1, 'one vote');
   assert.strictEqual(h.state.gameState.question, q1);
+  await until(() => ps[0].state.you.paceVotes.length === 1, 'the voter sees their vote');
   assert.deepStrictEqual(ps[0].state.you.paceVotes, ['skipq']);
   vote(ps[1], 'skipq');
   await until(() => h.state.gameState.question !== q1, 'question replaced');

@@ -13,7 +13,7 @@ test('host gets a 4-letter room code without I or O, plus a resume token', async
   assert.match(h.hostToken, /^[0-9a-f]{32}$/);
   await until(() => h.state && h.state.phase === 'lobby', 'lobby state');
   assert.deepStrictEqual(h.state.settings, { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en' });
-  assert.strictEqual(h.state.availableGames.length, 16);
+  assert.strictEqual(h.state.availableGames.length, 15);
 });
 
 test('join errors: unknown room, blank name, duplicate name, full room', async () => {
@@ -247,4 +247,63 @@ test('character maker: a look is validated, shared with everyone, editable, and 
   a.sock.emit('player:look', { look: null });
   await until(() => h.state.players.find((p) => p.nickname === 'Maker').look === null, 'cleared');
   assert.strictEqual(h.state.players.find((p) => p.nickname === 'Cheater').look, null);
+});
+
+test('the same phone always gets its seat back: new tab (no token) or a lost token, by device id', async () => {
+  const h = await makeHost(srv);
+  const a = await makePlayer(srv, h.code, 'Ann', { device: 'phone-ann-123' });
+  // A second tab on the same phone, without the saved seat: same player, the old tab is told.
+  const s2 = srv.connect();
+  await once(s2, 'connect');
+  const replaced = once(a.sock, 'player:replaced');
+  s2.emit('player:joinRoom', { code: h.code, nickname: '', device: 'phone-ann-123' });
+  const j = await once(s2, 'player:joined');
+  assert.strictEqual(j.playerId, a.id);
+  await replaced;
+  await until(() => h.state && h.state.players.length === 1 && h.state.players[0].connected, 'Ann seated once');
+  await sleep(100);
+  assert.strictEqual(h.state.players.length, 1, 'no duplicate player');
+  // The replaced tab can't act for the seat any more.
+  a.sock.emit('player:react', { emoji: '🔥' });
+  // Rejoin with a wrong token but the right device: still the same seat.
+  const s3 = srv.connect();
+  await once(s3, 'connect');
+  s3.emit('player:rejoin', { code: h.code, token: 'stale', device: 'phone-ann-123' });
+  assert.strictEqual((await once(s3, 'player:joined')).playerId, a.id);
+  // A different phone with the same name while Ann is online is still refused.
+  assert.strictEqual(await joinError(srv, h.code, 'Ann', { device: 'phone-other-999' }), 'That nickname is taken.');
+});
+
+test('player:submit is acknowledged, so phones know their tap reached the TV', async () => {
+  const h = await makeHost(srv);
+  const a = await makePlayer(srv, h.code, 'Ann');
+  await makePlayer(srv, h.code, 'Ben');
+  h.emit('host:startGame', { gameId: 'closest' });
+  await a.phase('cg-guess');
+  const res = await new Promise((resolve) => a.sock.timeout(2000).emit('player:submit', { payload: { number: 5 } }, (/** @type {any} */ err, /** @type {any} */ r) => resolve(err ? 'timeout' : r)));
+  assert.deepStrictEqual(res, { ok: true });
+  // Not in a room: answered with ok:false (the phone shows "tap again").
+  const s = srv.connect();
+  await once(s, 'connect');
+  const bad = await new Promise((resolve) => s.timeout(2000).emit('player:submit', { payload: {} }, (/** @type {any} */ err, /** @type {any} */ r) => resolve(err ? 'timeout' : r)));
+  assert.deepStrictEqual(bad, { ok: false });
+});
+
+test('a burst of taps is coalesced into a few state updates, and unchanged views are not resent', async () => {
+  const h = await makeHost(srv);
+  const ps = [await makePlayer(srv, h.code, 'Ann'), await makePlayer(srv, h.code, 'Ben'), await makePlayer(srv, h.code, 'Cat')];
+  h.emit('host:startGame', { gameId: 'closest' });
+  await h.phase('cg-guess');
+  await sleep(150);
+  let n = 0;
+  h.sock.on('room:stateUpdate', () => { n++; });
+  for (const p of ps) p.submit({ number: 1 });
+  await until(() => h.state.phase !== 'cg-guess' || (h.state.gameState.answeredCount || 0) >= 3 || n >= 1, 'answers counted');
+  await sleep(200);
+  assert.ok(n >= 1 && n <= 3, `3 taps in one go → ${n} TV updates`);
+  // Re-sending the same answer changes nothing → nobody gets a duplicate update.
+  const before = n;
+  ps[0].submit({ number: 1 });
+  await sleep(150);
+  assert.ok(n - before <= 1, 'no flood of identical updates');
 });

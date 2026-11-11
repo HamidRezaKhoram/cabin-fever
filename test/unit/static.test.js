@@ -16,7 +16,7 @@ const server = read('core/rooms.js') + read('server.js');
 const GAME_IDS = [...read('core/rooms.js').matchAll(/require\('\.\.\/games\/([a-z]+)'\), ?/g)].map((m) => m[1]);
 
 test('server game list matches the game modules on disk', () => {
-  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js'].includes(f)).map((f) => f.slice(0, -3));
+  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js', 'rng.js'].includes(f)).map((f) => f.slice(0, -3));
   assert.deepStrictEqual([...GAME_IDS].sort(), files.sort());
   for (const id of GAME_IDS) {
     const meta = require(path.join(ROOT, 'games', id)).meta;
@@ -212,7 +212,9 @@ test('the old "draw your own picture" feature is gone everywhere', () => {
 // ---- dead-code guards: leftovers from removed features must not linger -------------
 test('no dead CSS: every class/id in style.css is used by a page or script', () => {
   const css = read('public/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
-  const src = fs.readdirSync(path.join(ROOT, 'public')).filter((f) => /\.(js|html)$/.test(f)).map((f) => read('public/' + f)).join('\n');
+  // Pages and scripts (public/), plus the browser build's own UI (web/: the offline progress bar).
+  const src = [...fs.readdirSync(path.join(ROOT, 'public')).filter((f) => /\.(js|html)$/.test(f)).map((f) => read('public/' + f)),
+    ...fs.readdirSync(path.join(ROOT, 'web')).filter((f) => f.endsWith('.js')).map((f) => read('web/' + f))].join('\n');
   // Built dynamically in code: podium steps `p${i + 1}` and team classes 'team-' + team.
   const dynamic = { p1: /\bp\$\{i \+ 1\}/, p2: /\bp\$\{i \+ 1\}/, p3: /\bp\$\{i \+ 1\}/, 'team-red': /'team-' \+|team-\$\{/, 'team-blue': /'team-' \+|team-\$\{/ };
   const names = new Set();

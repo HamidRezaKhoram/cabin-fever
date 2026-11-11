@@ -2,7 +2,7 @@
  * Cabin Fever service worker (GitHub Pages build; tools/build-pages.js fills in the lists).
  * Every file of the game is cached in the browser under its content hash. A new deploy lists new
  * hashes: on install only files whose hash changed are downloaded; the rest come from the cache.
- * Music is cached the first time a track plays (also by hash). Live connections (PeerJS) are
+ * Music and the narrator voice are saved in the background once the TV asks (also by hash). Live connections (PeerJS) are
  * never touched. Once loaded, the game files work offline. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -10,23 +10,47 @@
 const VERSION = '__VERSION__';
 /** @type {Record<string, string>} path (relative to this worker) → content hash */
 const FILES = __FILES__;
-/** @type {Record<string, string>} music track → content hash */
+/** @type {Record<string, string>} music tracks + the narrator voice → content hash (saved in the background) */
 const MEDIA = __MEDIA__;
+/** @type {string[]} the files a phone needs: saved on install everywhere (the TV asks for the rest) */
+const PHONE = __PHONE__;
 const CACHE = 'cabin-fever-files';
 const scope = new URL('./', self.location.href).href;
 /** @param {string} rel @param {string} h */
 const key = (rel, h) => scope + rel + '?v=' + h;
 
+/** Tell every open page how far saving has got. @param {string} stage @param {number} done @param {number} total */
+async function progress(stage, done, total) {
+  const all = await /** @type {any} */ (self).clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  for (const c of all) c.postMessage({ cf: 'progress', stage, done, total });
+}
+/** Save files into the cache (6 at a time), skipping ones already saved. @param {[string, string][]} list @param {string} stage */
+async function save(list, stage) {
+  const cache = await caches.open(CACHE);
+  let done = 0;
+  const total = list.length;
+  void progress(stage, 0, total);
+  const queue = list.slice();
+  const worker = async () => {
+    for (let next = queue.shift(); next; next = queue.shift()) {
+      const [rel, h] = next;
+      try {
+        if (!(await cache.match(key(rel, h)))) { // unchanged since the last visit: nothing to fetch
+          const res = await fetch(scope + rel, { cache: 'no-cache' });
+          if (res.ok) await cache.put(key(rel, h), res);
+        }
+      } catch (e) { /* offline or a hiccup: fetched on first use instead */ }
+      done++;
+      if (done % 3 === 0 || done === total) void progress(stage, done, total);
+    }
+  };
+  await Promise.all([0, 1, 2, 3, 4, 5].map(worker));
+  await progress(stage, total, total);
+}
+
 self.addEventListener('install', (/** @type {any} */ e) => {
-  e.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await Promise.all(Object.entries(FILES).map(async ([rel, h]) => {
-      if (await cache.match(key(rel, h))) return; // unchanged since the last visit
-      const res = await fetch(scope + rel, { cache: 'no-cache' });
-      if (res.ok) await cache.put(key(rel, h), res);
-    }));
-    /** @type {any} */ (self).skipWaiting();
-  })());
+  const list = PHONE.filter((r) => FILES[r]).map((r) => /** @type {[string, string]} */ ([r, FILES[r]]));
+  e.waitUntil(save(list, 'phone').then(() => /** @type {any} */ (self).skipWaiting()));
 });
 
 self.addEventListener('activate', (/** @type {any} */ e) => {
@@ -50,7 +74,22 @@ self.addEventListener('fetch', (/** @type {any} */ e) => {
   if (rel === '' ) rel = 'index.html';
   if (!rel.includes('.') && FILES[rel + '.html']) rel += '.html'; // /play → play.html
   const h = FILES[rel] || MEDIA[rel];
-  if (!h || req.headers.has('range')) return; // not ours (or a partial music request): normal network
+  if (!h) return; // not ours: normal network
+  if (req.headers.has('range')) {
+    // <audio> asks for byte ranges: answer from the saved copy if there is one (works offline).
+    e.respondWith((async () => {
+      const hit = await (await caches.open(CACHE)).match(key(rel, h));
+      if (!hit) return fetch(req);
+      const buf = await hit.arrayBuffer();
+      const m = /bytes=(\d*)-(\d*)/.exec(req.headers.get('range') || '');
+      const start = m && m[1] ? Number(m[1]) : 0;
+      const end = m && m[2] ? Math.min(Number(m[2]), buf.byteLength - 1) : buf.byteLength - 1;
+      return new Response(buf.slice(start, end + 1), { status: 206, headers: {
+        'Content-Type': hit.headers.get('Content-Type') || 'application/octet-stream',
+        'Content-Range': `bytes ${start}-${end}/${buf.byteLength}`, 'Content-Length': String(end - start + 1), 'Accept-Ranges': 'bytes' } });
+    })());
+    return;
+  }
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const hit = await cache.match(key(rel, h));
@@ -61,5 +100,16 @@ self.addEventListener('fetch', (/** @type {any} */ e) => {
   })());
 });
 
-// Tells the page which build it runs (shown in the debug panel).
-self.addEventListener('message', (/** @type {any} */ e) => { if (e.data === 'version' && e.source) e.source.postMessage({ version: VERSION }); });
+// Tells the page which build it runs (shown in the debug panel); the TV asks for the music and
+// voice to be saved too once the game itself is.
+/** @type {Promise<void> | null} */
+let tvSaving = null;
+self.addEventListener('message', (/** @type {any} */ e) => {
+  if (e.data === 'version' && e.source) e.source.postMessage({ version: VERSION });
+  // The TV: every game file (progress bar), then music + the voice in the background.
+  if (e.data === 'cache-tv') {
+    if (!tvSaving) tvSaving = save(Object.entries(FILES), 'core').then(() => save(Object.entries(MEDIA), 'media')).finally(() => { tvSaving = null; });
+    else void progress('core', 1, 1); // already saving: a second TV tab just needs to know the game is there
+    e.waitUntil(tvSaving);
+  }
+});

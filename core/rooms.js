@@ -17,8 +17,9 @@ const stats = require('../games/stats');
 
 const NIGHT_GAP_MS = parseInt(process.env.RUMPUS_NIGHT_GAP_MS || '12000', 10);
 const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
-// How long a dropped phone / TV keeps its seat before being removed.
-const PLAYER_GRACE_MS = parseInt(process.env.PLAYER_GRACE_MS || '120000', 10);
+// How long a dropped phone / TV keeps its seat before being removed. Phones go to sleep in a
+// pocket all the time, so a seat is held for half an hour (the TV can kick anyone sooner).
+const PLAYER_GRACE_MS = parseInt(process.env.PLAYER_GRACE_MS || '1800000', 10);
 const HOST_GRACE_MS = parseInt(process.env.HOST_GRACE_MS || '300000', 10);
 const DEBUG = process.env.RUMPUS_DEBUG === '1';
 const dlog = (/** @type {unknown[]} */ ...a) => { if (DEBUG) console.log('[debug]', new Date().toISOString().slice(11, 23), ...a); };
@@ -31,7 +32,7 @@ for (const G of [
   require('../games/quiplash'), require('../games/fibbage'), require('../games/trivia'), require('../games/closest'),
   require('../games/majority'), require('../games/mostlikely'), require('../games/imposter'), require('../games/twotruths'),
   require('../games/telephone'), require('../games/minigames'), require('../games/looncall'), require('../games/lantern'),
-  require('../games/storm'), require('../games/wizards'), require('../games/crush'), require('../games/cah'),
+  require('../games/storm'), require('../games/crush'), require('../games/cah'),
 ]) GAMES[G.meta.id] = G;
 const GAME_LIST = Object.values(GAMES).map((G) => G.meta);
 
@@ -52,6 +53,10 @@ function makeRoomCode() {
 }
 
 const token = () => crypto.randomBytes(16).toString('hex');
+/** A phone's own id (made once and kept in its browser): the same phone always gets the same seat. @param {unknown} d */
+const cleanDevice = (d) => (typeof d === 'string' && /^[\w-]{8,64}$/.test(d) ? d : null);
+/** The seat this phone already has in the room, if any. @param {Room} room @param {string | null} device */
+const seatOf = (room, device) => (device ? [...room.players.values()].find((p) => p.device === device) || null : null);
 
 /** @param {Room} room */
 function roomPhase(room) {
@@ -69,6 +74,8 @@ function playersSummary(room) {
     team: room.settings.teams ? p.team || null : null,
     look: p.look || null, // character-maker look (rendered on clients)
     bot: !!p.bot,
+    // Browser build: how the phone reaches the TV ('relay' = through the internet, slower).
+    ...(p.socket && p.socket.data && p.socket.data.net ? { net: p.socket.data.net } : {}),
   }));
 }
 
@@ -119,9 +126,27 @@ function paceState(room) {
 // Push a full state update to the host and to every player. The host gets the
 // shared-screen view; each player gets a personalized view that never exposes
 // other players' in-progress input.
+// Updates are coalesced: a burst of taps (8 phones answering at once) becomes one update per
+// screen at most every BROADCAST_MS, and a screen whose view didn't change gets nothing. This
+// keeps the TV smooth when it is also the server (browser build) and phones snappy.
+const BROADCAST_MS = parseInt(process.env.RUMPUS_BROADCAST_MS || '30', 10);
 /** @param {Room} room */
 function broadcast(room) {
+  if (room.closed || room.flushTimer) return;
+  const wait = Math.max(0, (room.lastFlush || 0) + BROADCAST_MS - Date.now());
+  room.flushTimer = setTimeout(() => { room.flushTimer = null; flush(room); }, wait);
+}
+/** Send a payload unless this socket already has exactly this view. @param {any} sock @param {Record<string, unknown>} payload */
+function sendState(sock, payload) {
+  const json = JSON.stringify(payload);
+  if (sock.data && sock.data.lastState === json) return;
+  if (sock.data) sock.data.lastState = json;
+  sock.emit('room:stateUpdate', payload);
+}
+/** @param {Room} room */
+function flush(room) {
   if (room.closed) return;
+  room.lastFlush = Date.now();
   recordStats(room);
   countNight(room);
   if (DEBUG) {
@@ -131,11 +156,13 @@ function broadcast(room) {
     room.dbgKey = key;
   }
   const base = baseState(room);
-  if (room.hostSocket && room.hostSocket.connected) room.hostSocket.emit('room:stateUpdate', hostPayload(room, base));
+  // Phones first, then the TV: by the time the TV shows a change, every phone has been sent it.
   for (const p of room.players.values()) {
-    if (!p.connected || !p.socket.connected) continue;
-    p.socket.emit('room:stateUpdate', playerPayload(room, p, base));
+    if (!p.connected || !p.socket || !p.socket.connected) continue;
+    if (p.bot) p.socket.emit('room:stateUpdate', null); // bots read the game directly
+    else sendState(p.socket, playerPayload(room, p, base));
   }
+  if (room.hostSocket && room.hostSocket.connected) sendState(room.hostSocket, hostPayload(room, base));
 }
 
 /** The part of the state every screen shares. @param {Room} room */
@@ -162,8 +189,10 @@ function hostPayload(room, base = baseState(room)) {
 /** What one phone gets — only its own private view. @param {Room} room @param {Player} p @param {ReturnType<typeof baseState>} [base] */
 function playerPayload(room, p, base = baseState(room)) {
   const view = room.game ? room.game.playerView(p.id) : { gameState: {}, you: {} };
+  // Phones never show the game list (only the TV does): leaving it out halves every phone update.
+  const { availableGames: _games, ...shared } = base;
   return {
-    ...base,
+    ...shared,
     gameState: view.gameState,
     you: { playerId: p.id, nickname: p.nickname, paceVotes: /** @type {('ready' | 'hurry' | 'skipq')[]} */ (['ready', 'hurry', 'skipq']).filter((k) => room.pace[k].has(p.id)), ...view.you },
   };
@@ -245,12 +274,14 @@ function closeRoom(room) {
   if (room.closed) return;
   room.closed = true;
   if (room.closeTimer) clearTimeout(room.closeTimer);
+  if (room.flushTimer) clearTimeout(room.flushTimer);
   endNight(room);
   if (room.game) room.game.destroy();
   room.game = null;
   for (const p of room.players.values()) {
     if (p.dropTimer) clearTimeout(p.dropTimer);
-    if (p.socket.connected) {
+    if (p.botTimer) clearTimeout(p.botTimer);
+    if (p.socket && p.socket.connected) {
       p.socket.emit('room:stateUpdate', { code: room.code, phase: 'closed', players: [], gameState: {} });
       p.socket.disconnect(true);
     }
@@ -311,7 +342,12 @@ function removePlayer(room, playerId) {
   if (p.dropTimer) clearTimeout(p.dropTimer);
   if (p.botTimer) clearTimeout(p.botTimer);
   room.players.delete(playerId);
-  if (room.game) room.game.onPlayerLeft(playerId);
+  if (room.game && !room.players.size) {
+    // Everyone left (or was kicked): games assume someone is playing, so stop it — back to the lobby.
+    endNight(room);
+    room.game.destroy();
+    room.game = null;
+  } else if (room.game) room.game.onPlayerLeft(playerId);
   console.log(`[room ${room.code}] player left: ${p.nickname}`);
   broadcast(room);
 }
@@ -334,12 +370,14 @@ function attachHost(room, socket) {
 /** @param {Room} room @param {Player} p @param {import('socket.io').Socket} socket */
 function attachPlayer(room, p, socket) {
   if (p.socket && p.socket !== socket) {
-    p.socket.data.room = null; // stale tab: ignore its disconnect
-    if (p.socket.connected) p.socket.disconnect(true);
+    p.socket.data.room = null; // stale tab: ignore its disconnect and anything it sends
+    // The other tab/window is told and stops by itself (closing it from here could race the message).
+    if (p.socket.connected) p.socket.emit('player:replaced');
   }
   if (p.dropTimer) clearTimeout(p.dropTimer);
   p.dropTimer = null;
   p.socket = socket;
+  socket.data.lastState = null; // it may have missed updates: send the full view again
   p.connected = true;
   socket.data.role = 'player';
   socket.data.room = room;
@@ -366,13 +404,20 @@ function hostRoom(socket) {
 
 /** Wire one socket (socket.io in Docker; in the browser build a WebRTC/BroadcastChannel socket with the same shape). @param {import('socket.io').Socket} socket */
 function connection(socket) {
+  // Every handler is guarded: one malformed message or game bug is logged, never fatal (a throw in
+  // a socket.io listener would otherwise crash the whole server and every room on it).
+  const on = socket.on.bind(socket);
+  /** @type {any} */ (socket).on = (/** @type {string} */ ev, /** @type {(...a: any[]) => void} */ fn) => on(ev, (/** @type {any[]} */ ...a) => {
+    try { fn(...a); } catch (e) { console.error(`[socket] ${ev} failed:`, e); }
+  });
   socket.on('debug:ping', (ack) => { if (typeof ack === 'function') ack(); });
+  socket.on('k', () => {}); // phones' radio keep-warm (public/play.js): nothing to do
   // Clock sync for rhythm games (phones timestamp taps in server time).
   socket.on('time:ping', (ack) => { if (typeof ack === 'function') ack(Date.now()); });
   if (DEBUG) {
     dlog('connect', socket.id);
     socket.onAny((ev, payload) => {
-      if (ev === 'debug:ping' || ev === 'time:ping') return;
+      if (ev === 'debug:ping' || ev === 'time:ping' || ev === 'k') return;
       let s = '';
       try { s = JSON.stringify(payload) ?? ''; } catch (e) { s = String(payload); }
       dlog('◀', socket.id.slice(0, 6), socket.data.role || '-', ev, s.length > 200 ? s.slice(0, 200) + '…' : s);
@@ -412,7 +457,7 @@ function connection(socket) {
 
   socket.on('host:settings', (msg) => {
     const room = hostRoom(socket);
-    if (!room || !msg) return;
+    if (!room || !msg || typeof msg !== 'object') return;
     // Only touch the settings that were sent (the TV sends one at a time).
     if ('rounds' in msg) {
       const rounds = msg.rounds == null ? null : parseInt(msg.rounds, 10);
@@ -492,7 +537,7 @@ function connection(socket) {
     if (!p) return;
     const sock = p.socket;
     removePlayer(room, p.id);
-    if (sock.connected) {
+    if (sock && sock.connected) {
       sock.emit('player:kicked');
       sock.data.room = null;
       sock.disconnect(true);
@@ -505,6 +550,13 @@ function connection(socket) {
     const nickname = (msg && typeof msg.nickname === 'string' ? msg.nickname : '').trim().replace(/\s+/g, ' ').slice(0, 16);
     const room = rooms.get(code);
     if (!room || room.closed) return void socket.emit('player:joinError', { reason: 'No room with that code.' });
+    const device = cleanDevice(msg && msg.device);
+    const mine = seatOf(room, device);
+    if (mine) {
+      // This phone already has a seat (new tab, cleared seat, rejoining after a nap): it's still theirs.
+      console.log(`[room ${room.code}] ${mine.nickname} is back (same phone)`);
+      return void attachPlayer(room, mine, socket);
+    }
     if (!nickname) return void socket.emit('player:joinError', { reason: 'Pick a nickname.' });
     const existing = [...room.players.values()].find((p) => p.nickname.toLowerCase() === nickname.toLowerCase());
     if (existing) {
@@ -512,6 +564,7 @@ function connection(socket) {
       // new browser/cleared storage. Let them reclaim it.
       if (!existing.connected) {
         console.log(`[room ${room.code}] ${nickname} reclaimed seat by name`);
+        if (device) existing.device = device;
         return void attachPlayer(room, existing, socket);
       }
       return void socket.emit('player:joinError', { reason: 'That nickname is taken.' });
@@ -530,7 +583,7 @@ function connection(socket) {
       avatar = free.length ? free[crypto.randomInt(free.length)] : crypto.randomInt(AVATAR_COUNT);
     }
     /** @type {Player} */
-    const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar };
+    const p = { id: crypto.randomBytes(8).toString('hex'), token: token(), nickname, socket, score: 0, connected: true, avatar, device };
     const look = cleanLook(msg.look);
     if (look) p.look = look;
     if (room.settings.teams) assignTeam(room, p);
@@ -540,10 +593,13 @@ function connection(socket) {
   });
 
   socket.on('player:rejoin', (msg) => {
-    if (socket.data.room) return;
     const room = rooms.get(String((msg && msg.code) || '').toUpperCase());
-    const p = room && !room.closed && [...room.players.values()].find((x) => x.token === msg.token);
+    // A socket already in a room may only re-take its own seat (its link dropped and came back).
+    if (socket.data.room && (socket.data.room !== room || socket.data.role !== 'player')) return;
+    const p = room && !room.closed && ([...room.players.values()].find((x) => x.token === (msg && msg.token)) || seatOf(room, cleanDevice(msg && msg.device)));
     if (!p) return void socket.emit('player:rejoinFailed');
+    const device = cleanDevice(msg && msg.device);
+    if (device && !p.device) p.device = device;
     console.log(`[room ${room.code}] player rejoined: ${p.nickname}`);
     attachPlayer(room, p, socket);
   });
@@ -630,16 +686,19 @@ function connection(socket) {
     removePlayer(room, socket.data.playerId);
   });
 
-  socket.on('player:submit', (msg) => {
+  // A phone's answer/tap. The ack tells the phone it arrived (it shows "Sending…" until then).
+  socket.on('player:submit', (msg, ack) => {
+    const done = (/** @type {boolean} */ ok) => { if (typeof ack === 'function') ack({ ok }); };
     const room = socket.data.room;
-    if (!room || socket.data.role !== 'player' || room.closed || !room.game) return;
-    if (!room.players.has(socket.data.playerId)) return;
+    if (!room || socket.data.role !== 'player' || room.closed || !room.game) return void done(false);
+    if (!room.players.has(socket.data.playerId)) return void done(false);
     const payload = msg && typeof msg.payload === 'object' && msg.payload !== null ? msg.payload : {};
     try {
       room.game.handleSubmit(socket.data.playerId, payload);
     } catch (e) {
       console.error(`[room ${room.code}] game error:`, e);
     }
+    done(true);
   });
 
   socket.on('disconnect', () => {

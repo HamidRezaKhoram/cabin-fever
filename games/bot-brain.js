@@ -62,14 +62,21 @@ function decide(view, rnd = Math.random) {
       if (!you.submitted) return write({ text: pick(WORDS.slice(0, 4), rnd) });
       if (you.bet == null && g.maxBet != null) return tap({ bet: Math.floor(rnd() * (g.maxBet + 1)) });
       return null;
+    // Herd call: the first (biggest) answer, sometimes plus their own
+    case 'mr-herd': {
+      if (you.herdVoted || !(g.answers || []).length) return null;
+      const herd = [0];
+      if (Number.isInteger(you.mine) && you.mine > 0 && rnd() < 0.3) herd.push(you.mine);
+      return tap({ herd });
+    }
     case 'ml-vote': return !you.voted && g.targets && g.targets.length ? tap({ target: pick(g.targets, rnd).id }) : null;
     // Odd Duck Out
     case 'imp-clue': return !you.submitted ? write({ text: pick(WORDS, rnd) }) : null;
     case 'imp-vote': return !you.voted && g.clues && g.clues.length ? tap({ target: pick(g.clues, rnd).id }) : null;
     case 'imp-guess': return you.isImposter && g.options && g.options.length ? tap({ choice: Math.floor(rnd() * g.options.length) }) : null;
     // Porch Confessions
-    case 'tt-write': return !you.submitted ? write({ truths: ['I once ate a whole pie', 'I can juggle'], lie: 'I have met a moose' }) : null;
-    case 'tt-guess': return !you.isSubject && !you.guessed ? tap({ choice: Math.floor(rnd() * 3) }) : null;
+    case 'tt-write': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
+    case 'tt-judge': return !you.judged && (g.answers || []).length ? tap({ calls: Object.fromEntries(g.answers.map((/** @type {{ id: string }} */ a) => [a.id, rnd() < 0.5])) }) : null;
     // Message in a Bottle
     case 'tel-write': case 'tel-describe': return !you.submitted ? write({ text: pick(LINES, rnd) }) : null;
     case 'tel-draw': return !you.submitted ? { payload: { image: PNG }, kind: 'draw' } : null;
@@ -108,24 +115,6 @@ function decide(view, rnd = Math.random) {
       const fav = t.find((/** @type {{ nickname: string }} */ x) => fans.includes(x.nickname)); // date someone who wrote to you, usually
       return t.length ? tap({ pick: rnd() < 0.1 ? null : (fav && rnd() < 0.7 ? fav : pick(t, rnd)).id }) : null;
     }
-    // Campfire Wizards: a sensible spell — shield when hurt, meteor when rich, else bolt (often the bounty).
-    case 'wz-pick': {
-      if (you.picked || !(you.spells || []).length) return null;
-      const ok = you.spells.filter((/** @type {{ ok: boolean }} */ s) => s.ok);
-      const by = (/** @type {string} */ id) => ok.find((/** @type {{ id: string }} */ s) => s.id === id);
-      const others = you.others || [];
-      const bountyT = (g.wizards || []).find((/** @type {{ bounty: boolean, nickname: string }} */ w) => w.bounty && w.nickname !== you.nickname);
-      const foe = (bountyT && others.find((/** @type {{ nickname: string }} */ o) => o.nickname === bountyT.nickname)) || (others.length ? pick(others, rnd) : null);
-      if (you.ghost) return foe ? tap({ spell: rnd() < 0.5 ? 'haunt' : 'bless', target: foe.id }) : null;
-      if (you.hearts <= 2 && by('shield') && rnd() < 0.5) return tap({ spell: 'shield' });
-      if (by('meteor') && rnd() < 0.5) return tap({ spell: 'meteor' });
-      if (you.hearts <= 3 && by('mend') && rnd() < 0.3) return tap({ spell: 'mend', target: you.playerId });
-      if (foe && by('bolt') && rnd() < 0.7) return tap({ spell: 'bolt', target: foe.id });
-      if (foe && by('frost') && rnd() < 0.3) return tap({ spell: 'frost', target: foe.id });
-      if (foe && by('mirror') && rnd() < 0.2) return tap({ spell: 'mirror', target: foe.id });
-      return tap({ spell: 'charge' });
-    }
-    // Storm Watch: ready, lead (yourself + random others), vote, help/sabotage, accuse.
     case 'st-roles': return you.ready ? null : tap({ ready: true });
     case 'st-talk': {
       if (!you.isLeader || !(you.candidates || []).length) return null;
@@ -135,7 +124,7 @@ function decide(view, rnd = Math.random) {
       return { payload: { crew }, kind: 'tap' };
     }
     case 'st-vote': return you.voted ? null : tap({ vote: rnd() < 0.7 });
-    case 'st-crew': return you.onCrew && !you.played ? tap({ card: you.canSabotage && rnd() < 0.7 ? 'sabotage' : 'help', fix: !!you.canFix && rnd() < 0.5 }) : null;
+    case 'st-crew': return you.onCrew && !you.played ? tap({ card: you.canSabotage && rnd() < 0.7 ? 'sabotage' : 'help', fix: !!you.canFix && rnd() < 0.5, double: !!you.canDouble && rnd() < 0.3 }) : null;
     case 'st-accuse': return !you.accused && (you.accuseTargets || []).length ? tap({ accuse: pick(you.accuseTargets, rnd).id }) : null;
     // Lantern Lake: steer toward your target (a firefly, the moonbeam, the raft's next lantern).
     case 'll-intro': case 'll-play': {
@@ -168,7 +157,19 @@ function decide(view, rnd = Math.random) {
       if (g.mini === 'tug') return { payload: { tap: 3 + Math.floor(rnd() * 4) }, kind: 'mash' };
       if (g.mini === 'quickdraw') return !you.done && !you.early && g.sub === 'go' ? { payload: { tap: true }, kind: 'react' } : null;
       if (g.mini === 'fireflies') return !you.done ? tap({ number: 5 + Math.floor(rnd() * 30) }) : null;
-      if (g.mini === 'roast') return !you.done ? tap({ hold: 2000 + Math.floor(rnd() * 5000) }) : null;
+      if (g.mini === 'roast') return !you.done ? tap({ hold: Math.round((g.target || 3000) * (0.7 + rnd() * 0.6)) }) : null;
+      if (you.done || you.early) return null;
+      if (g.mini === 'skip') return { payload: { throw: Date.now() }, kind: 'react' };
+      if (g.mini === 'spot') return { payload: { cell: Math.floor(rnd() * (g.cells || 12)) }, kind: 'react' };
+      if (g.mini === 'swat') {
+        const t = Date.now() - g.playStart;
+        const i = (g.bugs || []).findIndex((/** @type {{ at: number, life: number }} */ b, /** @type {number} */ k) => t >= b.at && t <= b.at + b.life && !(you.swats || []).includes(k));
+        return i >= 0 && rnd() < 0.7 ? { payload: { swat: i }, kind: 'react' } : null;
+      }
+      if (g.mini === 'balance') return tap({ balance: Math.round(rnd() * 100) });
+      if (g.mini === 'paddle') return { payload: { strokes: 2 + Math.floor(rnd() * 3) }, kind: 'mash' };
+      if (g.mini === 'simon') return g.sub === 'go' ? tap({ seq: Array.from({ length: g.length || 5 }, () => Math.floor(rnd() * 4)) }) : null;
+      if (g.mini === 'stack') return tap({ stack: 3 + Math.floor(rnd() * 12) });
       return null;
     default: return null;
   }

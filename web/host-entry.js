@@ -12,6 +12,9 @@
 const fsShim = require('./shims/fs');
 const { Sock, pairWires, pickTransport, PREFIX } = require('./net');
 const { qrDataUrl } = require('./qr');
+const { offline } = require('./offline');
+
+offline('tv');
 
 /** The page's folder ("/cabin-fever/" on GitHub Pages, "/" elsewhere). */
 const BASE = location.pathname.replace(/[^/]*$/, '');
@@ -40,11 +43,25 @@ let peerSeq = 0;
 /** Phones can join room `code` from now on. @param {string} code */
 function listen(code) {
   if (stopListening) stopListening();
-  stopListening = transport.listen(code, (wire) => {
+  stopListening = transport.listen(code, (wire, path) => {
     const s = new Sock('phone-' + (++peerSeq));
     core().connection(/** @type {any} */ (s));
     s.attach(wire);
     s.fire('connect');
+    // The phone went quiet (asleep) and is back on the same direct link: no new connection needed,
+    // just ask it to take its seat again.
+    wire.onRevive(() => { s.attach(wire); s.emit('net:resync'); });
+    // Note how this phone is linked (straight over the Wi-Fi, or through an internet relay): the TV
+    // marks relayed phones, since that path is the slow one.
+    if (path) {
+      setTimeout(() => {
+        path().then((p) => {
+          if (!p) return;
+          s.data.net = p.type;
+          if (p.type === 'relay') console.warn('[cabin fever] a phone is connected through an internet relay (slower): is it on the same Wi-Fi?');
+        }).catch(() => {});
+      }, 2000);
+    }
   }, (err) => {
     console.warn('[cabin fever] could not open the room for phones:', err);
     if (err === 'unavailable-id') document.dispatchEvent(new CustomEvent('cf:room-taken', { detail: code }));

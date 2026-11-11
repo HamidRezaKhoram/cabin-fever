@@ -7,6 +7,9 @@
 'use strict';
 
 const { Sock, pickTransport } = require('./net');
+const { offline } = require('./offline');
+
+offline('phone');
 
 const BASE = location.pathname.replace(/[^/]*$/, '');
 
@@ -16,26 +19,41 @@ function io() {
   /** @type {string | null} */
   let code = null;
   let connecting = false;
+  /** Stopped by the page (left the room, or the seat moved to another tab): don't reconnect. */
+  let stopped = false;
   /** @type {number | null} */
   let retry = null;
+  /** @type {(import('./net').Wire & { check?: () => void }) | null} */
+  let live = null;
+  let tries = 0;
 
+  /** Try again soon: quickly at first, then every few seconds. */
+  const again = () => {
+    if (retry !== null || stopped) return;
+    const wait = Math.min(4000, 400 + tries * 600);
+    tries++;
+    retry = window.setTimeout(() => { retry = null; connect(); }, wait);
+  };
   const connect = () => {
-    if (!code || connecting || sock.connected) return;
+    if (!code || connecting || sock.connected || stopped) return;
     connecting = true;
     const want = code;
     transport.connect(want, (wire) => {
       connecting = false;
-      if (want !== code) { wire.close(); connect(); return; }
-      wire.onClose(() => { if (retry === null) retry = window.setTimeout(() => { retry = null; connect(); }, 1500); });
+      if (want !== code || stopped) { wire.close(); connect(); return; }
+      tries = 0;
+      live = wire;
+      wire.onClose(() => { if (live === wire) live = null; again(); });
       sock.attach(wire);
       sock.fire('connect');
     }, (why) => {
       connecting = false;
-      if (why === 'no-room') {
+      // A room that vanished for good (the TV page was closed): give up after about a minute.
+      if (why === 'no-room' && (!sock.data.everJoined || tries > 15)) {
         // Tell the page the same way the Docker server would.
         sock.fire('player:joinError', { reason: 'No room with that code — is the TV on?' });
         sock.fire('player:rejoinFailed');
-      } else if (retry === null) retry = window.setTimeout(() => { retry = null; connect(); }, 2000);
+      } else again();
     });
   };
 
@@ -43,7 +61,8 @@ function io() {
   const useCode = (c) => {
     const next = String(c || '').toUpperCase().slice(0, 4);
     if (!/^[A-Z]{4}$/.test(next)) return;
-    if (next !== code) { code = next; if (sock.connected) sock.disconnect(); }
+    stopped = false;
+    if (next !== code) { code = next; if (sock.connected) Sock.prototype.disconnect.call(sock); }
     connect();
   };
 
@@ -53,6 +72,20 @@ function io() {
     if ((ev === 'player:joinRoom' || ev === 'player:rejoin') && args[0] && typeof args[0] === 'object') useCode(/** @type {any} */ (args[0]).code);
     return emit(ev, ...args);
   };
+  sock.on('player:joined', () => { sock.data.everJoined = true; });
+  // socket.io's disconnect() / connect(): the page stops (left, or replaced by another tab) and resumes.
+  sock.disconnect = () => { stopped = true; if (retry !== null) { clearTimeout(retry); retry = null; } return Sock.prototype.disconnect.call(sock); };
+  /** @type {any} */ (sock).connect = () => { stopped = false; connect(); return sock; };
+  // A phone waking up: drop a link that went quiet while asleep and reconnect straight away.
+  const wake = () => {
+    if (document.visibilityState !== 'visible' || stopped) return;
+    if (live && live.check) live.check(); // a quick "still there?" (it closes itself if not)
+    if (!sock.connected) { if (retry !== null) { clearTimeout(retry); retry = null; } tries = 0; connect(); }
+  };
+  document.addEventListener('visibilitychange', wake);
+  addEventListener('pageshow', wake);
+  addEventListener('online', wake);
+  addEventListener('focus', wake);
   try {
     const q = new URLSearchParams(location.search).get('code');
     const seat = JSON.parse(localStorage.getItem('rumpus.seat') || 'null');

@@ -109,7 +109,7 @@ class QuiplashGame extends BaseGame {
       // Authors aren't idle while the room votes: a side bet on their own matchup.
       const m = this.matchIndex == null ? undefined : this.matchups[this.matchIndex];
       const bets = this.bets;
-      if (!m || !bets || !m.authors.includes(id) || bets.has(id) || !(payload.bet in SIDE_BETS)) return;
+      if (!m || !bets || !m.authors.includes(id) || bets.has(id) || typeof payload.bet !== 'string' || !Object.prototype.hasOwnProperty.call(SIDE_BETS, payload.bet)) return;
       bets.set(id, payload.bet);
       this.push();
     } else if (this.phase === 'voting') {

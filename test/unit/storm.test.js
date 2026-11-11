@@ -8,7 +8,7 @@ const Storm = require('../../games/storm');
 
 test('role decks: raccoon count by player count, special roles unlock with more players', () => {
   const count = (n, side) => Storm.roleDeck(n).filter((r) => Storm.ROLES[r].side === side).length;
-  assert.deepStrictEqual([4, 5, 6, 8, 9, 12].map((n) => count(n, 'raccoon')), [1, 1, 2, 2, 3, 3]);
+  assert.deepStrictEqual([4, 5, 6, 7, 8, 9, 12].map((n) => count(n, 'raccoon')), [1, 2, 2, 2, 3, 3, 3]);
   for (const n of [4, 5, 6, 7, 8, 9, 10, 11, 12]) assert.strictEqual(Storm.roleDeck(n).length, n);
   assert.ok(Storm.roleDeck(4).includes('lookout') && !Storm.roleDeck(4).includes('handyman'));
   assert.ok(Storm.roleDeck(5).includes('handyman') && !Storm.roleDeck(5).includes('snoop'));
@@ -31,7 +31,7 @@ async function game(names) {
 }
 const sideOf = (p) => p.state.you.role.side;
 
-test('who knows what: raccoons see each other, the Lookout sees one non-Sly raccoon, nobody else learns roles; nothing leaks to the TV', async () => {
+test('who knows what: raccoons see each other, the Lookout sees two names (one a non-Sly raccoon), nobody else learns roles; nothing leaks to the TV', async () => {
   const { srv, h, ps } = await game(['Ann', 'Ben', 'Cat', 'Dan', 'Eve', 'Fay', 'Gus']);
   try {
     const rac = ps.filter((p) => sideOf(p) === 'raccoon');
@@ -40,9 +40,12 @@ test('who knows what: raccoons see each other, the Lookout sees one non-Sly racc
     const look = ps.find((p) => p.state.you.role.id === 'lookout');
     const sly = ps.find((p) => p.state.you.role.id === 'sly');
     assert.ok(look && sly);
-    assert.ok(rac.map((r) => r.nickname).includes(look.state.you.spotted), 'the Lookout saw a raccoon');
-    assert.notStrictEqual(look.state.you.spotted, sly.nickname, '…never the Sly one');
-    for (const p of ps.filter((x) => sideOf(x) === 'cottage' && x !== look)) assert.deepStrictEqual([p.state.you.allies, p.state.you.spotted], [[], null]);
+    const seen = look.state.you.sighting;
+    assert.strictEqual(seen.length, 2, 'two suspects');
+    assert.strictEqual(seen.filter((n) => rac.map((r) => r.nickname).includes(n)).length, 1, 'exactly one of them is a raccoon');
+    assert.ok(!seen.includes(sly.nickname), '…never the Sly one');
+    assert.ok(!seen.includes(look.nickname), '…and never themselves');
+    for (const p of ps.filter((x) => sideOf(x) === 'cottage' && x !== look)) assert.deepStrictEqual([p.state.you.allies, p.state.you.sighting], [[], []]);
     const tv = JSON.stringify(h.state);
     for (const word of ['"Raccoon"', 'Lookout', 'Sly Raccoon', 'Handyman', 'Snoop', '"cards"', '"roles":[']) assert.ok(!tv.includes(word), `TV must not show ${word}`);
   } finally { await srv.stop(); }
@@ -114,5 +117,54 @@ test('three crews voted down in a row: the storm wins it for the raccoons', { ti
     await until(() => h.state.phase === 'st-accuse', 'accuse', 8000);
     assert.strictEqual(h.state.gameState.winner, 'raccoon');
     assert.match(h.state.gameState.winReason, /storm/);
+  } finally { await srv.stop(); }
+});
+
+test('raccoon powers: Double Trouble beats a Big Chore and Fix It; if the cottage wins, unmasking the Lookout steals it', { timeout: 60000 }, async () => {
+  const { srv, h, ps } = await game(['Ann', 'Ben', 'Cat', 'Dan']);
+  try {
+    for (const p of ps) p.submit({ ready: true });
+    const rac = ps.find((p) => sideOf(p) === 'raccoon');
+    const look = ps.find((p) => p.state.you.role.id === 'lookout');
+    let doubled = false, done = 0;
+    // Play chores: the raccoon stays off the crew (so the cottage wins) except once, to use Double Trouble.
+    while (!h.state.gameState.winner && h.state.phase !== 'st-accuse') {
+      const st = await until(() => (h.state.phase === 'st-talk' || h.state.phase === 'st-accuse') && h.state, 'talk', 8000);
+      if (st.phase === 'st-accuse') break;
+      const leader = ps.find((p) => p.nickname === st.gameState.leader);
+      await until(() => leader.state.phase === 'st-talk' && leader.state.you.candidates.length, 'leader screen');
+      const allowed = leader.state.you.candidates.map((c) => c.id);
+      const withRac = !doubled && allowed.includes(rac.id);
+      const crew = (withRac ? [rac.id, ...allowed.filter((id) => id !== rac.id)] : allowed.filter((id) => id !== rac.id)).slice(0, st.gameState.crewSize);
+      if (crew.length < st.gameState.crewSize) crew.push(...allowed.filter((id) => !crew.includes(id)).slice(0, st.gameState.crewSize - crew.length));
+      leader.submit({ crew });
+      await until(() => h.state.phase === 'st-vote', 'vote');
+      for (const p of ps) p.submit({ vote: true });
+      await until(() => h.state.phase === 'st-crew', 'crew');
+      const onCrew = ps.filter((p) => crew.includes(p.id));
+      await until(() => onCrew.every((p) => p.state.phase === 'st-crew'), 'crew phones');
+      for (const p of onCrew) {
+        if (p === rac && !doubled) { assert.ok(p.state.you.canDouble); p.submit({ card: 'sabotage', double: true }); doubled = true; }
+        else p.submit({ card: 'help', fix: true });
+      }
+      const rev = await until(() => h.state.phase === 'st-reveal' && h.state, 'reveal');
+      const r = rev.gameState.reveal;
+      if (r.cards.includes('double')) {
+        assert.strictEqual(r.ok, false, 'Double Trouble ruins even a Big Chore, whatever the Handyman does');
+        assert.strictEqual(r.fixed, false, "Fix It can't touch it");
+      } else if (r.ok) done++;
+    }
+    await until(() => h.state.phase === 'st-accuse', 'accuse', 8000);
+    if (h.state.gameState.winner === 'cottage') {
+      assert.ok(h.state.gameState.hunt, 'the raccoons get their last chance');
+      await until(() => rac.state.you.hunting, 'raccoon hunts the Lookout');
+      for (const p of ps) p.submit({ accuse: p === rac ? look.id : rac.id });
+      const fin = await until(() => h.state.phase === 'st-final' && h.state, 'final', 8000);
+      assert.strictEqual(fin.gameState.winner, 'raccoon', 'unmasked the Lookout → stolen');
+      assert.ok(fin.gameState.stolen);
+      const gain = (n) => fin.gameState.roles.find((x) => x.nickname === n).gained;
+      assert.strictEqual(gain(rac.nickname), 500 + 150, 'win + unmask bonus (accused → no unseen bonus)');
+    }
+    assert.ok(done <= 3);
   } finally { await srv.stop(); }
 });

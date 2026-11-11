@@ -75,7 +75,8 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     /** @type {number | null} */
     let last = null;
     const tick = () => {
-      const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      // Server time (a phone whose clock is a few seconds off still shows the right countdown).
+      const left = Math.max(0, Math.ceil((endsAt - time.now()) / 1000));
       els().forEach((e) => { e.textContent = left + 's'; e.classList.toggle('urgent', left <= 5); });
       if (left !== last && onTick) onTick(left);
       last = left;
@@ -248,5 +249,27 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     };
   })();
 
-  return { qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
+  // Haptics: a buzz you can feel on every tap. Android vibrates; iPhones (no vibrate API) get the
+  // system "tick" by flipping a hidden switch control (Safari 17.4+ plays a haptic for it).
+  /** @type {HTMLLabelElement | null} */
+  let iosSwitch = null;
+  /** @param {number | number[]} pattern ms (or on/off pattern) */
+  function haptic(pattern) {
+    try {
+      if (navigator.vibrate) { navigator.vibrate(pattern); return; }
+      if (!/iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent))) return;
+      if (!iosSwitch) {
+        iosSwitch = document.createElement('label');
+        iosSwitch.className = 'haptic-switch';
+        iosSwitch.setAttribute('aria-hidden', 'true');
+        iosSwitch.innerHTML = '<input type="checkbox" switch tabindex="-1">';
+        document.body.appendChild(iosSwitch);
+      }
+      iosSwitch.click();
+      // A "double" buzz for a miss.
+      if (Array.isArray(pattern) && pattern.length > 2) setTimeout(() => { if (iosSwitch) iosSwitch.click(); }, (pattern[0] || 0) + (pattern[1] || 0));
+    } catch (e) { /* no haptics here */ }
+  }
+
+  return { haptic, qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })())));

@@ -3,8 +3,29 @@
 
 
 const { esc, store, countdown, games, sprites, morph, playerImg , hit } = window.Rumpus;
-const socket = io();
+// Everyone is on the same Wi-Fi: open a WebSocket straight away (no long-polling warm-up; polling
+// only if a WebSocket can't be made), and reconnect quickly (a phone waking up should be back in a
+// second or two, not five).
+const socket = io({ transports: ['websocket', 'polling'], tryAllTransports: true, reconnectionDelay: 400, reconnectionDelayMax: 3000 });
 window.Rumpus.time.sync(socket);
+
+// This phone's own id, made once and kept: rejoining from any tab (or after the seat was lost)
+// always gives back the same player.
+// (Tab-to-tab mode, ?net=local, plays several phones in one browser: there each tab is a phone.)
+const DEVICE = (() => {
+  /** @type {Storage | null} */
+  let tabs = null;
+  try {
+    const local = new URLSearchParams(location.search).get('net') === 'local' || sessionStorage.getItem('cf.net') === 'local';
+    if (local) tabs = sessionStorage;
+  } catch (e) { /* storage blocked */ }
+  let d = tabs ? tabs.getItem('cf.device') : store('cf.device');
+  if (typeof d !== 'string' || !/^[\w-]{8,64}$/.test(d)) {
+    d = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)).replace(/[^\w-]/g, '');
+    if (tabs) tabs.setItem('cf.device', d); else store('cf.device', d);
+  }
+  return /** @type {string} */ (d);
+})();
 
 const joinView = /** @type {HTMLElement} */ (document.getElementById('join-view'));
 const gameView = /** @type {HTMLElement} */ (document.getElementById('game-view'));
@@ -16,6 +37,15 @@ const nickInput = /** @type {HTMLInputElement} */ (document.getElementById('nick
 const banner = /** @type {HTMLElement} */ (document.getElementById('banner'));
 const leaveBtn = /** @type {HTMLElement} */ (document.getElementById('leave-btn'));
 const reactBar = /** @type {HTMLElement} */ (document.getElementById('react-bar'));
+
+// No zooming or copying on the phone: pinch / double-tap zoom and the long-press menu only get in
+// the way of fast taps (iOS ignores user-scalable=no, so stop its gestures here). The Aa button
+// below is the way to make text bigger. (Double-tap zoom is off via CSS touch-action, which keeps
+// rapid taps working — a touchend handler would swallow every second tap of a mash game.)
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+document.addEventListener('contextmenu', (e) => { const t = /** @type {any} */ (e.target); if (!(t && t.closest && t.closest('input, textarea'))) e.preventDefault(); });
+document.addEventListener('selectstart', (e) => { const t = /** @type {any} */ (e.target); if (!(t && t.closest && t.closest('input, textarea'))) e.preventDefault(); });
 
 // Text size (accessibility): 100% → 120% → 140%, remembered on this phone.
 const SIZES = [1, 1.2, 1.4];
@@ -95,7 +125,7 @@ reactBar.addEventListener('click', (e) => {
   const b = hit(e.target, '[data-react]');
   if (!b) return;
   socket.emit('player:react', { emoji: b.dataset.react });
-  if (navigator.vibrate) navigator.vibrate(15);
+  window.Rumpus.haptic(15);
 });
 
 /** @type {{ playerId: string } | null} */
@@ -145,6 +175,8 @@ gameView.addEventListener('click', (e) => {
   if (dd) { const on = dd.getAttribute('aria-pressed') !== 'true'; dd.setAttribute('aria-pressed', String(on)); dd.classList.toggle('on', on); return; }
   const b = hit(e.target, '[data-send]');
   if (!b || b.disabled) return;
+  window.Rumpus.haptic(12); // every answer tap is felt
+  b.classList.add('sent');
   for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) x.disabled = true;
   const payload = JSON.parse(b.dataset.send);
   const ddOn = gameView.querySelector('[data-dd][aria-pressed="true"]');
@@ -168,30 +200,115 @@ joinForm.addEventListener('submit', (e) => {
   e.preventDefault();
   joinError.textContent = '';
   store('rumpus.nick', nickInput.value.trim());
+  joinBtn.disabled = true;
+  joinBtn.textContent = 'Joining…';
   socket.emit('player:joinRoom', {
-    code: codeInput.value, nickname: nickInput.value, avatar: myAvatar,
+    code: codeInput.value, nickname: nickInput.value, avatar: myAvatar, device: DEVICE,
     look: avatarMode === 'make' ? myLook : undefined,
   });
+  void keepAwake();
 });
+const joinBtn = /** @type {HTMLButtonElement} */ (joinForm.querySelector('button[type="submit"]'));
+const resetJoinBtn = () => { joinBtn.disabled = false; joinBtn.textContent = 'Join'; };
 
 leaveBtn.addEventListener('click', () => {
-  if (!confirm('Leave this room?')) return;
+  if (!confirm('Leave this room? Your score in this game is lost.')) return;
+  ended = true;
   socket.emit('player:leave');
   store('rumpus.seat', null);
-  location.href = '/play';
+  setTimeout(() => { location.href = '/play'; }, 150); // let the goodbye reach the TV
 });
 
+// ---- connection: rejoin on every (re)connect, show the link state, keep the screen on
+/** @type {number | null} */
+let lostTimer = null;
+const conn = /** @type {HTMLElement} */ (document.getElementById('conn-dot'));
+/** @param {'ok' | 'wait' | 'lost'} st */
+const setConn = (st) => { conn.dataset.state = st; conn.title = st === 'ok' ? 'Connected to the TV' : 'Reconnecting…'; };
+const seat0 = store('rumpus.seat');
+if (seat0 && seat0.code && seat0.token) showMessage('<div class="loading-card"><div class="spinner" aria-hidden="true"></div><h1>Getting your seat back…</h1><p>Connecting to the TV</p></div>');
 socket.on('connect', () => {
+  if (lostTimer) { clearTimeout(lostTimer); lostTimer = null; }
   banner.hidden = true;
+  setConn('ok');
   const seat = store('rumpus.seat');
-  if (seat && seat.code && seat.token && !ended) socket.emit('player:rejoin', seat);
+  if (ended) return;
+  if (seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
+});
+// Browser build: the TV saw this phone's direct link come back after a nap — re-take the seat.
+socket.on('net:resync', () => {
+  const seat = store('rumpus.seat');
+  if (!ended && seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
 });
 socket.on('player:rejoinFailed', () => {
   store('rumpus.seat', null);
+  resetJoinBtn();
   showJoin();
 });
-socket.on('player:joinError', (/** @type {any} */ msg) => { joinError.textContent = msg.reason || 'Could not join.'; });
+socket.on('player:joinError', (/** @type {any} */ msg) => { resetJoinBtn(); joinError.textContent = msg.reason || 'Could not join.'; });
+// This seat was opened in another tab or window: that one plays now; this one can take it back.
+socket.on('player:replaced', () => {
+  ended = true;
+  socket.disconnect();
+  showMessage('<div class="loading-card"><h1>You\'re playing in another tab</h1><p>Your character moved to the other tab or window on this phone.</p><button class="wide" data-takeback>Play here instead</button></div>');
+});
+document.addEventListener('click', (e) => {
+  if (!hit(e.target, '[data-takeback]')) return;
+  ended = false;
+  showMessage('<div class="loading-card"><div class="spinner" aria-hidden="true"></div><h1>Taking your seat back…</h1></div>');
+  socket.connect();
+});
+// Waking up (screen on, back to the tab): check the link at once instead of waiting for a ping.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || ended) return;
+  void keepAwake();
+  if (!socket.connected) return;
+  socket.timeout(2500).emit('debug:ping', (/** @type {any} */ err) => {
+    if (!err || ended) return;
+    socket.disconnect(); // the link died in our sleep: start a fresh one
+    socket.connect();
+  });
+});
+
+// Keep the Wi-Fi radio awake during a game. An idle phone's Wi-Fi dozes between router beacons
+// and the router holds incoming packets until it wakes, adding 100–300 ms to updates. A tiny
+// message 5×/s keeps it in active mode (measured: p99 572 → 173 ms on Android, PR linked in
+// docs/design/networking.md). Browsers can't take Android's low-latency Wi-Fi lock, so this is the lever we have.
+const WARM_MS = 200;
+setInterval(() => {
+  if (ended || !socket.connected || document.visibilityState !== 'visible' || !state || state.phase === 'lobby') return;
+  socket.volatile.emit('k');
+}, WARM_MS);
+
+/** Keep the screen on while in a room (needs a tap first; https uses the Wake Lock API, plain
+ * http a tiny silent looping video — the standard trick for phones without it). */
+/** @type {any} */
+let wakeLock = null;
+/** @type {HTMLVideoElement | null} */
+let wakeVideo = null;
+async function keepAwake() {
+  try {
+    const wl = /** @type {any} */ (navigator).wakeLock;
+    if (wl && window.isSecureContext) {
+      if (!wakeLock || wakeLock.released) wakeLock = await wl.request('screen');
+      return;
+    }
+  } catch (e) { /* not allowed right now: fall back */ }
+  if (!wakeVideo) {
+    wakeVideo = document.createElement('video');
+    wakeVideo.setAttribute('playsinline', '');
+    wakeVideo.muted = true;
+    wakeVideo.loop = true;
+    wakeVideo.className = 'keep-awake';
+    wakeVideo.innerHTML = '<source src="/keep-awake.webm" type="video/webm"><source src="/keep-awake.mp4" type="video/mp4">';
+    document.body.appendChild(wakeVideo);
+  }
+  if (wakeVideo.paused) wakeVideo.play().catch(() => {});
+}
+document.addEventListener('pointerdown', () => { if (me && !ended) void keepAwake(); }, { passive: true });
+
 socket.on('player:joined', (/** @type {any} */ msg) => {
+  resetJoinBtn();
   me = { playerId: msg.playerId };
   store('rumpus.seat', { code: msg.roomState.code, token: msg.token });
   joinView.hidden = true;
@@ -208,8 +325,16 @@ socket.on('player:kicked', () => {
 socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; render(); });
 socket.on('disconnect', () => {
   if (ended) return;
-  banner.textContent = 'Connection lost — reconnecting…';
-  banner.hidden = false;
+  setConn('wait');
+  // Brief blips heal by themselves; only say something if it lasts.
+  if (lostTimer) clearTimeout(lostTimer);
+  lostTimer = window.setTimeout(() => {
+    lostTimer = null;
+    if (socket.connected || ended) return;
+    setConn('lost');
+    banner.innerHTML = '<span class="spinner small" aria-hidden="true"></span> Reconnecting to the TV… your seat is saved';
+    banner.hidden = false;
+  }, 1500);
 });
 
 function showJoin() {
@@ -220,6 +345,10 @@ function showJoin() {
 }
 
 function showMessage(/** @type {any} */ html) {
+  // The game screen is going away: stop its timers and sensor listeners (tilt, tap batching).
+  cleanups.forEach((fn) => fn());
+  cleanups = [];
+  lastScreenKey = '';
   gameView.innerHTML = html;
   gameView.hidden = false;
   joinView.hidden = true;
@@ -298,8 +427,22 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
   }
 }
 
+let sendSeq = 0;
+/** Send an answer/tap. The TV confirms it; until then the screen says "Sending…", and if the
+ * confirmation never comes (the link dropped) the buttons come back so it can be tapped again. */
 function send(/** @type {any} */ payload) {
-  socket.emit('player:submit', { payload });
+  const seq = ++sendSeq;
+  const slow = window.setTimeout(() => { if (seq === sendSeq) document.body.classList.add('sending'); }, 250);
+  socket.timeout(6000).emit('player:submit', { payload }, (/** @type {any} */ err, /** @type {any} */ res) => {
+    clearTimeout(slow);
+    if (seq !== sendSeq) return;
+    document.body.classList.remove('sending');
+    if (!err && res && res.ok) return;
+    for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) x.disabled = false;
+    banner.textContent = 'That didn\'t reach the TV — tap again';
+    banner.hidden = false;
+    setTimeout(() => { if (socket.connected) banner.hidden = true; }, 3000);
+  });
 }
 
 function render() {
@@ -325,7 +468,7 @@ function render() {
     const taken = new Set(state.players.filter((/** @type {any} */ p) => p.id !== myId).map((/** @type {any} */ p) => p.avatar));
     const mine = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).avatar;
     html = `<h1>You're in!</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div>
-      <p>Watch the TV — the host is picking a game.</p>
+      <p>${state.players.length < 2 ? 'Get a friend to scan the QR code on the TV.' : 'The host is picking a game on the TV.'}</p>
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
       <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
       <button class="ghost-btn" data-lobby-maker>🧑 Edit my character</button>
@@ -351,7 +494,10 @@ function render() {
   // Only touch the DOM if this phone's screen actually changed — otherwise
   // another player's submit would wipe what you're typing/drawing.
   // Same screen (phase/round/step unchanged): patch in place, no re-animation.
-  const screenKey = [state.phase, g.round, g.step, g.chainIndex, g.subject].join('|');
+  // A new prompt/question is a new screen (fresh, empty answer box) even within the same phase:
+  // Campfire Quips asks two prompts in one phase, and a skipped question keeps the phase.
+  const screenKey = [state.phase, g.round, g.step, g.chainIndex, g.subject, g.promptNumber, g.matchIndex, g.revealIndex, g.skipSeq,
+    typeof g.prompt === 'string' ? g.prompt : '', typeof g.question === 'string' ? g.question : ''].join('|');
   if (html !== lastHtml && screenKey === lastScreenKey && lastHtml !== null && !gameView.querySelector('#pad')) {
     morph(gameView, html);
     lastHtml = html;
@@ -370,9 +516,42 @@ function render() {
     const first = gameView.querySelector('form input');
     if (first && !('ontouchstart' in window)) /** @type {HTMLInputElement} */ (first).focus();
   }
-  countdown(g.endsAt, '#phone-timer');
+  countdown(g.endsAt, '#phone-timer', (/** @type {number} */ left) => { if (left <= 0) renderStatus(); });
   if (state.phase !== 'lobby') lobbyMaker.hidden = true;
   renderPace();
+  renderStatus();
+}
+
+// One line under the header that always says what's going on (and that nothing is stuck).
+const statusLine = /** @type {HTMLElement} */ (document.getElementById('status-line'));
+/** @type {number | null} */
+let statusTimer = null;
+function renderStatus() {
+  if (!state || !me || ended) { statusLine.hidden = true; return; }
+  const g = state.gameState || {};
+  const ph = String(state.phase || '');
+  const myTurn = !!gameView.querySelector('form, [data-send]:not(:disabled), [data-herd], #pad, canvas[data-touch], .pad-zone');
+  const now = window.Rumpus.time.now();
+  const late = g.endsAt && g.endsAt < now - 600;
+  let text = '';
+  let spin = false;
+  if (ph === 'lobby') {
+    const n = state.players.length;
+    text = state.hostConnected === false ? 'TV is offline — waiting for it…' : n < 2 ? 'Waiting for more players to join…' : 'Waiting for the host to pick a game…';
+    spin = true;
+  } else if (ph === 'gameover') { text = state.night ? 'Next game coming up — vote on your phone soon' : 'Game over — waiting for the host to pick the next game'; spin = true; }
+  else if (late && !myTurn) { text = 'Time\'s up — waiting for the TV…'; spin = true; }
+  else if (myTurn) text = '👉 Your turn';
+  else if (/intro|roles|title/.test(ph)) { text = 'Get ready — the game is starting'; spin = true; }
+  else if (/reveal|result|final|score|show/.test(ph)) text = '📺 Watch the TV';
+  else { text = 'Waiting for the others…'; spin = true; }
+  const html = (spin ? '<span class="spinner small" aria-hidden="true"></span>' : '') + esc(text);
+  if (statusLine.innerHTML !== html) statusLine.innerHTML = html;
+  statusLine.dataset.kind = myTurn ? 'turn' : 'wait';
+  statusLine.hidden = false;
+  // Re-check once the timer runs out (no update may come while the TV finishes up).
+  if (statusTimer) clearTimeout(statusTimer);
+  statusTimer = g.endsAt && g.endsAt > now ? window.setTimeout(renderStatus, g.endsAt - now + 700) : null;
 }
 
 // Majority-vote pace buttons: skip question / hurry up / next.
@@ -399,7 +578,7 @@ paceBar.addEventListener('click', (e) => {
   const b = hit(e.target, '[data-pace]');
   if (!b || b.disabled) return;
   socket.emit('player:vote', { kind: b.dataset.pace });
-  if (navigator.vibrate) navigator.vibrate(20);
+  window.Rumpus.haptic(20);
 });
 
 function bind(/** @type {any} */ g) {

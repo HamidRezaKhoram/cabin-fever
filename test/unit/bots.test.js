@@ -12,8 +12,8 @@ const QUICK = {
   RUMPUS_MG_FLY_SHOW_MS: '300', RUMPUS_MG_FLY_GUESS_MS: '3000', RUMPUS_MG_DRAW_WINDOW: '1500',
   RUMPUS_TEL_FAV_MS: '3000', RUMPUS_TRIVIA_CATEGORY_MS: '2000', RUMPUS_CR_REVEAL_STEP_MS: '150',
   RUMPUS_LC_TEMPO: '4', RUMPUS_LC_PHRASES: '2', RUMPUS_LC_LEAD_MS: '300', RUMPUS_LC_RESULT_MS: '200',
-  RUMPUS_WZ_STEP_MS: '40', RUMPUS_WZ_FINAL_MS: '200',
   RUMPUS_ST_ROLES_MS: '2000', RUMPUS_ST_VOTE_SHOW_MS: '150', RUMPUS_ST_CARD_MS: '100', RUMPUS_ST_FINAL_MS: '200',
+  RUMPUS_TT_STEP_MS: '60', RUMPUS_MG_PLAY_MS: '1500', RUMPUS_MG_SHOW_MS: '40',
   RUMPUS_LL_INTRO_MS: '300', RUMPUS_LL_PLAY_MS: '2500', RUMPUS_LL_RESULT_MS: '200',
 };
 let srv;
@@ -32,10 +32,10 @@ test('host can add and remove bots; bots are flagged and get looks', async () =>
   await until(() => h.state.players.length === 0, 'bots removed');
 });
 
-test('bots play every game to the end (fast bots, 4 players)', { timeout: 240000 }, async () => {
+test('bots play every game to the end (fast bots, 8 players)', { timeout: 480000 }, async () => {
   const h = await makeHost(srv);
-  h.emit('host:addBots', { count: 4, speed: 20 });
-  await until(() => h.state && h.state.players.length === 4, '4 bots');
+  h.emit('host:addBots', { count: 8, speed: 20 });
+  await until(() => h.state && h.state.players.length === 8, '8 bots');
   // Which games: BOT_GAMES=all (CI) plays every game the server offers; otherwise test-all passes
   // the games changed or added since the last commit (BOT_GAMES=a,b), so local runs stay quick.
   const offered = h.state.availableGames.map((/** @type {{ id: string }} */ g) => g.id);

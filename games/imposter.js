@@ -26,8 +26,8 @@ const BUILTIN = [
   { category: 'Fantasy', words: ['Dragon', 'Wizard', 'Unicorn', 'Castle', 'Mermaid', 'Troll', 'Ghost', 'Vampire'] },
 ];
 
-const CLUE_MS = parseInt(process.env.RUMPUS_IMP_CLUE_MS || '40000', 10);
-const VOTE_MS = parseInt(process.env.RUMPUS_IMP_VOTE_MS || '40000', 10);
+const CLUE_MS = parseInt(process.env.RUMPUS_IMP_CLUE_MS || '25000', 10);
+const VOTE_MS = parseInt(process.env.RUMPUS_IMP_VOTE_MS || '25000', 10);
 const GUESS_MS = parseInt(process.env.RUMPUS_IMP_GUESS_MS || '20000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '9000', 10);
 

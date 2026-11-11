@@ -153,10 +153,13 @@ test('Campfire Quips: final round is worth double and flagged', async () => {
     ps.find((p) => !p.state.you.isAuthor).submit({ choice: 0 });
     const r = await until(() => h.state.phase === 'results' && h.state.gameState.matchIndex === 0 && h.state, 'results');
     assert.strictEqual(r.gameState.result.sides[0].gained, 100 * (round === 2 ? 2 : 1));
-    // Skip through the remaining matchups to the next round.
+    // Skip through the remaining matchups to the next round (once per screen: TV updates are
+    // coalesced, so a stale screen must not trigger a second skip that eats the next round).
+    let skipped = '';
     await until(() => {
       if (h.state.phase === 'gameover' || (h.state.phase === 'answering' && h.state.gameState.round === round + 1)) return true;
-      h.emit('host:skip');
+      const key = `${h.state.phase}/${h.state.gameState.round}/${h.state.gameState.matchIndex}`;
+      if (key !== skipped) { skipped = key; h.emit('host:skip'); }
       return false;
     }, 'end of round ' + round, 15000);
   }
@@ -372,10 +375,33 @@ test('Campfire Consensus: matching answers group up (300 each for 3), then exact
   await sleep(100);
   assert.strictEqual(by.Ann.state.you.bet, null);
   by.Ann.submit({ bet: 2 }); by.Ben.submit({ bet: 1 }); by.Cat.submit({ bet: 3 }); by.Dan.submit({ bet: 0 });
+  // The herd call: everyone agrees the boxes are the herd (lamp is alone).
+  const herd = await h.phase('mr-herd');
+  assert.deepStrictEqual(herd.gameState.answers, ['The Boxes', 'lamp']);
+  for (const n of ['Ann', 'Ben', 'Cat', 'Dan']) by[n].submit({ herd: [0] });
   const rev = await h.phase('mr-reveal');
   assert.strictEqual(rev.gameState.result.groups[0].count, 3);
   // Matching: 300 each for the trio. Bets: Ann called 2 exactly (+150), Dan called "nobody" (+50).
   assert.deepStrictEqual([score('Ann'), score('Ben'), score('Cat'), score('Dan')], [450, 300, 300, 50]);
+});
+
+test('Campfire Consensus: the players decide which answers count as the same herd (no spelling rules)', async () => {
+  const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
+  h.emit('host:startGame', { gameId: 'majority' });
+  await h.phase('mr-answer');
+  by.Ann.submit({ text: 'dog' }); by.Ben.submit({ text: 'puppy' }); by.Cat.submit({ text: 'doggo' }); by.Dan.submit({ text: 'cat' });
+  for (const n of ['Ann', 'Ben', 'Cat', 'Dan']) by[n].submit({ bet: 2 });
+  const herd = await h.phase('mr-herd');
+  assert.deepStrictEqual(herd.gameState.answers, ['cat', 'dog', 'doggo', 'puppy']);
+  assert.strictEqual(by.Ben.state.you.mine, 3, 'phones know which answer is theirs');
+  by.Ann.submit({ herd: [1, 2, 3] }); by.Ben.submit({ herd: [1, 2, 3] }); by.Cat.submit({ herd: [1, 2, 3, 99] }); by.Dan.submit({ herd: [0] });
+  const rev = await h.phase('mr-reveal');
+  // dog, doggo and puppy each got 3 of 4 votes (a majority): one herd of 3. Dan's lone vote didn't save cat.
+  const top = rev.gameState.result.groups[0];
+  assert.strictEqual(top.count, 3);
+  assert.ok(top.herd && top.label.includes('dog') && top.label.includes('puppy'));
+  // 300 each for the herd, +150 for the exact bets of 2; Dan alone.
+  assert.deepStrictEqual([score('Ann'), score('Ben'), score('Cat'), score('Dan')], [450, 450, 450, 0]);
 });
 
 // ------------------------------------------------------------------ Cabin Superlatives
@@ -458,26 +484,36 @@ test('Odd Duck Out: if the imposter leaves mid-round, a fresh round starts', asy
 });
 
 // ------------------------------------------------------------------ Porch Confessions
-test('Porch Confessions: incomplete sets rejected; subject cannot guess; 75 per person fooled', async () => {
-  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat']);
+test('Porch Confessions: a prompt, secret TRUTH/LIE roles, everyone calls everyone; +100 per right call, +50 per person fooled', async () => {
+  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
+  h.emit('host:settings', { rounds: 1 });
+  await until(() => h.state.settings.rounds === 1, 'one round');
   h.emit('host:startGame', { gameId: 'twotruths' });
-  await h.phase('tt-write');
-  ps[0].submit({ truths: ['only one'], lie: 'x' });
-  await sleep(100);
-  assert.strictEqual(ps[0].state.you.submitted, false);
-  assert.strictEqual(h.state.gameState.waitingOn.length, 3, 'TV names who is still writing');
-  for (const p of ps) p.submit({ truths: [`${p.nickname} t1`, `${p.nickname} t2`], lie: `${p.nickname} LIE` });
-  const first = await h.phase('tt-guess');
-  const subject = ps.find((p) => p.nickname === first.gameState.subject);
-  const others = ps.filter((p) => p !== subject);
-  const lie = first.gameState.statements.findIndex((s) => s.endsWith('LIE'));
-  subject.submit({ choice: lie }); // ignored
-  others[0].submit({ choice: lie });
-  others[1].submit({ choice: (lie + 1) % 3 });
-  const rev = await h.phase('tt-reveal');
-  assert.strictEqual(rev.gameState.result.lieIndex, lie);
-  assert.strictEqual(score(others[0].nickname), 100);
-  assert.strictEqual(score(subject.nickname), 75);
+  const w = await h.phase('tt-write');
+  assert.ok(w.gameState.prompt, 'a confession prompt');
+  await until(() => ps.every((p) => p.state.phase === 'tt-write'), 'phones writing');
+  const liars = ps.filter((p) => p.state.you.lie);
+  assert.ok(liars.length >= 1 && liars.length <= 3, `${liars.length} liars of 4`);
+  assert.ok(!JSON.stringify(h.state).includes('"lie":true'), 'the TV never knows who lies while writing');
+  // A truth-teller with nothing true to say may switch to lying.
+  const honest = ps.find((p) => !p.state.you.lie);
+  honest.submit({ switchToLie: true });
+  await until(() => honest.state.you.lie === true, 'switched');
+  for (const p of ps) p.submit({ text: `${p.nickname}'s story` });
+  const j = await h.phase('tt-judge');
+  assert.strictEqual(j.gameState.answers.length, 4);
+  await until(() => ps.every((p) => p.state.phase === 'tt-judge'), 'phones judging');
+  assert.strictEqual(ps[0].state.gameState.answers.length, 3, "you don't judge your own");
+  // Everyone calls every answer "real": right for truth-tellers' answers, fooled by the liars.
+  const isLiar = new Set([...liars, honest].map((p) => p.id));
+  for (const p of ps) p.submit({ calls: Object.fromEntries(ps.filter((x) => x !== p).map((x) => [x.id, true])) });
+  await until(() => h.state.phase === 'tt-reveal' && h.state.gameState.done, 'all revealed', 15000);
+  for (const p of ps) {
+    const othersHonest = ps.filter((x) => x !== p && !isLiar.has(x.id)).length;
+    const fooledMe = isLiar.has(p.id) ? 3 : 0; // all three others believed my lie
+    assert.strictEqual(score(p.nickname), othersHonest * 100 + fooledMe * 50, `${p.nickname}`);
+  }
+  await h.phase('gameover', 10000);
 });
 
 // ------------------------------------------------------------------ Message in a Bottle

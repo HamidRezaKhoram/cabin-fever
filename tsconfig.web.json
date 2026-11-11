@@ -10,6 +10,7 @@
     "web/qr.js",
     "web/host-entry.js",
     "web/client-entry.js",
+    "web/offline.js",
     "web/shims/fs.js",
     "web/shims/path.js",
     "web/shims/crypto.js",

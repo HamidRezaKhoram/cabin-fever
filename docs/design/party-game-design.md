@@ -94,7 +94,7 @@ How we hit them (patterns that worked in the playtests):
 | Message in a Bottle | 3.9 | 2.3 | 61 s | ◐ drawing takes time by nature; favourites + who's-left row help |
 | Rainy Day Cards | 3.0 | 3.1 | 32 s | ✅ good (czar picks the next prompt) |
 | Cottage Olympics | 1.5 | 36 | 17 s | ✅ meets every target (the old 53–78 s was a playtest bug: Quick Draw's wait wasn't scaled); results 4.5 s, firefly guesses lock in early |
-| Campfire Wizards (spell duel) | 2.4–3.6 bots (≈5–7 real) | 3–4 | 21 s (4p) · 24 s (6p) · 32 s (8p) | ✅ everyone casts every round; reveal capped at ~8 steps |
+| ~~Campfire Wizards (spell duel)~~ | removed Nov 2026 (playtest: not fun) | | | |
 | Storm Watch (strategy) | 2–3 with bots (≈10–12 with real talk) | 4 | 31–35 s | ✅ the 'idle' is the 60 s talk phase — people argue there; everyone votes every crew |
 | Lantern Lake (tilt) | 2.5 | continuous | 10 s | ✅ always steering; short on purpose (arms tire) |
 | Loon Call (rhythm) | 3.0 | 27 | 22 s | ✅ meets every target (the caller echoes too — was 33 s) |

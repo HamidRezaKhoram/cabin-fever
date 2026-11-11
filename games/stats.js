@@ -29,19 +29,25 @@ const MAX_IMAGES = 40; // drawings are big — keep only the newest ones on disk
 /** @type {StatsFile} */
 let data = { players: {}, highlights: [] };
 try { data = { players: {}, highlights: [], ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { /* first run */ }
+// Players are keyed by nickname, which players choose: a prototype-free object means names like
+// "constructor" or "__proto__" are just names (on a normal object they broke or poisoned the stats).
+data.players = Object.assign(Object.create(null), data.players && typeof data.players === 'object' ? data.players : {});
+if (!Array.isArray(data.highlights)) data.highlights = [];
 
 /** @type {NodeJS.Timeout | null} */
 let timer = null;
+function write() {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(FILE + '.tmp', JSON.stringify(data));
+    fs.renameSync(FILE + '.tmp', FILE);
+  } catch (e) { /* best effort: stats are a nice-to-have */ }
+}
+/** Shutting down: write a pending save now. */
+function flush() { if (timer) { clearTimeout(timer); timer = null; write(); } }
 function save() {
   if (timer) return;
-  timer = setTimeout(() => {
-    timer = null;
-    try {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-      fs.writeFileSync(FILE + '.tmp', JSON.stringify(data));
-      fs.renameSync(FILE + '.tmp', FILE);
-    } catch (e) { /* best effort: stats are a nice-to-have */ }
-  }, 1000);
+  timer = setTimeout(() => { timer = null; write(); }, 1000);
   if (timer.unref) timer.unref(); // (browsers have no unref)
 }
 
@@ -129,6 +135,6 @@ function summary(room) {
 }
 
 /** For tests: forget everything (in memory). */
-function _reset() { data = { players: {}, highlights: [] }; }
+function _reset() { data = { players: Object.create(null), highlights: [] }; }
 
-module.exports = { feat, highlight, recordGame, nightWin, achievements, summary, _reset };
+module.exports = { feat, highlight, recordGame, nightWin, achievements, summary, flush, _reset };
