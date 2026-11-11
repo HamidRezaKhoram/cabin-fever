@@ -16,7 +16,9 @@ const MAX_QUEUE = 64;
 const MAX_ACKS = 256;
 
 /** @typedef {{ t: 'e', ev: string, args: unknown[], ack?: number } | { t: 'a', id: number, args: unknown[] } | { t: 'p' }} Msg */
-/** A link to one peer: send a message, hear messages and the close. @typedef {{ send(m: Msg): void, onMessage(fn: (m: Msg) => void): void, onClose(fn: () => void): void, close(): void }} Wire */
+/** A link to one peer: send a message, hear messages and the close. `sendFast` (WebRTC only) sends
+ * on the unordered, no-retransmit channel: newest-wins traffic that must never wait behind a lost packet.
+ * @typedef {{ send(m: Msg): void, sendFast?: (m: Msg) => void, onMessage(fn: (m: Msg) => void): void, onClose(fn: () => void): void, close(): void }} Wire */
 
 class Sock {
   /** @param {string} id */
@@ -54,9 +56,19 @@ class Sock {
   onAny(fn) { this.anyIn.push(fn); return this; }
   /** @param {(ev: string, ...a: any[]) => void} fn */
   onAnyOutgoing(fn) { this.anyOut.push(fn); return this; }
-  /** socket.io's volatile: sent now or dropped, never queued (keep-warm pings, 30 fps frames). */
+  /** socket.io's volatile: sent now or dropped, never queued, no ack (tilt, keep-warm pings, 30 fps
+   * frames). Over WebRTC it travels on the fast channel (see fastChannel below). */
   get volatile() {
-    return { emit: (/** @type {string} */ ev, /** @type {any[]} */ ...args) => (this.connected ? this.emit(ev, ...args) : this) };
+    return {
+      emit: (/** @type {string} */ ev, /** @type {any[]} */ ...args) => {
+        if (!this.connected || !this.wire) return this;
+        if (typeof args[args.length - 1] === 'function') args.pop();
+        for (const f of this.anyOut) f(ev, ...args);
+        const m = /** @type {Msg} */ ({ t: 'e', ev, args });
+        if (this.wire.sendFast) this.wire.sendFast(m); else this.wire.send(m);
+        return this;
+      },
+    };
   }
   /** socket.io's `socket.timeout(ms).emit(ev, ..., cb)`: cb(err) if no reply in time. @param {number} ms */
   timeout(ms) {
@@ -197,6 +209,7 @@ function heartbeat(raw, opts = {}) {
   raw.onClose(hardClose);
   return {
     send: (m) => { if (state !== 'closed') raw.send(m); },
+    sendFast: (m) => { if (state !== 'closed') (raw.sendFast || raw.send)(m); },
     onMessage: (f) => { onMsg.push(f); },
     onClose: (f) => { onClose.push(f); },
     onRevive: (f) => { onRevive.push(f); },
@@ -209,16 +222,54 @@ function heartbeat(raw, opts = {}) {
 // ------------------------------------------------------------------ transports
 /** @typedef {{ listen(code: string, onConn: (w: LiveWire, path?: () => Promise<{ type: string, rtt: number | null } | null>) => void, onError: (e: string) => void): () => void, connect(code: string, onOpen: (w: Wire) => void, onFail: (why: string) => void): void }} Transport */
 
+/** The fast channel's fixed id (both ends create it themselves; PeerJS's own channel gets 0 or 1). */
+const FAST_ID = 77;
+/** Don't pile up behind a slow link: past this much unsent data, fast messages are dropped. */
+const FAST_BUFFER = 16 * 1024;
+/**
+ * A second data channel on an open WebRTC link: unordered and never retransmitted (like UDP), so a
+ * lost packet is simply gone instead of holding up everything behind it. For newest-wins traffic
+ * (tilt 15×/s). "Negotiated": both ends create it with the same id — announcing it the normal way
+ * would be picked up by PeerJS as its own channel.
+ * @param {RTCPeerConnection} pc @param {(m: Msg) => void} onMessage
+ * @returns {{ send(m: Msg): boolean, ready(): boolean, props(): { ordered: boolean, maxRetransmits: number | null }, close(): void } | null}
+ */
+function fastChannel(pc, onMessage) {
+  try {
+    const ch = pc.createDataChannel('cf-fast', { negotiated: true, id: FAST_ID, ordered: false, maxRetransmits: 0 });
+    ch.onmessage = (e) => { try { onMessage(JSON.parse(e.data)); } catch (err) { /* not ours */ } };
+    return {
+      /** True if it went out (or was deliberately dropped); false if this channel can't carry it. */
+      send: (m) => {
+        if (ch.readyState !== 'open') return false;
+        if (ch.bufferedAmount > FAST_BUFFER) return true; // congested: drop — a newer one is coming
+        try { ch.send(JSON.stringify(m)); return true; } catch (e) { return false; }
+      },
+      ready: () => ch.readyState === 'open',
+      props: () => ({ ordered: ch.ordered, maxRetransmits: ch.maxRetransmits }),
+      close: () => { try { ch.close(); } catch (e) { /* closed */ } },
+    };
+  } catch (e) { return null; } // an old browser: everything stays on the reliable channel
+}
+
 /** PeerJS (WebRTC). @returns {Transport} */
 function peerTransport() {
   const PeerCtor = /** @type {any} */ (window).Peer;
   /** @param {any} conn @returns {Wire} */
-  const wrap = (conn) => ({
-    send: (m) => { try { conn.send(m); } catch (e) { /* closing */ } },
-    onMessage: (f) => conn.on('data', f),
-    onClose: (f) => { conn.on('close', f); conn.on('error', f); },
-    close: () => { try { conn.close(); } catch (e) { /* closed */ } },
-  });
+  const wrap = (conn) => {
+    /** @type {((m: Msg) => void)[]} */
+    const hear = [];
+    const send = (/** @type {Msg} */ m) => { try { conn.send(m); } catch (e) { /* closing */ } };
+    const fast = conn.peerConnection ? fastChannel(conn.peerConnection, (m) => hear.forEach((f) => f(m))) : null;
+    return {
+      send,
+      // Not open (yet) or not supported: the reliable channel carries it instead.
+      sendFast: (m) => { if (!fast || !fast.send(m)) send(m); },
+      onMessage: (f) => { hear.push(f); conn.on('data', f); },
+      onClose: (f) => { conn.on('close', f); conn.on('error', f); },
+      close: () => { if (fast) fast.close(); try { conn.close(); } catch (e) { /* closed */ } },
+    };
+  };
   /** The phone's one Peer (re-made only if the broker drops it for good). @type {any} */
   let mine = null;
   /** Connection attempts waiting on the phone's Peer. @type {Set<(why: string) => void>} */
@@ -340,4 +391,4 @@ function pickTransport() {
   return local || !(/** @type {any} */ (window).Peer) ? localTransport() : peerTransport();
 }
 
-module.exports = { Sock, pairWires, pickTransport, heartbeat, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };
+module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };

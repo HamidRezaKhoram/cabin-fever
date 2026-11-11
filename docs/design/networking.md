@@ -30,9 +30,28 @@ delay itself, so the server adds nothing noticeable even then.
 | Coalesce updates, skip unchanged views | Done earlier | One update per screen per 30 ms at most; a screen that didn't change gets nothing. |
 | Keep the phone's Wi-Fi radio awake | **Done** | An idle phone's Wi-Fi dozes between router beacons; the router holds packets until it wakes, adding ~100–300 ms ([Nordic](https://nrfconnectdocs.nordicsemi.com/ncs/2.6.1/nrf/protocols/wifi/station_mode/powersave.html), [TI](https://e2e.ti.com/support/wireless-connectivity/wi-fi-group/wifi/f/wi-fi-forum/984486/wl1837mod-power_save-affect-on-ping-latency)). A 200 ms heartbeat cut p99 from 572 to 173 ms in [one Android LAN game](https://github.com/HashingSeeds/scryve/pull/582). Native apps can also take Android's [low-latency Wi-Fi lock](https://source.android.com/docs/core/connect/wifi-low-latency); web pages can't. Phones now send a tiny `k` message every 200 ms while a game is on screen (public/play.js). |
 | Send only what changed (deltas) | Not now | Would cut ~2 KB to a few hundred bytes, but 2 KB is well under a millisecond of Wi-Fi airtime; not worth the bug risk. |
-| Unreliable WebRTC channel for tilt and frames (browser build) | Maybe later | `ordered:false, maxRetransmits:0` avoids waiting on a lost packet ([guide](https://www.metered.ca/docs/realtime-messaging/sdk-javascript/guides/data-channel-low-latency)). Only matters when packets are lost; worth it if Lantern Lake feels sticky in real play. |
+| Unreliable WebRTC channel for tilt (browser build) | **Done** | A second data channel per phone, `ordered:false, maxRetransmits:0` ([guide](https://www.metered.ca/docs/realtime-messaging/sdk-javascript/guides/data-channel-low-latency)): a lost packet is dropped instead of holding up the ones behind it. See below. |
 
 ## What helps at the cottage (no code)
 
 - Use the router's 5 GHz network, and plug the TV/laptop into the router with a cable if you can.
 - A phone in battery-saver mode can be slower; plug-in or turn it off for the night.
+
+## The fast channel (browser build)
+
+`web/net.js` `fastChannel(pc)`: on every phone↔TV WebRTC link, both ends create a second data
+channel with the same fixed id ("negotiated" — a channel announced the normal way would be taken by
+PeerJS as its own). `socket.volatile.emit` uses it; if it isn't open or the browser can't make it,
+the message goes on the reliable channel instead. If more than 16 KB is waiting to be sent, fast
+messages are dropped (a newer one is coming).
+
+- **On it:** Lantern Lake steering (`api.sendFast` in `public/games.js`) and the Wi-Fi keep-warm ping.
+- **Not on it:** answers, votes, taps, drawings, rhythm taps — anything that must arrive.
+- **Newest wins:** each steering message carries a rising counter `n`; the server ignores one that
+  arrives late (`games/lantern.js`). The phone repeats its current steering every 200 ms, so a lost
+  packet — even the final "stop" — is corrected within 200 ms.
+- **Docker:** phones use a WebSocket (TCP), which has no unreliable mode; steering is sent
+  `volatile` there too (no ack, dropped if the socket is backed up), which is the most TCP allows.
+- **Tests:** `test/ui/pages.js` joins two real `RTCPeerConnection`s and checks the channel is
+  unordered, has 0 retransmits, carries messages both ways and is not announced; unit tests cover
+  the routing and out-of-order steering.

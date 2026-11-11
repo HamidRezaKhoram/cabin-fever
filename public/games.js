@@ -1076,17 +1076,21 @@
   });
 
   // ---- phone controller: tilt (secure pages) or touch steering (always works)
-  /** @type {{ mode: 'touch' | 'tilt', zero: number[] | null, vec: number[], sentAt: number, sent: string, https: string[] | null, trail: number }} */
-  const llCtl = { mode: 'touch', zero: null, vec: [0, 0], sentAt: 0, sent: '', https: null, trail: 0 };
-  /** Send the current vector at most 15×/s, and only when it changed. @param {(p: any) => void} send */
+  /** @type {{ mode: 'touch' | 'tilt', zero: number[] | null, vec: number[], sentAt: number, sent: string, https: string[] | null, trail: number, n: number }} */
+  const llCtl = { mode: 'touch', zero: null, vec: [0, 0], sentAt: 0, sent: '', https: null, trail: 0, n: 0 };
+  /** Send the current vector: at most 15×/s while it changes, and again every 200 ms while it
+   * doesn't. Steering goes on the fast channel, where a packet may be lost — the repeat means a lost
+   * one (even the last "stop") is put right within 200 ms. `n` rises with every send so the server
+   * can ignore one that arrives late, out of order. @param {(p: any) => void} send */
   function llSend(send) {
     const now = Date.now();
     const key = llCtl.vec.map((v) => v.toFixed(2)).join();
-    if (key === llCtl.sent) return;
-    // Throttled to 15/s; a trailing send makes sure the last position always arrives (the server keeps it).
+    if (key === llCtl.sent && now - llCtl.sentAt < 200) return;
+    // Throttled to 15/s; a trailing send makes sure the last position goes out.
     if (now - llCtl.sentAt < 66) { clearTimeout(llCtl.trail); llCtl.trail = window.setTimeout(() => llSend(send), 70); return; }
     llCtl.sent = key; llCtl.sentAt = now;
-    send({ tilt: llCtl.vec });
+    llCtl.n = Math.max(llCtl.n + 1, now);
+    send({ tilt: llCtl.vec, n: llCtl.n });
   }
   const llSecureLink = () => {
     const seat = window.Rumpus.store('rumpus.seat');
@@ -1149,6 +1153,9 @@
       if (!pad) return;
       const knob = /** @type {HTMLElement} */ (pad.querySelector('.ll-knob'));
       const show = () => { knob.style.transform = `translate(${Math.round(llCtl.vec[0] * 40)}%, ${Math.round(llCtl.vec[1] * 40)}%)`; };
+      const steer = api.sendFast || api.send;
+      const again = setInterval(() => llSend(steer), 100); // the 200 ms repeat (see llSend)
+      api.onCleanup(() => clearInterval(again));
       /** @param {PointerEvent} e */
       const fromPointer = (e) => {
         const r = pad.getBoundingClientRect();
@@ -1156,11 +1163,11 @@
         const m = Math.hypot(x, y);
         llCtl.mode = 'touch';
         llCtl.vec = m > 1 ? [x / m, y / m] : [x, y];
-        show(); llSend(api.send);
+        show(); llSend(steer);
       };
       pad.addEventListener('pointerdown', (e) => { e.preventDefault(); pad.setPointerCapture(e.pointerId); fromPointer(e); });
       pad.addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') fromPointer(e); });
-      const stop = () => { if (llCtl.mode === 'touch') { llCtl.vec = [0, 0]; show(); llCtl.sentAt = 0; llSend(api.send); } };
+      const stop = () => { if (llCtl.mode === 'touch') { llCtl.vec = [0, 0]; show(); llCtl.sentAt = 0; llSend(steer); } };
       pad.addEventListener('pointerup', stop); pad.addEventListener('pointercancel', stop);
       // Tilt: beta (front/back) and gamma (left/right), relative to how you held it when you turned it on.
       /** @param {DeviceOrientationEvent} e */
@@ -1173,7 +1180,7 @@
         const x = (gx - llCtl.zero[0]) / 25, y = (by - llCtl.zero[1]) / 25;
         const m = Math.hypot(x, y);
         llCtl.vec = m > 1 ? [x / m, y / m] : [x, y];
-        show(); llSend(api.send);
+        show(); llSend(steer);
       };
       window.addEventListener('deviceorientation', onTilt);
       api.onCleanup(() => window.removeEventListener('deviceorientation', onTilt));

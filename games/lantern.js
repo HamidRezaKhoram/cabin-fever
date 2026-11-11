@@ -112,6 +112,8 @@ class LanternGame extends BaseGame {
     this.order = [];
     /** @type {Map<string, Body>} */
     this.boats = new Map();
+    /** @type {Map<string, number>} each phone's latest steering counter */
+    this.tiltSeq = new Map();
     /** @type {Map<string, number[]>} */
     this.tilt = new Map();
     /** @type {{ x: number, y: number, gold: boolean, ph: number }[]} */
@@ -151,10 +153,12 @@ class LanternGame extends BaseGame {
     this.round += 1;
     this.scene = this.scenes[(this.round - 1) % this.scenes.length];
     this.order = this.playerIds();
-    // Boats start spread around the shore.
+    // Boats start spread around the shore — except on the Shrinking Pad, where they start in a
+    // ring well inside the pad (the shore is off it: they would all splash on the first tick).
+    const [rx, ry] = this.scene === 'sumo' ? [PAD_START * 0.6, PAD_START * 0.6] : [110, 60];
     this.boats = new Map(this.order.map((id, i) => {
       const a = (i / Math.max(1, this.order.length)) * Math.PI * 2;
-      return [id, { x: W / 2 + Math.cos(a) * 110, y: H / 2 + Math.sin(a) * 60, vx: 0, vy: 0 }];
+      return [id, { x: W / 2 + Math.cos(a) * rx, y: H / 2 + Math.sin(a) * ry, vx: 0, vy: 0 }];
     }));
     this.tilt = new Map();
     this.flies = [];
@@ -188,7 +192,16 @@ class LanternGame extends BaseGame {
   handleSubmit(id, payload) {
     if (this.phase !== 'll-play' && this.phase !== 'll-intro') return;
     const t = cleanTilt(payload.tilt);
-    if (t) this.tilt.set(id, t);
+    if (!t) return;
+    // Steering may arrive out of order (the fast channel): an older one never replaces a newer one.
+    // (A counter far below the last one is a phone that reloaded: start again from it.)
+    const n = Number(payload.n);
+    if (Number.isFinite(n)) {
+      const last = this.tiltSeq.get(id);
+      if (last !== undefined && n <= last && n > last - 5000) return;
+      this.tiltSeq.set(id, n);
+    }
+    this.tilt.set(id, t);
   }
 
   /** @param {string} id @param {number} pts */

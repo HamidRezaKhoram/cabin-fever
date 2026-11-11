@@ -5,7 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { startServer, until, makeHost, makePlayer, get, sleep } = require('../helpers');
 const { makeRng } = require('../../games/rng');
-const { Sock } = require('../../web/net');
+const { Sock, heartbeat } = require('../../web/net');
 
 test('nicknames like "constructor" and "__proto__" play a full game; the stats stay sane', { timeout: 60000 }, async () => {
   const srv = await startServer({ RUMPUS_TRIVIA_ROUNDS: '2', RUMPUS_TRIVIA_QUESTION_MS: '800', RUMPUS_TRIVIA_REVEAL_MS: '100' });
@@ -98,4 +98,27 @@ test('browser-build socket: offline messages are capped, volatile ones dropped, 
   await sleep(60);
   assert.ok(err, 'timed out');
   assert.strictEqual(t.acks.size, 0, 'the lost reply is forgotten');
+});
+
+test('browser-build socket: volatile messages take the fast channel when the link has one', () => {
+  /** @type {any[]} */ const slow = [];
+  /** @type {any[]} */ const fast = [];
+  const raw = { send: (/** @type {any} */ m) => slow.push(m), sendFast: (/** @type {any} */ m) => fast.push(m), onMessage() {}, onClose() {}, close() {} };
+  const wire = heartbeat(raw);
+  const s = new Sock('t');
+  s.attach(wire);
+  s.volatile.emit('player:submit', { payload: { tilt: [1, 0], n: 1 } }, () => {});
+  s.emit('player:submit', { payload: { choice: 0 } }, () => {});
+  wire.close();
+  assert.deepStrictEqual(fast.map((m) => m.args[0].payload), [{ tilt: [1, 0], n: 1 }], 'tilt went on the fast channel');
+  assert.strictEqual(fast[0].ack, undefined, 'no ack is waited for');
+  assert.deepStrictEqual(slow.filter((m) => m.t === 'e').map((m) => m.args[0].payload), [{ choice: 0 }], 'the answer stayed on the reliable channel');
+  // A link without a fast channel (local tabs, an old browser): volatile uses the normal one.
+  /** @type {any[]} */ const only = [];
+  const plain = heartbeat({ send: (/** @type {any} */ m) => only.push(m), onMessage() {}, onClose() {}, close() {} });
+  const p = new Sock('p');
+  p.attach(plain);
+  p.volatile.emit('k');
+  plain.close();
+  assert.ok(only.some((m) => m.t === 'e' && m.ev === 'k'));
 });

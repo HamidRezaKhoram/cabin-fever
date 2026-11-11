@@ -897,3 +897,5 @@ body.host .phase-view.in-game ol.answers:has(> li:nth-child(6)) { columns: 2; co
 body.host .phase-view.in-game ol.answers:has(> li:nth-child(6)) > li { break-inside: avoid; }
 body.host .doodle-grid { grid-template-columns: repeat(auto-fit, minmax(min(24vh, 220px), 1fr)); }
 body.host .doodle-grid img { max-height: 27vh; object-fit: contain; }
+
+.voice-status { opacity: .75; font-size: .7em; }

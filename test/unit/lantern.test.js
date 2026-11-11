@@ -150,3 +150,36 @@ test('a game plays four of the six scenes by default, always including one raft 
   assert.ok(g.scenes.includes('raft'));
   assert.strictEqual(new Set(g.scenes).size, 4);
 });
+
+test('steering that arrives out of order is ignored; a phone that reloaded starts over', () => {
+  const { g } = sceneGame('tag');
+  try {
+    g.handleSubmit('a', { tilt: [1, 0], n: 901000 });
+    g.handleSubmit('a', { tilt: [0, 1], n: 901002 });
+    g.handleSubmit('a', { tilt: [-1, 0], n: 901001 }); // late: an older packet overtaken by a newer one
+    assert.deepStrictEqual(g.tilt.get('a'), [0, 1], 'the newest steering stands');
+    g.handleSubmit('a', { tilt: [0, -1], n: 901002 }); // a duplicate
+    assert.deepStrictEqual(g.tilt.get('a'), [0, 1]);
+    g.handleSubmit('a', { tilt: [1, 0], n: 7 }); // counter far below (its clock was set back, or another device took the seat)
+    assert.deepStrictEqual(g.tilt.get('a'), [1, 0]);
+    g.handleSubmit('b', { tilt: [0, 1] }); // bots (and old phones) send no counter
+    assert.deepStrictEqual(g.tilt.get('b'), [0, 1]);
+  } finally { g.destroy(); }
+});
+
+test('Shrinking Pad: everyone starts on the pad, whatever the room size (nobody splashes at the whistle)', () => {
+  for (const n of [2, 3, 5, 8, 12]) {
+    const ids = Array.from({ length: n }, (_, i) => 'p' + i);
+    const room = { players: new Map(ids.map((id) => [id, { id, nickname: id, score: 0 }])), settings: {} };
+    const g = new Lantern(/** @type {any} */ (room), () => {});
+    try {
+      g.scenes = ['sumo'];
+      g.nextRound();
+      g.clearTimer();
+      g.phase = 'll-play';
+      for (let i = 0; i < 30; i++) g.tick(); // one second, nobody steering
+      assert.strictEqual(g.out.size, 0, `${n} players: ${g.out.size} out after a second`);
+      assert.strictEqual(g.phase, 'll-play');
+    } finally { g.destroy(); }
+  }
+});

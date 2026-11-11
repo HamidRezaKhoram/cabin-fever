@@ -107,6 +107,11 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   game (Wi-Fi power save). `test/unit/load.test.js` is the budget (tap storm, 60/s tilt, reconnect
   storm; `LOAD_REPORT=1` prints numbers); `scripts/load-harsh.sh` reruns it on bad Wi-Fi and a ¼-CPU
   server. Research and numbers: `docs/design/networking.md`.
+- **Fast channel** (`web/net.js` `fastChannel`): browser build only — a second, unordered,
+  no-retransmit WebRTC channel per phone. `socket.volatile.emit` / `api.sendFast` use it (Lantern
+  Lake steering, keep-warm); never put anything on it that must arrive. Steering carries a counter `n`.
+- **Updates** (`web/offline.js`): when a new service worker takes over, an idle page reloads itself
+  (a page with players shows "Update ready"); pages set `window.cfBusy`.
 - **Narrator voice** (`public/host-character.js`): lines are cut into sentence/clause parts and
   played as each arrives (Web Audio); a new line cancels the old. Docker makes the voice on the
   server (`core/voice.js`, native fp32 Kokoro in a worker thread — needs the Debian image, not

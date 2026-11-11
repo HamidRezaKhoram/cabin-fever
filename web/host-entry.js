@@ -10,7 +10,7 @@
 'use strict';
 
 const fsShim = require('./shims/fs');
-const { Sock, pairWires, pickTransport, PREFIX } = require('./net');
+const { Sock, pairWires, pickTransport, fastChannel, PREFIX } = require('./net');
 const { qrDataUrl } = require('./qr');
 const { offline } = require('./offline');
 
@@ -141,4 +141,4 @@ addEventListener('storage', (e) => {
 });
 
 /** @type {any} */ (window).io = io;
-/** @type {any} */ (window).CABIN = { p2p: true, prefix: PREFIX, qrDataUrl, boot };
+/** @type {any} */ (window).CABIN = { p2p: true, prefix: PREFIX, qrDataUrl, boot, fastChannel };
