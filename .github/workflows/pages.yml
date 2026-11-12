@@ -27,6 +27,8 @@ jobs:
         run: node tools/fetch-kokoro.js vendor/kokoro
       - name: Build the browser version (tools/build-pages.js)
         run: node tools/build-pages.js dist
+        # Optional: a working TURN relay so phones on another network than the TV can connect.
+        env: { CF_ICE_SERVERS: '${{ secrets.CF_ICE_SERVERS }}' }
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }
   deploy:

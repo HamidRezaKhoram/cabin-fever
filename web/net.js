@@ -260,6 +260,16 @@ function fastChannel(pc, onMessage) {
   } catch (e) { return null; } // an old browser: everything stays on the reliable channel
 }
 
+/** ICE servers for every WebRTC link. Google's STUN works; PeerJS's free relay (TURN) servers hand
+ * out no relay address any more (checked Nov 2026), so a phone on another network than the TV
+ * (Ethernet vs Wi-Fi, a guest network, mobile data) has no way through. A working relay can be baked
+ * into the build: CF_ICE_SERVERS='[{"urls":"turn:…","username":"…","credential":"…"}]' when running
+ * tools/build-pages.js (a GitHub secret in the Pages workflow). @returns {RTCIceServer[]} */
+function iceServers() {
+  const extra = /** @type {any} */ (globalThis).CF_ICE_SERVERS;
+  return [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }, ...(Array.isArray(extra) ? extra : [])];
+}
+
 /** PeerJS (WebRTC). @returns {Transport} */
 function peerTransport() {
   const PeerCtor = /** @type {any} */ (window).Peer;
@@ -284,7 +294,7 @@ function peerTransport() {
   const pending = new Set();
   return {
     listen(code, onConn, onError) {
-      const peer = new PeerCtor(PREFIX + code);
+      const peer = new PeerCtor(PREFIX + code, { config: { iceServers: iceServers() } });
       peer.on('connection', (/** @type {any} */ conn) => conn.on('open', () => onConn(heartbeat(wrap(conn), { revive: true }), () => linkType(conn.peerConnection))));
       peer.on('error', (/** @type {any} */ e) => onError(String(e && e.type || e)));
       peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) { /* destroyed */ } }); // broker blip: stay reachable
@@ -296,7 +306,7 @@ function peerTransport() {
       const fail = (why) => { if (settled) return; settled = true; clearTimeout(deadline); pending.delete(fail); onFail(why); };
       if (mine && (mine.destroyed || mine.disconnected)) { try { mine.destroy(); } catch (e) { /* gone */ } mine = null; }
       if (!mine) {
-        mine = new PeerCtor();
+        mine = new PeerCtor({ config: { iceServers: iceServers() } });
         mine.on('error', (/** @type {any} */ e) => {
           const type = e && e.type;
           if (type === 'peer-unavailable') { [...pending].forEach((f) => f('no-room')); return; }
@@ -315,7 +325,9 @@ function peerTransport() {
         if (settled) return;
         // JSON is several times faster than PeerJS's default binary packing for our state objects.
         const conn = peer.connect(PREFIX + code, { reliable: true, serialization: 'json' });
-        const t = setTimeout(() => { try { conn.close(); } catch (e) { /* closed */ } fail('timeout'); }, 10000);
+        // The broker knew the TV (no peer-unavailable) but no direct link opened in time: the phone
+        // and the TV can't reach each other (different networks and no relay).
+        const t = setTimeout(() => { try { conn.close(); } catch (e) { /* closed */ } fail('no-path'); }, 10000);
         conn.on('open', () => {
           clearTimeout(t);
           if (settled) { conn.close(); return; }
@@ -445,13 +457,13 @@ function rtcLocalTransport() {
       const me = Math.random().toString(36).slice(2);
       const pc = new RTCPeerConnection();
       const ch = pc.createDataChannel('main', { ordered: true });
-      let open = false;
-      const t = setTimeout(() => { if (!open) { bc.close(); pc.close(); onFail('no-room'); } }, 5000);
+      let open = false, answered = false;
+      const t = setTimeout(() => { if (!open) { bc.close(); pc.close(); onFail(answered ? 'no-path' : 'no-room'); } }, 5000);
       ch.onopen = () => { open = true; clearTimeout(t); bc.close(); onOpen(heartbeat(wrap(ch, pc))); };
       bc.onmessage = (e) => {
         const { to, kind, data } = e.data || {};
         if (to !== me) return;
-        if (kind === 'answer' && data) void pc.setRemoteDescription(data).catch(() => {});
+        if (kind === 'answer' && data) { answered = true; void pc.setRemoteDescription(data).catch(() => {}); }
       };
       void pc.createOffer().then((o) => pc.setLocalDescription(o)).then(() => gathered(pc))
         .then((d) => bc.postMessage({ from: me, to: 'tv', kind: 'offer', data: d && { type: d.type, sdp: d.sdp } }));
@@ -472,4 +484,4 @@ function pickTransport() {
   return local || !(/** @type {any} */ (window).Peer) ? localTransport() : peerTransport();
 }
 
-module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };
+module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, iceServers, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };

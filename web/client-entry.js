@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const { Sock, pickTransport } = require('./net');
+const { Sock, pickTransport, iceServers } = require('./net');
 const { offline } = require('./offline');
 
 offline('phone');
@@ -49,6 +49,11 @@ function io() {
     }, (why) => {
       connecting = false;
       if (want !== code) { connect(); return; } // the player typed another code meanwhile: open that one
+      // The TV exists but no link could be made: almost always a phone on another network than the
+      // TV (mobile data, a guest or 5 GHz/2.4 GHz network on its own subnet). Say what to do, every few tries.
+      if (why === 'no-path' && !sock.data.everJoined && tries % 3 === 0) {
+        sock.fire('player:joinError', { reason: "Found the TV, but can't reach it — put this phone on the same Wi-Fi as the TV (not mobile data or a guest network). Still trying…" });
+      }
       // Many failures in a row that aren't "no such room": the phone can't reach the broker (no
       // internet on this Wi-Fi?). Say so once — the join button comes back — and keep trying.
       if (why !== 'no-room' && tries === 8 && !sock.data.everJoined) sock.fire('player:joinError', { reason: "Can't reach the TV — is this phone online? Still trying…" });
@@ -108,4 +113,4 @@ window.fetch = async (input, init) => {
 };
 
 /** @type {any} */ (window).io = io;
-/** @type {any} */ (window).CABIN = { p2p: true };
+/** @type {any} */ (window).CABIN = { p2p: true, iceServers };

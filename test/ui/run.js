@@ -426,6 +426,19 @@ async function check(name, fn) {
     assert.strictEqual(ok, true, 'Kokoro generated and played the line');
     const voices = await tv.evaluate(() => Rumpus.host.voices().map((v) => v[0])); // the lobby's 🎙 picker lists these
     assert.ok(voices.includes('am_michael') && voices.includes('af_heart') && voices.includes('classic'), 'male, female and classic voices on offer');
+    // No clipping on a real TV: the voice and the music are two streams the TV adds up. A full-scale
+    // voice part is brought down to half scale, and music ducks to 45% under it, so the sum stays < 1.
+    const mix = await tv.evaluate(() => {
+      const ctx = new OfflineAudioContext(1, 4800, 48000);
+      const loud = ctx.createBuffer(1, 4800, 48000);
+      loud.getChannelData(0).fill(0.99);
+      const quiet = ctx.createBuffer(1, 4800, 48000);
+      quiet.getChannelData(0).fill(0.1);
+      return { loud: 0.99 * Rumpus.host.voicePeakGain(loud), quiet: 0.1 * Rumpus.host.voicePeakGain(quiet) };
+    });
+    assert.ok(Math.abs(mix.loud - 0.5) < 0.01, `a full-scale voice part peaks at half scale (${mix.loud})`);
+    assert.ok(mix.quiet <= 0.2 + 1e-9, 'a quiet part is lifted at most ×2');
+    assert.ok(mix.loud + 0.708 * 0.45 < 1, 'voice + ducked music (limiter at −3 dB) stay under full scale');
   });
 
   await check('in a game the TV switches to that game\'s look and hides the join clutter and the player strip', async () => {
