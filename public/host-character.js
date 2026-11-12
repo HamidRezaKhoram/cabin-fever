@@ -151,12 +151,39 @@
     line = null;
   }
 
+  // The voice has its own AudioContext, so it doesn't pass the music's limiter: on a real TV the two
+  // add up in the system mixer and clipped. Each part is scaled to a fixed peak (VOICE_PEAK) and the
+  // voice goes through its own limiter, leaving headroom for the (ducked) music underneath.
+  const VOICE_PEAK = 0.5;
+  /** @type {AudioNode | null} */
+  let voiceOut = null;
+  /** @param {AudioContext} ctx */
+  function voiceBus(ctx) {
+    if (voiceOut) return voiceOut;
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = -9; lim.knee.value = 2; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.15;
+    lim.connect(ctx.destination);
+    voiceOut = lim;
+    return lim;
+  }
+  /** Gain that brings this part's loudest sample to VOICE_PEAK (never boosts more than ×2). @param {AudioBuffer} buf */
+  function peakGain(buf) {
+    let peak = 0;
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < d.length; i++) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > peak) peak = v; }
+    }
+    return peak > 0 ? Math.min(2, VOICE_PEAK / peak) : 1;
+  }
   /** @param {AudioBuffer} buf */
   function schedule(buf) {
     const ctx = /** @type {AudioContext} */ (actx);
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    src.connect(ctx.destination);
+    const level = ctx.createGain();
+    level.gain.value = peakGain(buf);
+    src.connect(level);
+    level.connect(voiceBus(ctx));
     const at = Math.max(ctx.currentTime + 0.03, nextAt);
     src.start(at);
     nextAt = at + buf.duration;
@@ -347,5 +374,7 @@
     testNatural: (/** @type {string} */ t, /** @type {number} */ ms) => new Promise((/** @type {(ok: boolean) => void} */ res) => speakNatural(speakable(t), { patience: ms, done: res })),
     /** Threads the voice runs on, and how long the last line took to start (ms). */
     voiceInfo: () => ({ ...info, isolated: !!window.crossOriginIsolated }),
+    /** Tests: the gain a voice part gets (peaks land at VOICE_PEAK, so voice + ducked music can't clip). */
+    voicePeakGain: peakGain,
   };
 })();

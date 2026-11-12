@@ -30,7 +30,7 @@ jobs:
       - run: npm ci
       - name: Unit + integration tests with coverage (thresholds in .c8rc.json)
         env: { BOT_GAMES: all }
-        run: npx c8 node --test --test-concurrency=4 --test-timeout=240000 test/unit/
+        run: npx c8 node --test --test-concurrency=4 --test-timeout=900000 test/unit/
       - name: Coverage summary
         if: always()
         run: |

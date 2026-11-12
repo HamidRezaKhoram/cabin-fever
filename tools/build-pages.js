@@ -23,6 +23,15 @@ const PUB = path.join(ROOT, 'public');
 
 /** @param {string} p */
 const rmrf = (p) => fs.rmSync(p, { recursive: true, force: true });
+/** Extra WebRTC relay (TURN) servers from CF_ICE_SERVERS (JSON list), baked into the bundles; see
+ * web/net.js iceServers(). Invalid JSON is an error, not a silent "no relay". */
+function iceDefine() {
+  const raw = process.env.CF_ICE_SERVERS;
+  if (!raw) return 'undefined';
+  const list = JSON.parse(raw);
+  if (!Array.isArray(list) || !list.every((x) => x && (typeof x.urls === 'string' || Array.isArray(x.urls)))) throw new Error('CF_ICE_SERVERS must be a JSON list of {urls, username?, credential?}');
+  return JSON.stringify(list);
+}
 /** @param {string} p */
 const mkdirp = (p) => fs.mkdirSync(p, { recursive: true });
 /** @param {string} file @param {string | Buffer} data */
@@ -52,7 +61,7 @@ async function main() {
   const common = {
     bundle: true, platform: 'browser', format: 'iife', target: 'es2020', minify: true, sourcemap: false, logLevel: 'warning',
     alias: { fs: path.join(shims, 'fs.js'), path: path.join(shims, 'path.js'), crypto: path.join(shims, 'crypto.js') },
-    define: { 'process.env': '{}', __dirname: '"/games"' },
+    define: { 'process.env': '{}', __dirname: '"/games"', 'globalThis.CF_ICE_SERVERS': iceDefine() },
   };
   await esbuild.build({ ...common, entryPoints: [path.join(ROOT, 'web', 'host-entry.js')], outfile: path.join(OUT, 'cf-host.js') });
   await esbuild.build({ ...common, entryPoints: [path.join(ROOT, 'web', 'client-entry.js')], outfile: path.join(OUT, 'cf-client.js') });

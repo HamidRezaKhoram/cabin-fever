@@ -54,6 +54,25 @@ app.get('/admin', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFi
 app.get('/highlights', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFile(path.join(__dirname, 'public', 'highlights.html')));
 
 // LAN addresses so the TV can show a scannable URL even when opened via localhost.
+// The address this machine actually talks to the network from (the one its default route uses):
+// the TV's QR code must point there, not at a VPN or virtual adapter that happens to be listed
+// first. Found by "connecting" a UDP socket (nothing is sent), so it works offline too, as long as
+// the Wi-Fi router is the default route; re-checked every minute (Wi-Fi changes, DHCP).
+/** @type {string | null} */
+let primaryIp = null;
+function findPrimaryIp() {
+  const sock = require('dgram').createSocket('udp4');
+  sock.on('error', () => { try { sock.close(); } catch (e) { /* closed */ } });
+  try {
+    sock.connect(53, '192.0.2.1', () => {
+      try { const a = sock.address(); primaryIp = a && a.address && a.address !== '0.0.0.0' ? a.address : null; } catch (e) { /* no route */ }
+      sock.close();
+    });
+  } catch (e) { try { sock.close(); } catch (x) { /* closed */ } }
+}
+findPrimaryIp();
+setInterval(findPrimaryIp, 60000).unref();
+
 function lanAddresses() {
   const out = [];
   const skip = /^(lo|docker|br-|veth|virbr|podman|cni|flannel|tun|tap|wg|tailscale)/i;
@@ -63,6 +82,9 @@ function lanAddresses() {
       if (a.family === 'IPv4' && !a.internal) out.push(a.address);
     }
   }
+  // The default-route address first (the QR code uses the first one).
+  if (primaryIp && out.includes(primaryIp)) return [primaryIp, ...out.filter((x) => x !== primaryIp)];
+  if (primaryIp && !out.length) return [primaryIp];
   return out;
 }
 

@@ -67,6 +67,15 @@ PY
   cabin-fever:test >/dev/null
 trap '"$CT" rm -f cabin-fever-test >/dev/null 2>&1 || true' EXIT
 for i in $(seq 1 30); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
+# The image must actually start (a crash used to show up only as browser-test timeouts).
+curl -sf "http://localhost:$PORT/api/info" >/dev/null || { echo "The image did not start:"; "$CT" logs cabin-fever-test 2>&1 | tail -30; exit 1; }
+# The join address (QR code) must be this machine's real LAN address: the one its default route uses.
+HOST_IP=$(ip route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' | head -1)
+FIRST_LAN=$(curl -s "http://localhost:$PORT/api/info" | python3 -c 'import json,sys; l=json.load(sys.stdin)["lan"]; print(l[0] if l else "")')
+if [ -n "$HOST_IP" ] && [ "$FIRST_LAN" != "http://$HOST_IP:$PORT" ]; then
+  echo "Join address is $FIRST_LAN, but this machine's LAN address is $HOST_IP"; exit 1
+fi
+echo "join address: $FIRST_LAN"
 echo "test server music: $(curl -s "http://localhost:$PORT/api/music")"
 
 step "5/6 browser tests (TV + 3 phones)"

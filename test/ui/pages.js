@@ -313,6 +313,20 @@ async function check(name, fn) {
     console.log('  webrtc round trips (ms):', JSON.stringify(report));
     // One machine, no network: anything slower points at the transport (JSON, heartbeat, channel setup).
     assert.ok(report.p50 < 25 && report.p95 < 80, `round trips within budget: ${JSON.stringify(report)}`);
+    // A phone that finds the TV but can't open a link to it (another network, no relay): forced here
+    // with relay-only ICE and no relay. It must say what to do, not "no room" / "did not respond".
+    const far = await ctx.newPage();
+    await far.addInitScript(() => {
+      const Real = window.RTCPeerConnection;
+      // @ts-ignore
+      window.RTCPeerConnection = class extends Real { constructor(c) { super({ ...(c || {}), iceServers: [], iceTransportPolicy: 'relay' }); } };
+      if (!sessionStorage.getItem('cf.test')) { localStorage.removeItem('rumpus.seat'); sessionStorage.setItem('cf.test', '1'); }
+    });
+    await far.goto(`${BASE}play.html?code=${rcode}&net=rtc-local`);
+    await far.fill('#nick-input', 'Far');
+    await far.click('#join-form button[type="submit"]');
+    await far.waitForFunction(() => /same Wi-Fi as the TV/.test((document.getElementById('join-error') || {}).textContent || ''), null, { timeout: 20000 });
+    await far.close();
     for (const p of ps) await p.close();
     await tvR.close();
   });

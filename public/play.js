@@ -212,7 +212,8 @@ function askToJoin(takeover) {
   joinForm.setAttribute('aria-busy', 'true');
   joinTimer = window.setTimeout(() => {
     resetJoinBtn();
-    joinError.textContent = 'The TV did not respond. Check the room code and try again.';
+    // Keep a more precise message if the connection already gave one (e.g. "same Wi-Fi as the TV").
+    if (!joinError.textContent) joinError.textContent = 'The TV did not respond. Check the room code and try again.';
   }, 10000);
   socket.emit('player:joinRoom', {
     code: codeInput.value, nickname: nickInput.value, avatar: myAvatar, device: DEVICE,
