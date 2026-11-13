@@ -291,14 +291,10 @@ for line in (SRC / 'adult-trivia.txt').read_text(encoding='utf-8').splitlines():
     if short_answer(correct) and '____' not in q and not re.search(r'which of|following', q, re.I):
         fib.append({'q': q, 'answer': correct, 'cat': 'After Dark', 'a': True})
 
-# Original hand-written fill-in-the-blank facts from v1 stay in the pool too.
-try:
-    import subprocess
-    old = subprocess.run(['node', '-e', "console.log(JSON.stringify(require('./games/data/fibbage-questions').QUESTIONS))"],
-                         cwd=ROOT, capture_output=True, text=True, check=True).stdout
-    fib = [{'q': q['q'], 'answer': q['answer'], 'cat': 'Weird facts', 'a': False} for q in json.loads(old)] + fib
-except Exception:
-    pass
+# Original hand-written fill-in-the-blank facts from v1 stay in the pool too (JSON, so no Node needed:
+# shelling out to `node` silently dropped them wherever Node wasn't installed — CI caught the difference).
+v1 = json.loads((ROOT / 'games' / 'data' / 'fibbage-questions.json').read_text(encoding='utf-8'))
+fib = [{'q': q['q'], 'answer': q['answer'], 'cat': 'Weird facts', 'a': False} for q in v1] + fib
 
 # Topic diversity: a party doesn't want ten deep-cut questions about one game series. Each question
 # gets a topic (a franchise or the title it quotes); a pool keeps at most TOPIC_CAP per topic, and a
