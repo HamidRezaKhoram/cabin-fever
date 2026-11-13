@@ -192,6 +192,17 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   the `calc(max(28px, …vh) / var(--unzoom))` rule in style.css so the stage zoom can't shrink them.
   The TV marks the screen it shows with `#phase-view[data-phase]`.
 - Phones: everything tappable is ≥ 48px (`body.play #game-view button` etc.); the lab checks it.
+- **TV menu** (Nov 13 redesign, retro): a console-style game select — "▶ CHOOSE A GAME", one shelf of
+  old-console cartridges (`.shelf .cart`: grey shell, grip ridges, a label with art + name, nothing else),
+  and a footer (control hints + ⚙ Settings). The picked cartridge comes forward and its description
+  (`#game-detail`, from `data-blurb`/`data-min` + `GAME_TAGS`) sits under it (`placeDetail`). ◀ ▶ wrap
+  round the shelf; locked games stay selectable (`aria-disabled`) and say why. No top bar on the menu:
+  every setting (game, sound, screen, narrator, language, links) is in ⚙ Settings (`.settings-more`,
+  `moreOpen`), and 🎉 Game night is one button with its own box (`nightOpen`); Back/Escape closes them.
+  Dialogs are old-console boxes (`.retro-box`). The lab's remote-press budget is 8 (half the shelf).
+- **Phone join/lobby**: the join page is name + look + Join (sticky); the full character maker opens with
+  "Customise" (`editor(..., { open: false })`). The lobby is one card plus two buttons; "Change my look"
+  opens one panel with Character / Animal.
 - Every image load refits the TV (debounced 50 ms) — even avatars: an unloaded `<img alt="">` takes no space, so a loading avatar does move the layout (tried skipping them: the snapshot test overflowed).
 - Main prompts/answers get `data-fit` and are grown by `Rumpus.fit()` to fill their box.
 - A browser test asserts the TV prompt is ≥ 5% of the screen height.

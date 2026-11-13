@@ -85,7 +85,8 @@ const maker = window.Rumpus.avatarMaker;
 let myLook = store('rumpus.look') ? maker.norm(store('rumpus.look')) : maker.random(); // migrates older saved looks
 let avatarMode = store('rumpus.avatarMode') === 'pick' ? 'pick' : 'make';
 const avatarMake = /** @type {HTMLElement} */ (document.getElementById('avatar-make'));
-maker.editor(avatarMake, myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); });
+// Join page: just the picture, Random and Undo; the presets and part tabs open with "Customise".
+maker.editor(avatarMake, myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); }, { open: false });
 function setAvatarMode(/** @type {any} */ mode) {
   avatarMode = mode;
   store('rumpus.avatarMode', mode);
@@ -102,11 +103,43 @@ function setAvatarMode(/** @type {any} */ mode) {
 });
 setAvatarMode(avatarMode);
 
-// Edit your character from the lobby.
+// Change your look from the lobby: your character, or a pixel animal (one panel, two modes).
 const lobbyMaker = /** @type {HTMLElement} */ (document.getElementById('lobby-maker'));
+const lobbyAnimals = /** @type {HTMLElement} */ (document.getElementById('lobby-animals'));
+const lobbyBox = /** @type {HTMLElement} */ (document.getElementById('lobby-maker-box'));
 let lobbyMakerReady = false;
+let lobbyMode = 'make';
+/** Show the character maker or the animal grid in the lobby panel. @param {string} mode */
+function setLobbyMode(mode) {
+  lobbyMode = mode;
+  /** @type {NodeListOf<HTMLElement>} */ (lobbyMaker.querySelectorAll('[data-lobby-mode]')).forEach((b) => {
+    b.classList.toggle('on', b.dataset.lobbyMode === mode);
+    b.setAttribute('aria-pressed', String(b.dataset.lobbyMode === mode));
+  });
+  if (mode === 'make' && !lobbyMakerReady) { maker.editor(lobbyBox, myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); }, { toggle: false }); lobbyMakerReady = true; }
+  lobbyBox.hidden = mode !== 'make';
+  lobbyAnimals.hidden = mode !== 'pick';
+  if (mode === 'pick') renderLobbyAnimals();
+}
+function renderLobbyAnimals() {
+  if (!state) return;
+  const myId = me ? me.playerId : null;
+  const taken = new Set(state.players.filter((/** @type {any} */ p) => p.id !== myId).map((/** @type {any} */ p) => p.avatar));
+  const mine = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).avatar;
+  lobbyAnimals.innerHTML = avatarGrid(mine, taken);
+}
+lobbyMaker.addEventListener('click', (e) => {
+  const m = hit(e.target, '[data-lobby-mode]');
+  if (m) { setLobbyMode(m.dataset.lobbyMode || 'make'); return; }
+  const av = hit(e.target, '.lobby-pick [data-avatar]');
+  if (av && !av.disabled) {
+    store('rumpus.avatar', +av.dataset.avatar);
+    socket.emit('player:look', { look: null }); // back to the pixel animal
+    socket.emit('player:avatar', { avatar: +av.dataset.avatar });
+  }
+});
 /** @type {HTMLElement} */ (document.getElementById('lobby-maker-save')).addEventListener('click', () => {
-  socket.emit('player:look', { look: myLook });
+  if (lobbyMode === 'make') socket.emit('player:look', { look: myLook });
   lobbyMaker.hidden = true;
 });
 avatarPick.addEventListener('click', (e) => {
@@ -146,6 +179,26 @@ let ended = false;
 let lastScreenKey = null;
 
 // Delegated input handling: works for nodes added later by morph().
+// ---- Tap feedback (every button): a quick squish + flash you can see, and a buzz you can feel. ----
+document.addEventListener('pointerdown', (e) => {
+  const b = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('button, .toggle') : null);
+  if (!b || /** @type {HTMLButtonElement} */ (b).disabled) return;
+  b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); // restart the animation
+  if (!b.matches('[data-send], [data-react]')) window.Rumpus.haptic(8); // (answers and reactions buzz on their own)
+}, { passive: true });
+document.addEventListener('animationend', (e) => { if (e.target instanceof Element && e.animationName === 'tap-pop') e.target.classList.remove('tap'); });
+/** A form's answer didn't make sense (empty, not a number): shake it and buzz twice. @param {HTMLElement} el */
+function nope(el) {
+  el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope');
+  window.Rumpus.haptic([20, 60, 20]);
+}
+gameView.addEventListener('invalid', (e) => { if (e.target instanceof HTMLElement) nope(/** @type {HTMLElement} */ (e.target.closest('form') || e.target)); }, true);
+/** The form's button shows it went: ✓ Sent. @param {HTMLFormElement} f */
+const formSent = (f) => {
+  const btn = f.querySelector('button[type=submit], button:not([type])');
+  if (btn && /** @type {HTMLElement} */ (btn).dataset) { btn.classList.add('sent'); /** @type {HTMLElement} */ (btn).dataset.label = btn.textContent || ''; btn.textContent = '✓ Sent'; }
+  window.Rumpus.haptic(12);
+};
 gameView.addEventListener('submit', (e) => {
   const f = /** @type {HTMLFormElement} */ (e.target);
   const input = /** @type {HTMLInputElement | null} */ (f.querySelector('input'));
@@ -153,21 +206,14 @@ gameView.addEventListener('submit', (e) => {
   if (f.matches('form.text-form')) {
     e.preventDefault();
     const v = input.value;
-    if (v.trim()) send({ text: v });
+    if (v.trim()) { formSent(f); send({ text: v }); } else nope(f);
   } else if (f.matches('form.number-form')) {
     e.preventDefault();
     const n = parseFloat(input.value.replace(/,/g, ''));
-    if (Number.isFinite(n)) send(document.querySelector('#game-view [data-dd][aria-pressed="true"]') ? { number: n, double: true } : { number: n });
+    if (Number.isFinite(n)) { formSent(f); send(document.querySelector('#game-view [data-dd][aria-pressed="true"]') ? { number: n, double: true } : { number: n }); } else nope(f);
   }
 });
 gameView.addEventListener('click', (e) => {
-  const av = hit(e.target, '.lobby-pick [data-avatar]');
-  if (av && !av.disabled) {
-    store('rumpus.avatar', +av.dataset.avatar);
-    socket.emit('player:look', { look: null }); // back to the pixel animal
-    socket.emit('player:avatar', { avatar: +av.dataset.avatar });
-    return;
-  }
   const tb = hit(e.target, '[data-team]');
   if (tb) { socket.emit('player:team', { team: tb.dataset.team }); return; }
   if (hit(e.target, '[data-shy]')) { window.Rumpus.haptic(10); socket.emit('player:prefs', { shy: !(state && state.you && state.you.shy) }); return; }
@@ -175,7 +221,8 @@ gameView.addEventListener('click', (e) => {
   if (rate) { window.Rumpus.haptic(10); socket.emit('player:rate', { score: +(rate.dataset.rate || 0) }); return; }
   if (hit(e.target, '[data-lobby-maker]')) {
     lobbyMaker.hidden = false;
-    if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-maker-box'), myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
+    const p = state && state.players.find((/** @type {any} */ x) => x.id === (me && me.playerId));
+    setLobbyMode(p && !p.look ? 'pick' : 'make'); // open on what they use now
     lobbyMaker.scrollIntoView({ behavior: 'smooth' });
     return;
   }
@@ -509,6 +556,8 @@ function send(/** @type {any} */ payload) {
     if (screen !== lastScreenKey || ended) return;
     if (!err && res && res.ok) return;
     for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) { x.disabled = false; x.classList.remove('sent'); }
+    for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('form button.sent'))) { x.classList.remove('sent'); x.textContent = (x.dataset && x.dataset.label) || 'Send it'; }
+    if (window.Rumpus && window.Rumpus.haptic) window.Rumpus.haptic([30, 80, 30]); // it didn't go: a buzz you can feel
     banner.textContent = 'That didn\'t reach the TV — tap again';
     banner.hidden = false;
     setTimeout(() => { if (socket.connected) banner.hidden = true; }, 3000);
@@ -540,15 +589,20 @@ function render() {
 
   let html;
   const myId = me.playerId;
+  if (state.phase !== 'lobby') lobbyMaker.hidden = true; // a game started: the look panel closes
   if (state.phase === 'lobby') {
-    const taken = new Set(state.players.filter((/** @type {any} */ p) => p.id !== myId).map((/** @type {any} */ p) => p.avatar));
-    const mine = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).avatar;
-    html = `<h1>You're in!</h1><div class="waiting-art">${meAvatar('avatar huge bob')}</div>
-      <p>${state.players.length < 2 ? 'Get a friend to scan the QR code on the TV.' : 'The host is picking a game on the TV.'}</p>
-      <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
-      <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
-      <button class="ghost-btn" data-lobby-maker>🧑 Edit my character</button>
-      <button class="ghost-btn shy-btn" data-shy aria-pressed="${you.shy ? 'true' : 'false'}">${you.shy ? '🙈 You\'re left out of votes &amp; notes about people · tap to join in' : '🙈 Leave me out of votes &amp; notes about people'}</button>
+    if (!lobbyMaker.hidden && lobbyMode === 'pick') renderLobbyAnimals(); // someone took an animal
+    html = `<div class="lobby-card">
+        <div class="waiting-art">${meAvatar('avatar huge bob')}</div>
+        <h1>You're in!</h1>
+        <p>${state.players.length < 2 ? 'Get a friend to scan the QR code on the TV.' : 'The host is picking a game on the TV.'}</p>
+        <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here</p>
+      </div>
+      <div class="lobby-actions">
+        <button class="ghost-btn" data-lobby-maker>✏️ Change my look</button>
+        <button class="ghost-btn shy-btn" data-shy aria-pressed="${you.shy ? 'true' : 'false'}" title="Never the answer in votes about people, no notes or date picks">${you.shy ? '🙈 Left out ✓' : '🙈 Leave me out'}</button>
+      </div>
+      ${you.shy ? '<p class="hint shy-note">You\'re left out of votes &amp; notes about people. Tap again to join in.</p>' : ''}
       ${state.settings && state.settings.teams ? (() => {
         const mineTeam = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).team;
         const other = mineTeam === 'red' ? 'blue' : 'red';

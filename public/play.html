@@ -27,27 +27,40 @@
     <section id="join-view">
       <h1>Join a room</h1>
       <form id="join-form">
-        <label for="code-input">Room code</label>
-        <input id="code-input" maxlength="4" autocomplete="off" autocapitalize="characters"
-               placeholder="ABCD" pattern="[A-Za-z]{4}" aria-describedby="join-error" spellcheck="false" required>
-        <label for="nick-input">Nickname</label>
-        <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Your name" aria-describedby="join-error" required>
-        <label>Your profile picture</label>
+        <div class="join-row">
+          <div class="join-field join-field-code">
+            <label for="code-input">Room</label>
+            <input id="code-input" maxlength="4" autocomplete="off" autocapitalize="characters"
+                   placeholder="ABCD" pattern="[A-Za-z]{4}" aria-describedby="join-error" spellcheck="false" required>
+          </div>
+          <div class="join-field">
+            <label for="nick-input">Your name</label>
+            <input id="nick-input" maxlength="16" autocomplete="off" placeholder="Name" aria-describedby="join-error" required>
+          </div>
+        </div>
+        <label>Your look</label>
         <div class="avatar-mode">
-          <button type="button" data-mode="make">🧑 Make your character</button>
-          <button type="button" data-mode="pick">🐾 Pick an animal</button>
+          <button type="button" data-mode="make">🧑 Character</button>
+          <button type="button" data-mode="pick">🐾 Animal</button>
         </div>
         <div id="avatar-make" class="avatar-make"></div>
         <div id="avatar-pick" class="avatar-pick"></div>
-        <button type="submit">Join</button>
+        <button type="submit" class="join-go">Join ▶</button>
       </form>
       <p id="join-error" class="error" role="alert"></p>
     </section>
 
     <section id="game-view" hidden aria-live="polite"></section>
-    <section id="lobby-maker" class="lobby-maker" hidden aria-label="Edit your character">
+    <section id="lobby-maker" class="lobby-maker" hidden aria-label="Change your look">
+      <div class="lobby-maker-head">
+        <div class="avatar-mode lobby-mode">
+          <button type="button" data-lobby-mode="make">🧑 Character</button>
+          <button type="button" data-lobby-mode="pick">🐾 Animal</button>
+        </div>
+        <button id="lobby-maker-save">✓ Done</button>
+      </div>
       <div id="lobby-maker-box"></div>
-      <button id="lobby-maker-save" class="wide">Save my character</button>
+      <div id="lobby-animals" class="avatar-pick lobby-pick" hidden></div>
     </section>
     <div id="pace-bar" class="pace-bar" hidden></div>
   </main>

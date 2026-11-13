@@ -19,43 +19,84 @@ const scope = new URL('./', self.location.href).href;
 /** @param {string} rel @param {string} h */
 const key = (rel, h) => scope + rel + '?v=' + h;
 
-/** A download that stalls (slow cottage Wi-Fi) is given up after this long; the file is then fetched
- * the first time the game uses it. Without it one stuck file held the bar at 97% for good. */
-const TIMEOUT = /** @type {Record<string, number>} */ ({ phone: 20000, core: 20000, media: 90000 });
-/** How far each stage has got, re-sent to a page that asks again. @type {Record<string, [number, number]>} */
+/** @type {Record<string, number>} every file's size in bytes (progress is counted in bytes, not files) */
+const SIZES = __SIZES__;
+/** A download is given up when no bytes have arrived for this long (slow cottage Wi-Fi is fine as long
+ * as it moves); the file is then fetched the first time the game uses it. A stuck download used to
+ * hold the bar at 97% for good, and a fixed total time cut off the 169 MB voice model on slow Wi-Fi. */
+const STALL_MS = 20000;
+/** How far each stage has got, re-sent to a page that asks again. @type {Record<string, { done: number, total: number, noRoom?: boolean }>} */
 const at = {};
-/** Tell every open page how far saving has got. @param {string} stage @param {number} done @param {number} total */
-async function progress(stage, done, total) {
-  at[stage] = [done, total];
+/** Files being downloaded right now, by path: the background save and a page's own request for the same
+ * file wait for each other instead of downloading it twice. @type {Map<string, Promise<unknown>>} */
+const inflight = new Map();
+/** Tell every open page how far saving has got. @param {string} stage @param {number} done @param {number} total @param {boolean} [noRoom] */
+async function progress(stage, done, total, noRoom) {
+  at[stage] = { done, total, noRoom };
   const all = await /** @type {any} */ (self).clients.matchAll({ includeUncontrolled: true, type: 'window' });
-  for (const c of all) c.postMessage({ cf: 'progress', stage, done, total });
+  for (const c of all) c.postMessage({ cf: 'progress', stage, done, total, noRoom: !!noRoom });
 }
-/** Save files into the cache (6 at a time), skipping ones already saved. @param {[string, string][]} list @param {string} stage */
+/** Download one file into the cache, giving up if it stalls. @param {Cache} cache @param {string} rel @param {string} h @param {(n: number) => void} onBytes */
+async function download(cache, rel, h, onBytes) {
+  const stop = new AbortController();
+  let timer = setTimeout(() => stop.abort(), STALL_MS);
+  const moved = () => { clearTimeout(timer); timer = setTimeout(() => stop.abort(), STALL_MS); };
+  try {
+    const res = await fetch(scope + rel, { cache: 'no-cache', signal: stop.signal });
+    if (!res.ok || !res.body) return;
+    const reader = res.body.getReader();
+    /** @type {Uint8Array[]} */ const chunks = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      onBytes(value.length);
+      moved();
+    }
+    await cache.put(key(rel, h), new Response(new Blob(chunks), { status: res.status, statusText: res.statusText, headers: res.headers }));
+  } finally { clearTimeout(timer); }
+}
+/** Room left in this browser's storage, in bytes (Infinity if it won't say). */
+async function room() {
+  try {
+    const nav = /** @type {any} */ (self).navigator;
+    const e = nav && nav.storage && nav.storage.estimate ? await nav.storage.estimate() : null;
+    return e && e.quota ? e.quota - (e.usage || 0) : Infinity;
+  } catch (e) { return Infinity; }
+}
+/** Save files into the cache (6 at a time), skipping ones already saved. Files that don't fit in this
+ * browser's storage (a private window has little) are left to stream from the internet instead.
+ * @param {[string, string][]} list @param {string} stage */
 async function save(list, stage) {
   const cache = await caches.open(CACHE);
+  const size = (/** @type {string} */ rel) => SIZES[rel] || 1;
+  const total = list.reduce((n, [rel]) => n + size(rel), 0);
   let done = 0;
-  const total = list.length;
-  void progress(stage, 0, total);
+  let noRoom = false;
+  let free = await room();
+  let lastSent = 0;
+  const tell = (/** @type {boolean} */ force) => { if (force || Date.now() - lastSent > 400) { lastSent = Date.now(); void progress(stage, Math.min(done, total), total); } };
+  tell(true);
   const queue = list.slice();
   const worker = async () => {
     for (let next = queue.shift(); next; next = queue.shift()) {
       const [rel, h] = next;
+      let got = 0;
       try {
+        if (inflight.has(rel)) await inflight.get(rel); // the page is already downloading it
         if (!(await cache.match(key(rel, h)))) { // unchanged since the last visit: nothing to fetch
-          const stop = new AbortController();
-          const timer = setTimeout(() => stop.abort(), TIMEOUT[stage] || 20000);
-          try {
-            const res = await fetch(scope + rel, { cache: 'no-cache', signal: stop.signal });
-            if (res.ok) await cache.put(key(rel, h), res); // (the body streams in here: the timeout covers it)
-          } finally { clearTimeout(timer); }
+          if (size(rel) > free) { noRoom = true; continue; }
+          free -= size(rel);
+          const p = download(cache, rel, h, (n) => { got += n; done += n; tell(false); });
+          inflight.set(rel, p);
+          try { await p; } finally { inflight.delete(rel); }
         }
-      } catch (e) { /* offline, a hiccup or too slow: fetched on first use instead */ }
-      done++;
-      if (done % 3 === 0 || done === total) void progress(stage, done, total);
+      } catch (e) { /* offline, a hiccup, stalled or out of room: fetched on first use instead */ }
+      finally { done += size(rel) - got; tell(false); }
     }
   };
   await Promise.all([0, 1, 2, 3, 4, 5].map(worker));
-  await progress(stage, total, total);
+  await progress(stage, total, total, noRoom);
 }
 
 self.addEventListener('install', (/** @type {any} */ e) => {
@@ -115,10 +156,17 @@ self.addEventListener('fetch', (/** @type {any} */ e) => {
   }
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const hit = await cache.match(key(rel, h));
+    let hit = await cache.match(key(rel, h));
     if (hit) return isolate(rel, hit);
+    // The background save is downloading this very file: wait for it rather than download it twice.
+    const pending = inflight.get(rel);
+    if (pending) { await pending.catch(() => {}); hit = await cache.match(key(rel, h)); if (hit) return isolate(rel, hit); }
     const res = await fetch(scope + rel);
-    if (res.ok) await cache.put(key(rel, h), res.clone());
+    if (res.ok) {
+      const p = cache.put(key(rel, h), res.clone()).catch(() => {}); // (no room: it just isn't kept)
+      inflight.set(rel, p);
+      try { await p; } finally { inflight.delete(rel); }
+    }
     return isolate(rel, res);
   })());
 });
@@ -131,8 +179,10 @@ self.addEventListener('message', (/** @type {any} */ e) => {
   if (e.data === 'version' && e.source) e.source.postMessage({ version: VERSION });
   // The TV: every game file (progress bar), then music + the voice in the background.
   if (e.data === 'cache-tv') {
-    if (!tvSaving) tvSaving = save(Object.entries(FILES), 'core').then(() => save(Object.entries(MEDIA), 'media')).finally(() => { tvSaving = null; });
-    else for (const [stage, [done, total]] of Object.entries(at)) void progress(stage, done, total); // already saving: say how far
+    // The narrator's voice first (it's needed as soon as a game starts), then the music.
+    const media = Object.entries(MEDIA).sort(([a], [b]) => Number(b.startsWith('tts/')) - Number(a.startsWith('tts/')));
+    if (!tvSaving) tvSaving = save(Object.entries(FILES), 'core').then(() => save(media, 'media')).finally(() => { tvSaving = null; });
+    else for (const [stage, x] of Object.entries(at)) void progress(stage, x.done, x.total, x.noRoom); // already saving: say how far
     e.waitUntil(tvSaving);
   }
 });

@@ -332,8 +332,10 @@
   /**
    * @param {HTMLElement} el @param {Record<string, number>} look @param {(look: Record<string, number>) => void} onChange
    */
-  function editor(el, look, onChange) {
+  function editor(el, look, onChange, { open = true, toggle = true } = {}) {
     let cur = norm(look);
+    /** the presets and part tabs are shown (on the join page they wait behind "Customise") */
+    let more = open;
     /** @type {Record<string, number>[]} */
     const undo = [];
     let tab = 'face';
@@ -358,18 +360,20 @@
           <div class="maker-actions">
             <button type="button" class="maker-random" data-random="1">🎲 Random</button>
             <button type="button" class="maker-undo" data-undo="1" ${undo.length ? '' : 'disabled'}>↶ Undo</button>
+            ${toggle ? `<button type="button" class="maker-more" data-more="1" aria-expanded="${more}">${more ? '✓ Done' : '✏️ Customise'}</button>` : ''}
           </div>
         </div>
-        <section class="maker-part"><h3>Start from</h3><div class="preset-row">${PRESETS.map((pr, i) =>
+        ${more ? `<section class="maker-part"><h3>Start from</h3><div class="preset-row">${PRESETS.map((pr, i) =>
           `<button type="button" class="preset-opt" data-preset="${i}" aria-label="Preset ${i + 1}"><img src="${url(pr)}" alt=""></button>`).join('')}</div></section>
         <div class="maker-tabs" role="tablist">${TABS.map((x) => `<button type="button" role="tab" class="maker-tab ${x.id === tab ? 'on' : ''}" data-tab="${x.id}" aria-selected="${x.id === tab}">${x.icon}<span>${x.label}</span></button>`).join('')}</div>
-        <div class="maker-panel" role="tabpanel">${t.parts.map(optionHtml).join('')}</div>
+        <div class="maker-panel" role="tabpanel">${t.parts.map(optionHtml).join('')}</div>` : ''}
       </div>`;
     };
     el.addEventListener('click', (e) => {
       const b = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('button') : null);
       if (!b || !el.contains(b)) return;
       if (b.dataset.tab) { tab = b.dataset.tab; render(); return; }
+      if (b.dataset.more) { more = !more; render(); return; }
       if (b.dataset.undo) { const prev = undo.pop(); if (prev) cur = prev; }
       else if (b.dataset.random) { undo.push(cur); cur = random(); }
       else if (b.dataset.preset) { undo.push(cur); cur = norm(PRESETS[Number(b.dataset.preset)]); }

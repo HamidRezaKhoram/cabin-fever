@@ -211,24 +211,6 @@ ul.scored-list li.wrong { color: var(--dim); }
 .lobby-crew figure img { display: block; margin: 0 auto 2px; }
 @keyframes drop-in { from { transform: translateY(-40px); opacity: 0; } }
 
-.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; margin-top: 22px; }
-button.game-pick {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  grid-template-rows: auto auto auto;
-  column-gap: 12px;
-  align-items: start;
-  background: var(--panel);
-  padding: 14px;
-  text-align: left;
-  color: var(--ink);
-  font-family: var(--body);
-}
-button.game-pick:not(:disabled):hover, button.game-pick:not(:disabled):focus { background: var(--panel2); transform: translateY(-3px); }
-button.game-pick .game-name { font-size: 12px; color: var(--accent); line-height: 1.5; }
-button.game-pick .game-blurb { color: var(--dim); font-size: 19px; }
-button.game-pick .game-min { color: var(--danger); font-size: 16px; }
-button.game-pick:not(:disabled) .game-min { color: var(--dim); }
 
 #offline-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--danger); color: #fff; text-align: center; padding: 10px; font-family: var(--pixel); font-size: 12px; z-index: 50; }
 body.offline #offline-banner { display: block; }
@@ -429,11 +411,6 @@ body.play { padding-bottom: 120px; }
 .cat-card div:nth-child(2) { animation-delay: 0.2s; background: var(--blue); }
 .cat-card div:nth-child(3) { animation-delay: 0.4s; background: var(--danger); }
 .cat-banner { font-family: var(--pixel); font-size: 13px; color: #fff; background: var(--purple); display: inline-block; padding: 6px 10px; margin-bottom: 6px; }
-button.game-pick { display: flex; flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; }
-.game-art { display: grid; place-items: center; height: 150px; background: var(--art-bg, var(--panel2)); border-bottom: 4px solid var(--edge); }
-.game-art img { image-rendering: pixelated; }
-button.game-pick:not(:disabled):hover .game-art img { animation: bob 0.6s steps(18) infinite; }
-.game-text { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 
 /* ---------- v5: pace votes, drawn avatars ---------- */
 .pace-bar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
@@ -926,15 +903,6 @@ body.host.picking #phase-view { height: 100%; }
 .lobby-top h1 { margin: 0; font-size: clamp(16px, 4vh, 44px); line-height: 1.1; }
 .game-menu .night-row { margin: 0; font-size: clamp(12px, 2vh, 22px); gap: 0.6vw; }
 .game-menu .night-row button { font-size: clamp(8px, 1.3vh, 14px); padding: 0.7vh 0.8vw; }
-.game-menu .game-grid { grid-area: games; margin: 0; min-height: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 1.1vh 0.7vw; }
-.lobby button.game-pick { min-height: 0; min-width: 0; }
-.game-menu .game-art { height: auto; flex: 0 0 50%; min-height: 0; border-bottom-width: 3px; overflow: hidden; }
-.game-menu .game-art img { height: 82%; width: auto; max-width: 92%; object-fit: contain; }
-.game-menu .game-text { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 0.7vh 0.6vw 0.9vh; gap: 0.3vh; min-width: 0; }
-.lobby button.game-pick .game-name { font-size: clamp(7px, 1.3vh, 14px); line-height: 1.35; }
-.lobby button.game-pick .game-blurb { font-size: clamp(10px, 1.65vh, 19px); line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.lobby button.game-pick .game-min { font-size: clamp(9px, 1.35vh, 16px); margin-top: auto; }
-@media (max-height: 880px) { .lobby button.game-pick .game-blurb { -webkit-line-clamp: 1; } }
 /* Right column: join card on top, the players underneath (room is kept clear for Rocco in the corner). */
 .lobby-side { grid-area: side; display: flex; flex-direction: column; gap: 1.2vh; min-height: 0; min-width: 0; padding-bottom: 104px; }
 .game-menu .join-card { flex: 0 0 auto; flex-wrap: nowrap; justify-content: flex-start; gap: 1vw; padding: 1.2vh 0.8vw; }
@@ -999,3 +967,150 @@ body.play #game-view .toggle input { width: 28px; height: 28px; }
 /* A long results list (6+ players) uses the TV's width instead of zooming everything under 28 px. */
 body.host ol.answers.two-col { columns: 2; column-gap: 4vw; }
 body.host ol.answers.two-col li { break-inside: avoid; }
+
+/* ---- Menu, cleaner (Nov 13): four game settings on the bar, the rest in ⚙ (the cartridge shelf is below). */
+.game-menu .settings { font-size: clamp(12px, 2vh, 22px); gap: 0.6vh 1.4vw; }
+.game-menu .settings .more-btn { font-size: clamp(9px, 1.4vh, 15px); padding: 0.7vh 1vw; background: var(--panel2); color: var(--ink); margin-left: auto; min-height: 0; }
+.settings-more { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 90; width: min(92vw, 1100px); max-height: 86vh; overflow: auto;
+  background: var(--panel); box-shadow: 0 0 0 6px var(--edge), 0 0 0 10px var(--accent), 0 0 0 100vmax rgba(10, 8, 20, 0.6);
+  padding: 3vh 2.4vw; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2vh 2vw; font-size: clamp(14px, 2.2vh, 24px); }
+.settings-more[hidden] { display: none; }
+.settings-more h2 { grid-column: 1 / -1; margin: 0; font-size: clamp(14px, 2.6vh, 30px); }
+.settings-more .more-group { display: flex; flex-direction: column; gap: 1.2vh; align-items: flex-start; min-width: 0; }
+.settings-more h3 { margin: 0; font-family: var(--pixel); font-weight: 400; font-size: clamp(10px, 1.6vh, 18px); color: var(--dim); }
+.settings-more label { display: inline-flex; gap: 0.6vw; align-items: center; margin: 0; color: var(--ink); font-size: inherit; }
+.settings-more select { font-size: inherit; padding: 0.3vh 0.5vw; max-width: 100%; }
+.settings-more .toggle input { width: clamp(16px, 2.4vh, 26px); height: clamp(16px, 2.4vh, 26px); }
+.settings-more .voice-status { color: var(--dim); font-size: 0.8em; }
+.settings-more .hl-link, .settings-more .link-btn { font-size: inherit; }
+.settings-more .more-close { grid-column: 1 / -1; justify-self: end; font-size: clamp(10px, 1.6vh, 18px); }
+/* The join card: a bigger QR (it's what people point their phones at). */
+.game-menu .qr-big { width: clamp(100px, 21vh, 240px); height: clamp(100px, 21vh, 240px); }
+
+/* ---- Phone join + lobby, cleaner (Nov 13): name and look up top, Join always in reach; the full
+   character maker opens with "Customise"; the lobby fits one screen. */
+#join-form .join-row { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 10px; }
+#join-form .join-field label { margin-top: 6px; }
+#join-form .join-field input { width: 100%; }
+#join-form .join-field-code input { text-transform: uppercase; letter-spacing: 0.12em; padding-left: 10px; padding-right: 6px; }
+#join-form .avatar-mode button { font-size: 12px; padding: 12px 6px 15px; }
+#join-form .join-go { position: sticky; bottom: 10px; z-index: 6; width: 100%; margin-top: 16px; font-size: 16px; padding: 18px 12px 22px; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.3), 0 0 0 3px var(--edge), 0 6px 18px rgba(0, 0, 0, 0.55); }
+.maker-actions .maker-more { background: var(--panel2); color: var(--ink); }
+.maker-actions button { min-height: 48px; }
+.lobby-card { text-align: center; background: var(--panel); box-shadow: 0 0 0 4px var(--edge); padding: 16px 14px 12px; }
+.lobby-card .waiting-art { margin: 0 0 8px; }
+.lobby-card h1 { margin: 6px 0; }
+.lobby-card p { margin: 6px 0; }
+.lobby-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.lobby-actions .ghost-btn { margin: 0; width: 100%; font-size: 18px; padding: 12px 6px 14px; line-height: 1.5; }
+.shy-note { text-align: center; margin: 8px 0 0; }
+.lobby-mode { margin-bottom: 10px; }
+/* Polish: the "now playing" toast sits under the top bar (at the bottom it covered the menu's
+   settings); the ⚙ panel's long dropdown wraps. */
+body.host .now-playing { top: 86px; bottom: auto; left: auto; right: 16px; transform: translateX(calc(100% + 32px)); }
+body.host .now-playing.show { transform: none; }
+.settings-more label.more-select { flex-wrap: wrap; }
+.settings-more label.more-select select { width: 100%; min-width: 0; }
+.settings-more .more-group > * { max-width: 100%; }
+.game-menu .qr-big { width: clamp(96px, 19vh, 220px); height: clamp(96px, 19vh, 220px); }
+.game-menu .join-addr { font-size: clamp(10px, 1.6vh, 19px); }
+.lobby-maker { scroll-margin-top: 64px; }
+.lobby-maker-head { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: stretch; margin-bottom: 10px; }
+.lobby-maker-head .avatar-mode { display: contents; }
+.lobby-maker-head #lobby-maker-save { width: auto; margin: 0; padding: 10px 12px 13px; font-size: 12px; }
+.lobby-maker-head [data-lobby-mode] { font-size: 10px; padding: 10px 4px 13px; white-space: nowrap; }
+
+/* ---- Feedback on every press (Nov 13). Phones: a squish + flash on tap (play.js adds .tap), the answer
+   you sent wears a ✓ and a pulsing ring while the others step back, a wrong entry shakes. TV: the
+   same pop for remote/mouse presses, and a short note when a setting changes. */
+@keyframes tap-pop { 0% { transform: scale(0.94); filter: brightness(1.35); } 60% { transform: scale(1.02); } 100% { transform: none; filter: none; } }
+button.tap, .toggle.tap { animation: tap-pop 0.2s steps(6); }
+body.calm button.tap, body.calm .toggle.tap { animation: none; }
+#game-view [data-send].sent, #game-view button.sent { position: relative; opacity: 1 !important; color: #14121f; background: var(--accent2);
+  box-shadow: 0 0 0 3px var(--edge), 0 0 0 6px var(--accent2); animation: sent-ring 1.2s steps(36) infinite; }
+#game-view [data-send].sent::after { content: '✓'; position: absolute; top: -10px; right: -8px; width: 26px; height: 26px; line-height: 26px; text-align: center;
+  background: var(--accent); color: #14121f; font-family: var(--pixel); font-size: 12px; box-shadow: 0 0 0 3px var(--edge); }
+@keyframes sent-ring { 50% { box-shadow: 0 0 0 3px var(--edge), 0 0 0 10px rgba(94, 214, 195, 0.35); } }
+body.calm #game-view .sent { animation: none; }
+#game-view [data-send]:disabled:not(.sent) { opacity: 0.35; }
+@keyframes nope-shake { 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
+.nope { animation: nope-shake 0.3s steps(9); }
+.nope input { box-shadow: 0 0 0 3px var(--danger), inset 0 4px 0 rgba(0,0,0,0.5); }
+
+/* ---- The game shelf (Nov 13): old console cartridges in one row. Each is a grey plastic shell with
+   grip ridges and a label (art + name) — nothing else. The picked one comes forward and its
+   description appears under it. The row scrolls (remote ◀ ▶ wraps round; the mouse wheel scrolls). */
+.shelf-wrap { grid-area: games; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.shelf { display: flex; gap: 2.2vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none;
+  padding: 5.5vh 3vw 3vh; margin: 0 -1vw; flex: 0 0 auto;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3vw, #000 calc(100% - 3vw), transparent 100%); }
+.shelf::-webkit-scrollbar { display: none; }
+.game-menu .shelf button.cart { flex: 0 0 auto; position: relative; width: 26vh; height: 30vh; padding: 0; margin: 0; border: 0; scroll-snap-align: center;
+  background: linear-gradient(180deg, #b2b0b8 0%, #9c9aa3 55%, #8a8891 100%); color: #fff; font-family: var(--pixel);
+  box-shadow: inset 0.5vh 0.5vh 0 rgba(255, 255, 255, 0.35), inset -0.6vh -0.6vh 0 rgba(0, 0, 0, 0.22), 0 0 0 3px #17151f, 0 1vh 0 #17151f;
+  transition: transform 0.2s steps(6), box-shadow 0.2s steps(6), filter 0.2s steps(6); }
+.cart-ridges { position: absolute; left: 12%; right: 12%; top: 4.5%; height: 10%;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0 0.35vh, rgba(255, 255, 255, 0.18) 0.35vh 0.55vh, transparent 0.55vh 1vh); }
+.game-menu .shelf button.cart::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 7%; background: rgba(0, 0, 0, 0.18); box-shadow: inset 0 0.3vh 0 rgba(0, 0, 0, 0.2); }
+.cart-label { position: absolute; left: 9%; right: 9%; top: 18%; bottom: 13%; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--art-bg, #2f2850); box-shadow: 0 0 0 0.4vh #17151f, inset 0 0 0 0.35vh rgba(255, 255, 255, 0.14); }
+.cart-label .game-art { flex: 1 1 auto; min-height: 0; display: grid; place-items: center; }
+.cart-label .game-art img { height: 78%; width: auto; max-width: 90%; object-fit: contain; image-rendering: pixelated; }
+.cart-label .game-name { flex: 0 0 auto; background: #121019; color: #fff; text-align: center; font-size: clamp(8px, 1.45vh, 16px); line-height: 1.3; padding: 0.7vh 0.4vw 0.8vh; }
+.cart-lock { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-size: 5vh; filter: drop-shadow(0 0.4vh 0 #17151f); }
+.game-menu .shelf button.cart.locked .cart-label { filter: grayscale(1) brightness(0.55); }
+.game-menu .shelf button.cart .game-lang { position: absolute; top: 1vh; right: 1vh; font-size: 1.3vh; background: #121019; padding: 0.3vh 0.4vw; }
+/* The pick comes forward: bigger, lifted, its shadow on the shelf; its art bobs. */
+.game-menu .shelf button.cart:hover, .game-menu .shelf button.cart:focus { transform: translateY(-3.5vh) scale(1.2); z-index: 2;
+  box-shadow: inset 0.5vh 0.5vh 0 rgba(255, 255, 255, 0.4), inset -0.6vh -0.6vh 0 rgba(0, 0, 0, 0.22), 0 0 0 3px #17151f, 0 0 0 0.7vh var(--accent), 0 4vh 3vh rgba(0, 0, 0, 0.55); }
+.game-menu .shelf button.cart:focus .game-art img, .game-menu .shelf button.cart:hover .game-art img { animation: bob 0.6s steps(18) infinite; }
+.game-menu .shelf button.cart.nope { animation: nope-shake 0.3s steps(9); }
+body.kbd .game-menu .shelf button.cart:focus { outline: none !important; } /* its own ring and lift are the focus */
+body.calm .game-menu .shelf button.cart { transition: none; }
+body.calm .game-menu .shelf button.cart .game-art img { animation: none !important; }
+/* The description, under the picked cartridge (host.js placeDetail sets `left`). */
+.game-detail { position: relative; align-self: flex-start; transform: translateX(-50%); left: 50%; width: min(100%, 64vh); margin: 0.6vh 0 0; padding: 1.4vh 1.4vw 1.5vh;
+  background: var(--panel); box-shadow: 0 0 0 3px var(--edge), 0 0 0 0.6vh var(--art-bg, var(--edge)); color: var(--dim); text-align: center;
+  font-size: clamp(13px, 2.2vh, 26px); line-height: 1.35; display: flex; flex-direction: column; gap: 0.6vh; }
+.game-detail::before { content: ''; position: absolute; left: 50%; top: -2.2vh; transform: translateX(-50%); border: 1.2vh solid transparent; border-bottom-color: var(--art-bg, var(--edge)); }
+.game-detail:not(.on)::before { display: none; }
+.game-detail.on { color: var(--ink); }
+.game-detail .detail-name { font-family: var(--pixel); font-weight: 400; color: var(--accent); font-size: clamp(11px, 2.2vh, 26px); }
+.game-detail .detail-meta { color: var(--dim); font-size: 0.85em; }
+
+/* ---- Retro menu (Nov 13): the menu is a console's game select — title, shelf, a footer with the
+   controls. No top bar here; every setting sits in ⚙ Settings, drawn as an old-console dialog box
+   (black, double white border). Faint scanlines over the screen. */
+body.host.picking #topbar { display: none; }
+.game-menu { position: relative; }
+.game-menu::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.13) 0 2px, transparent 2px 4px); }
+.lobby-top { justify-content: space-between; }
+.retro-title { text-transform: uppercase; letter-spacing: 0.08em; color: #fff; text-shadow: 0.45vh 0.45vh 0 #c0392b, 0.9vh 0.9vh 0 #17151f; }
+.retro-title::before { content: '▶ '; color: var(--accent); animation: blink-cursor 1s steps(30) infinite; }
+@keyframes blink-cursor { 50% { opacity: 0; } }
+body.calm .retro-title::before { animation: none; }
+.game-menu .night-btn { font-size: clamp(9px, 1.6vh, 18px); padding: 1vh 1.2vw 1.3vh; }
+.shelf { padding-top: 8vh; }
+.game-menu .settings.menu-foot { display: flex; align-items: center; justify-content: space-between; gap: 1vw; font-family: var(--pixel); font-size: clamp(9px, 1.5vh, 16px); color: var(--dim); }
+.menu-foot .foot-hint b { color: #fff; background: #17151f; padding: 0.3vh 0.5vw; margin: 0 0.3vw 0 1vw; box-shadow: 0 0 0 2px var(--dim); }
+.menu-foot .foot-hint b:first-child { margin-left: 0; }
+.game-menu .settings .more-btn { margin-left: auto; font-size: clamp(9px, 1.6vh, 18px); padding: 1vh 1.2vw 1.3vh; background: var(--accent); color: #221a00; }
+/* Old-console dialog boxes: the settings, game night, the description and the join card. */
+.retro-box, .game-menu .game-detail, .game-menu .join-card { background: #0b0a10; box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge); }
+.settings-more.retro-box { box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--accent), 0 0 0 100vmax rgba(10, 8, 20, 0.65); grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(94vw, 1500px); }
+.settings-more .more-group input[type=range] { width: 100%; }
+.night-pick { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 90; width: min(90vw, 760px); padding: 3vh 2.4vw; text-align: center;
+  font-size: clamp(14px, 2.4vh, 26px); box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--accent), 0 0 0 100vmax rgba(10, 8, 20, 0.65); }
+.night-pick[hidden] { display: none; }
+.night-pick h2 { margin: 0 0 1.4vh; font-size: clamp(14px, 2.8vh, 32px); }
+.night-pick .night-choices { display: flex; justify-content: center; gap: 1.4vw; margin: 2vh 0; }
+.night-pick .night-choices button { font-size: clamp(11px, 2vh, 22px); padding: 1.4vh 1.6vw 1.8vh; }
+.night-pick .more-close { font-size: clamp(9px, 1.5vh, 16px); background: var(--panel2); color: var(--ink); }
+.game-menu .game-detail { border-left: 0; }
+.game-detail .detail-go { margin-top: 0.4vh; font-family: var(--pixel); font-size: clamp(8px, 1.3vh, 14px); color: var(--accent); animation: blink-cursor 1.2s steps(36) infinite; }
+.game-detail .detail-go.locked { color: #ff9b9b; animation: none; }
+body.calm .game-detail .detail-go { animation: none; }
+/* On the menu (no top bar) the "now playing" toast rises in the footer, between the hints and ⚙ Settings. */
+body.host.picking .now-playing { top: auto; bottom: 2.4vh; left: 30vw; right: auto; transform: translateY(calc(100% + 4vh)); }
+body.host.picking .now-playing.show { transform: none; }
