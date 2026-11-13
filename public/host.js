@@ -109,9 +109,13 @@ function narratePrompt(g) {
   const text = g.prompt || g.question || g.blackCard || '';
   if (!text || text === lastSpoken) return;
   lastSpoken = text;
-  // Let the intro card finish first on a game's first prompt.
-  setTimeout(() => window.Rumpus.host.say(text), 900);
+  // A game's first prompt waits for the intro card (and its line) to finish; every other prompt is
+  // read the moment it's on screen (a fixed 900 ms wait made the voice trail the text).
+  const wait = Math.max(0, introUntil - Date.now());
+  if (wait) setTimeout(() => window.Rumpus.host.say(text), wait); else window.Rumpus.host.say(text);
 }
+/** When the current intro card goes away (showIntro). */
+let introUntil = 0;
 
 function showIntro(/** @type {any} */ gameId) {
   const meta = (state.availableGames || []).find((/** @type {any} */ g) => g.id === gameId);
@@ -125,6 +129,7 @@ function showIntro(/** @type {any} */ gameId) {
       <div class="intro-crew">${state.players.map((/** @type {any} */ p) => playerImg(p, 'avatar big bob')).join('')}</div>
     </div>`;
   document.body.appendChild(el);
+  introUntil = Date.now() + 4000;
   setTimeout(() => el.classList.add('out'), 3800);
   setTimeout(() => el.remove(), 4400);
 }
@@ -140,7 +145,16 @@ setInterval(() => {
   setTimeout(() => w.remove(), 14000);
 }, 4500);
 
-// --- volume sliders ----------------------------------------------------------------
+// --- volume sliders (top bar during games, and in ⚙ Settings on the menu) ----------------------------
+document.addEventListener('input', (e) => {
+  const el = e.target instanceof HTMLInputElement && e.target.dataset.vol ? e.target : null;
+  if (!el) return;
+  const kind = /** @type {'music' | 'sfx'} */ (el.dataset.vol);
+  music.setVolume(kind, Number(el.value) / 100);
+  const top = /** @type {HTMLInputElement | null} */ (document.getElementById('vol-' + kind));
+  if (top) top.value = el.value;
+});
+document.addEventListener('change', (e) => { if (e.target instanceof HTMLInputElement && e.target.dataset.vol === 'sfx') sfx.pop(); });
 for (const kind of ['music', 'sfx']) {
   const el = /** @type {HTMLInputElement} */ (document.getElementById('vol-' + kind));
   el.value = String(Math.round(music.volumes()[kind] * 100));
@@ -268,7 +282,13 @@ document.addEventListener('click', (e) => {
     return;
   }
   const pickBtn = hit(e.target, '.game-pick');
-  if (pickBtn && !pickBtn.disabled) {
+  if (pickBtn && pickBtn.getAttribute('aria-disabled') === 'true') {
+    // A locked cartridge: say why (it stays selectable, so its description can be read).
+    pickBtn.classList.remove('nope'); void pickBtn.offsetWidth; pickBtn.classList.add('nope');
+    remoteToast(`🔒 ${pickBtn.dataset.min || ''}`);
+    return;
+  }
+  if (pickBtn) {
     // Show a loading card until the game's first screen arrives (content is being drawn).
     const name = (pickBtn.querySelector('.game-name') || pickBtn).textContent || '';
     showLoading(`Loading ${name.trim()}…`);
@@ -279,6 +299,21 @@ document.addEventListener('click', (e) => {
   if (act.dataset.act === 'skip') socket.emit('host:skip');
   if (act.dataset.act === 'picknext' || act.dataset.act === 'scores') { pickNext = act.dataset.act === 'picknext'; render(); }
   if (act.dataset.act === 'night') socket.emit('host:startNight', { count: +act.dataset.n });
+  if (act.dataset.act === 'fullscreen') fsBtn.click();
+  if (act.dataset.act === 'nightmenu' || (act.dataset.act === 'night' && nightOpen)) {
+    nightOpen = act.dataset.act === 'nightmenu' ? !nightOpen : false;
+    render();
+    const target = nightOpen ? document.querySelector('.night-pick button:not([disabled])') : document.querySelector('.night-btn');
+    if (target) /** @type {HTMLElement} */ (target).focus();
+  }
+  if (act.dataset.act === 'more') {
+    moreOpen = !moreOpen;
+    nightOpen = false;
+    render();
+    // With a remote: focus moves into the panel, and back to its button when it closes.
+    const target = moreOpen ? document.querySelector('.settings-more input, .settings-more select') : document.querySelector('.more-btn');
+    if (target) /** @type {HTMLElement} */ (target).focus();
+  }
   if (act.dataset.act === 'bots') socket.emit('host:addBots', { count: +act.dataset.n, speed: +(act.dataset.speed || 1) });
   if (act.dataset.act === 'nobots') socket.emit('host:removeBots');
   if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
@@ -298,7 +333,28 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-voice') { window.Rumpus.host.setVoice(t.value); window.Rumpus.host.say(t.value === 'classic' ? 'Beep boop. Classic voice.' : t.value.startsWith('sys:') ? 'G\'day! I will be your host tonight.' : 'Hi! I will be your host tonight.'); }
   else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
   else if (t.id === 'set-calm') { store('rumpus.calm', t.checked); document.body.classList.toggle('calm', t.checked); }
+  // Every change says what it did (from across the room you can't tell a checkbox moved).
+  const on = (/** @type {boolean} */ v) => (v ? 'on' : 'off');
+  const optText = () => { const sel = /** @type {HTMLSelectElement} */ (/** @type {unknown} */ (t)); return sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : t.value; };
+  /** @type {Record<string, () => string>} */
+  const NOTES = {
+    'set-rounds': () => `🔁 Rounds: ${optText()}`, 'set-timer': () => `⏱ Timers: ${optText()}`,
+    'set-spicy': () => `🌶 18+ prompts ${on(t.checked)}`, 'set-teams': () => (t.checked ? '👥 Teams on — phones pick red or blue' : '👥 Teams off'),
+    'set-lang': () => `🌐 ${optText()}`, 'set-narrator': () => `🗣 Narrator ${on(t.checked)}`,
+    'set-cb': () => `👁 Colour-blind colours ${on(t.checked)}`, 'set-calm': () => `🕊 Calm ${on(t.checked)}`,
+  };
+  if (NOTES[t.id]) { remoteToast(NOTES[t.id]()); sfx.pop(); }
 });
+// Presses on the TV (mouse, or OK on the remote) pop like the phones' taps; a soft click to go with it.
+/** @param {Element | null} el */
+function pressFx(el) {
+  const b = /** @type {HTMLElement | null} */ (el && el.closest('button, .toggle'));
+  if (!b || /** @type {HTMLButtonElement} */ (b).disabled) return;
+  b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
+  if (!b.matches('.game-pick, [data-act="more"]')) sfx.tick(); // (a game start or the panel has its own sound/feel)
+}
+document.addEventListener('pointerdown', (e) => pressFx(e.target instanceof Element ? e.target : null), { passive: true });
+document.addEventListener('animationend', (e) => { if (e.target instanceof Element && e.animationName === 'tap-pop') e.target.classList.remove('tap'); });
 fsBtn.addEventListener('click', () => {
   // Fullscreen can be refused (no user gesture, kiosk mode) — that's fine, just stay windowed.
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -382,6 +438,71 @@ const art = (/** @type {any} */ id) => {
   return `<div class="game-art" style="--art-bg:${ART_BG[id] || '#2f2850'}"><img src="${u}" width="${w * 4}" height="${h * 4}" alt=""></div>`;
 };
 
+/** Each game's genre, shown in its description. */
+const GAME_TAGS = /** @type {Record<string, string>} */ ({
+  quiplash: 'Comedy', cah: 'Comedy', fibbage: 'Bluffing', twotruths: 'Bluffing', trivia: 'Trivia', closest: 'Guessing',
+  majority: 'Mind-reading', mostlikely: 'Party vote', crush: 'Romance', imposter: 'Deduction', storm: 'Hidden roles',
+  telephone: 'Drawing', minigames: 'Action', lantern: 'Tilt', looncall: 'Rhythm',
+});
+/** The ⚙ Settings panel on the menu is open. */
+let moreOpen = false;
+/** The 🎉 Game night chooser (how many games) is open. */
+let nightOpen = false;
+/** The menu's detail line: the focused (remote) or hovered game's description. */
+let detailHtml = 'Pick a game with the remote or the mouse — or start a 🎉 Game night and let the phones vote.';
+/** The description's colour follows the picked game (its label colour). */
+let detailColour = '';
+/** The game the description shows now. */
+let detailId = '';
+/** Where the description sits: under the picked cartridge (inline style, kept across re-renders). */
+let detailLeft = '';
+/** Put the description under `card` and fill it in. @param {HTMLElement} card */
+function showDetail(card) {
+  const id = card.dataset.gameId || '';
+  const name = (card.querySelector('.game-name') || card).textContent || '';
+  const tag = GAME_TAGS[id] || '';
+  const locked = card.getAttribute('aria-disabled') === 'true';
+  detailColour = /** @type {Record<string, string>} */ (ART_BG)[id] || '';
+  detailHtml = `<b class="detail-name">${esc(name)}</b><span class="detail-blurb">${esc(card.dataset.blurb || '')}</span>
+    <span class="detail-meta">${locked ? '🔒' : '👥'} ${esc(card.dataset.min || '')}${tag ? ` · ${esc(tag)}` : ''}</span>
+    <span class="detail-go ${locked ? 'locked' : ''}">${locked ? 'NEEDS MORE PLAYERS' : 'PRESS OK TO PLAY'}</span>`;
+  detailId = id;
+  placeDetail(card);
+  const el = /** @type {HTMLElement | null} */ (document.getElementById('game-detail'));
+  if (el) { el.innerHTML = detailHtml; el.style.setProperty('--art-bg', detailColour); el.classList.add('on'); }
+}
+/** Centre the description under `card`, kept inside the shelf. @param {HTMLElement} card */
+function placeDetail(card) {
+  const shelf = card.parentElement, el = document.getElementById('game-detail');
+  if (!shelf || !el) return;
+  const s = shelf.getBoundingClientRect(), c = card.getBoundingClientRect();
+  const half = Math.min(el.offsetWidth || s.width * 0.6, s.width) / 2;
+  const x = Math.max(half, Math.min(s.width - half, c.left - s.left + c.width / 2));
+  detailLeft = `left:${Math.round(x)}px`;
+  el.style.left = Math.round(x) + 'px';
+}
+document.addEventListener('focusin', (e) => {
+  const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
+  if (card) showDetail(card);
+});
+document.addEventListener('mouseover', (e) => {
+  const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
+  if (card && card.dataset.gameId !== detailId) showDetail(card);
+});
+// The mouse wheel scrolls the shelf sideways (it's one row).
+document.addEventListener('wheel', (e) => {
+  const shelf = e.target instanceof Element ? e.target.closest('.shelf') : null;
+  if (!shelf || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  shelf.scrollLeft += e.deltaY;
+  e.preventDefault();
+}, { passive: false });
+// The shelf scrolls under the description: keep it under its cartridge.
+document.addEventListener('scroll', (e) => {
+  if (!(e.target instanceof Element) || !e.target.classList.contains('shelf')) return;
+  const card = /** @type {HTMLElement | null} */ (e.target.querySelector(`.game-pick[data-game-id="${detailId}"]`));
+  if (card) placeDetail(card);
+}, true);
+
 function gamePicker(/** @type {any} */ label) {
   const count = state.players.length;
   const st = state.settings || {};
@@ -405,43 +526,74 @@ function gamePicker(/** @type {any} */ label) {
     </div>` : '';
   // One screen, no scrolling: games fill the space left of the join card + players column; the
   // settings sit in a compact bar underneath (public/style.css ".game-menu").
-  const settings = `<div class="settings">
-          <label>Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
-            ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
-          <label>Timers <select id="set-timer">${opt(0.6, st.timerScale, 'Fast')}${opt(1, st.timerScale, 'Normal')}
-            ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
-          <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+</label>
-          <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
-          <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind</label>
-          <label class="toggle" title="No screen shakes, wipes, confetti or lightning flashes"><input type="checkbox" id="set-calm" ${document.body.classList.contains('calm') ? 'checked' : ''}> 🕊 Calm</label>
-          <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
-          <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator</label>
-          <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => (v[2] ? `<option disabled>${esc(v[1])}</option>` : opt(esc(v[0]), esc(window.Rumpus.host.voice()), esc(v[1])))).join('')}</select> <small id="voice-status" class="voice-status">${window.Rumpus.host.voiceStatus()}</small></label>
-          <a class="hl-link" href="/admin" target="_blank">⚙ House rules</a> <a class="hl-link" href="/highlights" target="_blank">🏆 Hall of fame</a>
-          <button class="link-btn" data-act="newroom">Fresh room</button>
+  // The menu itself is the shelf; every setting lives in ⚙ Settings (a retro dialog box).
+  const vols = music.volumes();
+  const settings = `<div class="settings menu-foot">
+          <span class="foot-hint"><b>◀ ▶</b> choose <b>OK</b> play</span>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((/** @type {any} */ p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
+          <button class="more-btn" data-act="more" aria-expanded="${moreOpen}">⚙ Settings</button>
+        </div>
+        <div class="settings-more retro-box" role="dialog" aria-label="Settings" ${moreOpen ? '' : 'hidden'}>
+          <h2>⚙ Settings</h2>
+          <div class="more-group"><h3>Game</h3>
+            <label class="more-select">🔁 Rounds <select id="set-rounds">${opt('', st.rounds == null ? '' : st.rounds, 'Default')}
+              ${[3, 5, 8, 10].map((n) => opt(n, st.rounds, n)).join('')}</select></label>
+            <label class="more-select">⏱ Timers <select id="set-timer">${opt(0.6, st.timerScale, 'Fast')}${opt(1, st.timerScale, 'Normal')}
+              ${opt(1.5, st.timerScale, 'Relaxed')}${opt(2, st.timerScale, 'Extra slow')}</select></label>
+            <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+ prompts</label>
+            <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams (red vs blue)</label>
+          </div>
+          <div class="more-group"><h3>Sound &amp; screen</h3>
+            <label class="more-select">🎵 Music <input type="range" data-vol="music" min="0" max="100" value="${Math.round(vols.music * 100)}"></label>
+            <label class="more-select">🔔 Sounds <input type="range" data-vol="sfx" min="0" max="100" value="${Math.round(vols.sfx * 100)}"></label>
+            <button class="link-btn" data-act="fullscreen">⛶ Fullscreen</button>
+            <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind colours</label>
+            <label class="toggle" title="No screen shakes, wipes, confetti or lightning flashes"><input type="checkbox" id="set-calm" ${document.body.classList.contains('calm') ? 'checked' : ''}> 🕊 Calm (no shakes or flashes)</label>
+          </div>
+          <div class="more-group"><h3>Narrator &amp; language</h3>
+            <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Read things aloud</label>
+            <label class="more-select">🎙 Voice <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => (v[2] ? `<option disabled>${esc(v[1])}</option>` : opt(esc(v[0]), esc(window.Rumpus.host.voice()), esc(v[1])))).join('')}</select></label>
+            <small id="voice-status" class="voice-status">${window.Rumpus.host.voiceStatus()}</small>
+            <label class="more-select">🌐 Language <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
+          </div>
+          <div class="more-group more-links"><h3>This cottage</h3>
+            <a class="hl-link" href="/admin" target="_blank">⚙ House rules</a>
+            <a class="hl-link" href="/highlights" target="_blank">🏆 Hall of fame</a>
+            <button class="link-btn" data-act="newroom">🔄 Fresh room (everyone rejoins)</button>
+          </div>
+          <button class="more-close" data-act="more">✓ Done</button>
+        </div>
+        <div class="night-pick retro-box" role="dialog" aria-label="Game night" ${nightOpen ? '' : 'hidden'}>
+          <h2>🎉 Game night</h2>
+          <p>A playlist your phones vote on, game by game. How many games tonight?</p>
+          <div class="night-choices">${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}</div>
+          ${count < 2 ? '<p class="hint">Needs 2+ players.</p>' : ''}
+          <button class="more-close" data-act="nightmenu">Back</button>
         </div>`;
   return `<div class="game-menu">
       <div class="lobby-top">
-        <h1>${label}</h1>
-        <div class="night-row">🎉 <b>Game night</b> <span class="night-what">— a playlist your phones vote on:</span>
-          ${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}
+        <h1 class="retro-title">${label}</h1>
+        <div class="night-row">
+          <button class="night-btn" data-act="nightmenu" aria-expanded="${nightOpen}">🎉 Game night</button>
           ${state.phase === 'gameover' ? '<button data-act="scores" class="ghost">◀ Scores</button>' : ''}</div>
       </div>
-      <div class="game-grid">` +
+      <div class="shelf-wrap">
+        <div class="shelf">` +
     (state.availableGames || []).map((/** @type {any} */ gm) => {
-      const disabled = count < gm.minPlayers;
-      return `<button class="game-pick" data-game-id="${esc(gm.id)}" ${disabled ? 'disabled' : ''}>
-        ${art(gm.id)}
-        <span class="game-text">
-          <span class="game-name">${esc(gm.name)}</span>
-          <span class="game-blurb">${esc(gm.blurb)}</span>
-          <span class="game-min">${disabled ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}</span>
-          ${st.lang === 'fr' && !FRENCH_GAMES.includes(gm.id) ? '<span class="game-lang" title="Questions in English">EN</span>' : ''}
-        </span>
+      const locked = count < gm.minPlayers;
+      // An old-console cartridge: grey shell, grip ridges, a label with the art and the name. Nothing else.
+      return `<button class="game-pick cart ${locked ? 'locked' : ''}" data-game-id="${esc(gm.id)}" data-blurb="${esc(gm.blurb)}"
+          data-min="${locked ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}" ${locked ? 'aria-disabled="true"' : ''}
+          style="--art-bg:${/** @type {Record<string, string>} */ (ART_BG)[gm.id] || '#2f2850'}">
+        <span class="cart-ridges" aria-hidden="true"></span>
+        <span class="cart-label">${art(gm.id)}<span class="game-name">${esc(gm.name)}</span></span>
+        ${locked ? '<span class="cart-lock" aria-hidden="true">🔒</span>' : ''}
+        ${st.lang === 'fr' && !FRENCH_GAMES.includes(gm.id) ? '<span class="game-lang" title="Questions in English">EN</span>' : ''}
       </button>`;
     }).join('') + `</div>
+        <div class="game-detail ${detailId ? 'on' : ''}" id="game-detail" style="--art-bg:${detailColour || 'var(--panel)'};${detailLeft}">${detailHtml}</div>
+      </div>
       <aside class="lobby-side">
         ${joinCard}
         <div class="lobby-crew ${st.teams ? 'teams' : ''}" style="--rows:${Math.max(1, st.teams ? Math.ceil(Math.max(...['red', 'blue'].map((t) => state.players.filter((/** @type {any} */ p) => p.team === t).length)) / 2) : Math.ceil(count / 4))}">${crew || '<p class="hint">Scan the code with your phone to join.</p>'}</div>
@@ -724,6 +876,7 @@ function render() {
           phaseView.innerHTML = pendingHtml || '';
           phaseView.dataset.phase = pendingPhase; // what's on screen (the lab waits for it)
           layoutStage(true);
+          keepFocus(); // the remote's focused control was in the old screen
         } finally {
           wiping = false;
         }
@@ -743,6 +896,17 @@ function render() {
   srcEl.hidden = !(inGame && g.source);
   if (inGame && g.source && srcEl.textContent !== 'Source: ' + g.source) srcEl.textContent = 'Source: ' + g.source;
   if (!wiping) countdown(g.endsAt, '.timer', tick);
+  keepFocus();
+}
+
+/** With the remote: if the focused control just vanished (the menu hid the top bar, a dialog closed),
+ * the focus goes to the screen's first control rather than nowhere. */
+function keepFocus() {
+  if (!document.body.classList.contains('kbd')) return;
+  const a = /** @type {HTMLElement | null} */ (document.activeElement);
+  if (a && a !== document.body && a.getClientRects().length) return;
+  const t = /** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])')) || remoteTargets()[0];
+  if (t) t.focus({ preventScroll: true });
 }
 
 // Make the main question/prompt fill the stage (TV readability).
@@ -874,15 +1038,30 @@ function isBack(e) {
   const typing = e.target instanceof HTMLElement && e.target.matches('input[type="text"], input:not([type]), textarea');
   return e.key === 'XF86Back' || e.key === 'BrowserBack' || e.keyCode === 10009 || e.key === 'GoBack' || (e.key === 'Backspace' && !typing);
 }
-function remoteToast(/** @type {string} */ text) {
+/** @type {number} */
+let toastTimer = 0;
+/** A short note at the bottom of the TV (Back hint, a setting that changed). @param {string} text */
+function remoteToast(text) {
   let el = document.getElementById('remote-toast');
   if (!el) { el = document.createElement('div'); el.id = 'remote-toast'; el.className = 'remote-toast'; document.body.appendChild(el); }
   el.textContent = text;
   el.hidden = false;
-  setTimeout(() => { if (el) el.hidden = true; }, 3000);
+  el.classList.remove('tap'); void el.offsetWidth; el.classList.add('tap');
+  clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => { if (el) el.hidden = true; }, 2500);
 }
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+  // Back / Escape with a menu dialog open (⚙ Settings, 🎉 Game night): close it (that's what "back" means there).
+  if ((moreOpen || nightOpen) && (isBack(e) || e.key === 'Escape')) {
+    e.preventDefault();
+    const was = moreOpen ? '.more-btn' : '.night-btn';
+    moreOpen = false; nightOpen = false;
+    render();
+    const btn = /** @type {HTMLElement | null} */ (document.querySelector(was));
+    if (btn) btn.focus();
+    return;
+  }
   if (isBack(e)) {
     e.preventDefault();
     // Second press: leave. Done here rather than left to the browser, which doesn't go back on every key
@@ -903,11 +1082,19 @@ document.addEventListener('keydown', (e) => {
     if (cur && cur.matches('input[type="text"], input:not([type])')) return; // typing: arrows move the caret
     e.preventDefault();
     const [dx, dy] = ARROWS[e.key];
-    const next = onControl ? nearest(/** @type {HTMLElement} */ (cur), dx, dy)
-      : (/** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([disabled])')) || remoteTargets()[0] || null);
-    if (next) { next.focus(); next.scrollIntoView({ block: 'nearest' }); }
+    // Along the cartridge shelf: the next one in line, round from the last to the first.
+    const shelf = cur && dx && cur.matches('.game-pick') ? [.../** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.shelf .game-pick'))] : null;
+    const along = shelf && cur ? shelf[(shelf.indexOf(cur) + dx + shelf.length) % shelf.length] : null;
+    const next = along || (onControl ? nearest(/** @type {HTMLElement} */ (cur), dx, dy)
+      : (/** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])')) || remoteTargets()[0] || null));
+    if (next && next !== cur) {
+      next.focus({ preventScroll: true });
+      next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' });
+      sfx.select();
+    }
   } else if (e.key === 'Enter' && onControl && cur && cur.matches('input[type="checkbox"]')) {
     e.preventDefault(); cur.click(); // OK toggles a switch (browsers only do that for Space)
-  }
+    pressFx(cur.closest('.toggle'));
+  } else if (e.key === 'Enter' && onControl && cur) pressFx(cur);
 });
 document.addEventListener('mousedown', () => document.body.classList.remove('kbd'));

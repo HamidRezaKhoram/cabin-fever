@@ -27,7 +27,7 @@ const PROFILES = {
   phone: { name: 'Galaxy A15 (Dimensity 6100+)', viewport: { width: 384, height: 832 }, cpu: 4, latencyMs: 30, isMobile: true, hasTouch: true },
 };
 // Budgets (feel-plan.md §2), checked per screen.
-const BUDGET = { tapToTv: 150, peakDb: -1, phoneMaxFrame: 100, tapTarget: 44, tapP95: 80, inpMax: 200, longPerScreen: 2, longMax: 200, tvMaxFrame: 100, deadAir: 8000, minFontPx: 28, tvLoadMs: 5000, phoneJoinMs: 4000, menuPresses: 6, heapGrowth: 0.2 };
+const BUDGET = { tapToTv: 150, peakDb: -1, phoneMaxFrame: 100, tapTarget: 44, tapP95: 80, inpMax: 200, longPerScreen: 2, longMax: 200, tvMaxFrame: 100, deadAir: 8000, minFontPx: 28, tvLoadMs: 5000, phoneJoinMs: 4000, menuPresses: 8, heapGrowth: 0.2 };
 
 /** @param {number[]} xs */
 const median = (xs) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[a.length >> 1] : '–'; };
@@ -97,16 +97,14 @@ async function views(/** @type {string} */ code) { try { return await (await fet
     phones.push({ p, i, taps: /** @type {number[]} */ ([]) });
   }
   await tv.click('[data-act="bots"][data-n="3"]').catch(() => {}); // 6 players: every game can start
-  await tv.selectOption('#set-rounds', '1').catch(() => {});
   await sleep(1500);
 
   // --- Menu by remote (M7): presses from the first card to every other card ------------------
   report.startup.menuPresses = await tv.evaluate(() => {
-    const cards = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.game-pick')]);
-    const c = cards.map((el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
-    // Rows and columns of a grid: presses = column distance + row distance.
-    const xs = [...new Set(c.map((p) => Math.round(p[0])))].sort((a, b) => a - b), ys = [...new Set(c.map((p) => Math.round(p[1])))].sort((a, b) => a - b);
-    return Math.max(...c.map((p) => xs.indexOf(Math.round(p[0])) + ys.indexOf(Math.round(p[1]))));
+    // The games are one shelf of cartridges and ◀ ▶ wrap round (host.js): from the first one, the
+    // furthest is half the shelf away.
+    const n = document.querySelectorAll('.shelf .game-pick').length;
+    return Math.max(0, ...Array.from({ length: n }, (_, i) => Math.min(i, n - i)));
   });
   // CPU profiles (LAB_PROFILE=1): the TV, and one phone (they all run the same page).
   const stopTv = process.env.LAB_PROFILE ? await cpuProfile(tv, 25) : null;

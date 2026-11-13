@@ -11,7 +11,7 @@
  * Kokoro speaks a line part by part (sentences / clauses), so it starts after the first part; a new
  * line cuts the old one off, so it never lags behind the screen. It needs the TV page to be
  * cross-origin isolated (multi-threaded: server.js headers, sw.js on GitHub Pages). A TV too slow
- * for it (3 lines in a row late) switches to the classic voice.
+ * for it (2 lines in a row late) switches to the classic voice.
  * Animation runs on the shared 30 fps clock. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -122,6 +122,10 @@
       if (merged.length && (p.length < 14 || merged[merged.length - 1].length < 14) && merged[merged.length - 1].length + p.length < 60) merged[merged.length - 1] += ' ' + p;
       else merged.push(p);
     }
+    // The first part is only a few words: the voice starts as soon as those are made, the rest is
+    // made while they play (on a TV, a whole first sentence took seconds).
+    const words = merged.length ? merged[0].split(' ') : [];
+    if (words.length > 6) merged.splice(0, 1, words.slice(0, 4).join(' '), words.slice(4).join(' '));
     return merged;
   }
 
@@ -142,7 +146,10 @@
   const made = new Map();
   /** Lines in a row whose first part came too late: this TV can't keep up → classic voice. */
   let lateLines = 0;
-  const FIRST_PART_MS = 3500;
+  /** The first sound of a line must come within this long, or the line is skipped (its text is on
+   * screen): a voice that trails the text is worse than none. Two such lines in a row → classic voice. */
+  const FIRST_PART_MS = 2000;
+  const LATE_LIMIT = 2;
 
   function stopNatural() {
     for (const n of playing) { try { n.stop(); } catch (e) { /* not started */ } }
@@ -197,14 +204,14 @@
     if (voiceId === 'classic' || voiceId.startsWith('sys:')) return '';
     if (engine === 'loading') return 'natural voice loading…';
     if (engine === 'none') return 'no natural voice here — using the robot voice';
-    if (lateLines >= 3) return 'this device is too slow for the natural voice — using the robot voice';
+    if (lateLines >= LATE_LIMIT) return 'this device is too slow for the natural voice — using the robot voice';
     return 'natural voice ready';
   }
   let lastStatus = '';
   setInterval(() => { const s = status(); if (s !== lastStatus) { lastStatus = s; document.dispatchEvent(new CustomEvent('cf:voice', { detail: s })); } }, 500);
 
   /** Can the natural voice speak right now? (While it loads, lines wait for it.) */
-  const naturalOn = () => voiceId !== 'classic' && !voiceId.startsWith('sys:') && engine !== 'none' && lateLines < 3;
+  const naturalOn = () => voiceId !== 'classic' && !voiceId.startsWith('sys:') && engine !== 'none' && lateLines < LATE_LIMIT;
 
   /** Speak with Kokoro, part by part. Falls back to the classic voice only if it fails.
    * @param {string} t @param {{ patience?: number, done?: (ok: boolean) => void }} [opt] */
@@ -227,7 +234,7 @@
       if (started || !line || line.id !== id) return;
       // Too slow on this TV: skip this line (the text is on screen) rather than talk over the next.
       lateLines++;
-      if (lateLines >= 3) console.warn('[narrator] this TV is too slow for the natural voice — using the classic one');
+      if (lateLines >= LATE_LIMIT) console.warn('[narrator] this TV is too slow for the natural voice — using the classic one');
       stopNatural();
       done(false);
     }, opt.patience || FIRST_PART_MS);

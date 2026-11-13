@@ -150,7 +150,8 @@ async function main() {
     ...Object.keys(files).filter((f) => /^(fonts|icons)\//.test(f))])].filter((f) => files[f]);
   const version = hash(JSON.stringify(files) + JSON.stringify(media));
   const sw = fs.readFileSync(path.join(ROOT, 'web', 'sw-template.js'), 'utf8')
-    .replace('__VERSION__', version).replace('__FILES__', JSON.stringify(files)).replace('__MEDIA__', JSON.stringify(media)).replace('__PHONE__', JSON.stringify(phoneFiles));
+    .replace('__VERSION__', version).replace('__FILES__', JSON.stringify(files)).replace('__MEDIA__', JSON.stringify(media)).replace('__PHONE__', JSON.stringify(phoneFiles))
+    .replace('__SIZES__', JSON.stringify(Object.fromEntries([...Object.keys(files), ...Object.keys(media)].map((rel) => [rel, fs.statSync(path.join(OUT, decodeURIComponent(rel))).size]))));
   write(path.join(OUT, 'sw.js'), sw);
   console.log(`built ${OUT}: ${Object.keys(files).length} files + ${Object.keys(media).length} music tracks (version ${version})`);
 }

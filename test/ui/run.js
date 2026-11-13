@@ -85,6 +85,8 @@ const allPages = t.pages;
       await r.keyboard.press('Enter');
       await r.waitForSelector('#start-overlay', { state: 'hidden' });
       await r.keyboard.press('ArrowDown');
+      // (pressed before the menu is drawn, the focus lands as soon as it is)
+      await r.waitForFunction(() => document.activeElement && document.activeElement !== document.body, null, { timeout: 3000 }).catch(() => {});
       const at = () => r.evaluate(() => { const el = /** @type {HTMLElement} */ (document.activeElement); const b = el.getBoundingClientRect(); return { tag: el.tagName, cls: el.className, x: b.left + b.width / 2, y: b.top + b.height / 2, ring: parseFloat(getComputedStyle(el).outlineWidth) }; });
       const a = await at();
       assert.notStrictEqual(a.tag, 'BODY', 'the first arrow press focuses a control');
@@ -99,12 +101,19 @@ const allPages = t.pages;
       await r.keyboard.press('Backspace');
       await r.waitForSelector('#remote-toast:not([hidden])');
       assert.match(r.url(), /\/host/, 'still on the TV page');
-      // OK on a switch toggles it (browsers only do that for Space).
+      // OK on ⚙ Settings opens it; OK on a switch toggles it (browsers only do that for Space).
+      await r.focus('.more-btn');
+      await r.keyboard.press('Enter');
+      await r.waitForSelector('.settings-more:not([hidden])');
       await r.focus('#set-spicy');
       const was = await r.isChecked('#set-spicy');
       await r.keyboard.press('Enter');
       await r.waitForFunction((w) => /** @type {HTMLInputElement} */ (document.getElementById('set-spicy')).checked !== w, was);
       await r.keyboard.press('Enter');
+      // Back with Settings open closes Settings — not the page.
+      await r.keyboard.press('Backspace');
+      await r.waitForSelector('.settings-more', { state: 'hidden' });
+      assert.match(r.url(), /\/host/, 'Back closed the panel, the TV page stays');
       // Back twice within 3 s: leaves (back to the page before).
       await r.keyboard.press('Backspace');
       await r.keyboard.press('Backspace');
@@ -112,17 +121,29 @@ const allPages = t.pages;
     } finally { await ctx.close(); }
   });
 
-  await check('Français: the TV language setting translates the TV (and back)', async () => {
+  await check('Français: the TV language setting (in ⚙ More) translates the TV (and back)', async () => {
+    await tv.click('[data-act="more"]');
+    await tv.waitForSelector('.settings-more:not([hidden])');
     await tv.selectOption('#set-lang', 'fr');
     await tv.waitForFunction(() => document.documentElement.lang === 'fr' && /Choisis un jeu/.test(document.getElementById('phase-view').textContent));
     await tv.selectOption('#set-lang', 'en');
     await tv.waitForFunction(() => document.documentElement.lang === 'en' && /Choose a game/.test(document.getElementById('phase-view').textContent));
+    await tv.keyboard.press('Escape'); // Escape / Back closes the panel
+    await tv.waitForSelector('.settings-more', { state: 'hidden' });
+  });
+
+  await check('the menu cards say what a game is when picked: the description line follows the focus', async () => {
+    await tv.focus('.game-pick[data-game-id="trivia"]');
+    await tv.waitForFunction(() => /Lakeside Quiz/.test((document.getElementById('game-detail') || { textContent: '' }).textContent || ''));
+    const blurb = await tv.getAttribute('.game-pick[data-game-id="trivia"]', 'data-blurb');
+    assert.ok(blurb && (await tv.textContent('#game-detail') || '').includes(blurb.slice(0, 20)), 'the full description, not a cut-off one');
   });
 
   await check('menu links: House rules (save, reload, add + delete a prompt) and Hall of fame (every tab) work; the Rounds setting sticks', async () => {
     // Click the real links (regression: they pointed at URLs the server didn't serve).
     const open = async (href) => {
-      const [page] = await Promise.all([tv.context().waitForEvent('page'), tv.click(`.settings a[href="${href}"]`)]);
+      if (await tv.isHidden('.settings-more')) await tv.click('[data-act="more"]'); // the links live in ⚙ Settings
+      const [page] = await Promise.all([tv.context().waitForEvent('page'), tv.click(`.settings-more a[href="${href}"]`)]);
       page.on('pageerror', (e) => errors.push(`${href}: ${e.message}`));
       page.on('console', (m) => { if (m.type() === 'error') errors.push(`${href} console: ${m.text()}`); });
       await page.waitForLoadState('domcontentloaded');
@@ -159,12 +180,15 @@ const allPages = t.pages;
       await hl.waitForFunction((t) => document.querySelector(`.hl-tabs [data-tab="${t}"]`).classList.contains('on') && document.getElementById('hl-body').textContent.trim().length > 0, tab);
     }
     await hl.close();
+    if (await tv.isHidden('.settings-more')) await tv.click('[data-act="more"]'); // every setting is in ⚙ Settings
     await tv.selectOption('#set-rounds', '3');
     await tv.selectOption('#set-timer', '1.5'); // forces another server push + re-render
     await tv.waitForFunction(() => /** @type {HTMLSelectElement} */ (document.getElementById('set-timer')).value === '1.5' && /** @type {HTMLSelectElement} */ (document.getElementById('set-rounds')).value === '3'
       && !!document.querySelector('#set-rounds option[value="3"][selected]'));
     await tv.selectOption('#set-timer', '1');
     await tv.selectOption('#set-rounds', '');
+    await tv.click('.settings-more .more-close');
+    await tv.waitForSelector('.settings-more', { state: 'hidden' });
   });
 
   await check('menu music never stops: loops, moves on, and the watchdog revives it', async () => {
@@ -238,6 +262,10 @@ const allPages = t.pages;
       if (i === 0) {
         // Default: the character maker. Change a few parts.
         assert.strictEqual(await p.isVisible('#avatar-make .maker-preview'), true, 'character maker is the default');
+        // The join page is short: picture, Random, Undo — the full maker opens with "Customise".
+        assert.strictEqual(await p.isVisible('#avatar-make [data-preset="0"]'), false, 'presets wait behind Customise');
+        assert.ok(await p.evaluate(() => { const r = document.querySelector('#join-form .join-go').getBoundingClientRect(); return r.bottom <= innerHeight + 1; }), 'Join is on screen without scrolling');
+        await p.click('#avatar-make [data-more]');
         await p.click('#avatar-make [data-preset="0"]');
         await p.click('#avatar-make [data-part="faceShape"][data-val="3"]');
         await p.click('#avatar-make [data-tab="style"]');
@@ -288,6 +316,8 @@ const allPages = t.pages;
   });
 
   await check('changing avatar in the lobby updates the TV', async () => {
+    await phones[1].click('[data-lobby-maker]'); // ✏️ Change my look → 🐾 Animal
+    await phones[1].click('[data-lobby-mode="pick"]');
     await phones[1].click('.lobby-pick [data-avatar]:not([disabled]):not(.on)'); // any free animal
     await tv.waitForFunction(() => [...document.querySelectorAll('#player-list li img')].some((i) => i.src.startsWith('data:')));
   });
@@ -302,10 +332,13 @@ const allPages = t.pages;
   });
 
   await check('🕊 Calm (TV setting) stops shakes, wipes and flashes, and is remembered on this TV', async () => {
+    await tv.click('[data-act="more"]');
     await tv.check('#set-calm');
     await tv.waitForFunction(() => document.body.classList.contains('calm') && localStorage.getItem('rumpus.calm') === 'true');
     await tv.uncheck('#set-calm');
     await tv.waitForFunction(() => !document.body.classList.contains('calm'));
+    await tv.click('.settings-more .more-close');
+    await tv.waitForSelector('.settings-more', { state: 'hidden' });
   });
 
   await check('/bench (device speed check) measures and shows the factor against the lab machine', async () => {

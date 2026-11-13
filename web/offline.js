@@ -86,6 +86,13 @@ function offline(role) {
       }
     } else if (m.stage === 'media') {
       if (updateNote) return;
+      if (m.done >= m.total && m.noRoom) {
+        // A private window (or a full disk) has no room for ~300 MB: say so once, then get out of the way.
+        corner.hidden = false;
+        corner.textContent = '💾 No room to save music & voice on this device — they\'ll play from the internet';
+        setTimeout(() => { if (!updateNote) corner.hidden = true; }, 8000);
+        return;
+      }
       corner.hidden = m.done >= m.total;
       corner.textContent = `💾 Saving music & voice for offline · ${pct}%`;
     }
