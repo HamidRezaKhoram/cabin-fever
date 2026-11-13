@@ -725,6 +725,8 @@
     leader: () => { duck(900); sfx((t, d) => [392, 523, 659, 784].forEach((f, i) => voice(d, f, t + i * 0.06, 0.12, { wave: 0.25, vol: 0.1 }))); },
     thunder: () => { duck(2500, 0.2); sfx((t, d) => { noise(d, t, 2.2, 0.6, 160, 'lowpass'); noise(d, t + 0.04, 0.35, 0.3, 900, 'lowpass'); voice(d, 55, t, 1.5, { type: 'sine', vol: 0.3, slide: 0.6 }); }); },
     award: () => sfx((t, d) => { voice(d, 784, t, 0.12, { vol: 0.1 }); voice(d, 1175, t + 0.12, 0.3, { vol: 0.1 }); }),
+    /** a cartridge passed the middle of the turning shelf: a short wooden click, like a prize wheel's peg */
+    wheel: () => sfx((t, d) => { noise(d, t, 0.03, 0.14, 1800, 'bandpass'); voice(d, 1500, t, 0.018, { wave: 0.125, vol: 0.05, slide: 0.7 }); }),
     /** the remote moved to another game card: a soft two-note blip */
     select: () => sfx((t, d) => { voice(d, 740, t, 0.035, { wave: 0.25, vol: 0.045 }); voice(d, 1109, t + 0.03, 0.05, { wave: 0.25, vol: 0.045 }); }),
   };

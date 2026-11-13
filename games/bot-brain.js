@@ -159,8 +159,6 @@ function decide(view, rnd = Math.random) {
       const taps = human(p.steps.map((/** @type {number} */ st) => p.echoAt + (st * s.barMs) / s.steps));
       return { payload: { taps: taps.length ? taps : [p.echoAt + s.barMs * 0.97] }, kind: 'beat' }; // all missed: one stray tap
     }
-    // Game night: vote on what's next
-    case 'night-vote': return !you.voted && g.options && g.options.length ? tap({ choice: Math.floor(rnd() * g.options.length) }) : null;
     // Cottage Olympics
     case 'mg-play':
       if (g.mini === 'tug') return { payload: { tap: 3 + Math.floor(rnd() * 4) }, kind: 'mash' };

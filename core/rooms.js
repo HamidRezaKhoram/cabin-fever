@@ -73,7 +73,7 @@ function snapshot(room) {
     players: [...room.players.values()].filter((p) => !p.bot).map((p) => ({
       id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null, shy: !!p.shy,
     })),
-    night: room.night ? { total: room.night.total, played: room.night.played, points: [...room.night.points] } : null,
+    night: room.night ? { total: room.night.total, list: room.night.list, played: room.night.played, points: [...room.night.points] } : null,
     // A game that can be picked up again (todo 2.1: trivia, Closest Cast so far) saves where it is.
     game: saved ? { id: /** @type {any} */ (g).constructor.meta.id, data: saved } : room.resumeGame || null,
     // A real game was on (not the lobby, a finished game or the game-night vote) and can't resume.
@@ -146,8 +146,10 @@ function restoreRooms() {
       if (p.dropTimer.unref) p.dropTimer.unref();
       room.players.set(p.id, p);
     }
-    if (s.night && Array.isArray(s.night.played) && s.night.played.length < Number(s.night.total)) {
-      room.night = { total: Number(s.night.total), played: s.night.played.filter((/** @type {unknown} */ x) => typeof x === 'string'), points: new Map(Array.isArray(s.night.points) ? s.night.points : []), timer: null };
+    if (s.night && Array.isArray(s.night.played) && Array.isArray(s.night.list) && s.night.played.length < s.night.list.length) {
+      const strs = (/** @type {unknown[]} */ a) => a.filter((x) => typeof x === 'string').map(String);
+      const list = strs(s.night.list).filter((id) => /** @type {Record<string, any>} */ (GAMES)[id]);
+      room.night = { total: list.length, list, played: strs(s.night.played), points: new Map(Array.isArray(s.night.points) ? s.night.points : []), timer: null };
     }
     room.closeTimer = setTimeout(() => closeRoom(room), HOST_GRACE_MS);
     if (room.closeTimer.unref) room.closeTimer.unref();
@@ -372,25 +374,35 @@ function startGame(room, GameClass) {
   safely(room, 'game start', () => game.start());
 }
 
-// --- game night -------------------------------------------------------------
-/** Between games: vote on 3 games not played yet tonight (or show the final table). @param {Room} room @param {boolean} final */
-function nightVote(room, final) {
+// --- the lineup -------------------------------------------------------------
+/** Between games: the next game of the lineup ("NEXT GAME", then it starts), or the final table.
+ * A game that needs more players than are here now is passed over. @param {Room} room */
+function nightNext(room) {
   const night = room.night;
   if (!night) return;
-  const fits = GAME_LIST.filter((m) => room.players.size >= (m.minPlayers || 2));
-  const fresh = fits.filter((m) => !night.played.includes(m.id));
-  const pool = (fresh.length >= 3 ? fresh : fits).slice();
-  for (let i = pool.length - 1; i > 0; i--) { const j = crypto.randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  /** @type {any} */
+  let next = null;
+  while (night.played.length < night.list.length) {
+    const id = night.list[night.played.length];
+    const G = /** @type {Record<string, any>} */ (GAMES)[id];
+    if (G && room.players.size >= (G.meta.minPlayers || 2)) { next = G.meta; break; }
+    night.played.push(id); // can't be played with who's here: skipped
+  }
+  const final = !next;
+  if (final && night.played.length) {
+    const best = Math.max(0, ...night.points.values());
+    for (const [id, n] of night.points) if (best > 0 && n === best) stats.nightWin(room, id);
+  }
   if (room.game) room.game.destroy();
   for (const p of room.players.values()) p.score = 0;
   room.game = new NightGame(room, () => broadcast(room), {
-    options: pool.slice(0, 3).map((m) => ({ id: m.id, name: m.name, minPlayers: m.minPlayers })),
+    next: next ? { id: next.id, name: next.name, minPlayers: next.minPlayers } : null,
     final,
     onPick: (/** @type {string} */ id) => { const G = /** @type {Record<string, any>} */ (GAMES)[id]; if (room.night && G) startGame(room, G); },
   });
   watchGlitches(room, room.game);
-  const vote = room.game;
-  safely(room, 'game night vote', () => vote.start());
+  const between = room.game;
+  safely(room, 'lineup next', () => between.start());
 }
 /** A game of the night just ended: add placings, then queue the next vote (or the final table). @param {Room} room */
 function countNight(room) {
@@ -401,13 +413,9 @@ function countNight(room) {
   const pts = placePoints([...room.players.values()].map((p) => ({ id: p.id, score: p.score })));
   for (const [id, n] of pts) night.points.set(id, (night.points.get(id) || 0) + n);
   night.played.push(/** @type {any} */ (game.constructor).meta.id);
-  const final = night.played.length >= night.total;
-  if (final) {
-    const best = Math.max(0, ...night.points.values());
-    for (const [id, n] of night.points) if (best > 0 && n === best) stats.nightWin(room, id);
-  }
+  // The scores stay up for a while, then the next cartridge (or the final table).
   night.nextAt = Date.now() + NIGHT_GAP_MS;
-  night.timer = setTimeout(() => { night.timer = null; if (room.night === night) nightVote(room, final); }, NIGHT_GAP_MS);
+  night.timer = setTimeout(() => { night.timer = null; if (room.night === night) nightNext(room); }, NIGHT_GAP_MS);
 }
 /** Every finished game counts towards the all-time stats (once). @param {Room} room */
 function recordStats(room) {
@@ -426,8 +434,11 @@ function endNight(room) {
 function nightSummary(room) {
   const night = room.night;
   if (!night) return null;
+  const meta = (/** @type {string} */ id) => { const G = /** @type {Record<string, any>} */ (GAMES)[id]; return { id, name: G ? G.meta.name : id }; };
   return {
     total: night.total, played: night.played.length, nextAt: night.nextAt || null,
+    // The lineup in order (the TV draws it as a row of cartridges: done, now, still to come).
+    list: night.list.map(meta),
     standings: [...room.players.values()].map((p) => ({ nickname: p.nickname, points: night.points.get(p.id) || 0 }))
       .sort((a, b) => b.points - a.points),
   };
@@ -544,7 +555,7 @@ function attachHost(room, socket) {
   if (room.interrupted) {
     socket.emit('room:event', { type: 'interrupted', game: room.interrupted });
     room.interrupted = null;
-    if (room.night && !room.game) nightVote(room, false);
+    if (room.night && !room.game) nightNext(room);
   }
   broadcast(room);
 }
@@ -671,16 +682,17 @@ function connection(socket) {
     startGame(room, GameClass);
   });
 
-  // Game night: a playlist of `count` games chosen by phone votes, with a running leaderboard.
+  // The lineup: games the host picked, in their order, back to back, with a running leaderboard.
   socket.on('host:startNight', (msg) => {
     const room = hostRoom(socket);
     if (!room) return;
     const phase = roomPhase(room);
-    if ((phase !== 'lobby' && phase !== 'gameover') || room.players.size < 2) return;
-    const total = Math.max(2, Math.min(10, Number(msg && msg.count) || 3));
-    room.night = { total, played: [], points: new Map(), timer: null };
-    console.log(`[room ${room.code}] game night: ${total} games`);
-    nightVote(room, false);
+    if (phase !== 'lobby' && phase !== 'gameover') return;
+    const list = (Array.isArray(msg && msg.games) ? msg.games : []).filter((/** @type {unknown} */ id) => typeof id === 'string' && /** @type {Record<string, any>} */ (GAMES)[id]).slice(0, 15);
+    if (!list.length) return;
+    room.night = { total: list.length, list, played: [], points: new Map(), timer: null };
+    console.log(`[room ${room.code}] lineup: ${list.join(', ')}`);
+    nightNext(room);
   });
 
   socket.on('host:skip', () => {

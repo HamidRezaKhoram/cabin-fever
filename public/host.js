@@ -32,6 +32,8 @@ const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.sear
 let baseUrl = location.origin;
 /** @type {string | null} */
 let lastPhaseKey = null;
+/** The game whose title card was shown (null between games): a new one gets its own. @type {string | null} */
+let startedGame = null;
 let lastPlayerCount = 0;
 /** @type {Map<string, number>} */
 let prevScores = new Map();
@@ -122,8 +124,9 @@ function showIntro(/** @type {any} */ gameId) {
   if (!meta) return;
   const el = document.createElement('div');
   el.className = 'intro-card';
+  // Like slotting a cartridge into the console: it slides up into place, then the rules.
   el.innerHTML = `<div class="intro-inner">
-      ${sprites.iconUrl(gameId) ? `<img class="intro-icon" src="${sprites.iconUrl(gameId)}" alt="">` : ''}
+      <div class="intro-cart">${cartHtml(gameId, meta.name, 'big')}</div>
       <div class="intro-title">${esc(meta.name)}</div>
       <ol class="intro-rules">${(RULES[gameId] || []).map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
       <div class="intro-crew">${state.players.map((/** @type {any} */ p) => playerImg(p, 'avatar big bob')).join('')}</div>
@@ -134,16 +137,6 @@ function showIntro(/** @type {any} */ gameId) {
   setTimeout(() => el.remove(), 4400);
 }
 
-// Attract mode: avatars stroll across the bottom of the lobby screen.
-setInterval(() => {
-  if (!state || state.phase !== 'lobby' || document.hidden) return;
-  const pool = state.players.length ? state.players.map((/** @type {any} */ p) => p.avatar) : [...Array(sprites.count).keys()];
-  const w = document.createElement('img');
-  w.className = 'walker' + (Math.random() < 0.5 ? ' rtl' : '');
-  w.src = sprites.avatarUrl(pool[Math.floor(Math.random() * pool.length)]);
-  document.body.appendChild(w);
-  setTimeout(() => w.remove(), 14000);
-}, 4500);
 
 // --- volume sliders (top bar during games, and in ⚙ Settings on the menu) ----------------------------
 document.addEventListener('input', (e) => {
@@ -298,17 +291,32 @@ document.addEventListener('click', (e) => {
   if (!act) return;
   if (act.dataset.act === 'skip') socket.emit('host:skip');
   if (act.dataset.act === 'picknext' || act.dataset.act === 'scores') { pickNext = act.dataset.act === 'picknext'; render(); }
-  if (act.dataset.act === 'night') socket.emit('host:startNight', { count: +act.dataset.n });
-  if (act.dataset.act === 'fullscreen') fsBtn.click();
-  if (act.dataset.act === 'nightmenu' || (act.dataset.act === 'night' && nightOpen)) {
-    nightOpen = act.dataset.act === 'nightmenu' ? !nightOpen : false;
+  if (act.dataset.act === 'lineup' || act.dataset.act === 'lineup-del' || act.dataset.act === 'lineup-clear') {
+    const id = act.dataset.id || '';
+    if (act.dataset.act === 'lineup') lineup = lineup.includes(id) ? lineup.filter((x) => x !== id) : [...lineup, id];
+    else if (act.dataset.act === 'lineup-del') lineup.splice(Number(act.dataset.i), 1);
+    else lineup = [];
+    sfx.pop();
     render();
-    const target = nightOpen ? document.querySelector('.night-pick button:not([disabled])') : document.querySelector('.night-btn');
-    if (target) /** @type {HTMLElement} */ (target).focus();
+    const card = /** @type {HTMLElement | null} */ (document.querySelector(`.game-pick[data-game-id="${detailId}"]`));
+    if (card) showDetail(card); // the button says what it does now
+    const again = /** @type {HTMLElement | null} */ (document.querySelector(act.dataset.act === 'lineup' ? '.lineup-add' : '.lineup-play, .game-pick'));
+    if (again && document.body.classList.contains('kbd')) again.focus({ preventScroll: true });
+  }
+  if (act.dataset.act === 'lineup-play' && lineup.length) {
+    socket.emit('host:startNight', { games: lineup });
+    lineup = [];
+  }
+  if (act.dataset.act === 'fullscreen') fsBtn.click();
+  if (act.dataset.act === 'edit-players') { editPlayers = !editPlayers; render(); }
+  if (act.dataset.act === 'stats') {
+    statsOpen = !statsOpen; moreOpen = false;
+    render();
+    const t = /** @type {HTMLElement | null} */ (document.querySelector(statsOpen ? '.stats-box .stats-link' : '.stats-btn'));
+    if (t) t.focus();
   }
   if (act.dataset.act === 'more') {
-    moreOpen = !moreOpen;
-    nightOpen = false;
+    moreOpen = !moreOpen; statsOpen = false;
     render();
     // With a remote: focus moves into the panel, and back to its button when it closes.
     const target = moreOpen ? document.querySelector('.settings-more input, .settings-more select') : document.querySelector('.more-btn');
@@ -431,6 +439,14 @@ const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
   mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e',
 };
+/** An old-console cartridge (the menu shelf, the lineup, "NEXT GAME", the game's title card): grey
+ * shell, grip ridges, a label with the game's art and name. @param {string} id @param {string} name @param {string} [cls] */
+function cartHtml(id, name, cls = '') {
+  return `<span class="cart-shell ${cls}" style="--art-bg:${/** @type {Record<string, string>} */ (ART_BG)[id] || '#2f2850'}">
+    <span class="cart-ridges" aria-hidden="true"></span>
+    <span class="cart-label">${art(id)}<span class="game-name">${esc(name)}</span></span></span>`;
+}
+window.Rumpus.cartHtml = cartHtml;
 const art = (/** @type {any} */ id) => {
   const u = sprites.iconUrl(id);
   if (!u) return '';
@@ -446,15 +462,19 @@ const GAME_TAGS = /** @type {Record<string, string>} */ ({
 });
 /** The ⚙ Settings panel on the menu is open. */
 let moreOpen = false;
-/** The 🎉 Game night chooser (how many games) is open. */
-let nightOpen = false;
+/** The lineup being built on the menu: game ids in play order (▶ Play lineup sends it to the server). @type {string[]} */
+let lineup = [];
+/** The ✕ to remove players shows only after ✏️ Edit. */
+let editPlayers = false;
+/** The 🏆 Stats box (tonight's highlights, hall of fame) is open. */
+let statsOpen = false;
 /** The menu's detail line: the focused (remote) or hovered game's description. */
-let detailHtml = 'Pick a game with the remote or the mouse — or start a 🎉 Game night and let the phones vote.';
+let detailHtml = 'Pick a game — or add a few to the lineup to play them back to back.';
 /** The description's colour follows the picked game (its label colour). */
 let detailColour = '';
 /** The game the description shows now. */
 let detailId = '';
-/** Where the description sits: under the picked cartridge (inline style, kept across re-renders). */
+/** Where the description's pointer sits (inline style, kept across re-renders). */
 let detailLeft = '';
 /** Put the description under `card` and fill it in. @param {HTMLElement} card */
 function showDetail(card) {
@@ -465,40 +485,109 @@ function showDetail(card) {
   detailColour = /** @type {Record<string, string>} */ (ART_BG)[id] || '';
   detailHtml = `<b class="detail-name">${esc(name)}</b><span class="detail-blurb">${esc(card.dataset.blurb || '')}</span>
     <span class="detail-meta">${locked ? '🔒' : '👥'} ${esc(card.dataset.min || '')}${tag ? ` · ${esc(tag)}` : ''}</span>
-    <span class="detail-go ${locked ? 'locked' : ''}">${locked ? 'NEEDS MORE PLAYERS' : 'PRESS OK TO PLAY'}</span>`;
+    <span class="detail-actions"><button class="lineup-add" data-act="lineup" data-id="${esc(id)}">${lineup.includes(id) ? `✕ Remove from lineup (#${lineup.indexOf(id) + 1})` : '＋ Add to lineup'}</button></span>`;
   detailId = id;
   placeDetail(card);
   const el = /** @type {HTMLElement | null} */ (document.getElementById('game-detail'));
   if (el) { el.innerHTML = detailHtml; el.style.setProperty('--art-bg', detailColour); el.classList.add('on'); }
 }
-/** Centre the description under `card`, kept inside the shelf. @param {HTMLElement} card */
+/** The description box stays in one place (centred under the shelf); its pointer moves to the picked
+ * cartridge (kept on the box's top edge). @param {HTMLElement} card */
 function placeDetail(card) {
-  const shelf = card.parentElement, el = document.getElementById('game-detail');
-  if (!shelf || !el) return;
-  const s = shelf.getBoundingClientRect(), c = card.getBoundingClientRect();
-  const half = Math.min(el.offsetWidth || s.width * 0.6, s.width) / 2;
-  const x = Math.max(half, Math.min(s.width - half, c.left - s.left + c.width / 2));
-  detailLeft = `left:${Math.round(x)}px`;
-  el.style.left = Math.round(x) + 'px';
+  const el = document.getElementById('game-detail');
+  if (!el) return;
+  const box = el.getBoundingClientRect(), c = card.getBoundingClientRect();
+  const x = Math.max(24, Math.min(box.width - 24, c.left - box.left + c.width / 2));
+  detailLeft = `--arrow-x:${Math.round(x)}px`;
+  el.style.setProperty('--arrow-x', Math.round(x) + 'px');
 }
 document.addEventListener('focusin', (e) => {
   const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
-  if (card) showDetail(card);
+  if (card) { showDetail(card); centreCart(card, true); }
 });
 document.addEventListener('mouseover', (e) => {
   const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
   if (card && card.dataset.gameId !== detailId) showDetail(card);
 });
-// The mouse wheel scrolls the shelf sideways (it's one row).
+// The shelf is a wheel: the picked cartridge sits in the middle, and each cartridge that passes the
+// middle clicks (sfx.wheel), like a prize wheel's pegs. A mouse wheel turns it one cartridge a notch.
+/** @type {string | null} */ let centredId = null;
+let clickAt = 0;
+let spinUntil = 0; // a turn in progress: a redraw mustn't jump it
+/** @type {(() => void) | null} */ let spinOff = null; // the turn in progress, on the shared 30 fps clock
+/** Turn the shelf so this cartridge is in the middle. Turned by hand, not the browser's smooth scroll
+ * (which jumps several cartridges a frame, so they'd pass without a click): quick, then easing out,
+ * like a prize wheel, so each cartridge clicks past the middle. @param {HTMLElement} card @param {boolean} [smooth] */
+function centreCart(card, smooth = false) {
+  const shelf = /** @type {HTMLElement | null} */ (card.closest('.shelf'));
+  if (!shelf) return;
+  const s = shelf.getBoundingClientRect(), c = card.getBoundingClientRect();
+  const from = shelf.scrollLeft;
+  const to = Math.max(0, Math.min(shelf.scrollWidth - shelf.clientWidth, from + (c.left + c.width / 2) - (s.left + s.width / 2)));
+  if (spinOff) { spinOff(); spinOff = null; shelf.style.scrollSnapType = ''; }
+  if (Math.abs(to - from) < 2) return;
+  if (!smooth || document.body.classList.contains('calm')) { shelf.scrollLeft = to; return; }
+  const steps = Math.max(1, Math.round(Math.abs(to - from) / Math.max(1, c.width)));
+  const ms = Math.min(1100, 160 + steps * 70);
+  const t0 = performance.now();
+  spinUntil = Date.now() + ms + 100;
+  shelf.style.scrollSnapType = 'none'; // a snapping shelf would jump each frame to a cartridge
+  spinOff = clock.add(() => {
+    const k = Math.min(1, (performance.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    shelf.scrollLeft = from + (to - from) * e;
+    if (k >= 1 && spinOff) { spinOff(); spinOff = null; shelf.style.scrollSnapType = ''; }
+  });
+}
+/** The cartridge in the middle of the shelf now. @param {Element} shelf */
+function middleCart(shelf) {
+  const s = shelf.getBoundingClientRect(), mid = s.left + s.width / 2;
+  let best = null, gap = Infinity;
+  for (const c of /** @type {NodeListOf<HTMLElement>} */ (shelf.querySelectorAll('.game-pick'))) {
+    const b = c.getBoundingClientRect(), d = Math.abs(b.left + b.width / 2 - mid);
+    if (d < gap) { gap = d; best = c; }
+  }
+  return best;
+}
+/** After a redraw (the shelf is new, scrolled to the start): put the pick back in the middle, silently. */
+function centreShelf() {
+  const shelf = document.querySelector('.shelf');
+  if (!shelf || Date.now() < spinUntil) return;
+  const a = document.activeElement;
+  const card = /** @type {HTMLElement | null} */ ((a instanceof HTMLElement && a.matches('.game-pick') && a) ||
+    shelf.querySelector(`.game-pick[data-game-id="${detailId}"]`) || shelf.querySelector('.game-pick'));
+  if (!card) return;
+  centredId = card.dataset.gameId || null;
+  centreCart(card);
+}
+let wheelAt = 0;
 document.addEventListener('wheel', (e) => {
   const shelf = e.target instanceof Element ? e.target.closest('.shelf') : null;
-  if (!shelf || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-  shelf.scrollLeft += e.deltaY;
+  if (!shelf) return;
   e.preventDefault();
+  const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+  if (!d || Date.now() - wheelAt < 140) return; // one notch per flick, not one per pixel
+  wheelAt = Date.now();
+  const carts = [.../** @type {NodeListOf<HTMLElement>} */ (shelf.querySelectorAll('.game-pick'))];
+  const from = middleCart(shelf);
+  const next = carts[(carts.indexOf(/** @type {HTMLElement} */ (from)) + Math.sign(d) + carts.length) % carts.length];
+  if (!next) return;
+  next.focus({ preventScroll: true });
+  showDetail(next);
+  centreCart(next, true);
 }, { passive: false });
+// The pointer follows its cartridge when the screen changes size, too.
+window.addEventListener('resize', () => {
+  const card = /** @type {HTMLElement | null} */ (document.querySelector(`.game-pick[data-game-id="${detailId}"]`));
+  if (card) placeDetail(card);
+});
 // The shelf scrolls under the description: keep it under its cartridge.
 document.addEventListener('scroll', (e) => {
   if (!(e.target instanceof Element) || !e.target.classList.contains('shelf')) return;
+  const mid = middleCart(e.target);
+  if (mid && mid.dataset.gameId !== centredId) {
+    centredId = mid.dataset.gameId || null;
+    if (Date.now() - clickAt > 25) { clickAt = Date.now(); sfx.wheel(); }
+  }
   const card = /** @type {HTMLElement | null} */ (e.target.querySelector(`.game-pick[data-game-id="${detailId}"]`));
   if (card) placeDetail(card);
 }, true);
@@ -508,7 +597,7 @@ function gamePicker(/** @type {any} */ label) {
   const st = state.settings || {};
   const opt = (/** @type {any} */ v, /** @type {any} */ cur, /** @type {any} */ text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
   // Each player in the lobby: their picture, an asleep/relay marker, and a ✕ to kick them.
-  const fig = (/** @type {any} */ p) => `<figure class="${[p.team ? 'team-' + p.team : '', p.connected ? '' : 'offline'].join(' ')}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}${p.connected ? '' : ' <small>💤</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower) — same Wi-Fi?">🌐</small>' : ''}${p.shy ? ' <small class="shy" title="Left out of votes and notes about people">🙈</small>' : ''}<button class="kick lobby-kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}" aria-label="Kick ${esc(p.nickname)}">✕</button></figure>`;
+  const fig = (/** @type {any} */ p) => `<figure class="${[p.team ? 'team-' + p.team : '', p.connected ? '' : 'offline'].join(' ')}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}${p.connected ? '' : ' <small>💤</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower) — same Wi-Fi?">🌐</small>' : ''}${p.shy ? ' <small class="shy" title="Left out of votes and notes about people">🙈</small>' : ''}${editPlayers ? `<button class="kick lobby-kick" data-kick="${esc(p.id)}" title="Remove ${esc(p.nickname)}" aria-label="Remove ${esc(p.nickname)}">✕</button>` : ''}</figure>`;
   const crew = st.teams
     ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((/** @type {any} */ p) => p.team === t).map(fig).join('')}</div>`).join('')
     : state.players.map(fig).join('');
@@ -517,22 +606,36 @@ function gamePicker(/** @type {any} */ label) {
   const joinCard = roomCode ? `<div class="join-card">
       <img class="qr-big" src="${window.Rumpus.qrSrc(joinUrl(true))}" alt="QR code to join">
       <div class="join-text">
-        <span class="join-label">Scan or go to</span>
-        <span class="join-addr">${esc(joinUrl(false).replace(/^https?:\/\//, ''))}</span>
         <span class="join-label">Room code</span>
         <span class="join-code">${esc(roomCode)}</span>
-        <span class="join-count">${count ? `${count}/${max} joined` : 'Nobody here yet'}</span>
       </div>
+      <p class="join-at"><span class="join-label">Scan, or go to</span> <span class="join-addr">${esc(joinUrl(false).replace(/^https?:\/\//, ''))}</span></p>
     </div>` : '';
   // One screen, no scrolling: games fill the space left of the join card + players column; the
   // settings sit in a compact bar underneath (public/style.css ".game-menu").
   // The menu itself is the shelf; every setting lives in ⚙ Settings (a retro dialog box).
   const vols = music.volumes();
-  const settings = `<div class="settings menu-foot">
-          <span class="foot-hint"><b>◀ ▶</b> choose <b>OK</b> play</span>
+  // The lineup: picked games in order, as little cartridges, each with ✕; then ▶ Play.
+  const lineupBar = lineup.length ? `<div class="lineup-bar">
+          <span class="lineup-title">🎞 Lineup</span>
+          ${lineup.map((id, i) => { const gm = (state.availableGames || []).find((/** @type {any} */ x) => x.id === id); return `<span class="lineup-item"><b>${i + 1}</b>${cartHtml(id, gm ? gm.name : id, 'mini')}<button class="lineup-del" data-act="lineup-del" data-i="${i}" aria-label="Take ${esc(gm ? gm.name : id)} out">✕</button></span>`; }).join('')}
+        </div>` : '';
+  // Every menu button sits together in one group at the end of the command bar.
+  const commands = `<div class="cmd-group">
+          ${state.phase === 'gameover' ? '<button data-act="scores" class="ghost">◀ Scores</button>' : ''}
+          ${lineup.length ? `<button class="lineup-play" data-act="lineup-play">▶ Play ${lineup.length} game${lineup.length === 1 ? '' : 's'}</button>
+          <button class="link-btn" data-act="lineup-clear">Clear</button>` : ''}
+        </div>`;
+  // Top-right corner of the menu: stats and settings, side by side.
+  const corner = `<div class="corner-group">
+          <button class="stats-btn" data-act="stats" aria-expanded="${statsOpen}">🏆 Stats</button>
+          <button class="more-btn" data-act="more" aria-expanded="${moreOpen}">⚙ Settings</button>
+        </div>`;
+  const settings = `<div class="settings menu-foot cmd-bar">
+          <div class="cmd-info">${lineupBar}</div>
           ${TEST_TOOLS ? `<span class="bot-tools">🤖 <button data-act="bots" data-n="1">+1 bot</button><button data-act="bots" data-n="3">+3</button>
             <button data-act="bots" data-n="3" data-speed="8">+3 fast</button>${state.players.some((/** @type {any} */ p) => p.bot) ? '<button data-act="nobots">Remove bots</button>' : ''}</span>` : ''}
-          <button class="more-btn" data-act="more" aria-expanded="${moreOpen}">⚙ Settings</button>
+          ${commands}
         </div>
         <div class="settings-more retro-box" role="dialog" aria-label="Settings" ${moreOpen ? '' : 'hidden'}>
           <h2>⚙ Settings</h2>
@@ -559,24 +662,20 @@ function gamePicker(/** @type {any} */ label) {
           </div>
           <div class="more-group more-links"><h3>This cottage</h3>
             <a class="hl-link" href="/admin" target="_blank">⚙ House rules</a>
-            <a class="hl-link" href="/highlights" target="_blank">🏆 Hall of fame</a>
             <button class="link-btn" data-act="newroom">🔄 Fresh room (everyone rejoins)</button>
           </div>
           <button class="more-close" data-act="more">✓ Done</button>
         </div>
-        <div class="night-pick retro-box" role="dialog" aria-label="Game night" ${nightOpen ? '' : 'hidden'}>
-          <h2>🎉 Game night</h2>
-          <p>A playlist your phones vote on, game by game. How many games tonight?</p>
-          <div class="night-choices">${[3, 5, 7].map((n) => `<button data-act="night" data-n="${n}" ${count < 2 ? 'disabled' : ''}>${n} games</button>`).join('')}</div>
-          ${count < 2 ? '<p class="hint">Needs 2+ players.</p>' : ''}
-          <button class="more-close" data-act="nightmenu">Back</button>
+        <div class="stats-box retro-box" role="dialog" aria-label="Stats" ${statsOpen ? '' : 'hidden'}>
+          <h2>🏆 Stats</h2>
+          <a class="stats-link" href="/highlights?room=${esc(roomCode || '')}" target="_blank"><b>📸 Tonight</b><span>The best moments and scores of this room</span></a>
+          <a class="stats-link" href="/highlights" target="_blank"><b>🏆 Hall of fame</b><span>All-time champions, records and ratings</span></a>
+          <button class="more-close" data-act="stats">✓ Done</button>
         </div>`;
   return `<div class="game-menu">
       <div class="lobby-top">
         <h1 class="retro-title">${label}</h1>
-        <div class="night-row">
-          <button class="night-btn" data-act="nightmenu" aria-expanded="${nightOpen}">🎉 Game night</button>
-          ${state.phase === 'gameover' ? '<button data-act="scores" class="ghost">◀ Scores</button>' : ''}</div>
+        ${corner}
       </div>
       <div class="shelf-wrap">
         <div class="shelf">` +
@@ -585,10 +684,10 @@ function gamePicker(/** @type {any} */ label) {
       // An old-console cartridge: grey shell, grip ridges, a label with the art and the name. Nothing else.
       return `<button class="game-pick cart ${locked ? 'locked' : ''}" data-game-id="${esc(gm.id)}" data-blurb="${esc(gm.blurb)}"
           data-min="${locked ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}" ${locked ? 'aria-disabled="true"' : ''}
-          style="--art-bg:${/** @type {Record<string, string>} */ (ART_BG)[gm.id] || '#2f2850'}">
-        <span class="cart-ridges" aria-hidden="true"></span>
-        <span class="cart-label">${art(gm.id)}<span class="game-name">${esc(gm.name)}</span></span>
+>
+        ${cartHtml(gm.id, gm.name)}
         ${locked ? '<span class="cart-lock" aria-hidden="true">🔒</span>' : ''}
+        ${lineup.includes(gm.id) ? `<span class="cart-num" aria-label="number ${lineup.indexOf(gm.id) + 1} in the lineup">${lineup.indexOf(gm.id) + 1}</span>` : ''}
         ${st.lang === 'fr' && !FRENCH_GAMES.includes(gm.id) ? '<span class="game-lang" title="Questions in English">EN</span>' : ''}
       </button>`;
     }).join('') + `</div>
@@ -596,6 +695,8 @@ function gamePicker(/** @type {any} */ label) {
       </div>
       <aside class="lobby-side">
         ${joinCard}
+        <h2 class="crew-head">👥 Players <span>${count}/${max}</span>
+          ${count ? `<button class="edit-players" data-act="edit-players" aria-pressed="${editPlayers}">${editPlayers ? '✓ Done' : '✏️ Edit'}</button>` : ''}</h2>
         <div class="lobby-crew ${st.teams ? 'teams' : ''}" style="--rows:${Math.max(1, st.teams ? Math.ceil(Math.max(...['red', 'blue'].map((t) => state.players.filter((/** @type {any} */ p) => p.team === t).length)) / 2) : Math.ceil(count / 4))}">${crew || '<p class="hint">Scan the code with your phone to join.</p>'}</div>
       </aside>
       ${settings}
@@ -744,6 +845,7 @@ function render() {
   document.body.classList.toggle('mode-storm', inGame && g.gameId === 'storm');
   document.body.classList.toggle('lobby', phase === 'lobby'); // the lobby shows the players itself
   if (phase !== 'gameover') pickNext = false;
+  if (phase !== 'lobby' && phase !== 'gameover') { editPlayers = false; statsOpen = false; } // a game started: menu modes end
   // The game menu is on screen (lobby, or "choose the next game" after the scores): fixed layout, no scrolling.
   document.body.classList.toggle('picking', phase === 'lobby' || (phase === 'gameover' && pickNext && !state.night));
   if (!inGame || !wasInGame) { if (sidebarTimer) clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
@@ -792,10 +894,13 @@ function render() {
   const key = [phase, g.round || 0, g.chainIndex || 0, g.matchIndex == null ? '' : g.matchIndex, g.skipSeq || 0].join(':');
   const phaseChanged = key !== lastPhaseKey;
   if (phaseChanged) {
-    const wasInGame = lastPhaseKey && !/^(lobby|gameover)/.test(lastPhaseKey);
     lastPhaseKey = key;
-    // Game just started: title card + stinger, start tracking stats.
-    if (inGame && !wasInGame) {
+    // A game just started: title card + stinger, start tracking stats. ("Started" = a real game that
+    // wasn't on before — in a lineup the game follows the NEXT GAME screen, which is no game itself.)
+    const isGame = inGame && g.gameId !== 'night';
+    const fresh = isGame && startedGame !== g.gameId;
+    startedGame = isGame ? g.gameId : null;
+    if (fresh) {
       gameStats = { gameId: g.gameId, start: snapshotScores(), snaps: [] };
       leaderId = null;
       // Storm Watch is its own mode: a storm rolls in before the title card.
@@ -877,6 +982,7 @@ function render() {
           phaseView.dataset.phase = pendingPhase; // what's on screen (the lab waits for it)
           layoutStage(true);
           keepFocus(); // the remote's focused control was in the old screen
+          centreShelf();
         } finally {
           wiping = false;
         }
@@ -897,6 +1003,7 @@ function render() {
   if (inGame && g.source && srcEl.textContent !== 'Source: ' + g.source) srcEl.textContent = 'Source: ' + g.source;
   if (!wiping) countdown(g.endsAt, '.timer', tick);
   keepFocus();
+  centreShelf();
 }
 
 /** With the remote: if the focused control just vanished (the menu hid the top bar, a dialog closed),
@@ -1052,11 +1159,11 @@ function remoteToast(text) {
 }
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
-  // Back / Escape with a menu dialog open (⚙ Settings, 🎉 Game night): close it (that's what "back" means there).
-  if ((moreOpen || nightOpen) && (isBack(e) || e.key === 'Escape')) {
+  // Back / Escape with ⚙ Settings open: close it (that's what "back" means there).
+  if ((moreOpen || statsOpen) && (isBack(e) || e.key === 'Escape')) {
     e.preventDefault();
-    const was = moreOpen ? '.more-btn' : '.night-btn';
-    moreOpen = false; nightOpen = false;
+    const was = moreOpen ? '.more-btn' : '.stats-btn';
+    moreOpen = false; statsOpen = false;
     render();
     const btn = /** @type {HTMLElement | null} */ (document.querySelector(was));
     if (btn) btn.focus();
@@ -1089,8 +1196,8 @@ document.addEventListener('keydown', (e) => {
       : (/** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])')) || remoteTargets()[0] || null));
     if (next && next !== cur) {
       next.focus({ preventScroll: true });
-      next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' });
-      sfx.select();
+      if (along) centreCart(next, true); // the wheel turns; its clicks are the sound
+      else { next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' }); sfx.select(); }
     }
   } else if (e.key === 'Enter' && onControl && cur && cur.matches('input[type="checkbox"]')) {
     e.preventDefault(); cur.click(); // OK toggles a switch (browsers only do that for Space)

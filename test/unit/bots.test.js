@@ -99,7 +99,6 @@ test('bot brain answers every input screen a phone can show', () => {
     { phase: 'cah-submit', gameState: {}, you: { isCzar: true, nextOptions: ['a', 'b', 'c'], nextPick: null } },
     { phase: 'tel-reveal', gameState: { favOpen: true, entries: [{ ok: false }, { ok: true }] }, you: { fav: null, canFav: true } },
     { phase: 'mg-play', gameState: { mini: 'quickdraw', sub: 'go' }, you: { done: false, early: false } },
-    { phase: 'night-vote', gameState: { options: [{}, {}, {}] }, you: { voted: false } },
     { phase: 'll-play', gameState: { scene: 'fireflies' }, you: { pos: [10, 10], target: [100, 50] } },
     { phase: 'lc-song', gameState: { serverNow: 5000, sched: { barMs: 1000, steps: 8, phrases: [{ steps: [0, 4], echoAt: 3000 }] } }, you: { tapped: [], judged: [] } },
   ];
@@ -108,33 +107,34 @@ test('bot brain answers every input screen a phone can show', () => {
   assert.strictEqual(decide({ phase: 'mr-answer', gameState: {}, you: { submitted: true, bet: 1 } }), null, 'done → nothing');
 });
 
-test('game night: phones vote the next game, placings earn night points, a champion at the end', { timeout: 120000 }, async () => {
+test('lineup: the games play back to back in the chosen order, "NEXT GAME" between them, placings add up, a champion at the end', { timeout: 120000 }, async () => {
   const { placePoints } = require('../../games/night');
   const pts = placePoints([{ id: 'a', score: 900 }, { id: 'b', score: 900 }, { id: 'c', score: 100 }, { id: 'd', score: 0 }]);
-  assert.deepStrictEqual([pts.get('a'), pts.get('b'), pts.get('c'), pts.get('d')], [10, 10, 4, 0], 'ties share the better placing; 0 points = no night points');
-  const s2 = await startServer({ ...QUICK, RUMPUS_NIGHT_VOTE_MS: '3000', RUMPUS_NIGHT_PICK_MS: '200', RUMPUS_NIGHT_GAP_MS: '300' });
+  assert.deepStrictEqual([pts.get('a'), pts.get('b'), pts.get('c'), pts.get('d')], [10, 10, 4, 0], 'ties share the better placing; 0 points = no lineup points');
+  const s2 = await startServer({ ...QUICK, RUMPUS_NIGHT_NEXT_MS: '300', RUMPUS_NIGHT_GAP_MS: '300' });
   try {
     const h = await makeHost(s2);
-    h.emit('host:addBots', { count: 4, speed: 20 });
-    await until(() => h.state && h.state.players.length === 4, 'bots');
-    h.emit('host:startNight', { count: 2 });
-    const v = await h.phase('night-vote');
-    assert.strictEqual(v.gameState.options.length, 3);
-    assert.strictEqual(new Set(v.gameState.options.map((o) => o.id)).size, 3, 'three different games');
+    h.emit('host:addBots', { count: 3, speed: 20 });
+    await until(() => h.state && h.state.players.length === 3, 'bots');
+    // Storm Watch needs 4 players: with 3 it's passed over, the rest play in order.
+    const order = ['closest', 'storm', 'trivia'];
+    h.emit('host:startNight', { games: order });
+    const first = await h.phase('night-next');
+    assert.strictEqual(first.gameState.next.id, 'closest', 'the first game of the lineup is up next');
+    assert.deepStrictEqual(h.state.night.list.map((/** @type {any} */ x) => x.id), order, 'the TV gets the lineup in order');
     const played = [];
     let scoredYet = false;
     for (let i = 0; i < 2; i++) {
-      if (i > 0) await h.phase('night-vote', 20000);
+      if (i > 0) await h.phase('night-next', 20000);
       await until(() => h.state.gameState.gameId && h.state.gameState.gameId !== 'night', `game ${i + 1} starts`, 20000);
       played.push(h.state.gameState.gameId);
-      await until(() => h.state.phase === 'gameover' && h.state.night && h.state.night.played === i + 1, `game ${i + 1} counted`, 90000);
-      // Placings earn night points, but only for players who scored: a game where every bot scored 0
-      // (random games, random bots) rightly gives none. So: points so far > 0 ⇔ someone has scored.
+      await until(() => h.state.phase === 'gameover' && h.state.night && h.state.night.played >= i + 1, `game ${i + 1} counted`, 90000);
+      // Placings earn points, but only for players who scored: points so far > 0 ⇔ someone has scored.
       scoredYet = scoredYet || h.state.players.some((p) => p.score > 0);
-      assert.strictEqual(h.state.night.standings.some((x) => x.points > 0), scoredYet, `night points awarded iff someone scored (${played.join(', ')})`);
+      assert.strictEqual(h.state.night.standings.some((/** @type {any} */ x) => x.points > 0), scoredYet, `lineup points awarded iff someone scored (${played.join(', ')})`);
     }
     await h.phase('night-final', 20000);
-    assert.notStrictEqual(played[0], played[1], 'no repeats within a night');
+    assert.deepStrictEqual(played, ['closest', 'trivia'], 'in the chosen order; Storm Watch (needs 4) skipped');
     h.emit('host:endGame');
     await until(() => h.state.phase === 'lobby' && h.state.night === null, 'back to the menu');
   } finally { await s2.stop(); }

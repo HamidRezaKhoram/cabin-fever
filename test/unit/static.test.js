@@ -303,7 +303,7 @@ test('character maker: seasonal hats show up first in their season', () => {
 test('the pacing playtest scales every game timer (no fake idle in the report)', () => {
   const root = path.join(__dirname, '..', '..');
   const play = fs.readFileSync(path.join(root, 'test', 'playtest.js'), 'utf8');
-  const NOT_TIMED_BY_BOTS = new Set(['RUMPUS_HURRY_MS', 'RUMPUS_NIGHT_PICK_MS', 'RUMPUS_NIGHT_VOTE_MS']); // pace votes / game night aren't playtested
+  const NOT_TIMED_BY_BOTS = new Set(['RUMPUS_HURRY_MS', 'RUMPUS_NIGHT_NEXT_MS']); // pace votes / the lineup aren't playtested
   for (const f of fs.readdirSync(path.join(root, 'games')).filter((x) => x.endsWith('.js'))) {
     const src = fs.readFileSync(path.join(root, 'games', f), 'utf8');
     for (const [, name] of src.matchAll(/(RUMPUS_[A-Z_]+_(?:MS|MIN|MAX|WINDOW))\b/g)) {

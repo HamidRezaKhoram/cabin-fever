@@ -200,6 +200,22 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   every setting (game, sound, screen, narrator, language, links) is in ⚙ Settings (`.settings-more`,
   `moreOpen`), and 🎉 Game night is one button with its own box (`nightOpen`); Back/Escape closes them.
   Dialogs are old-console boxes (`.retro-box`). The lab's remote-press budget is 8 (half the shelf).
+- **Menu layout pattern**: every area has one place. Main column: title → shelf → description (a fixed
+  box; only its pointer moves to the pick, `--arrow-x`) → command bar (`.cmd-bar`: the lineup on the
+  left, every button together in `.cmd-group` on the right, one style and size). No "press OK to…"
+  hints: the controls should be obvious from the screen itself.
+  Right column: join card → players (✏️ Edit shows each player's small ✕, `editPlayers`). Top-right
+  corner of the main column: 🏆 Stats (its own box: tonight, hall of fame) and ⚙ Settings (settings
+  only). Lineup actions go in `.cmd-group`; menus go in the corner.
+- **The lineup** (replaced game night's vote, Nov 13): ▼ from a cartridge → "＋ Add to the lineup"; the
+  footer shows it as mini cartridges (`lineup` in host.js) and ▶ Play sends `host:startNight {games}`.
+  The server (`room.night.list`, `nightNext` in core/rooms.js) plays them in order, skipping a game that
+  needs more players; between games `NightGame` shows `night-next` (the next cartridge, "NEXT GAME") for
+  `RUMPUS_NIGHT_NEXT_MS`. Cartridges come from one helper, `cartHtml(id, name, 'mini' | 'big')`.
+- **Game starts**: the title card is the cartridge sliding in (`cart-insert`); every new game gets one,
+  lineup games too (`startedGame`). The screen wipe is old-console "blinds" (fx.js).
+- **Rocco** only comes out to talk (`#rocco.away` otherwise). The backdrop's life (ducks, the fox, the
+  raccoon at the door, chimney smoke) is drawn in bg.js `life()` at a calm pace — no DOM walkers.
 - **Phone join/lobby**: the join page is name + look + Join (sticky); the full character maker opens with
   "Customise" (`editor(..., { open: false })`). The lobby is one card plus two buttons; "Change my look"
   opens one panel with Character / Animal.
