@@ -42,6 +42,8 @@ let timerTotal = { endsAt: null, total: 1 };
 let wiping = false;
 /** @type {string | null} */
 let pendingHtml = null;
+/** the phase pendingHtml belongs to */
+let pendingPhase = '';
 /** @type {any[]} awards shown at game over */
 let lastAwards = [];
 
@@ -77,11 +79,11 @@ music.onTrack((/** @type {{ name: string }} */ { name }) => {
 // How-to-play cards shown when a game starts.
 /** How-to-play lines per game (intro card + narrator). @type {Record<string, string[]>} */
 const RULES = {
-  quiplash: ['You get 2 prompts — a rival gets each one too', 'Everyone else votes: who\'s funnier?', 'Win every vote = SHUTOUT bonus'],
+  quiplash: ['You get 2 prompts — a rival gets each one too', 'Everyone else votes: who\'s funnier?', 'Win every vote = SHUTOUT bonus (4+ players)'],
   fibbage: ['Write a believable fake answer', 'Find the TRUE answer among the lies', 'Points for every friend you fool'],
   trivia: ['Pick the right answer — fast!', 'Answer streaks add bonus points 🔥', 'Last place picks the next category'],
   closest: ['Guess the number', 'Closest gets the most points', 'Exact hit = BULLSEYE bonus'],
-  majority: ['Type what everyone ELSE will say', 'Then the room votes which answers count as the herd', 'Match the herd to score — loners get nothing'],
+  majority: ['Type what everyone ELSE will say', 'Then the room votes which answers count as the herd', 'Match anyone to score — the bigger the herd, the more you get'],
   mostlikely: ['Vote which friend fits the prompt', 'Vote with the majority to score', 'No hard feelings… probably'],
   imposter: ['Everyone gets a secret word — except one', 'Give a one-word clue', 'Vote out the imposter!'],
   twotruths: ['Your phone secretly says TRUTH or LIE', 'Answer the confession — real or made up', 'Call everyone else\'s: points for right calls and for fooling people'],
@@ -453,15 +455,16 @@ function podium(/** @type {any} */ standings) {
   const order = [1, 0, 2].filter((i) => top[i]);
   return '<div class="podium">' + order.map((i) => {
     const s = top[i];
+    const place = s.place || i + 1; // ties share the better placing
     return `<div class="step p${i + 1}">
       ${av(s.nickname, `avatar ${i === 0 ? 'huge' : 'big'} bob`)}
-      <div class="who">${i === 0 ? '👑 ' : ''}${esc(s.nickname)}</div>
+      <div class="who">${place === 1 ? '👑 ' : ''}${esc(s.nickname)}</div>
       <div class="pts">${s.score}</div>
-      <div class="block">${i + 1}</div>
+      <div class="block">${place}</div>
     </div>`;
   }).join('') + '</div>' +
   (standings.length > 3 ? '<ol class="answers standings" start="4">' + standings.slice(3).map((/** @type {any} */ s) =>
-    `<li>${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.score}</span></li>`).join('') + '</ol>' : '');
+    `<li value="${s.place || ''}">${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.score}</span></li>`).join('') + '</ol>' : '');
 }
 
 const voterIcons = (/** @type {any} */ names) => names && names.length
@@ -645,12 +648,18 @@ function render() {
       leaderId = null;
       // Storm Watch is its own mode: a storm rolls in before the title card.
       if (g.gameId === 'storm') { window.Rumpus.stormTransition(); setTimeout(() => showIntro(g.gameId), 3400); } else showIntro(g.gameId);
-      music.play('intro', { then: cueFor(state) });
-      narrateIntro(g.gameId);
+      // Loon Call's tune-up clicks start right after the title card: no jingle or narrator over them
+      // (never talk over a rhythm game).
+      if (g.gameId === 'looncall') music.play(cueFor(state));
+      else { music.play('intro', { then: cueFor(state) }); narrateIntro(g.gameId); }
     } else if (phase === 'gameover') {
       sfx.win(); fx.confetti(240);
       const champ = (g.standings || [])[0];
-      if (champ && champ.score > 0) { window.Rumpus.host.cheer(); window.Rumpus.host.say(`${champ.nickname} wins with ${champ.score} points!`); }
+      if (champ && champ.score > 0) {
+        const tied = (g.standings || []).filter((/** @type {any} */ x) => x.score === champ.score).map((/** @type {any} */ x) => x.nickname);
+        window.Rumpus.host.cheer();
+        window.Rumpus.host.say(tied.length > 1 ? `It's a tie! ${tied.join(' and ')}, with ${champ.score} points!` : `${champ.nickname} wins with ${champ.score} points!`);
+      }
       music.play('victory', { then: 'scoreboard' });
       lastAwards.forEach((a, i) => setTimeout(() => sfx.award(), 1000 + i * 500));
     } else {
@@ -705,7 +714,7 @@ function render() {
     if (inGame && !isRevealPhase(phase)) lastRoundSeen = mult;
     if (!inGame) lastRoundSeen = 1;
     // Pixel wipe between screens (not between lobby re-renders).
-    pendingHtml = html;
+    pendingHtml = html; pendingPhase = phase;
     if (!wiping) {
       wiping = true;
       fx.wipe(() => {
@@ -713,6 +722,7 @@ function render() {
         // every later screen would queue behind it and the TV would freeze on this one.
         try {
           phaseView.innerHTML = pendingHtml || '';
+          phaseView.dataset.phase = pendingPhase; // what's on screen (the lab waits for it)
           layoutStage(true);
         } finally {
           wiping = false;
@@ -721,8 +731,9 @@ function render() {
       });
     }
   } else if (wiping) {
-    pendingHtml = html;
+    pendingHtml = html; pendingPhase = phase;
   } else {
+    phaseView.dataset.phase = phase;
     morph(phaseView, html); // small updates (counts, votes) without restarting animations
     layoutStage();
   }
@@ -750,7 +761,10 @@ function layoutStage(force = false) {
   const key = `${innerWidth}x${innerHeight}|${phaseView.getElementsByTagName('*').length}|${phaseView.querySelectorAll('img').length}|${big}`;
   if (!force && key === lastFitKey) return;
   lastFitKey = key;
-  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = h.dataset.fit || '0.13,4'; });
+  // A crowded screen (a results list for 6+ players) gets a smaller headline, so the list keeps its
+  // size instead of the whole screen being zoomed down under the 28 px floor.
+  const crowded = phaseView.querySelectorAll('ol.answers li, .bars .bar-row').length >= 6;
+  /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = crowded ? '0.07,3' : '0.13,4'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.vs-card')).forEach((c) => { c.dataset.fit = '0.07,5'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.big-answer')).forEach((c) => { c.dataset.fit = '0.12,2'; });
   phaseView.style.setProperty('--shrink', '1');
@@ -789,7 +803,9 @@ if (document.fonts) void document.fonts.ready.then(() => layoutStage(true));
 // Avatars and drawings load after the screen is laid out and make it taller: fit again once they're in.
 /** @type {number | null} */
 let refitTimer = null;
-phaseView.addEventListener('load', () => {
+// Avatars have a fixed CSS size (img.avatar), so their loading can't move anything: skip those. On a
+// slow TV each refit is the whole fit + zoom search, and a reveal with a dozen avatars did it a dozen times.
+phaseView.addEventListener('load', (e) => {
   if (refitTimer) return;
   refitTimer = window.setTimeout(() => { refitTimer = null; layoutStage(true); }, 50);
 }, true);
@@ -849,8 +865,33 @@ function nearest(from, dx, dy) {
   }
   return best;
 }
+// Back on a TV remote leaves the page (browser history): one stray press in the middle of a round would
+// end the night. Like TV apps: the first press only says how to leave, a second one within 3 s leaves.
+/** @type {number} */
+let backAt = 0;
+/** @param {KeyboardEvent} e */
+function isBack(e) {
+  const typing = e.target instanceof HTMLElement && e.target.matches('input[type="text"], input:not([type]), textarea');
+  return e.key === 'XF86Back' || e.key === 'BrowserBack' || e.keyCode === 10009 || e.key === 'GoBack' || (e.key === 'Backspace' && !typing);
+}
+function remoteToast(/** @type {string} */ text) {
+  let el = document.getElementById('remote-toast');
+  if (!el) { el = document.createElement('div'); el.id = 'remote-toast'; el.className = 'remote-toast'; document.body.appendChild(el); }
+  el.textContent = text;
+  el.hidden = false;
+  setTimeout(() => { if (el) el.hidden = true; }, 3000);
+}
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (isBack(e)) {
+    e.preventDefault();
+    // Second press: leave. Done here rather than left to the browser, which doesn't go back on every key
+    // that means Back (desktop Chrome ignores Backspace; TV browsers differ).
+    if (Date.now() - backAt < 3000) { history.back(); return; }
+    backAt = Date.now();
+    remoteToast('Press BACK again to leave Cabin Fever');
+    return;
+  }
   document.body.classList.add('kbd');
   if (!overlay.hidden) {
     if (e.key === 'Enter' || e.key === ' ' || e.key in ARROWS) { e.preventDefault(); overlay.click(); }

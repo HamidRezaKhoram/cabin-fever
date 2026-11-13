@@ -470,7 +470,7 @@ body.host .vs-bar { height: 2.2vh; }
 body.host ul.scored-list { font-size: max(22px, 3.2vh); }
 body.host .clue-list .clue { font-size: max(26px, 4.6vh); }
 body.host .clue-list li { padding: 2vh 1.4vw; }
-body.host .bar-row { font-size: max(22px, 3.6vh); grid-template-columns: minmax(180px, 26vw) 1fr 70px; }
+body.host .bar-row { font-size: max(22px, 3.6vh); grid-template-columns: minmax(180px, 26vw) 1fr auto; }
 body.host .bar { height: 4vh; }
 body.host .cat-card div { font-size: max(14px, 2.4vh); padding: 6vh 2vw; }
 body.host .chain-entry { width: min(30vw, 34vh); }
@@ -967,12 +967,20 @@ body.kbd :focus, body.kbd :focus-visible { outline: 6px solid var(--accent) !imp
    13 px (Cottage Lab scorecard, feel-plan.md). */
 /* The stage zoom (host.js shrinkToStage, --shrink) must not push these labels under 28 px: they grow by
    1/zoom, and the zoom search counts that in. */
-body.host .round-tag { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); }
-body.host .cat-banner { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); padding: 0.8vh 1.4vh; }
+/* --unzoom is the stage zoom only while it applies (in a game); on gameover and the lobby it's 1. */
+body.host .phase-view { --unzoom: 1; }
+body.host .phase-view.in-game { --unzoom: var(--shrink, 1); }
+body.host .round-tag, body.host .cat-banner, body.host .vs-meta, body.host .next-game-btn, body.host .bar-n,
+body.host .doodle-grid figcaption, body.host .byline, body.host .storm-chores li, body.host .storm-card { font-size: calc(max(28px, 2.6vh) / var(--unzoom)); }
+body.host .count, body.host .lc-name { font-size: calc(max(28px, 2.8vh) / var(--unzoom)); }
+body.host .ll-chip { font-size: calc(max(28px, 3vh) / var(--unzoom)); }
+body.host ul.scored-list { font-size: calc(max(28px, 3.2vh) / var(--unzoom)); }
+body.host .cat-banner { padding: 0.8vh 1.4vh; }
+body.host .storm-chores li { width: 20vh; }
+body.host .storm-card { width: 24vh; }
 body.host .cat-card div { font-size: max(28px, 2.6vh); }
 body.host .podium .pts { font-size: max(28px, 2.6vh); }
 body.host .phase-view .hint { font-size: max(28px, 2.6vh); }
-body.host .vs-meta { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); }
 .start-spicy { margin-top: 1.4vh; font-size: max(28px, 2.6vh); color: var(--danger); }
 .rate-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0 14px; }
 .rate-row .vote-btn { font-size: 34px; min-width: 72px; min-height: 64px; }
@@ -980,3 +988,14 @@ body.host .vs-meta { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); }
 /* 🕊 Calm (TV setting): no lightning flash, no shaking; transitions stay as gentle fades. */
 body.calm .storm-bolt, body.calm canvas.confetti { display: none; }
 body.calm .shake { animation: none !important; }
+/* TV remote: "press BACK again to leave" (host.js). */
+.remote-toast { position: fixed; left: 50%; bottom: 6vh; transform: translateX(-50%); z-index: 120; background: var(--panel); color: var(--ink); font-family: var(--pixel); font-size: max(28px, 2.6vh); padding: 2vh 3vh; box-shadow: 0 0 0 6px var(--edge), 0 0 0 10px var(--accent); }
+/* Phones: everything you tap is ≥ 48 px (Material 48 dp, Apple 44 pt; Cottage Lab checks it). A checkbox
+   is tapped through its whole label row. */
+body.play #game-view button, body.play #game-view select { min-height: 48px; }
+body.play .swatch { width: 48px; height: 48px; }
+body.play #game-view .toggle { min-height: 48px; }
+body.play #game-view .toggle input { width: 28px; height: 28px; }
+/* A long results list (6+ players) uses the TV's width instead of zooming everything under 28 px. */
+body.host ol.answers.two-col { columns: 2; column-gap: 4vw; }
+body.host ol.answers.two-col li { break-inside: avoid; }

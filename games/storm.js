@@ -36,7 +36,7 @@ const ROLES = {
 /** @typedef {'big' | 'thunder' | 'outage' | 'bonfire' | 'bear' | 'lucky' | 'leaky' | 'calm' | 'wind' | 'cold'} EventId */
 /** @type {Record<EventId, { name: string, desc: string }>} */
 const EVENTS = {
-  big: { name: 'Big Chore', desc: 'It takes two sabotages to ruin this one.' },
+  big: { name: 'Big Chore', desc: 'It takes two sabotages to ruin this one (one, if the crew is just two).' },
   thunder: { name: 'Thunder', desc: 'One extra pair of hands on the crew.' },
   outage: { name: 'Power Outage', desc: 'In the dark: only the vote totals are shown.' },
   bonfire: { name: 'Bonfire', desc: 'The leader secretly sees one crew card.' },
@@ -107,6 +107,12 @@ class StormGame extends BaseGame {
     this.peeks = new Map();
     /** @type {{ crew: string[], cards: Map<string, 'help' | 'sabotage' | 'double'> } | null} the last played chore (Snoop) */
     this.lastPlayed = null;
+    /** when the last card of the current reveal has flipped (until then nobody is told the result) */
+    this.flipAt = 0;
+    /** @type {NodeJS.Timeout | null} */
+    this.flipTimer = null;
+    /** @type {Record<string, number>} points earned during play (Lucky Loon), shown on the end screen */
+    this.playGains = {};
     /** @type {Set<string>} */
     this.ready = new Set();
     /** @type {Map<string, string>} */
@@ -123,6 +129,10 @@ class StormGame extends BaseGame {
     /** @type {string[]} */
     this.sighting = this.rng.shuffle([seen, decoy].filter((x) => x !== null).map(String));
     this.lookoutId = lookoutId;
+    // The Lookout keeps the two names they saw, even if one of them leaves (dropping the decoy's name
+    // turned the lead into a certainty).
+    /** @type {string[]} */
+    this.sightingNames = this.sighting.map((x) => this.nick(x));
     /** @type {Map<string, string>} raccoon → who they think the Lookout is (only if the cottage won) */
     this.unmask = new Map();
     /** @type {Map<string, string>} private hunch (todo 3.3): who each player suspects, revealed at the end */
@@ -236,22 +246,43 @@ class StormGame extends BaseGame {
     const ok = sabotage < needed;
     const i = this.chore();
     this.chores[i] = ok;
-    if (ok && this.event === 'lucky') for (const id of this.crew) this.award(id, LUCKY);
+    if (ok && this.event === 'lucky') for (const id of this.crew) this.playGains[id] = (this.playGains[id] || 0) + this.award(id, LUCKY);
     if (!ok && this.event === 'leaky') this.storm = Math.min(2, this.storm + 1);
     this.lastCrew = [...this.crew];
     this.lastPlayed = { crew: [...this.crew], cards: new Map(this.cards) };
     // Bonfire: the leader privately sees one crew card.
-    if (this.event === 'bonfire') {
-      const who = this.rng.shuffle([...this.crew])[0];
-      this.peeks.set(this.leader(), `🔥 By the bonfire you saw ${this.nick(who)} play ${this.cards.get(who) === 'help' ? 'HELP' : 'SABOTAGE'}.`);
+    // (Never the leader's own card — they know it — and a Snoop's earlier result is kept, not replaced.)
+    const others = this.crew.filter((x) => x !== this.leader());
+    if (this.event === 'bonfire' && others.length) {
+      const who = this.rng.shuffle(others)[0];
+      this.addPeek(this.leader(), `🔥 By the bonfire you saw ${this.nick(who)} play ${this.cards.get(who) === 'help' ? 'HELP' : 'SABOTAGE'}.`);
     }
     this.reveal = { ok, cards, fixed, needed, index: i };
     const done = this.chores.filter((c) => c === true).length, ruined = this.chores.filter((c) => c === false).length;
     if (done >= 3) { this.winner = 'cottage'; this.winReason = 'Three chores done — the cottage is ready for the storm!'; }
     else if (ruined >= 3) { this.winner = 'raccoon'; this.winReason = 'Three chores ruined — the raccoons are feasting in the wreckage.'; }
     this.phase = 'st-reveal';
+    // The cards flip one by one on the TV: nobody (phones, the board, the narrator) learns the result
+    // before the last one is over. Then everyone is told.
+    this.flipAt = Date.now() + CARD_MS * cards.length;
+    if (this.flipTimer) clearTimeout(this.flipTimer);
+    this.flipTimer = setTimeout(() => { this.flipTimer = null; if (!this.destroyed && this.phase === 'st-reveal') this.push(); }, CARD_MS * cards.length + 50);
     this.setTimer(CARD_MS * (cards.length + 2), () => this.passLeader(), false);
     this.push();
+  }
+
+  /** Has the current reveal's last card flipped? (Always true outside a reveal.) */
+  flipped() { return this.phase !== 'st-reveal' || Date.now() >= this.flipAt; }
+
+  /** A private line for one player's phone, added to what they already know. @param {string} id @param {string} text */
+  addPeek(id, text) {
+    const had = this.peeks.get(id);
+    this.peeks.set(id, had ? `${had} ${text}` : text);
+  }
+
+  destroy() {
+    super.destroy();
+    if (this.flipTimer) clearTimeout(this.flipTimer);
   }
 
   /** Raccoons hunt the Lookout when the cottage won (and there is one). @param {string} id */
@@ -268,19 +299,22 @@ class StormGame extends BaseGame {
     if (this.phase !== 'st-accuse') return;
     // The raccoons' last chance: if most of them named the Lookout, they steal the win.
     if (this.winner === 'cottage' && this.lookoutId && this.unmask.size) {
+      // A real majority of the raccoons still here (a tie isn't one; staying silent is a "no").
       const right = [...this.unmask.values()].filter((w) => w === this.lookoutId).length;
-      if (right * 2 >= this.unmask.size) {
+      const raccoons = this.playerIds().filter((id) => this.side(id) === 'raccoon').length;
+      if (right * 2 > raccoons) {
         this.winner = 'raccoon';
         this.stolen = true;
         this.winReason = `The raccoons sniffed out the Lookout (${this.nick(this.lookoutId)}) and stole the win!`;
       }
     }
     /** @type {Record<string, number>} */
-    const g = {};
+    const g = { ...this.playGains }; // Lucky Loon points count in the end screen's "+gained" too
     const add = (/** @type {string} */ id, /** @type {number} */ n) => { g[id] = (g[id] || 0) + this.award(id, n); };
     for (const id of this.playerIds()) if (this.side(id) === this.winner) add(id, WIN);
     if (this.stolen) for (const id of this.unmask.keys()) if (this.unmask.get(id) === this.lookoutId) add(id, UNMASK);
-    const accused = new Set(this.accusations.values());
+    // Only the cottage's accusations unmask a raccoon (a raccoon naming an ally mustn't cost them UNSEEN).
+    const accused = new Set([...this.accusations].filter(([by]) => this.side(by) === 'cottage').map(([, who]) => who));
     for (const [by, who] of this.accusations) if (this.side(who) === 'raccoon' && this.side(by) === 'cottage') add(by, ACCUSE_RIGHT);
     for (const id of this.playerIds()) if (this.side(id) === 'raccoon' && !accused.has(id)) add(id, UNSEEN);
     this.finalGains = g;
@@ -295,7 +329,7 @@ class StormGame extends BaseGame {
       this.ready.add(id);
       if (this.allIn(this.ready)) this.nextChore(); else this.push();
     } else if (this.phase === 'st-talk' && Array.isArray(payload.crew)) {
-      this.pickCrew(id, payload.crew.map(String));
+      this.pickCrew(id, payload.crew.filter((/** @type {unknown} */ x) => typeof x === 'string'));
     } else if (this.phase === 'st-vote' && typeof payload.vote === 'boolean' && !this.votes.has(id)) {
       this.votes.set(id, payload.vote);
       if (this.allIn(this.votes)) this.countVotes(); else this.push();
@@ -313,13 +347,14 @@ class StormGame extends BaseGame {
       if (who === id || !this.room.players.has(who)) return void this.push(); // re-enable the phone's buttons
       this.hunches.set(id, who);
       this.push();
-    } else if (payload.snoop && this.roles.get(id) === 'snoop' && !this.used.has(id) && this.lastPlayed && this.lastPlayed.crew.includes(String(payload.snoop)) && ['st-reveal', 'st-talk'].includes(this.phase)) {
-      const who = String(payload.snoop);
+    } else if (typeof payload.snoop === 'string' && this.roles.get(id) === 'snoop' && !this.used.has(id) && this.lastPlayed && this.lastPlayed.crew.includes(payload.snoop) && ['st-reveal', 'st-talk'].includes(this.phase)) {
+      const who = payload.snoop;
       this.used.add(id);
-      this.peeks.set(id, `🔍 You snooped: ${this.nick(who)} played ${this.lastPlayed.cards.get(who) === 'help' ? 'HELP' : 'SABOTAGE'}.`);
+      this.addPeek(id, `🔍 You snooped: ${this.nick(who)} played ${this.lastPlayed.cards.get(who) === 'help' ? 'HELP' : 'SABOTAGE'}.`);
       this.push();
-    } else if (this.phase === 'st-accuse' && payload.accuse && !this.accusations.has(id) && !this.unmask.has(id)) {
-      const who = String(payload.accuse);
+    } else if (this.phase === 'st-accuse' && typeof payload.accuse === 'string' && !this.accusations.has(id) && !this.unmask.has(id)) {
+      // (Payloads are checked for type: a crafted {toString: 1} used to throw and show the glitch banner.)
+      const who = payload.accuse;
       if (who === id || !this.room.players.has(who)) return;
       // The cottage won: raccoons don't accuse, they try to unmask the Lookout.
       if (this.hunting(id)) this.unmask.set(id, who); else this.accusations.set(id, who);
@@ -340,14 +375,17 @@ class StormGame extends BaseGame {
 
   boardView() {
     const i = this.chore();
+    const flipped = this.flipped();
     return {
-      chores: this.chores, choreNames: this.choreNames, choreIndex: i,
+      // Mid-reveal the board doesn't show the chore's fate yet (the cards are still flipping).
+      chores: flipped || !this.reveal ? this.chores : this.chores.map((c, k) => (k === /** @type {{ index: number }} */ (this.reveal).index ? null : c)),
+      choreNames: this.choreNames, choreIndex: i,
       storm: this.storm, leader: this.nick(this.leader()), crewSize: this.crewSize(),
       event: { id: this.event, ...EVENTS[this.event] },
       crew: this.crew.map((id) => this.nick(id)),
       seats: this.seats.filter((id) => this.room.players.has(id)).map((id) => this.nick(id)),
       raccoons: this.roleDeckCount(),
-      winner: this.winner, winReason: this.winner && ['st-accuse', 'st-final', 'st-reveal', 'st-votes'].includes(this.phase) ? this.winReason : null,
+      winner: flipped ? this.winner : null, winReason: this.winner && flipped && ['st-accuse', 'st-final', 'st-reveal', 'st-votes'].includes(this.phase) ? this.winReason : null,
     };
   }
 
@@ -392,12 +430,12 @@ class StormGame extends BaseGame {
     const r = /** @type {RoleId} */ (this.roles.get(id) || 'cottager');
     const raccoon = ROLES[r].side === 'raccoon';
     return {
-      gameState: { ...this.boardView(), votes: this.votesView(), reveal: this.phase === 'st-reveal' ? { ok: this.reveal && this.reveal.ok } : null },
+      gameState: { ...this.boardView(), votes: this.votesView(), reveal: this.phase === 'st-reveal' && this.flipped() ? { ok: this.reveal && this.reveal.ok } : null },
       you: {
         role: { id: r, ...ROLES[r] },
         // Raccoons know each other; the Lookout knows one (non-Sly) raccoon.
         allies: raccoon ? this.playerIds().filter((x) => x !== id && this.side(x) === 'raccoon').map((x) => this.nick(x)) : [],
-        sighting: r === 'lookout' ? this.sighting.filter((x) => this.room.players.has(x)).map((x) => this.nick(x)) : [],
+        sighting: r === 'lookout' ? this.sightingNames : [],
         isLeader: this.leader() === id,
         candidates: this.phase === 'st-talk' && this.leader() === id ? this.allowed().map((x) => ({ id: x, nickname: this.nick(x) })) : [],
         ready: this.ready.has(id),

@@ -75,10 +75,11 @@ class ImposterGame extends BaseGame {
     this.item = item;
     const fallback = BUILTIN[this.round % BUILTIN.length];
     this.category = item ? item.category : fallback.category;
-    this.word = item ? item.word : fallback.words[0];
     // Roles first: who the imposter is must not depend on how many words this card has.
     const ids = this.playerIds();
     this.imposter = ids[this.rng.int(0, ids.length - 1)] || '';
+    // A built-in card has no set word: any of its words can be the secret (it was always the first).
+    this.word = item ? item.word : this.rng.pick(fallback.words);
     this.order = this.rng.shuffleIn(ids.slice());
     const decoys = this.rng.shuffleIn(/** @type {string[]} */ (item ? item.words : fallback.words).filter((w) => w !== this.word)).slice(0, 7);
     this.options = this.rng.shuffleIn([this.word, ...decoys]);
@@ -154,6 +155,7 @@ class ImposterGame extends BaseGame {
     for (const [voter, t] of this.votes) if (voter !== this.imposter && t === this.imposter) add(voter, 100);
     if (!this.caught) add(this.imposter, 300);
     else if (guessedRight) add(this.imposter, 200);
+    const mine = gained.find((x) => x.nickname === this.nick(this.imposter));
     let outcome;
     if (!this.caught) outcome = 'escaped';
     else if (guessedRight) outcome = 'stole';
@@ -166,6 +168,8 @@ class ImposterGame extends BaseGame {
       accused: this.accused ? this.nick(this.accused) : null,
       voteCounts: this.voteCounts,
       gained,
+      /** what the imposter really got (×2/×3 stakes) */
+      impGained: mine ? mine.gained : 0,
     };
     this.phase = 'imp-reveal';
     this.setTimer(REVEAL_MS, () => this.nextRound(), false);
@@ -176,12 +180,17 @@ class ImposterGame extends BaseGame {
   onPlayerLeft(id) {
     if (this.phase !== 'gameover' && this.room.players.size < (ImposterGame.meta.minPlayers || 3)) { this.clearTimer(); return this.gameOver(); }
     if (id === this.imposter && (this.phase === 'imp-clue' || this.phase === 'imp-vote' || this.phase === 'imp-guess')) {
-      // Round can't continue without the imposter — reshuffle.
+      // Round can't continue without the imposter — reshuffle. It's a new round: phones must drop
+      // anything half-typed for the old word (skipSeq makes them redraw; pace votes start over).
       this.clearTimer();
+      this.skipSeq = (this.skipSeq || 0) + 1;
       this.round -= 1;
       this.nextRound();
       return;
     }
+    // Their own clue and vote go with them (the TV mustn't say "3/3 in" while someone still has to).
+    if (this.phase === 'imp-clue') this.clues.delete(id);
+    this.votes.delete(id);
     if (this.phase === 'imp-clue' && this.room.players.size && this.allIn(this.clues)) this.beginVote();
     else if (this.phase === 'imp-vote') {
       for (const [v, t] of this.votes) if (t === id) this.votes.delete(v);

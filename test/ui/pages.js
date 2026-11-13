@@ -194,7 +194,12 @@ const { check, errors } = t;
     hits.clear();
     await tv.evaluate(async () => {
       const r = await navigator.serviceWorker.getRegistration();
-      await new Promise((res) => { navigator.serviceWorker.addEventListener('controllerchange', res, { once: true }); r.update(); });
+      await new Promise((res, rej) => {
+        // (a dist/ that was already "deployed" by an earlier run has nothing new: fail, don't hang)
+        const t = setTimeout(() => rej(new Error('no new service worker took over within 30 s')), 30000);
+        navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(t); res(null); }, { once: true });
+        void r.update();
+      });
     });
     const fetched = [...hits.keys()].filter((k) => k !== 'sw.js');
     assert.deepStrictEqual(fetched, ['clock.js'], `only the changed file was downloaded (got ${fetched.join(', ')})`);

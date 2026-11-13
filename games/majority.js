@@ -56,8 +56,12 @@ function normalize(s) {
   let t = s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
   t = t.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
   t = t.replace(/^(a|an|the) /, '');
-  t = t.split(' ').map((/** @type {string} */ w) => (w.length > 3 && w.endsWith('es') && /(ch|sh|x|s|z|o)es$/.test(w)
-    ? w.slice(0, -2) : w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w)).join(' ');
+  // Plurals: drop the -s, then the silent -e that -es plurals share ("shoes"/"shoe", "boxes"/"box",
+  // "potatoes"/"potato", "horses"/"horse" all meet). Stripping "-es" alone split "shoes" from "shoe".
+  t = t.split(' ').map((/** @type {string} */ w) => {
+    if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) w = w.slice(0, -1);
+    return w.length > 3 && /(ch|sh|x|s|z|o)e$/.test(w) ? w.slice(0, -1) : w;
+  }).join(' ');
   return t.replace(/ /g, '');
 }
 
@@ -98,6 +102,7 @@ class MajorityGame extends BaseGame {
     this.groups = [];
     this.herdVotes = new Map();
     this.result = null;
+    this.noHurry = false;
     this.phase = 'mr-answer';
     this.setTimer(ANSWER_MS, () => this.reveal());
     this.push();
@@ -126,8 +131,16 @@ class MajorityGame extends BaseGame {
       this.answers.set(id, text);
     }
     if (this.allIn(this.answers) && this.allIn(this.bets)) return this.reveal();
-    if (this.allIn(this.answers) && this.endsAt && this.endsAt - Date.now() > BET_WINDOW_MS) this.setTimer(BET_WINDOW_MS, () => this.reveal(), false);
+    this.betWindow();
     this.push();
+  }
+
+  /** Every answer is in: the bets get a short window instead of the rest of the clock. */
+  betWindow() {
+    if (this.allIn(this.answers) && this.endsAt && this.endsAt - Date.now() > BET_WINDOW_MS) {
+      this.setTimer(BET_WINDOW_MS, () => this.reveal(), false);
+      this.noHurry = true; // already short: "hurry" would do nothing, so phones don't offer it
+    }
   }
 
   /** Answers grouped by spelling ("Bananas!" = "banana"): the starting point for the herd call. */
@@ -146,6 +159,7 @@ class MajorityGame extends BaseGame {
   /** Answers are in: if there's anything to judge, everyone picks which answers are THE HERD. */
   reveal() {
     if (this.phase !== 'mr-answer') return;
+    this.noHurry = false;
     this.groups = this.autoGroups();
     /** @type {Map<string, number[]>} voter → indexes of the answers they call the herd */
     this.herdVotes = new Map();
@@ -164,9 +178,11 @@ class MajorityGame extends BaseGame {
     const need = Math.floor(votes.size / 2) + 1;
     let herdIx = votes.size ? tally.map((n, i) => (n >= need ? i : -1)).filter((i) => i >= 0) : [];
     if (!herdIx.length && votes.size) {
-      // Nobody got a majority: the most-voted answer(s) are the herd.
+      // Nobody got a majority: the most-voted answer is the herd — if there is one. A tie merges
+      // nothing (merging every tied answer let everyone who voted for their own answer "match").
       const most = Math.max(...tally);
-      if (most > 0) herdIx = tally.map((n, i) => (n === most ? i : -1)).filter((i) => i >= 0);
+      const tops = tally.map((n, i) => (n === most ? i : -1)).filter((i) => i >= 0);
+      if (most > 0 && tops.length === 1) herdIx = tops;
     }
     /** @type {{ label: string, ids: string[], herd: boolean, labels: string[], votes: number }[]} */
     const list = [];
@@ -184,7 +200,7 @@ class MajorityGame extends BaseGame {
       // 100 per matching friend, +100 bonus for the (tied) biggest group.
       const pts = (g.ids.length - 1) * 100 + (g.ids.length === biggest ? 100 : 0);
       for (const id of g.ids) {
-        gained.push({ nickname: this.nick(id), gained: this.award(id, pts) });
+        if (this.room.players.has(id)) gained.push({ nickname: this.nick(id), gained: this.award(id, pts) }); // no "(left) +300"
       }
     }
     /** @type {{ nickname: string, bet: number, actual: number, gained: number }[]} */
@@ -218,6 +234,7 @@ class MajorityGame extends BaseGame {
 
   onPlayerLeft() {
     if (this.phase === 'mr-answer' && this.room.players.size && this.allIn(this.answers) && this.allIn(this.bets)) this.reveal();
+    else if (this.phase === 'mr-answer' && this.room.players.size) this.betWindow(); // the last answer left with them
     else if (this.phase === 'mr-herd' && this.room.players.size && this.allIn(this.herdVotes)) this.score();
   }
 

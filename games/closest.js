@@ -48,7 +48,7 @@ const BUILTIN = [
 
 const GUESS_MS = parseInt(process.env.RUMPUS_CG_GUESS_MS || '30000', 10);
 const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '8000', 10);
-const DOUBLE_RISK = 200; // lost on a Double Down that doesn't place
+const DOUBLE_RISK = 200; // lost on a Double Down that doesn't finish in the top half
 const RANK_POINTS = [300, 200, 100];
 
 class ClosestGame extends BaseGame {
@@ -96,6 +96,12 @@ class ClosestGame extends BaseGame {
 
   get skippablePhases() { return ['cg-guess']; }
 
+  /** A skipped question gives back the Double Downs played on it (it never counted). */
+  skipQuestion() {
+    if (this.phase === 'cg-guess') for (const id of this.doubling) this.doubled.delete(id);
+    super.skipQuestion();
+  }
+
   nextRound() {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
@@ -116,7 +122,7 @@ class ClosestGame extends BaseGame {
     const n = typeof payload.number === 'number' ? payload.number : parseFloat(String(payload.number || '').replace(/,/g, ''));
     if (!Number.isFinite(n) || Math.abs(n) > 1e12) return;
     this.guesses.set(id, n);
-    // Double Down (once per game): ×2 if you place, −DOUBLE_RISK if you don't.
+    // Double Down (once per game): ×2 if you finish in the top half, −DOUBLE_RISK if you don't.
     if (payload.double === true && !this.doubled.has(id)) { this.doubled.add(id); this.doubling.add(id); }
     if (this.allIn(this.guesses)) this.reveal();
     else this.push();
@@ -125,9 +131,13 @@ class ClosestGame extends BaseGame {
   reveal() {
     if (this.phase !== 'cg-guess') return;
     const ans = this.q.answer;
-    const list = [...this.guesses.entries()]
-      .map(([id, n]) => ({ id, nickname: this.nick(id), guess: n, off: Math.abs(n - ans), rank: 0, exact: false, gained: 0, double: false }))
+    // Only people still here take places (a guess from someone who left can't push anyone down).
+    // The distance is rounded so 0.1 + 0.2 style float noise can't split a tie.
+    const list = [...this.guesses.entries()].filter(([id]) => this.room.players.has(id))
+      .map(([id, n]) => ({ id, nickname: this.nick(id), guess: n, off: Math.round(Math.abs(n - ans) * 1e6) / 1e6, rank: 0, exact: false, gained: 0, double: false }))
       .sort((a, b) => a.off - b.off);
+    // A Double Down pays in the top half only: with 2–3 players every guess "places", so it was free.
+    const topHalf = Math.max(1, Math.floor(list.length / 2));
     // Ties share a rank.
     let rank = 0;
     list.forEach((e, i) => {
@@ -137,7 +147,7 @@ class ClosestGame extends BaseGame {
       const pts = (RANK_POINTS[rank] || 0) + (e.exact ? 200 : 0);
       if (this.doubling.has(e.id)) {
         e.double = true;
-        if (pts > 0) e.gained = this.award(e.id, pts * 2);
+        if (pts > 0 && rank < topHalf) e.gained = this.award(e.id, pts * 2);
         else { const p = this.room.players.get(e.id); const lost = p ? Math.min(p.score, DOUBLE_RISK) : 0; if (p) p.score -= lost; e.gained = -lost; }
       } else e.gained = this.award(e.id, pts);
     });

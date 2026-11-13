@@ -176,13 +176,23 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   the CPU factor to put in `test/lab/run.js` PROFILES (the lab report prints the lab's ms).
 - **Lab**: `./scripts/lab.sh [games]` plays games on a simulated 2022 Samsung TV (CPU ÷6) + 3 Galaxy A15
   phones (CPU ÷4) and writes `test/lab/out/report.md` (per-screen tap latency, long tasks, worst frame,
-  dead air, smallest text, phone frames, smallest tap target). `LAB_PROFILE=1` adds the TV's and a phone's top CPU functions. Device factors are
-  estimates until calibrated on real hardware. Runs nightly (report only).
+  dead air, smallest text, phone frames, smallest tap target, tap→TV, sound peak/clipping).
+  `LAB_PROFILE=1` adds the TV's and a phone's top CPU functions (it slows everything: don't read
+  timings from a profiled run). `LAB_FLASH=1` screenshots the TV to count flashes. `LAB_STRICT=1`
+  fails on the hard checks (text, tap targets, clipping, flashes, games finishing). Games in
+  `./scripts/lab.sh trivia,trivia,trivia` run in that order, repeats allowed (memory: leak or cache?).
+  Device factors are estimates until calibrated on real hardware. Runs nightly.
+- **TV Back button**: the first press shows "Press BACK again to leave", a second within 3 s calls
+  `history.back()` — a stray press mid-round must not end the night.
 
 ## Screen layout (10-foot UI)
 
 - Design against 1080p and size relative to screen height: body ≥ 3.2vh (~35px), secondary ≥ 2.6vh,
-  never below 28px on the TV. Few elements, big, centred vertically during play.
+  never below 28px on the TV. Few elements, big, centred vertically during play. Small labels go in
+  the `calc(max(28px, …vh) / var(--unzoom))` rule in style.css so the stage zoom can't shrink them.
+  The TV marks the screen it shows with `#phase-view[data-phase]`.
+- Phones: everything tappable is ≥ 48px (`body.play #game-view button` etc.); the lab checks it.
+- Every image load refits the TV (debounced 50 ms) — even avatars: an unloaded `<img alt="">` takes no space, so a loading avatar does move the layout (tried skipping them: the snapshot test overflowed).
 - Main prompts/answers get `data-fit` and are grown by `Rumpus.fit()` to fill their box.
 - A browser test asserts the TV prompt is ≥ 5% of the screen height.
 - **The TV never scrolls in a game**: `host.js` `shrinkToStage()` zooms the screen's content down
