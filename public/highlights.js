@@ -7,7 +7,7 @@
   const body = /** @type {HTMLElement} */ (document.getElementById('hl-body'));
   const room = new URLSearchParams(location.search).get('room') || '';
   let tab = room ? 'tonight' : 'alltime';
-  /** @type {{ tonight: any[], allTime: any[], players: any[] } | null} */
+  /** @type {{ tonight: any[], allTime: any[], players: any[], ratings?: Record<string, number[]> } | null} */
   let data = null;
 
   /** @param {any} h */
@@ -30,7 +30,13 @@
     if (!data) return;
     const list = tab === 'tonight' ? data.tonight : tab === 'alltime' ? data.allTime : null;
     if (list) body.innerHTML = list.length ? list.map(card).join('') : '<p class="hint">Nothing yet — play a few rounds!</p>';
-    else body.innerHTML = data.players.length ? data.players.map(fame).join('') : '<p class="hint">No games recorded yet.</p>';
+    else if (tab === 'ratings') {
+      // The phones' 1-tap verdicts after each game (😴 / 🙂 / 🤩), best-liked first.
+      const rows = Object.entries(data.ratings || {}).map(([g, r]) => ({ g, r, n: r[0] + r[1] + r[2], avg: (r[0] + 2 * r[1] + 3 * r[2]) / Math.max(1, r[0] + r[1] + r[2]) }))
+        .filter((x) => x.n > 0).sort((a, b) => b.avg - a.avg);
+      body.innerHTML = rows.length ? rows.map((x) => `<article class="hl-card"><h2>${esc(x.g)}</h2><p>🤩 ${x.r[2]} · 🙂 ${x.r[1]} · 😴 ${x.r[0]} <span class="hint">(${x.n} vote${x.n === 1 ? '' : 's'})</span></p></article>`).join('')
+        : '<p class="hint">No ratings yet — phones can rate each game when it ends.</p>';
+    } else body.innerHTML = data.players.length ? data.players.map(fame).join('') : '<p class="hint">No games recorded yet.</p>';
   }
   /** @type {HTMLElement} */ (document.querySelector('.hl-tabs')).addEventListener('click', (e) => {
     const b = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('[data-tab]') : null);

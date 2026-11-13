@@ -168,6 +168,17 @@ class BaseGame {
     return [...this.room.players.keys()];
   }
 
+  /** Who may be singled out (voted the answer, sent a note): everyone but the 🙈 "leave me out"
+   * players — unless that leaves fewer than two, then everyone (the game must stay playable). */
+  targetIds() {
+    const ok = this.playerIds().filter((id) => !(this.room.players.get(id) || {}).shy);
+    return ok.length >= 2 ? ok : this.playerIds();
+  }
+  /** @param {string} id */
+  targetable(id) {
+    return this.targetIds().includes(id);
+  }
+
   // True once every *currently present* player has an entry in `set` (a Map/Set
   // keyed by playerId), optionally excluding some ids.
   /** @param {{ has(id: string): boolean }} set @param {string[]} [exclude] */

@@ -8,14 +8,11 @@
  */
 'use strict';
 
-const house = require('./house');
-const { guarded } = require('./base');
-const { makeRng, newSeed } = require('./rng');
+const { BaseGame } = require('./base');
 
 const stats = require('./stats');
 
 const library = require('./library');
-const flow = require('./flow');
 // Fallback deck if the pools are missing.
 const { WHITE, BLACK } = require('./data/cah-cards.sample');
 
@@ -31,17 +28,12 @@ const POINTS_PER_WIN = 500;
  * (not their own); the most-liked card(s) earn this bonus — the Czar's pick is still the big win. */
 const FAV_POINTS = 200;
 
-class CAHGame {
+class CAHGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
-    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
-    this.seed = newSeed();
-    this.rng = makeRng(this.seed);
-    this.room = room;
-    this.push = push;
+    super(room, push);
     this.phase = 'cah-submit';
-    this.round = 0;
-    this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
+    this.totalRounds = this.rounds(TOTAL_ROUNDS);
     this.whiteDeck = this.rng.shuffleIn(WHITE.slice());
     this.blackDeck = this.rng.shuffleIn(BLACK.slice());
     this.hands = new Map(); // playerId -> [cardText]
@@ -58,10 +50,6 @@ class CAHGame {
     this.favVotes = new Map();
     /** @type {{ nickname: string, text: string, votes: number }[]} the room's favourite card(s) last round */
     this.favourites = [];
-    this.timer = null;
-    this.endsAt = null;
-    this.destroyed = false;
-    /** @type {((what: string, e: unknown) => void) | null} set by the room (see games/base.js guarded) */ this.onGlitch = null;
 
     for (const p of room.players.values()) {
       this.hands.set(p.id, this.drawWhite(HAND_SIZE));
@@ -90,38 +78,6 @@ class CAHGame {
     this.nextRound();
   }
 
-  destroy() {
-    this.destroyed = true;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-  }
-
-  /** @param {number} ms @param {() => void} fn */
-  setTimer(ms, fn) {
-    if (this.timer) clearTimeout(this.timer);
-    const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('cah');
-    ms = Math.round(ms * scale);
-    this.endsAt = Date.now() + ms;
-    this.timerFn = fn;
-    this.timer = setTimeout(() => {
-      this.timerFn = null;
-      if (!this.destroyed) guarded(fn, 'cah timer', this, true);
-    }, ms);
-  }
-
-  // Escalating stakes: first half ×1, second half ×2, final question ×3.
-  mult() {
-    return flow.stage(this.round, this.totalRounds);
-  }
-
-  isFinal() {
-    return this.mult() > 1;
-  }
-
-  spicy() {
-    return !(this.room.settings && this.room.settings.spicy === false);
-  }
-
   get skippablePhases() { return ['cah-submit']; }
 
   // New prompt card, same Card Czar; played cards go back to their owners.
@@ -136,16 +92,6 @@ class CAHGame {
     this.skipSeq = (this.skipSeq || 0) + 1;
     this.setTimer(SUBMIT_MS, () => this.submitTimeUp());
     this.push();
-  }
-
-  // Host pressed "skip": run the pending phase transition now.
-  skip() {
-    if (!this.timerFn || this.destroyed) return;
-    const fn = this.timerFn;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.timerFn = null;
-    fn();
   }
 
   currentCzar() {
@@ -260,7 +206,7 @@ class CAHGame {
       if (hand) hand.push(...this.drawWhite(HAND_SIZE - hand.length));
     }
     this.phase = 'cah-reveal';
-    this.setTimer(REVEAL_MS, () => this.nextRound());
+    this.setTimer(REVEAL_MS, () => this.nextRound(), false);
     this.push();
   }
 
@@ -281,15 +227,6 @@ class CAHGame {
     });
   }
 
-  gameOver() {
-    this.phase = 'gameover';
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.timerFn = null;
-    this.endsAt = null;
-    this.push();
-  }
-
   /** @param {string} playerId */
   onPlayerLeft(playerId) {
     if (this.destroyed) return;
@@ -306,12 +243,6 @@ class CAHGame {
     }
   }
 
-  standings() {
-    return [...this.room.players.values()]
-      .map((p) => ({ nickname: p.nickname, score: p.score }))
-      .sort((a, b) => b.score - a.score);
-  }
-
   czarNickname() {
     const p = this.czarId ? this.room.players.get(this.czarId) : undefined;
     return p ? p.nickname : '???';
@@ -321,13 +252,7 @@ class CAHGame {
 
   hostGameState() {
     const base = {
-      gameId: 'cah',
-      round: this.round,
-      totalRounds: this.totalRounds,
-      doublePoints: this.mult() > 1,
-      multiplier: this.mult(),
-      stage: flow.stage(this.round, this.totalRounds),
-      skipSeq: this.skipSeq || 0,
+      ...this.base(),
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
       pickedBy: this.pickedBy || null,
@@ -350,7 +275,7 @@ class CAHGame {
       case 'cah-reveal':
         return { ...base, winner: this.winner, favourites: this.favourites, favPoints: FAV_POINTS * this.mult() };
       case 'gameover':
-        return { gameId: 'cah', standings: this.standings() };
+        return { ...base, standings: this.standings() };
       default:
         return base;
     }
@@ -359,13 +284,7 @@ class CAHGame {
   /** @param {string} playerId */
   playerView(playerId) {
     const base = {
-      gameId: 'cah',
-      round: this.round,
-      totalRounds: this.totalRounds,
-      doublePoints: this.mult() > 1,
-      multiplier: this.mult(),
-      stage: flow.stage(this.round, this.totalRounds),
-      skipSeq: this.skipSeq || 0,
+      ...this.base(),
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
       isCzar: playerId === this.czarId,
@@ -394,7 +313,7 @@ class CAHGame {
       case 'cah-reveal':
         return { gameState: { ...base, winner: this.winner, favourites: this.favourites, favPoints: FAV_POINTS * this.mult() }, you: {} };
       case 'gameover':
-        return { gameState: { gameId: 'cah', standings: this.standings() }, you: {} };
+        return { gameState: { ...base, standings: this.standings() }, you: {} };
       default:
         return { gameState: base, you: {} };
     }

@@ -1,7 +1,7 @@
 'use strict';
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
-const { startServer, until, sleep, makeHost, makePlayer } = require('../helpers');
+const { startServer, until, sleep, makeHost, makePlayer, makeRoom } = require('../helpers');
 
 let srv;
 before(async () => {
@@ -13,15 +13,7 @@ before(async () => {
 });
 after(() => srv.stop());
 
-async function room(n, settings = {}) {
-  const h = await makeHost(srv);
-  const ps = [];
-  for (let i = 0; i < n; i++) ps.push(await makePlayer(srv, h.code, 'P' + i));
-  await until(() => h.state.players.length === n, 'joined');
-  h.emit('host:settings', { rounds: 4, ...settings });
-  await until(() => h.state.settings.rounds === 4 && (settings.teams === undefined || h.state.settings.teams === settings.teams), 'settings');
-  return { h, ps, score: (/** @type {string} */ n) => h.state.players.find((p) => p.nickname === n).score };
-}
+const room = (n, settings = {}) => makeRoom(srv, n, { rounds: 4, ...settings });
 const playing = (h, mini, sub) => until(() => h.state.phase === 'mg-play' && h.state.gameState.mini === mini && (!sub || h.state.gameState.sub === sub) && h.state, `${mini} ${sub || ''}`);
 
 test('free-for-all series: tap race, quick draw, fireflies, roast — scoring and rules', async () => {

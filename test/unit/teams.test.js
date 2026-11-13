@@ -1,19 +1,13 @@
 'use strict';
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
-const { startServer, until, makeHost, makePlayer, contentDir } = require('../helpers');
+const { startServer, until, makePlayer, contentDir, makeRoom } = require('../helpers');
 
 let srv;
 before(async () => { srv = await startServer({ RUMPUS_CONTENT_DIR: contentDir({ closest: [{ q: 'N?', answer: 10 }] }), RUMPUS_CONTENT_MODE: 'replace', RUMPUS_ANSWER_MS: '30000' }); });
 after(() => srv.stop());
 
-async function room(n) {
-  const h = await makeHost(srv);
-  const ps = [];
-  for (let i = 0; i < n; i++) ps.push(await makePlayer(srv, h.code, 'P' + i));
-  await until(() => h.state.players.length === n, 'joined');
-  return { h, ps };
-}
+const room = (n) => makeRoom(srv, n);
 const count = (h, t) => h.state.players.filter((p) => p.team === t).length;
 
 test('teams off by default; turning on splits players evenly into red and blue', async () => {

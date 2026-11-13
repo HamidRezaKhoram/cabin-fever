@@ -26,6 +26,7 @@ let roomCode = null;
 /** Games with French content (others use English question banks). */
 const FRENCH_GAMES = ['quiplash', 'mostlikely', 'majority', 'telephone', 'twotruths', 'minigames', 'looncall', 'lantern'];
 document.body.classList.toggle('cb', store('rumpus.cb') === true); // colour-blind palette (this TV)
+document.body.classList.toggle('calm', store('rumpus.calm') === true); // 🕊 calm: no shakes, wipes, flashes (this TV)
 // Test tools (bot players) show with /host?debug=1 or /host?bots=1.
 const TEST_TOOLS = (() => { try { return /[?&](debug|bots)=1/.test(location.search) || localStorage.getItem('rumpus.debug') === '1'; } catch (e) { return false; } })();
 let baseUrl = location.origin;
@@ -294,6 +295,7 @@ document.addEventListener('change', (e) => {
   else if (t.id === 'set-narrator') window.Rumpus.host.setEnabled(t.checked);
   else if (t.id === 'set-voice') { window.Rumpus.host.setVoice(t.value); window.Rumpus.host.say(t.value === 'classic' ? 'Beep boop. Classic voice.' : t.value.startsWith('sys:') ? 'G\'day! I will be your host tonight.' : 'Hi! I will be your host tonight.'); }
   else if (t.id === 'set-cb') { store('rumpus.cb', t.checked); document.body.classList.toggle('cb', t.checked); }
+  else if (t.id === 'set-calm') { store('rumpus.calm', t.checked); document.body.classList.toggle('calm', t.checked); }
 });
 fsBtn.addEventListener('click', () => {
   // Fullscreen can be refused (no user gesture, kiosk mode) — that's fine, just stay windowed.
@@ -383,7 +385,7 @@ function gamePicker(/** @type {any} */ label) {
   const st = state.settings || {};
   const opt = (/** @type {any} */ v, /** @type {any} */ cur, /** @type {any} */ text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;
   // Each player in the lobby: their picture, an asleep/relay marker, and a ✕ to kick them.
-  const fig = (/** @type {any} */ p) => `<figure class="${[p.team ? 'team-' + p.team : '', p.connected ? '' : 'offline'].join(' ')}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}${p.connected ? '' : ' <small>💤</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower) — same Wi-Fi?">🌐</small>' : ''}<button class="kick lobby-kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}" aria-label="Kick ${esc(p.nickname)}">✕</button></figure>`;
+  const fig = (/** @type {any} */ p) => `<figure class="${[p.team ? 'team-' + p.team : '', p.connected ? '' : 'offline'].join(' ')}">${playerImg(p, 'avatar big bob')}${esc(p.nickname)}${p.connected ? '' : ' <small>💤</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower) — same Wi-Fi?">🌐</small>' : ''}${p.shy ? ' <small class="shy" title="Left out of votes and notes about people">🙈</small>' : ''}<button class="kick lobby-kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}" aria-label="Kick ${esc(p.nickname)}">✕</button></figure>`;
   const crew = st.teams
     ? ['red', 'blue'].map((t) => `<div class="team-col team-${t}"><b>${t === 'red' ? '🔴 RED' : '🔵 BLUE'}</b>${state.players.filter((/** @type {any} */ p) => p.team === t).map(fig).join('')}</div>`).join('')
     : state.players.map(fig).join('');
@@ -409,6 +411,7 @@ function gamePicker(/** @type {any} */ label) {
           <label class="toggle ${st.spicy !== false ? 'spicy-on' : ''}"><input type="checkbox" id="set-spicy" ${st.spicy !== false ? 'checked' : ''}> 🌶 18+</label>
           <label class="toggle ${st.teams ? 'teams-on' : ''}"><input type="checkbox" id="set-teams" ${st.teams ? 'checked' : ''}> 👥 Teams</label>
           <label class="toggle"><input type="checkbox" id="set-cb" ${document.body.classList.contains('cb') ? 'checked' : ''}> 👁 Colour-blind</label>
+          <label class="toggle" title="No screen shakes, wipes, confetti or lightning flashes"><input type="checkbox" id="set-calm" ${document.body.classList.contains('calm') ? 'checked' : ''}> 🕊 Calm</label>
           <label>🌐 <select id="set-lang">${opt('en', st.lang || 'en', 'English')}${opt('fr', st.lang || 'en', 'Français')}</select></label>
           <label class="toggle"><input type="checkbox" id="set-narrator" ${window.Rumpus.host.isEnabled() ? 'checked' : ''}> 🗣 Narrator</label>
           <label>🎙 <select id="set-voice">${window.Rumpus.host.voices().map((/** @type {string[]} */ v) => (v[2] ? `<option disabled>${esc(v[1])}</option>` : opt(esc(v[0]), esc(window.Rumpus.host.voice()), esc(v[1])))).join('')}</select> <small id="voice-status" class="voice-status">${window.Rumpus.host.voiceStatus()}</small></label>
@@ -530,7 +533,7 @@ function renderSidebar(/** @type {any} */ phase) {
   morph(playerList, sorted.map((/** @type {any} */ p, /** @type {any} */ i) => {
     const cls = [!p.connected && 'offline', i === 0 && p.score > 0 && phase !== 'lobby' && 'leader'].filter(Boolean).join(' ');
     return `<li data-id="${esc(p.id)}" class="${cls}${p.team ? ' team-' + p.team : ''}">${playerImg(p)}` +
-      `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower)">🌐</small>' : ''}</span>` +
+      `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower)">🌐</small>' : ''}${p.shy ? ' <small class="shy" title="Left out of votes and notes about people">🙈</small>' : ''}</span>` +
       `<span class="pscore">${p.score}</span><button class="kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}">✕</button></li>`;
   }).join(''));
   // Score pop-ups
@@ -562,6 +565,9 @@ function render() {
   if (!state) return;
   const g = state.gameState || {};
   const phase = state.phase;
+  // Everyone sees, before anyone joins, whether tonight's prompts are 18+ (feel-plan.md §4).
+  const spicyNote = /** @type {HTMLElement} */ (document.getElementById('start-spicy'));
+  spicyNote.hidden = !(state.settings && state.settings.spicy !== false);
   if (phase !== 'lobby' && phase !== 'gameover' && !loadingEl.hidden) hideLoading();
 
   renderSidebar(phase);
@@ -648,9 +654,20 @@ function render() {
       music.play('victory', { then: 'scoreboard' });
       lastAwards.forEach((a, i) => setTimeout(() => sfx.award(), 1000 + i * 500));
     } else {
-      music.setIntensity(g.multiplier === 2 ? 2 : 1);
-      music.play(cueFor(state));
-      narratePrompt(g);
+      // Sound and voice start one frame after the new screen: building the music cue's audio nodes and
+      // starting the narrator in the same task as the screen change made it one long freeze on a slow
+      // TV (Cottage Lab, feel-plan.md). 40 ms later is not something anyone can hear.
+      const st = state;
+      setTimeout(() => {
+        music.setIntensity(g.multiplier === 2 ? 2 : 1);
+        music.play(cueFor(st));
+        narratePrompt(g);
+        if (isRevealPhase(phase)) {
+          window.Rumpus.host.cheer();
+          if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();
+          else sfx.reveal();
+        } else if (inGame) sfx.phase();
+      }, 40);
       // Games with their own narration (spell duels, hidden roles, the dock reveal…) give Rocco a line.
       const impl = window.Rumpus.games[g.gameId];
       const line = impl && impl.narrate ? impl.narrate(state) : null;
@@ -660,12 +677,9 @@ function render() {
       if (m && m.shakeAt != null) fx.shake(m.shakeAt);
       if (m && m.confettiAt != null) setTimeout(() => fx.confetti(120), m.confettiAt);
       if (isRevealPhase(phase)) {
-        window.Rumpus.host.cheer();
-        if (['cg-reveal', 'mr-reveal', 'ml-reveal'].includes(phase)) sfx.drumroll();
-        else sfx.reveal();
         shake();
         if (gameStats) gameStats.snaps.push(snapshotScores());
-      } else if (inGame) sfx.phase();
+      }
       if (phase === 'cah-reveal' || (phase === 'results' && g.result && g.result.sides.some((/** @type {any} */ sd) => sd.shutout))) fx.confetti(90);
       if (phase === 'results' && g.result && g.result.sides.some((/** @type {any} */ sd) => sd.shutout)) fx.banner('SHUTOUT!', 'gold');
       if (phase === 'trivia-category') fx.banner('CATEGORY ROUND!', 'gold');
@@ -699,7 +713,7 @@ function render() {
         // every later screen would queue behind it and the TV would freeze on this one.
         try {
           phaseView.innerHTML = pendingHtml || '';
-          layoutStage();
+          layoutStage(true);
         } finally {
           wiping = false;
         }
@@ -721,10 +735,21 @@ function render() {
 }
 
 // Make the main question/prompt fill the stage (TV readability).
-function layoutStage() {
+/** What the last fit was for: same words, same pictures, same screen size → the fit still holds.
+ * Fitting forces many full layouts (the costliest thing the TV does: Cottage Lab profile, feel-plan.md),
+ * so a small update that changes nothing visible (a phone's tap, a vote) must not redo it. */
+let lastFitKey = '';
+/** @param {boolean} [force] something outside the text changed size (resize, fonts, images, a new screen) */
+function layoutStage(force = false) {
   const inGame = state && !['lobby', 'gameover'].includes(state.phase);
   phaseView.classList.toggle('in-game', !!inGame);
-  if (!inGame) return;
+  if (!inGame) { lastFitKey = ''; return; }
+  // What decides the layout: the screen size, how many things are on it, and the words in the big
+  // fitted text. A counter ticking ("3 of 6 answered") or a vote arriving doesn't.
+  const big = [...phaseView.querySelectorAll('h1, .vs-card, .big-answer')].map((e) => e.textContent).join('|');
+  const key = `${innerWidth}x${innerHeight}|${phaseView.getElementsByTagName('*').length}|${phaseView.querySelectorAll('img').length}|${big}`;
+  if (!force && key === lastFitKey) return;
+  lastFitKey = key;
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('h1.prompt, h1:not(.prompt)')).forEach((h, i) => { if (i === 0) h.dataset.fit = h.dataset.fit || '0.13,4'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.vs-card')).forEach((c) => { c.dataset.fit = '0.07,5'; });
   /** @type {NodeListOf<HTMLElement>} */ (phaseView.querySelectorAll('.big-answer')).forEach((c) => { c.dataset.fit = '0.12,2'; });
@@ -740,7 +765,8 @@ function shrinkToStage() {
   const fits = () => stage.scrollHeight - stage.clientHeight <= 1;
   let z = 1;
   if (!fits()) {
-    // Binary search for the biggest zoom that fits (gaps and padding don't scale, so ratios alone undershoot).
+    // Binary search for the biggest zoom that fits (gaps and padding don't scale, so ratios alone
+    // undershoot — don't start the search from the overflow ratio: it can't reach the real answer).
     let lo = 0.45, hi = 1;
     for (let i = 0; i < 8; i++) {
       const mid = (lo + hi) / 2;
@@ -752,20 +778,20 @@ function shrinkToStage() {
   }
   phaseView.classList.toggle('shrunk', z < 1);
 }
-window.addEventListener('resize', () => layoutStage());
+window.addEventListener('resize', () => layoutStage(true));
 // Refit when the stage changes size (sidebar sliding away, fonts loading, …).
 let lastStageW = 0;
 new ResizeObserver(() => {
   const w = phaseView.clientWidth;
-  if (Math.abs(w - lastStageW) > 4) { lastStageW = w; layoutStage(); }
+  if (Math.abs(w - lastStageW) > 4) { lastStageW = w; layoutStage(true); }
 }).observe(phaseView);
-if (document.fonts) void document.fonts.ready.then(() => layoutStage());
+if (document.fonts) void document.fonts.ready.then(() => layoutStage(true));
 // Avatars and drawings load after the screen is laid out and make it taller: fit again once they're in.
 /** @type {number | null} */
 let refitTimer = null;
 phaseView.addEventListener('load', () => {
   if (refitTimer) return;
-  refitTimer = window.setTimeout(() => { refitTimer = null; layoutStage(); }, 50);
+  refitTimer = window.setTimeout(() => { refitTimer = null; layoutStage(true); }, 50);
 }, true);
 /** Tests: the screen has nothing left that could change its size — no re-fit pending, fonts in,
  * every image decoded, no screen wipe running. A screen measured then is measured as it will stay. */
@@ -781,6 +807,7 @@ function tick(/** @type {any} */ left) {
 }
 
 function shake() {
+  if (document.body.classList.contains('calm')) return;
   const st = /** @type {HTMLElement} */ (document.getElementById('stage'));
   st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
 }
@@ -792,3 +819,54 @@ document.addEventListener('cf:voice', (e) => {
 });
 // The browser's own voices arrive a moment after the page loads: refresh the 🎙 list when they do.
 document.addEventListener('cf:voices', () => { if (state && document.body.classList.contains('picking') && document.activeElement !== document.getElementById('set-voice')) render(); });
+
+// --- TV remote ------------------------------------------------------------------------------------
+// A TV browser is driven by a remote: arrow keys + OK (Enter) + Back, no mouse (Samsung's pointer
+// mode is slow). Arrows move the focus to the nearest control in that direction, OK presses it, and
+// the focus ring is big enough to see from the couch (docs/future-features/feel-plan.md, M7).
+const FOCUSABLE = 'button:not([disabled]), select:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+/** @type {Record<string, [number, number]>} key → direction */
+const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+/** Visible controls, the game cards first (they're what a remote is for). */
+function remoteTargets() {
+  return /** @type {HTMLElement[]} */ ([...document.querySelectorAll(FOCUSABLE)]).filter((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && !el.closest('[hidden]');
+  });
+}
+/** The nearest control from `from` in direction (dx, dy): distance along it, plus sideways drift ×2.
+ * @param {HTMLElement} from @param {number} dx @param {number} dy */
+function nearest(from, dx, dy) {
+  const a = from.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+  let best = null, bestScore = Infinity;
+  for (const el of remoteTargets()) {
+    if (el === from) continue;
+    const b = el.getBoundingClientRect(), bx = b.left + b.width / 2, by = b.top + b.height / 2;
+    const along = (bx - ax) * dx + (by - ay) * dy;
+    if (along <= 1) continue;
+    const score = along + 2 * Math.abs((bx - ax) * dy + (by - ay) * dx);
+    if (score < bestScore) { bestScore = score; best = el; }
+  }
+  return best;
+}
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  document.body.classList.add('kbd');
+  if (!overlay.hidden) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key in ARROWS) { e.preventDefault(); overlay.click(); }
+    return;
+  }
+  const cur = /** @type {HTMLElement | null} */ (document.activeElement);
+  const onControl = cur && cur !== document.body && cur.matches(FOCUSABLE);
+  if (e.key in ARROWS) {
+    if (cur && cur.matches('input[type="text"], input:not([type])')) return; // typing: arrows move the caret
+    e.preventDefault();
+    const [dx, dy] = ARROWS[e.key];
+    const next = onControl ? nearest(/** @type {HTMLElement} */ (cur), dx, dy)
+      : (/** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([disabled])')) || remoteTargets()[0] || null);
+    if (next) { next.focus(); next.scrollIntoView({ block: 'nearest' }); }
+  } else if (e.key === 'Enter' && onControl && cur && cur.matches('input[type="checkbox"]')) {
+    e.preventDefault(); cur.click(); // OK toggles a switch (browsers only do that for Space)
+  }
+});
+document.addEventListener('mousedown', () => document.body.classList.remove('kbd'));

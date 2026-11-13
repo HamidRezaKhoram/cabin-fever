@@ -2,21 +2,13 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { startServer, until, makeHost, makePlayer, sleep } = require('../helpers');
+const { startServer, until, sleep, makeRoom } = require('../helpers');
 
 let srv;
 test.before(async () => { srv = await startServer({ RUMPUS_CR_REVEAL_STEP_MS: '50' }); });
 test.after(() => srv.stop());
 
-async function room(names, rounds) {
-  const h = await makeHost(srv);
-  const ps = [];
-  for (const n of names) ps.push(await makePlayer(srv, h.code, n));
-  await until(() => h.state.players.length === names.length, 'joined');
-  if (rounds) { h.emit('host:settings', { rounds }); await until(() => h.state.settings.rounds === rounds, 'rounds'); }
-  const by = Object.fromEntries(ps.map((p) => [p.nickname, p]));
-  return { h, ps, by };
-}
+const room = (names, rounds) => makeRoom(srv, names, rounds ? { rounds } : undefined);
 
 test('notes are private, budgets hold (Player gets 5), wallflowers are anonymous; scoring follows the agendas', async () => {
   const { h, ps, by } = await room(['Ann', 'Ben', 'Cat', 'Dan'], 1);

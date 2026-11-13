@@ -100,14 +100,14 @@ class CrushGame extends BaseGame {
     // A wink: one free, anonymous nudge a night — something to do while others write.
     if (payload.wink !== undefined) {
       const to = String(payload.wink);
-      if (!['cr-mingle', 'cr-reply', 'cr-pick'].includes(this.phase) || this.winks.has(id) || to === id || !this.room.players.has(to)) return;
+      if (!['cr-mingle', 'cr-reply', 'cr-pick'].includes(this.phase) || this.winks.has(id) || to === id || !this.targetable(to)) return;
       this.winks.set(id, to);
       return this.push();
     }
     if (this.phase === 'cr-mingle') {
       const to = String(payload.to || '');
       const text = cleanText(payload.text, 80);
-      if (!text || to === id || !this.room.players.has(to) || this.sent(id) >= this.budget(id)) return;
+      if (!text || to === id || !this.targetable(to) || this.sent(id) >= this.budget(id)) return;
       this.notes.push({ id: ++this.noteSeq, from: id, to, text, reply: null });
       if (this.playerIds().every((p) => this.sent(p) >= this.budget(p))) this.toReply();
       else this.push();
@@ -121,7 +121,7 @@ class CrushGame extends BaseGame {
     } else if (this.phase === 'cr-pick') {
       if (this.picks.has(id)) return;
       const pick = payload.pick === null ? null : String(payload.pick || '');
-      if (pick !== null && (pick === id || !this.room.players.has(pick))) return;
+      if (pick !== null && (pick === id || !this.targetable(pick))) return;
       this.picks.set(id, pick);
       if (this.allIn(this.picks)) this.reveal();
       else this.push();
@@ -274,7 +274,7 @@ class CrushGame extends BaseGame {
     return {
       gameState: {
         evening: this.round,
-        targets: this.playerIds().filter((p) => p !== id).map((p) => ({ id: p, nickname: this.nick(p) })),
+        targets: this.targetIds().filter((p) => p !== id).map((p) => ({ id: p, nickname: this.nick(p) })),
         exposed: this.exposedView(),
       },
       you: {

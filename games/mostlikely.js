@@ -82,7 +82,7 @@ class MostLikelyGame extends BaseGame {
   handleSubmit(id, payload) {
     if (this.phase !== 'ml-vote' || this.votes.has(id)) return;
     const target = String(payload.target);
-    if (!this.room.players.has(target)) return;
+    if (!this.targetable(target)) return;
     this.votes.set(id, target);
     if (this.allIn(this.votes)) this.reveal();
     else this.push();
@@ -124,7 +124,7 @@ class MostLikelyGame extends BaseGame {
   }
 
   targets() {
-    return [...this.room.players.values()].map((p) => ({ id: p.id, nickname: p.nickname }));
+    return this.targetIds().map((id) => ({ id, nickname: this.nick(id) }));
   }
 
   hostView() {

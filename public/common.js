@@ -161,8 +161,12 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
       return;
     }
     if (x.nodeType !== 1) return;
-    for (const at of [...x.attributes]) if (!y.hasAttribute(at.name)) x.removeAttribute(at.name);
+    // Text sized by fit() (data-fit + its inline font size) keeps that size: the layout code owns it,
+    // not the HTML. Dropping it made every small update re-fit the whole TV screen (feel-plan.md).
+    const fitted = x.hasAttribute('data-fit') ? x.style.fontSize : '';
+    for (const at of [...x.attributes]) if (!y.hasAttribute(at.name) && !(fitted && (at.name === 'data-fit' || at.name === 'style'))) x.removeAttribute(at.name);
     for (const at of [...y.attributes]) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    if (fitted && !x.style.fontSize) x.style.fontSize = fitted;
     // Once the user has touched a control, its attributes no longer drive its live state:
     // keep checkboxes and dropdown choices in step with what the server says.
     if (x.nodeName === 'INPUT' && x.checked !== y.hasAttribute('checked') && (x.type === 'checkbox' || x.type === 'radio')) x.checked = y.hasAttribute('checked');
@@ -175,30 +179,69 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
   // Fit-to-fill: grow text until it fills its box (up to maxLines / max size),
   // so short prompts become big and long ones still fit. TV "10-foot" rule:
   // size relative to screen height, never below ~28px at 1080p.
-  /** @param {HTMLElement} el @param {{ max?: number, min?: number, maxLines?: number }} [opts] */
-  function fit(el, { max = 0.14, min = 0.032, maxLines = 4 } = {}) {
-    if (!el || !el.isConnected) return;
+  /** A hidden box that only lays out itself (CSS containment): fit() measures a copy of the text in it,
+   * so each step of the search costs one tiny layout instead of a layout of the whole TV screen
+   * (the TV's biggest cost on a slow CPU: Cottage Lab profile, docs/future-features/feel-plan.md). */
+  /** @type {HTMLDivElement | null} */
+  let measureBox = null;
+  function box() {
+    if (!measureBox || !measureBox.isConnected) {
+      measureBox = document.createElement('div');
+      measureBox.setAttribute('aria-hidden', 'true');
+      // Fixed size + overflow clip + contain:strict = a layout root: changing the copy re-lays out only this box.
+      measureBox.style.cssText = 'position:fixed;left:-20000px;top:0;width:4000px;height:4000px;overflow:hidden;visibility:hidden;contain:strict;pointer-events:none;';
+      document.body.appendChild(measureBox);
+    }
+    return measureBox;
+  }
+  const COPY = ['fontFamily', 'fontWeight', 'fontStyle', 'letterSpacing', 'wordSpacing', 'textTransform', 'whiteSpace', 'wordBreak', 'overflowWrap', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'borderLeftWidth', 'borderRightWidth', 'borderLeftStyle', 'borderRightStyle', 'textIndent'];
+  /** The font size that fills `el`'s box (searched on the hidden copy; `el` itself isn't touched).
+   * @param {HTMLElement} el @param {{ max?: number, min?: number, maxLines?: number }} [opts] @returns {number} */
+  function fitSize(el, { max = 0.14, min = 0.032, maxLines = 4 } = {}) {
     const vh = window.innerHeight;
     let lo = Math.round(vh * min), hi = Math.round(vh * max), best = lo;
     const width = el.clientWidth || (el.parentElement ? el.parentElement.clientWidth : 0);
+    const cs = getComputedStyle(el);
+    // The copy: same text, same font settings, same width; line height kept as a ratio of the size.
+    const lhRatio = (parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.25) / (parseFloat(cs.fontSize) || 16);
+    const m = box();
+    const c = /** @type {HTMLElement} */ (el.cloneNode(true));
+    c.removeAttribute('id');
+    for (const k of COPY) /** @type {any} */ (c.style)[k] = /** @type {any} */ (cs)[k];
+    // Spacing given in em grows with the font: computed values are px at today's size, so pass them on
+    // as a ratio (as px they'd stay small while the search tries big sizes, and the fit would overshoot).
+    const fs0 = parseFloat(cs.fontSize) || 16;
+    for (const k of /** @type {const} */ (['letterSpacing', 'wordSpacing'])) {
+      const v = parseFloat(/** @type {any} */ (cs)[k]);
+      /** @type {any} */ (c.style)[k] = Number.isFinite(v) ? `${v / fs0}em` : 'normal';
+    }
+    c.style.display = 'block'; c.style.margin = '0'; c.style.lineHeight = String(lhRatio);
+    // Same box as the real one: border-box at its full width, so clientWidth/scrollWidth mean the same.
+    c.style.boxSizing = 'border-box'; c.style.width = (el.offsetWidth || width) + 'px'; c.style.height = 'auto'; c.style.maxHeight = 'none'; c.style.overflow = 'visible';
+    m.textContent = ''; m.appendChild(c);
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      el.style.fontSize = mid + 'px';
-      // Measure with the element's real line height (not a guess).
-      const lh = parseFloat(getComputedStyle(el).lineHeight) || mid * 1.25;
-      const lines = Math.round(el.scrollHeight / lh);
-      if (el.scrollWidth <= width + 1 && lines <= maxLines) { best = mid; lo = mid + 1; } else hi = mid - 1;
+      c.style.fontSize = mid + 'px';
+      const lines = Math.round(c.scrollHeight / (mid * lhRatio));
+      if (c.scrollWidth <= c.clientWidth + 1 && lines <= maxLines) { best = mid; lo = mid + 1; } else hi = mid - 1;
     }
-    el.style.fontSize = best + 'px';
+    m.textContent = '';
+    return best;
+  }
+  /** @param {HTMLElement} el @param {{ max?: number, min?: number, maxLines?: number }} [opts] */
+  function fit(el, opts) {
+    if (el && el.isConnected) el.style.fontSize = fitSize(el, opts) + 'px';
   }
   /** @param {Element | null} root */
   function fitAll(root) {
     if (!root) return;
-    root.querySelectorAll('[data-fit]').forEach((node) => {
-      const el = /** @type {HTMLElement} */ (node);
+    // All sizes first, then all writes: a write between two reads would force a whole-page layout each.
+    const els = /** @type {HTMLElement[]} */ ([...root.querySelectorAll('[data-fit]')]).filter((el) => el.isConnected);
+    const sizes = els.map((el) => {
       const [max, lines] = (el.dataset.fit || '').split(',').map(Number);
-      fit(el, { max: max || 0.14, maxLines: lines || 4 });
+      return fitSize(el, { max: max || 0.14, maxLines: lines || 4 });
     });
+    els.forEach((el, i) => { el.style.fontSize = sizes[i] + 'px'; });
   }
 
   /**

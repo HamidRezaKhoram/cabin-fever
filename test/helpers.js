@@ -2,12 +2,13 @@
  * clients, wait for states. AGPLv3 — see LICENSE. */
 'use strict';
 
-const { fork } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
 const { io: ioClient } = require('socket.io-client');
+const { until, once, sleep } = require('./kit/wait');
+const { startApp } = require('./kit/process');
 
 const ROOT = path.join(__dirname, '..');
 const FAST = {
@@ -23,65 +24,22 @@ function tmpDir(prefix = 'rumpus-') {
 }
 
 /** Start server.js in a child process. Resolves when it's listening. */
-function startServer(env = {}) {
-  return new Promise((resolve, reject) => {
-    const proc = fork(path.join(ROOT, 'server.js'), [], {
-      cwd: ROOT,
-      env: {
-        ...process.env, ...FAST, PORT: '0',
-        RUMPUS_DATA_DIR: tmpDir(), RUMPUS_CONTENT_DIR: '/nonexistent', RUMPUS_MUSIC_DIR: '/nonexistent',
-        ...env,
-      },
-      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-    });
-    let out = '';
-    const onData = (d) => {
-      out += d;
-      const m = /listening on port (\d+)/.exec(out);
-      if (m) {
-        proc.stdout.off('data', onData);
-        const port = +m[1];
-        const clients = [];
-        resolve({
-          port, url: `http://127.0.0.1:${port}`, proc, log: () => out,
-          connect() { const s = ioClient(`http://127.0.0.1:${port}`, { transports: ['websocket'], forceNew: true, reconnection: false }); clients.push(s); return s; },
-          async stop() {
-            clients.forEach((c) => c.disconnect());
-            proc.kill('SIGTERM');
-            await new Promise((r) => (proc.exitCode !== null ? r() : proc.once('exit', r)));
-          },
-        });
-      }
-    };
-    proc.stdout.on('data', onData);
-    proc.stderr.on('data', (d) => { out += d; });
-    proc.once('exit', (code) => reject(new Error(`server exited (${code}) before listening:\n${out}`)));
-    setTimeout(() => reject(new Error('server did not start:\n' + out)), 15000).unref();
+async function startServer(env = {}) {
+  const app = await startApp(path.join(ROOT, 'server.js'), {
+    cwd: ROOT,
+    env: { ...FAST, PORT: '0', RUMPUS_DATA_DIR: tmpDir(), RUMPUS_CONTENT_DIR: '/nonexistent', RUMPUS_MUSIC_DIR: '/nonexistent', ...env },
   });
+  const clients = [];
+  const url = `http://127.0.0.1:${app.port}`;
+  return {
+    port: app.port, url, proc: app.proc, log: app.log,
+    connect() { const s = ioClient(url, { transports: ['websocket'], forceNew: true, reconnection: false }); clients.push(s); return s; },
+    async stop() { clients.forEach((c) => c.disconnect()); await app.stop(); },
+  };
 }
 
-function once(sock, event, ms = 5000) {
-  return new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`timed out waiting for '${event}'`)), ms);
-    sock.once(event, (msg) => { clearTimeout(t); resolve(msg); });
-  });
-}
 
-/** Wait until fn() returns truthy (polls). */
-function until(fn, label = 'condition', ms = 8000) {
-  return new Promise((resolve, reject) => {
-    const t0 = Date.now();
-    (function poll() {
-      let v;
-      try { v = fn(); } catch (e) { v = null; }
-      if (v) return resolve(v);
-      if (Date.now() - t0 > ms) return reject(new Error('timed out waiting for ' + label));
-      setTimeout(poll, 20);
-    })();
-  });
-}
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Host client that tracks the latest state. */
 async function makeHost(srv) {
@@ -110,6 +68,23 @@ async function makePlayer(srv, code, nickname, extra = {}) {
   p.submit = (payload) => sock.emit('player:submit', { payload });
   p.phase = (ph, ms) => until(() => p.state && p.state.phase === ph && p.state, `${nickname} phase ${ph} (at ${p.state && p.state.phase})`, ms);
   return p;
+}
+
+/** A room with a host and players, joined and (optionally) set up. `who` is a list of nicknames
+ * or a count (P0, P1, …). Returns { h, ps, by: nickname → player, score(nickname) }. */
+async function makeRoom(srv, who, settings) {
+  const names = typeof who === 'number' ? Array.from({ length: who }, (_, i) => 'P' + i) : who;
+  const h = await makeHost(srv);
+  const ps = [];
+  for (const n of names) ps.push(await makePlayer(srv, h.code, n));
+  await until(() => h.state.players.length === names.length, 'all joined');
+  if (settings) {
+    h.emit('host:settings', settings);
+    await until(() => Object.entries(settings).every(([k, v]) => h.state.settings[k] === v), 'settings');
+  }
+  const by = Object.fromEntries(ps.map((p) => [p.nickname, p]));
+  const score = (n) => h.state.players.find((p) => p.nickname === n).score;
+  return { h, ps, by, score };
 }
 
 /** Attempt a join and return the error reason (or null on success). */
@@ -150,4 +125,4 @@ const QUICK = {
   RUMPUS_LL_INTRO_MS: '300', RUMPUS_LL_PLAY_MS: '2500', RUMPUS_LL_RESULT_MS: '200',
 };
 
-module.exports = { QUICK, ROOT, startServer, once, until, sleep, makeHost, makePlayer, joinError, get, contentDir, tmpDir, PNG };
+module.exports = { QUICK, ROOT, startServer, once, until, sleep, makeHost, makePlayer, makeRoom, joinError, get, contentDir, tmpDir, PNG };

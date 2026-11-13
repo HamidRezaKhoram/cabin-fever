@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14121f">
+  <title>Device speed check</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="play bench-page">
+  <main id="screen">
+    <h1>⏱ Device speed check</h1>
+    <p class="hint">Open this on the TV and on a phone. It runs the same kind of work the game does
+      (JavaScript, page layout, pixel drawing) and shows how long it took. That tells the Cottage Lab
+      how much slower to make its simulated TV and phone (docs/future-features/feel-plan.md).</p>
+    <p id="bench-result" class="prompt">Measuring…</p>
+    <p id="bench-detail" class="hint"></p>
+    <div id="bench-scratch" aria-hidden="true" style="position:absolute;left:-9999px;top:0;width:600px"></div>
+    <canvas id="bench-canvas" width="320" height="180" style="display:none"></canvas>
+  </main>
+  <script src="/bench.js"></script>
+</body>
+</html>

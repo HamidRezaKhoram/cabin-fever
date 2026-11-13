@@ -170,6 +170,9 @@ gameView.addEventListener('click', (e) => {
   }
   const tb = hit(e.target, '[data-team]');
   if (tb) { socket.emit('player:team', { team: tb.dataset.team }); return; }
+  if (hit(e.target, '[data-shy]')) { window.Rumpus.haptic(10); socket.emit('player:prefs', { shy: !(state && state.you && state.you.shy) }); return; }
+  const rate = hit(e.target, '[data-rate]');
+  if (rate) { window.Rumpus.haptic(10); socket.emit('player:rate', { score: +(rate.dataset.rate || 0) }); return; }
   if (hit(e.target, '[data-lobby-maker]')) {
     lobbyMaker.hidden = false;
     if (!lobbyMakerReady) { maker.editor(document.getElementById('lobby-maker-box'), myLook, (/** @type {any} */ l) => { myLook = l; store('rumpus.look', l); }); lobbyMakerReady = true; }
@@ -545,6 +548,7 @@ function render() {
       <p class="hint">${state.players.length} player${state.players.length === 1 ? '' : 's'} here · tap to change your animal:</p>
       <div class="avatar-pick lobby-pick">${avatarGrid(mine, taken)}</div>
       <button class="ghost-btn" data-lobby-maker>🧑 Edit my character</button>
+      <button class="ghost-btn shy-btn" data-shy aria-pressed="${you.shy ? 'true' : 'false'}">${you.shy ? '🙈 You\'re left out of votes &amp; notes about people · tap to join in' : '🙈 Leave me out of votes &amp; notes about people'}</button>
       ${state.settings && state.settings.teams ? (() => {
         const mineTeam = (state.players.find((/** @type {any} */ p) => p.id === myId) || {}).team;
         const other = mineTeam === 'red' ? 'blue' : 'red';
@@ -556,7 +560,9 @@ function render() {
     const rank = (g.standings || []).findIndex((/** @type {any} */ s) => s.nickname === you.nickname);
     html = '<h1>Game over</h1>' +
       (top ? `<p class="prompt">${esc(top.nickname)} wins with ${top.score}!</p>` : '') +
-      `<p>You finished #${rank + 1} with <strong>${myScore()}</strong> points.</p><p>Watch the TV for the next game.</p>
+      `<p>You finished #${rank + 1} with <strong>${myScore()}</strong> points.</p>
+      ${you.rated ? '<p class="hint">Thanks — noted! 🙏</p>' : `<p class="hint">How was that game?</p><div class="rate-row"><button class="vote-btn" data-rate="1" aria-label="boring">😴</button><button class="vote-btn" data-rate="2" aria-label="good">🙂</button><button class="vote-btn" data-rate="3" aria-label="great">🤩</button></div>`}
+      <p>Watch the TV for the next game.</p>
       <p><a class="hl-link" href="/highlights?room=${esc(state.code)}" target="_blank">📸 Tonight's highlights &amp; hall of fame</a></p>`;
   } else if (games[g.gameId]) {
     html = games[g.gameId].player(state);

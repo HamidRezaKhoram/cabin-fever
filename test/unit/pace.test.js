@@ -4,7 +4,7 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const flow = require('../../games/flow');
-const { startServer, until, makeHost, makePlayer, contentDir } = require('../helpers');
+const { startServer, until, contentDir, makeRoom } = require('../helpers');
 
 test('stage multipliers: first half ×1, second half ×2, final question ×3', () => {
   const sched = (n) => Array.from({ length: n }, (_, i) => flow.stage(i + 1, n));
@@ -29,17 +29,7 @@ before(async () => {
 });
 after(() => srv.stop());
 
-async function room(n, settings) {
-  const h = await makeHost(srv);
-  const ps = [];
-  for (let i = 0; i < n; i++) ps.push(await makePlayer(srv, h.code, 'P' + i));
-  await until(() => h.state.players.length === n, 'joined');
-  if (settings) {
-    h.emit('host:settings', settings);
-    await until(() => Object.entries(settings).every(([k, v]) => h.state.settings[k] === v), 'settings');
-  }
-  return { h, ps };
-}
+const room = (n, settings) => makeRoom(srv, n, settings);
 const vote = (p, kind) => p.sock.emit('player:vote', { kind });
 
 test('skip question: needs a majority, then swaps in a fresh question (same round)', async () => {

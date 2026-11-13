@@ -2,7 +2,7 @@
 /* Rules and scoring for every game, with deterministic custom content. */
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
-const { startServer, until, sleep, makeHost, makePlayer, contentDir, PNG } = require('../helpers');
+const { startServer, until, sleep, makeHost, makePlayer, contentDir, PNG, makeRoom } = require('../helpers');
 
 const POOLS = {
   punchline: [{ text: 'Prompt one' }, { text: 'Prompt two' }, { text: 'Prompt three' }],
@@ -24,19 +24,7 @@ before(async () => {
 });
 after(() => srv.stop());
 
-async function room(names, settings) {
-  const h = await makeHost(srv);
-  const ps = [];
-  for (const n of names) ps.push(await makePlayer(srv, h.code, n));
-  await until(() => h.state.players.length === names.length, 'all joined');
-  if (settings) {
-    h.emit('host:settings', settings);
-    await until(() => Object.entries(settings).every(([k, v]) => h.state.settings[k] === v), 'settings');
-  }
-  const by = Object.fromEntries(ps.map((p) => [p.nickname, p]));
-  const score = (n) => h.state.players.find((p) => p.nickname === n).score;
-  return { h, ps, by, score };
-}
+const room = (names, settings) => makeRoom(srv, names, settings);
 
 // ------------------------------------------------------------------ Campfire Quips
 async function answerAll(players) {

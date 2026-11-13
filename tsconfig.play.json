@@ -21,6 +21,7 @@
     "public/games.js",
     "public/play.js",
     "public/highlights.js",
-    "public/admin.js"
+    "public/admin.js",
+    "public/bench.js"
   ]
 }

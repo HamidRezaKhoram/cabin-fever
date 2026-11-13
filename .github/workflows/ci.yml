@@ -1,39 +1,50 @@
-# CI on every push and PR:
-#  - lint:      TypeScript type checks (strict) + type-aware ESLint + the strict ratchet
-#  - coverage:  unit/integration tests under c8 (≥ 80% lines/branches/functions), report attached
-#  - test-all:  the same full suite we run locally (content, mypy, browser tests, Pages build)
-name: test
-on: [push, pull_request]
+# CI/CD on every push and PR (docs/future-features/testing-plan.md):
+#   checks  → types, lint, strict ratchet, unit + integration tests with coverage (bots play every game)
+#   browser → the image + real browsers: TV and 3 phones, and the GitHub Pages build (needs checks)
+#   docker  → `docker compose up` exactly as at the cottage, full and lite images, a room plays (needs checks)
+#   deploy  → main only, after browser + docker pass: publish the Pages site
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  # A newer push cancels an older run on a branch; main always finishes (never half a deploy).
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  lint:
+  checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12', cache: pip, cache-dependency-path: .github/workflows/ci.yml }
       - run: npm ci
+      - name: Generated content is committed
+        run: |
+          python3 tools/build-content.py >/dev/null && python3 tools/make-icons.py >/dev/null
+          git diff --exit-code --stat -- games/data/pools public/sprites.js
+      - name: Python tools (mypy --strict)
+        run: pip install -q mypy==1.13.0 && mypy --strict tools/*.py
       - name: Type checks (tsc --checkJs, strict, all four projects)
         run: npm run -s typecheck
       - name: ESLint (type-aware)
         run: npm run -s lint
       - name: Strict ratchet (counts may only go down)
         run: node tools/strict-ratchet.js
-
-  coverage:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci
       - name: Unit + integration tests with coverage (thresholds in .c8rc.json)
         env: { BOT_GAMES: all }
         run: npx c8 node --test --test-concurrency=4 --test-timeout=900000 test/unit/
       - name: Coverage summary
         if: always()
         run: |
+          [ -f coverage/coverage-summary.json ] || exit 0
+          # shellcheck disable=SC2016  # the $ below is JavaScript, not shell
           node -e '
             const s = require("./coverage/coverage-summary.json").total;
             const row = (k) => `| ${k} | ${s[k].pct}% | ${s[k].covered}/${s[k].total} |`;
@@ -41,16 +52,61 @@ jobs:
           ' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: coverage, path: coverage/ }
+        with: { name: coverage, path: coverage/, if-no-files-found: ignore }
 
-  test-all:
+  browser:
+    needs: checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Full test suite (podman containers, like the dev machine)
-        run: BOT_GAMES=all ./scripts/test-all.sh
+      - name: Image + browser tests + Pages build (podman, like the dev machine; skips what `checks` ran)
+        run: UI_ONLY=1 ./scripts/test-all.sh
       - name: Keep browser screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with: { name: ui-shots, path: test/ui/.shots/ }
+
+  docker:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: docker compose up (full and lite), pages load, a room plays, still up 10 s later
+        run: ./scripts/docker-smoke.sh
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [browser, docker]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency: { group: pages, cancel-in-progress: false }
+    environment: { name: github-pages, url: '${{ steps.deployment.outputs.page_url }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Cache the narrator voice (Kokoro model)
+        uses: actions/cache@v4
+        with:
+          path: vendor/kokoro
+          key: kokoro-${{ hashFiles('tools/fetch-kokoro.js', 'package-lock.json') }}
+      - name: Fetch the narrator voice (served from the site; the TV caches it on first use)
+        run: node tools/fetch-kokoro.js vendor/kokoro
+      - name: Build the browser version (tools/build-pages.js)
+        run: node tools/build-pages.js dist
+        # Optional: a working TURN relay so phones on another network than the TV can connect.
+        env: { CF_ICE_SERVERS: '${{ secrets.CF_ICE_SERVERS }}' }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: dist }
+      - id: deployment
+        uses: actions/deploy-pages@v4

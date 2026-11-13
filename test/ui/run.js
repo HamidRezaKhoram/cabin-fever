@@ -6,17 +6,14 @@
 'use strict';
 const { chromium, devices } = require('playwright');
 const assert = require('assert');
+const { suite } = require('../kit/browser');
 
 const BASE = process.env.BASE_URL || 'http://localhost:18012';
 const SHOTS = process.env.SHOTS || null;
-let passed = 0;
-const allPages = [];
-async function check(name, fn) {
-  const t0 = Date.now();
-  try { await fn(); passed++; console.log(`  ✔ ${name} (${Date.now() - t0} ms)`); } catch (e) {
-    console.error(`  ✖ ${name}\n`, e);
-    if (SHOTS) for (const [i, pg] of allPages.entries()) await pg.screenshot({ path: `${SHOTS}/FAIL-${i}.png` }).catch(() => {});
-    for (const [i, pg] of allPages.entries()) {
+const t = suite({
+  name: 'UI', shots: SHOTS,
+  async diagnose(pages) {
+    for (const [i, pg] of pages.entries()) {
       const info = await pg.evaluate(() => ({
         url: location.pathname, errors: Rumpus.debug.errors(), log: Rumpus.debug.tail(25),
         wiping: Rumpus.fx ? Rumpus.fx.isWiping() : null,
@@ -25,17 +22,15 @@ async function check(name, fn) {
       console.error(`\n  ---- page ${i} ${info.url || ''} errors=${JSON.stringify(info.errors || info.err)} wiping=${info.wiping}\n  DOM: ${info.dom}\n${info.log || ''}`);
     }
     try { const d = await (await fetch(BASE + '/api/debug')).json(); console.error('\n  ---- server /api/debug\n' + JSON.stringify(d.rooms, null, 1).slice(0, 3000)); } catch (er) { /* debug off */ }
-    process.exit(1);
-  }
-}
+  },
+});
+const { check, errors } = t;
+const allPages = t.pages;
 
 (async () => {
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
-  const errors = [];
   const watch = (page, who) => {
-    allPages.push(page);
-    page.on('pageerror', (e) => errors.push(`${who}: ${e.message}`));
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(`${who} console: ${m.text()}`); });
+    t.watch(page, who);
     // Client code coverage (Chrome's V8 block coverage), merged across every page at the end.
     return page.coverage.startJSCoverage({ resetOnNavigation: false }).catch(() => {});
   };
@@ -75,6 +70,37 @@ async function check(name, fn) {
     }, code);
     assert.deepStrictEqual(seen, { qrs: 1, codes: 1, sidebar: false });
     await shot(tv, '02a-lobby-empty');
+  });
+
+  await check('TV remote: OK starts, arrows move a big focus ring between controls by direction, OK presses', async () => {
+    // A TV browser has a remote, not a mouse (docs/future-features/feel-plan.md, M7). Own browser
+    // context: its own room, so the main TV above is untouched.
+    const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    const r = await ctx.newPage();
+    t.watch(r, 'remote-tv');
+    try {
+      await r.goto(BASE + '/host?debug=1');
+      await r.waitForSelector('#start-overlay:not([hidden])');
+      await r.keyboard.press('Enter');
+      await r.waitForSelector('#start-overlay', { state: 'hidden' });
+      await r.keyboard.press('ArrowDown');
+      const at = () => r.evaluate(() => { const el = /** @type {HTMLElement} */ (document.activeElement); const b = el.getBoundingClientRect(); return { tag: el.tagName, cls: el.className, x: b.left + b.width / 2, y: b.top + b.height / 2, ring: parseFloat(getComputedStyle(el).outlineWidth) }; });
+      const a = await at();
+      assert.notStrictEqual(a.tag, 'BODY', 'the first arrow press focuses a control');
+      assert.ok(a.ring >= 6, `focus ring is visible from the couch (${a.ring}px)`);
+      for (const [key, test] of /** @type {[string, (p: any, q: any) => boolean][]} */ ([['ArrowRight', (p, q) => q.x > p.x], ['ArrowDown', (p, q) => q.y > p.y], ['ArrowLeft', (p, q) => q.x < p.x], ['ArrowUp', (p, q) => q.y < p.y]])) {
+        const before = await at();
+        await r.keyboard.press(key);
+        const after = await at();
+        if (after.x !== before.x || after.y !== before.y) assert.ok(test(before, after), `${key} moved the focus that way (${JSON.stringify(before)} → ${JSON.stringify(after)})`);
+      }
+      // OK on a switch toggles it (browsers only do that for Space).
+      await r.focus('#set-spicy');
+      const was = await r.isChecked('#set-spicy');
+      await r.keyboard.press('Enter');
+      await r.waitForFunction((w) => /** @type {HTMLInputElement} */ (document.getElementById('set-spicy')).checked !== w, was);
+      await r.keyboard.press('Enter');
+    } finally { await ctx.close(); }
   });
 
   await check('Français: the TV language setting translates the TV (and back)', async () => {
@@ -255,6 +281,32 @@ async function check(name, fn) {
   await check('changing avatar in the lobby updates the TV', async () => {
     await phones[1].click('.lobby-pick [data-avatar]:not([disabled]):not(.on)'); // any free animal
     await tv.waitForFunction(() => [...document.querySelectorAll('#player-list li img')].some((i) => i.src.startsWith('data:')));
+  });
+
+  await check('🙈 a phone can leave itself out of votes and notes about people (and back); the TV shows it', async () => {
+    await phones[2].click('[data-shy]');
+    await phones[2].waitForSelector('[data-shy][aria-pressed="true"]');
+    await tv.waitForSelector('.lobby-crew .shy'); // on the menu's crew strip (the sidebar list is hidden there)
+    await phones[2].click('[data-shy]');
+    await phones[2].waitForSelector('[data-shy][aria-pressed="false"]');
+    await tv.waitForSelector('.lobby-crew .shy', { state: 'detached' });
+  });
+
+  await check('🕊 Calm (TV setting) stops shakes, wipes and flashes, and is remembered on this TV', async () => {
+    await tv.check('#set-calm');
+    await tv.waitForFunction(() => document.body.classList.contains('calm') && localStorage.getItem('rumpus.calm') === 'true');
+    await tv.uncheck('#set-calm');
+    await tv.waitForFunction(() => !document.body.classList.contains('calm'));
+  });
+
+  await check('/bench (device speed check) measures and shows the factor against the lab machine', async () => {
+    const b = await browser.newPage();
+    t.watch(b, 'bench');
+    try {
+      await b.goto(BASE + '/bench?base=100');
+      await b.waitForFunction(() => /** @type {any} */ (window).cfBench, null, { timeout: 60000 });
+      assert.match(await b.textContent('#bench-result') || '', /\d+ ms — [\d.]+× the lab machine/);
+    } finally { await b.close(); }
   });
 
   await check('pace buttons: majority "skip question" swaps the prompt', async () => {
@@ -605,7 +657,7 @@ async function check(name, fn) {
   // through the real TV and phone page code exactly like a server update.
   await check('every recorded screen of every game renders on the TV and on a phone', async () => {
     const fs = require('fs');
-    const dir = process.env.SNAP_DIR || '/tests/snapshots';
+    const dir = process.env.SNAP_DIR || require('path').join(__dirname, 'snapshots');
     const games = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.json')) : [];
     const offered = (await (await fetch(BASE + '/api/admin/rules')).json()).games.map((g) => g.id);
     const missing = offered.filter((id) => !games.includes(`${id}.json`));
@@ -702,5 +754,5 @@ async function check(name, fn) {
   const CLIENT_MIN = Number(process.env.CLIENT_COVERAGE_MIN || 80);
   await browser.close();
   if (pct < CLIENT_MIN) { console.error(`✖ client coverage ${pct.toFixed(1)}% is below ${CLIENT_MIN}%`); process.exit(1); }
-  console.log(`\nUI: ${passed} checks passed`);
+  t.done();
 })().catch((e) => { console.error(e); process.exit(1); });

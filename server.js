@@ -52,6 +52,8 @@ app.get('/play', (req, res) => res.sendFile(path.join(__dirname, 'public', 'play
 // Pretty URLs the TV links to (static would only serve /admin.html, /highlights.html).
 app.get('/admin', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/highlights', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFile(path.join(__dirname, 'public', 'highlights.html')));
+// Device speed check for calibrating the Cottage Lab (feel-plan.md): open on the real TV and phone.
+app.get('/bench', (/** @type {any} */ req, /** @type {any} */ res) => res.sendFile(path.join(__dirname, 'public', 'bench.html')));
 
 // LAN addresses so the TV can show a scannable URL even when opened via localhost.
 // The address this machine actually talks to the network from (the one its default route uses):

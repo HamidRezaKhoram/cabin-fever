@@ -15,15 +15,13 @@
  */
 'use strict';
 
+const { BaseGame } = require('./base');
 const house = require('./house');
-const { guarded } = require('./base');
-const { makeRng, newSeed } = require('./rng');
 
 const stats = require('./stats');
 
 const { QUESTIONS } = require('./data/fibbage-questions');
 const library = require('./library');
-const flow = require('./flow');
 
 const BLUFF_MS = parseInt(process.env.RUMPUS_FIB_BLUFF_MS || '40000', 10);
 const CHOOSE_MS = parseInt(process.env.RUMPUS_FIB_CHOOSE_MS || '30000', 10);
@@ -42,17 +40,12 @@ function normalize(s) {
 
 /** @typedef {{ text: string, authorIds: Set<string>, isTruth: boolean, index: number }} Option */
 
-class FibbageGame {
+class FibbageGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
-    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
-    this.seed = newSeed();
-    this.rng = makeRng(this.seed);
-    this.room = room;
-    this.push = push;
+    super(room, push);
     this.phase = 'fib-bluff';
-    this.round = 0;
-    this.totalRounds = Math.min((room.settings && room.settings.rounds) || TOTAL_ROUNDS, QUESTIONS.length);
+    this.totalRounds = Math.min(this.rounds(TOTAL_ROUNDS), QUESTIONS.length);
     this.deck = this.rng.shuffleIn(QUESTIONS.map((q, i) => i));
     this.prompt = '';
     this.answer = '';
@@ -68,15 +61,6 @@ class FibbageGame {
     this.options = [];
     /** @type {any} the reveal (shape documented by the renderer) */
     this.roundResult = null;
-    /** @type {NodeJS.Timeout | null} */
-    this.timer = null;
-    /** @type {(() => void) | null} */
-    this.timerFn = null;
-    /** @type {number | null} */
-    this.endsAt = null;
-    this.destroyed = false;
-    /** @type {((what: string, e: unknown) => void) | null} set by the room (see games/base.js guarded) */ this.onGlitch = null;
-    this.skipSeq = 0;
     this.poolName = 'fibbage';
     /** @type {PoolItem | null} */
     this.item = null;
@@ -88,38 +72,6 @@ class FibbageGame {
     this.nextRound();
   }
 
-  destroy() {
-    this.destroyed = true;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-  }
-
-  /** @param {number} ms @param {() => void} fn */
-  setTimer(ms, fn) {
-    if (this.timer) clearTimeout(this.timer);
-    const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('fibbage');
-    ms = Math.round(ms * scale);
-    this.endsAt = Date.now() + ms;
-    this.timerFn = fn;
-    this.timer = setTimeout(() => {
-      this.timerFn = null;
-      if (!this.destroyed) guarded(fn, 'fibbage timer', this, true);
-    }, ms);
-  }
-
-  // Escalating stakes: first half ×1, second half ×2, final question ×3.
-  mult() {
-    return flow.stage(this.round, this.totalRounds);
-  }
-
-  isFinal() {
-    return this.mult() > 1;
-  }
-
-  spicy() {
-    return !(this.room.settings && this.room.settings.spicy === false);
-  }
-
   get skippablePhases() { return ['fib-bluff']; }
 
   skipQuestion() {
@@ -127,16 +79,6 @@ class FibbageGame {
     this.skipSeq = (this.skipSeq || 0) + 1;
     this.round -= 1;
     this.nextRound();
-  }
-
-  // Host pressed "skip": run the pending phase transition now.
-  skip() {
-    if (!this.timerFn || this.destroyed) return;
-    const fn = this.timerFn;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.timerFn = null;
-    fn();
   }
 
   nextRound() {
@@ -289,15 +231,7 @@ class FibbageGame {
         .sort((a, b) => b.gained - a.gained),
     };
     this.phase = 'fib-reveal';
-    this.setTimer(REVEAL_MS, () => this.nextRound());
-    this.push();
-  }
-
-  gameOver() {
-    this.phase = 'gameover';
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.endsAt = null;
+    this.setTimer(REVEAL_MS, () => this.nextRound(), false);
     this.push();
   }
 
@@ -317,25 +251,12 @@ class FibbageGame {
     }
   }
 
-  standings() {
-    return [...this.room.players.values()]
-      .map((p) => ({ nickname: p.nickname, score: p.score }))
-      .sort((a, b) => b.score - a.score);
-  }
-
   // --- views ---------------------------------------------------------------
 
   hostGameState() {
     const base = {
-      gameId: 'fibbage',
-      round: this.round,
-      totalRounds: this.totalRounds,
-      endsAt: this.endsAt,
-      doublePoints: this.mult() > 1,
-      multiplier: this.mult(),
+      ...this.base(),
       source: this.source || null,
-      stage: flow.stage(this.round, this.totalRounds),
-      skipSeq: this.skipSeq || 0,
     };
     switch (this.phase) {
       case 'fib-bluff':
@@ -365,14 +286,7 @@ class FibbageGame {
   /** @param {string} playerId */
   playerView(playerId) {
     const base = {
-      gameId: 'fibbage',
-      round: this.round,
-      totalRounds: this.totalRounds,
-      endsAt: this.endsAt,
-      doublePoints: this.mult() > 1,
-      multiplier: this.mult(),
-      stage: flow.stage(this.round, this.totalRounds),
-      skipSeq: this.skipSeq || 0,
+      ...this.base(),
     };
     switch (this.phase) {
       case 'fib-bluff':

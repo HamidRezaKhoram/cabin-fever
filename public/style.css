@@ -34,7 +34,7 @@ body {
 }
 img.avatar, canvas { image-rendering: pixelated; }
 
-#bg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; object-fit: cover; image-rendering: pixelated; }
+#bg { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; object-fit: cover; image-rendering: pixelated; }
 body.play #bg { opacity: 0.45; }
 
 h1, h2, .brand, .room-code, button, .round-tag, .slam, .game-name { font-family: var(--pixel); font-weight: 400; letter-spacing: 0.02em; }
@@ -204,7 +204,7 @@ ul.scored-list li.wrong { color: var(--dim); }
 .settings { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
 .settings label { display: inline-flex; gap: 8px; align-items: center; margin: 0; }
 .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-.toggle input { width: 22px; height: 22px; accent-color: var(--danger); box-shadow: none; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--danger); /* old TVs: default colour, cosmetic */ box-shadow: none; }
 .spicy-on { color: var(--danger); }
 .lobby-crew { display: flex; flex-wrap: wrap; gap: 14px; margin: 18px 0 6px; min-height: 60px; }
 .lobby-crew figure { margin: 0; text-align: center; font-size: 20px; animation: drop-in 0.4s steps(12) both; }
@@ -234,7 +234,7 @@ button.game-pick:not(:disabled) .game-min { color: var(--dim); }
 body.offline #offline-banner { display: block; }
 
 /* Press start overlay (TV) — needed so the browser lets audio play */
-#start-overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(10, 8, 20, 0.7); cursor: pointer; }
+#start-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; display: grid; place-items: center; background: rgba(10, 8, 20, 0.7); cursor: pointer; }
 #start-overlay .press { font-family: var(--pixel); font-size: clamp(16px, 3vw, 34px); color: var(--accent); text-shadow: 4px 4px 0 var(--edge); animation: blink 1s steps(30) infinite; text-align: center; line-height: 1.8; }
 #start-overlay .logo { font-family: var(--pixel); font-size: clamp(28px, 4.4vw, 76px); line-height: 1.2; overflow-wrap: anywhere; color: var(--accent2); text-shadow: 6px 6px 0 var(--edge), -2px -2px 0 var(--purple); margin-bottom: 30px; }
 #start-overlay[hidden] { display: none; }
@@ -248,7 +248,7 @@ body.offline #offline-banner { display: block; }
 @media (max-aspect-ratio: 1/1) { #start-overlay { grid-auto-flow: row; } }
 
 /* ---------- FX ---------- */
-canvas.wipe, canvas.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; display: none; image-rendering: pixelated; }
+canvas.wipe, canvas.confetti { position: fixed; top: 0; right: 0; bottom: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; display: none; image-rendering: pixelated; }
 canvas.confetti { z-index: 41; }
 .reaction { position: fixed; bottom: 30px; z-index: 45; display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: float-up 3.2s steps(96) forwards; }
 .r-emoji { font-size: 54px; filter: drop-shadow(3px 3px 0 var(--edge)); }
@@ -333,7 +333,7 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .chain-entry { background: var(--panel); padding: 12px; width: 260px; display: flex; flex-direction: column; gap: 6px; animation: pop-in 0.5s steps(15) both; }
 .chain-entry img { width: 100%; background: #fff; }
 .chain-text { font-size: 30px; color: var(--accent); margin: 0; min-height: 2.4em; }
-.blank-drawing { aspect-ratio: 1; background: #fff; color: #999; display: grid; place-items: center; }
+.blank-drawing { min-height: 16vh; aspect-ratio: 1; /* old TVs: min-height when aspect-ratio is unknown */ background: #fff; color: #999; display: grid; place-items: center; }
 .doodle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .doodle-grid figure { margin: 0; position: relative; box-shadow: 0 0 0 4px var(--edge); }
 .doodle-grid img { width: 100%; display: block; background: #fff; }
@@ -343,7 +343,7 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .doodle-btn img { width: 100%; display: block; }
 .describe-img { width: 100%; background: #fff; margin-bottom: 8px; box-shadow: 0 0 0 3px var(--edge); }
 .draw-prompt { font-size: 24px; margin: 0 0 8px; }
-.draw-canvas { width: 100%; aspect-ratio: 1; background: #fff; touch-action: none; display: block; box-shadow: 0 0 0 4px var(--edge); image-rendering: auto; }
+.draw-canvas { width: 100%; aspect-ratio: 1; /* phone only */ background: #fff; touch-action: none; display: block; box-shadow: 0 0 0 4px var(--edge); image-rendering: auto; }
 .draw-tools { margin: 10px 0; }
 .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
 .swatch { width: 34px; height: 34px; padding: 0; box-shadow: 0 0 0 2px var(--edge); }
@@ -374,7 +374,7 @@ body.play { padding-bottom: 120px; }
 .now-playing.show { transform: none; }
 .storm-hunch { font-size: 2.6vh; color: var(--dim); }
 /* Message in a Bottle: waiting doodles drift across the TV (6 s → steps(180)). */
-.scribble-sea { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.scribble-sea { position: fixed; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; overflow: hidden; z-index: 5; }
 .scribble { position: absolute; left: 0; margin: 0; width: 14vh; text-align: center; animation: scribble-drift 6s steps(180) forwards; }
 .scribble img { width: 100%; image-rendering: pixelated; background: var(--ink); box-shadow: 0 0 0 4px var(--edge); }
 .scribble figcaption { font-size: 2.6vh; color: var(--dim); }
@@ -386,7 +386,7 @@ body.play { padding-bottom: 120px; }
 /* Browser build: a second TV tab (web/host-entry.js secondTabNote). */
 .second-tab-note { position: fixed; top: 0; left: 0; right: 0; z-index: 61; padding: 6px 16px; text-align: center; font-family: var(--body); font-size: max(28px, 2.6vh);
   background: var(--panel2); color: var(--accent); box-shadow: 0 3px 0 var(--edge); pointer-events: none; }
-.intro-card { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; background: rgba(10,8,20,0.88); animation: intro-in 0.4s steps(12) both; }
+.intro-card { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 55; display: grid; place-items: center; background: rgba(10,8,20,0.88); animation: intro-in 0.4s steps(12) both; }
 .intro-card.out { animation: intro-out 0.5s steps(15) forwards; }
 @keyframes intro-in { from { clip-path: inset(50% 0 50% 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes intro-out { to { clip-path: inset(50% 0 50% 0); } }
@@ -717,21 +717,21 @@ body.cb, body.cb[data-theme] { --accent2: #56b4e9; --danger: #d55e00; --accent: 
 
 /* ---------- Lantern Lake (tilt) ---------- */
 .ll-title { margin-bottom: 0.2em; }
-.ll-lake { width: min(100%, 128vh); aspect-ratio: 16 / 9; image-rendering: pixelated; box-shadow: 0 0 0 6px var(--edge), 0 0 0 12px var(--panel); display: block; margin: 1vh auto; }
+.ll-lake { width: min(100%, 128vh); height: auto; aspect-ratio: 16 / 9; /* old TVs: height:auto keeps the canvas's own 16:9 */ image-rendering: pixelated; box-shadow: 0 0 0 6px var(--edge), 0 0 0 12px var(--panel); display: block; margin: 1vh auto; }
 .ll-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 1vh 2.4vh; margin-top: 1vh; }
 .ll-chip { display: inline-flex; align-items: center; gap: 0.4em; border-bottom: 0.6vh solid var(--c); font-size: 3vh; }
 .ll-you { border-left: 8px solid var(--c); padding-left: 8px; }
 .ll-arrow { display: inline-block; color: var(--accent); }
-.ll-pad { position: relative; width: min(78vw, 46vh); aspect-ratio: 1; margin: 12px auto; border-radius: 50%; background: radial-gradient(circle, var(--panel2) 0 60%, var(--panel) 61%); box-shadow: 0 0 0 4px var(--edge); touch-action: none; user-select: none; -webkit-user-select: none; }
+.ll-pad { position: relative; width: min(78vw, 46vh); aspect-ratio: 1; /* phone only */ margin: 12px auto; border-radius: 50%; background: radial-gradient(circle, var(--panel2) 0 60%, var(--panel) 61%); box-shadow: 0 0 0 4px var(--edge); touch-action: none; user-select: none; -webkit-user-select: none; }
 .ll-knob { position: absolute; left: 35%; top: 35%; width: 30%; height: 30%; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px var(--edge), 0 0 24px var(--c); pointer-events: none; }
 .ll-modes { text-align: center; }
 
 /* ---------- Storm Watch (strategy) — its own full-screen mode ---------- */
 body.mode-storm { background: #06080f; }
 body.mode-storm #phase-view { position: relative; box-shadow: inset 0 0 0 1.4vh #3b2716, inset 0 0 0 2.2vh #1f140b, inset 0 0 8vh rgba(0,0,0,0.8); }
-body.mode-storm #phase-view::before { content: ''; position: absolute; inset: 2.2vh; pointer-events: none; background: linear-gradient(90deg, transparent calc(50% - 0.6vh), #3b2716 calc(50% - 0.6vh), #3b2716 calc(50% + 0.6vh), transparent calc(50% + 0.6vh)); opacity: 0.25; }
+body.mode-storm #phase-view::before { content: ''; position: absolute; top: 2.2vh; right: 2.2vh; bottom: 2.2vh; left: 2.2vh; pointer-events: none; background: linear-gradient(90deg, transparent calc(50% - 0.6vh), #3b2716 calc(50% - 0.6vh), #3b2716 calc(50% + 0.6vh), transparent calc(50% + 0.6vh)); opacity: 0.25; }
 .storm-rain { width: 100%; height: 100%; image-rendering: pixelated; }
-.storm-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.85; pointer-events: none; }
+.storm-bg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; opacity: 0.85; pointer-events: none; }
 .storm-board { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 2vh; padding: 3vh 4vh; }
 .storm-head { display: flex; align-items: center; gap: 3vh; flex-wrap: wrap; justify-content: center; }
 .storm-chores { list-style: none; display: flex; gap: 1.2vh; padding: 0; margin: 0; }
@@ -760,11 +760,11 @@ body.mode-storm #phase-view::before { content: ''; position: absolute; inset: 2.
 .storm-roles { display: flex; flex-wrap: wrap; justify-content: center; gap: 2vh; }
 .storm-role { display: flex; flex-direction: column; align-items: center; gap: 0.4vh; padding: 1.2vh 2vh; background: var(--panel); box-shadow: 0 0 0 4px var(--edge); animation: storm-flip 0.6s steps(18) both; font-size: 2.8vh; }
 .storm-role.raccoon { background: #4a1d2a; box-shadow: 0 0 0 4px var(--edge), 0 0 0 8px #ff6b6b; }
-.storm-transition { position: fixed; inset: 0; z-index: 60; background: #05070d; animation: storm-in 0.9s steps(27) both; }
+.storm-transition { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: #05070d; animation: storm-in 0.9s steps(27) both; }
 .storm-transition.out { animation: storm-out 0.6s steps(18) both; }
-.storm-transition .storm-rain { position: absolute; inset: 0; }
-.storm-bolt { position: absolute; inset: 0; background: #e8eeff; opacity: 0; animation: storm-bolt 0.4s steps(12) 0.9s both; }
-.storm-title { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 9vh; color: #e8eeff; text-shadow: 0.6vh 0.6vh 0 #2a3348; opacity: 0; animation: storm-title 1.2s steps(36) 1.1s both; }
+.storm-transition .storm-rain { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.storm-bolt { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #e8eeff; opacity: 0; animation: storm-bolt 0.4s steps(12) 0.9s both; }
+.storm-title { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 9vh; color: #e8eeff; text-shadow: 0.6vh 0.6vh 0 #2a3348; opacity: 0; animation: storm-title 1.2s steps(36) 1.1s both; }
 @keyframes storm-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes storm-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes storm-bolt { 0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: 0.1; } 60% { opacity: 0.9; } 100% { opacity: 0; } }
@@ -803,7 +803,8 @@ body.sending #game-view [data-send]:disabled, body.sending #game-view button[typ
 body.sending .playbar::after { content: 'Sending…'; font-size: 14px; color: var(--accent2, #f2c14e); margin-left: 6px; }
 
 /* ---- phone: no pinch/double-tap zoom, no text selection or long-press copy menu (they break taps) ---- */
-html:has(body.play), body.play { touch-action: manipulation; overscroll-behavior: none; }
+body.play { touch-action: manipulation; overscroll-behavior: none; }
+html:has(body.play) { touch-action: manipulation; overscroll-behavior: none; } /* phone only (own rule: an unknown :has() drops the whole rule) */
 body.play { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 body.play img { -webkit-user-drag: none; pointer-events: none; }
 body.play button img, body.play [data-send] img { pointer-events: none; }
@@ -818,7 +819,7 @@ body.host.in-game #stage { overflow: hidden; }
 .status-line { text-align: center; font-size: calc(18px * var(--phone-scale, 1)); padding: 4px 8px; background: #0008; color: #e8e3ff; }
 .status-line[data-kind="turn"] { color: var(--accent2, #f2c14e); }
 .status-line[hidden] { display: none; }
-.tv-loading { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 8, 20, 0.7); font-size: 4vh; color: #fff; }
+.tv-loading { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 8, 20, 0.7); font-size: 4vh; color: #fff; }
 .tv-loading[hidden] { display: none; }
 .tv-loading .spinner { width: 9vh; height: 9vh; }
 /* Campfire Consensus herd call */
@@ -828,7 +829,7 @@ body.host.in-game #stage { overflow: hidden; }
 .herd-pick .herd-opt.on::before { content: '🐑 '; }
 .answers li.herd { outline: 4px solid var(--accent, #f2c14e); }
 /* Browser build: saving the game for offline play (web/offline.js) */
-.cf-offline { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(10, 8, 20, 0.92); color: #fff; }
+.cf-offline { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(10, 8, 20, 0.92); color: #fff; }
 .cf-offline[hidden], .cf-offline-corner[hidden] { display: none; }
 .cf-offline-box { width: min(80vw, 640px); text-align: center; font-size: 22px; }
 .cf-offline-title { font-family: 'Press Start 2P', monospace; font-size: 18px; }
@@ -870,7 +871,7 @@ body.host.in-game #stage { overflow: hidden; }
 .mg-meter { height: 64px; margin: 12px 0; }
 .mg-field { height: 56vh; }
 .spot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4vh; max-width: 110vh; margin: 1vh auto; }
-.spot-cell { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center; background: #1e5f9e; box-shadow: 0 0 0 4px var(--edge); font-size: 8vh; }
+.spot-cell { position: relative; min-height: 14vh; aspect-ratio: 4 / 3; /* old TVs: min-height instead */ display: grid; place-items: center; background: #1e5f9e; box-shadow: 0 0 0 4px var(--edge); font-size: 8vh; }
 .spot-cell b { position: absolute; left: 0.8vh; top: 0.4vh; font-family: var(--pixel); font-size: 2.6vh; }
 .spot-cell img { width: 60%; image-rendering: pixelated; }
 .spot-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -879,7 +880,7 @@ body.host.in-game #stage { overflow: hidden; }
 .mg-big.paddle { min-height: 50vh; font-size: clamp(20px, 7vw, 40px); }
 .simon-pad .mg-big.simon { min-height: 24vh; background: var(--c); color: #14121f; font-size: clamp(16px, 5vw, 28px); }
 .simon-stage { position: relative; height: 40vh; width: 40vh; margin: 2vh auto; }
-.simon-spark { position: absolute; inset: 0; display: grid; place-items: center; background: var(--c); box-shadow: 0 0 0 6px var(--edge), 0 0 6vh var(--c); visibility: hidden; animation: simon-flash 0.6s steps(18); }
+.simon-spark { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: grid; place-items: center; background: var(--c); box-shadow: 0 0 0 6px var(--edge), 0 0 6vh var(--c); visibility: hidden; animation: simon-flash 0.6s steps(18); }
 .simon-spark span { font-family: var(--pixel); font-size: 4vh; color: #14121f; }
 @keyframes simon-flash { from { visibility: visible; } 90% { visibility: visible; } to { visibility: hidden; } }
 /* Porch Confessions */
@@ -904,8 +905,8 @@ body.host.in-game #stage { overflow: hidden; }
 /* In a game the timer bar floats over the top of the stage (it must not push the screen down). */
 body.host.in-game #timerbar { position: absolute; top: 8px; left: 32px; right: 32px; margin: 0; z-index: 2; }
 /* Big rooms (8+ players): long answer lists flow into two columns, doodles stay on one screen. */
-body.host .phase-view.in-game ol.answers:has(> li:nth-child(6)) { columns: 2; column-gap: 4vh; }
-body.host .phase-view.in-game ol.answers:has(> li:nth-child(6)) > li { break-inside: avoid; }
+@supports selector(:has(a)) { body.host .phase-view.in-game ol.answers:has(> li:nth-child(6)) { columns: 2; column-gap: 4vh; } }
+@supports selector(:has(a)) { body.host .phase-view.in-game ol.answers:has(> li:nth-child(6)) > li { break-inside: avoid; } } /* old TVs: one column, shrinkToStage fits it */
 body.host .doodle-grid { grid-template-columns: repeat(auto-fit, minmax(min(24vh, 220px), 1fr)); }
 body.host .doodle-grid img { max-height: 27vh; object-fit: contain; }
 
@@ -946,7 +947,7 @@ body.host.picking #phase-view { height: 100%; }
 /* Players: 4 across; the rows share the height there is (never more than 13vh each), so 12 fit as well as 2. */
 .game-menu .lobby-crew { flex: 1 1 0; min-height: 0; max-height: calc(var(--rows, 1) * 13.5vh); margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows, 1), minmax(0, 1fr)); gap: 0.8vh 0.4vw; overflow: hidden; }
 .game-menu .lobby-crew figure { display: flex; flex-direction: column; align-items: center; min-height: 0; font-size: clamp(10px, 1.6vh, 19px); line-height: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.game-menu .lobby-crew figure img { flex: 1 1 0; min-height: 0; width: auto; max-width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; margin: 0; }
+.game-menu .lobby-crew figure img { flex: 1 1 0; min-height: 0; width: auto; max-width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; margin: 0; } /* old TVs: the image's own square shape */
 .game-menu .lobby-crew .lobby-kick { top: 0; right: 0; font-size: clamp(9px, 1.3vh, 14px); }
 .game-menu .lobby-crew .hint { grid-column: 1 / -1; margin: 0; font-size: clamp(12px, 2vh, 22px); }
 .game-menu .lobby-crew.teams { grid-template-columns: 1fr 1fr; }
@@ -960,3 +961,22 @@ body.host.picking #phase-view { height: 100%; }
 .game-menu .settings .link-btn, .game-menu .settings .bot-tools button { font-size: inherit; padding: 0.2vh 0.5vw; min-height: 0; }
 .next-row { text-align: center; margin: 2vh 0 0; }
 .next-game-btn { font-size: clamp(12px, 2.2vh, 22px); padding: 1.4vh 2vw; }
+/* TV remote (host.js): the focused control gets a thick pixel ring you can see from the couch. */
+body.kbd :focus, body.kbd :focus-visible { outline: 6px solid var(--accent) !important; outline-offset: 4px; box-shadow: 0 0 0 14px rgba(255, 176, 46, 0.25); }
+/* 10-foot rule: secondary TV text ≥ 2.6vh / 28 px. The round tag and category banner were 17 px and
+   13 px (Cottage Lab scorecard, feel-plan.md). */
+/* The stage zoom (host.js shrinkToStage, --shrink) must not push these labels under 28 px: they grow by
+   1/zoom, and the zoom search counts that in. */
+body.host .round-tag { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); }
+body.host .cat-banner { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); padding: 0.8vh 1.4vh; }
+body.host .cat-card div { font-size: max(28px, 2.6vh); }
+body.host .podium .pts { font-size: max(28px, 2.6vh); }
+body.host .phase-view .hint { font-size: max(28px, 2.6vh); }
+body.host .vs-meta { font-size: calc(max(28px, 2.6vh) / var(--shrink, 1)); }
+.start-spicy { margin-top: 1.4vh; font-size: max(28px, 2.6vh); color: var(--danger); }
+.rate-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0 14px; }
+.rate-row .vote-btn { font-size: 34px; min-width: 72px; min-height: 64px; }
+.shy-btn[aria-pressed="true"] { box-shadow: 0 0 0 4px var(--accent2); }
+/* 🕊 Calm (TV setting): no lightning flash, no shaking; transitions stay as gentle fades. */
+body.calm .storm-bolt, body.calm canvas.confetti { display: none; }
+body.calm .shake { animation: none !important; }

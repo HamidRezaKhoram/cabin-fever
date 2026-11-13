@@ -71,7 +71,7 @@ function snapshot(room) {
   return {
     code: room.code, hostToken: room.hostToken, settings: room.settings, highlights: room.highlights || [],
     players: [...room.players.values()].filter((p) => !p.bot).map((p) => ({
-      id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null,
+      id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null, shy: !!p.shy,
     })),
     night: room.night ? { total: room.night.total, played: room.night.played, points: [...room.night.points] } : null,
     // A game that can be picked up again (todo 2.1: trivia, Closest Cast so far) saves where it is.
@@ -141,6 +141,7 @@ function restoreRooms() {
       const look = cleanLook(sp.look);
       if (look) p.look = look;
       if (sp.team === 'red' || sp.team === 'blue') p.team = sp.team;
+      if (sp.shy === true) p.shy = true;
       p.dropTimer = setTimeout(() => removePlayer(room, p.id), PLAYER_GRACE_MS);
       if (p.dropTimer.unref) p.dropTimer.unref();
       room.players.set(p.id, p);
@@ -186,6 +187,7 @@ function playersSummary(room) {
     avatar: p.avatar,
     team: room.settings.teams ? p.team || null : null,
     look: p.look || null, // character-maker look (rendered on clients)
+    shy: !!p.shy, // left out of votes and notes about people (🙈 on the TV)
     bot: !!p.bot,
     // Browser build: how the phone reaches the TV ('relay' = through the internet, slower).
     ...(p.socket && p.socket.data && p.socket.data.net ? { net: p.socket.data.net } : {}),
@@ -324,7 +326,7 @@ function playerPayload(room, p, base = baseState(room)) {
   return {
     ...shared,
     gameState: view.gameState,
-    you: { playerId: p.id, nickname: p.nickname, paceVotes: /** @type {('ready' | 'hurry' | 'skipq' | 'wrap')[]} */ (['ready', 'hurry', 'skipq', 'wrap']).filter((k) => room.pace[k].has(p.id)), ...view.you },
+    you: { playerId: p.id, nickname: p.nickname, shy: !!p.shy, rated: !!(room.rated && room.rated.has(p.id)), paceVotes: /** @type {('ready' | 'hurry' | 'skipq' | 'wrap')[]} */ (['ready', 'hurry', 'skipq', 'wrap']).filter((k) => room.pace[k].has(p.id)), ...view.you },
   };
 }
 
@@ -363,6 +365,7 @@ function makeGame(room, GameClass) {
 function startGame(room, GameClass) {
   if (room.game) room.game.destroy();
   for (const p of room.players.values()) p.score = 0;
+  room.rated = new Set();
   library.replayReset(); // RUMPUS_REPLAY=1: same seed → same questions (games/library.js)
   const game = makeGame(room, GameClass);
   console.log(`[room ${room.code}] starting game: ${GameClass.meta.id}`);
@@ -848,6 +851,29 @@ function connection(socket) {
     if (!p) return;
     if (msg && msg.look === null) p.look = null;
     else { const look = cleanLook(msg && msg.look); if (!look) return; p.look = look; }
+    broadcast(room);
+  });
+
+  // 🙈 "Leave me out": the player can't be the answer in votes about people or get Crush notes/dates.
+  socket.on('player:prefs', (msg) => {
+    const room = socket.data.room;
+    if (!room || socket.data.role !== 'player' || room.closed) return;
+    const p = room.players.get(socket.data.playerId);
+    if (!p || !msg || typeof msg.shy !== 'boolean') return;
+    p.shy = msg.shy;
+    broadcast(room); // (saves the room too)
+  });
+
+  // 😴 / 🙂 / 🤩 after a game: one tap per phone per game, kept in the house stats (/highlights).
+  socket.on('player:rate', (msg) => {
+    const room = socket.data.room;
+    if (!room || socket.data.role !== 'player' || room.closed || roomPhase(room) !== 'gameover' || !room.game) return;
+    const id = /** @type {any} */ (room.game.constructor).meta && /** @type {any} */ (room.game.constructor).meta.id;
+    const pid = /** @type {string} */ (socket.data.playerId);
+    room.rated = room.rated || new Set();
+    if (!id || room.rated.has(pid) || !msg || ![1, 2, 3].includes(msg.score)) return;
+    room.rated.add(pid);
+    stats.rate(String(id), msg.score);
     broadcast(room);
   });
 
