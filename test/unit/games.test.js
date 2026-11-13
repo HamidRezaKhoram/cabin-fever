@@ -258,8 +258,9 @@ test('Fish Tales: lies matching the truth are bounced; truth 1000, each fooled 5
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat']);
   h.emit('host:startGame', { gameId: 'fibbage' });
   await h.phase('fib-bluff');
-  by.Ann.submit({ text: ' truthy ' });
-  await until(() => by.Ann.state.you.collidedWithTruth, 'collision flagged');
+  // Cat stumbles onto the truth: bounced, and (no probing for free points) finding it won't score.
+  by.Cat.submit({ text: ' truthy ' });
+  await until(() => by.Cat.state.you.collidedWithTruth, 'collision flagged');
   by.Ann.submit({ text: 'Lie A' }); by.Ben.submit({ text: 'Lie B' }); by.Cat.submit({ text: 'Lie C' });
   await by.Ann.phase('fib-choose');
   const opt = (p, t) => p.state.gameState.options.find((o) => o.text === t).index;
@@ -278,6 +279,7 @@ test('Fish Tales: lies matching the truth are bounced; truth 1000, each fooled 5
   const rev = await h.phase('fib-reveal');
   assert.strictEqual(score('Ann'), 1000 + 2 * 500);
   assert.strictEqual(score('Ben'), 50, 'one like on Lie B');
+  assert.strictEqual(score('Cat'), 0, 'Cat fooled nobody (and bounced off the truth)');
   assert.strictEqual(rev.gameState.result.options.find((o) => o.text === 'Lie B').likes, 1);
 });
 
@@ -515,17 +517,25 @@ test('Porch Confessions: a prompt, secret TRUTH/LIE roles, everyone calls everyo
   const liars = ps.filter((p) => p.state.you.lie);
   assert.ok(liars.length >= 1 && liars.length <= 3, `${liars.length} liars of 4`);
   assert.ok(!JSON.stringify(h.state).includes('"lie":true'), 'the TV never knows who lies while writing');
-  // A truth-teller with nothing true to say may switch to lying.
+  // A truth-teller with nothing true to say may switch to lying — unless they're the last one telling
+  // the truth (a round of only lies isn't the game).
   const honest = ps.find((p) => !p.state.you.lie);
+  const truthers = ps.filter((p) => !p.state.you.lie).length;
   honest.submit({ switchToLie: true });
-  await until(() => honest.state.you.lie === true, 'switched');
+  if (truthers >= 2) await until(() => honest.state.you.lie === true, 'switched');
+  else {
+    await sleep(200);
+    assert.strictEqual(honest.state.you.lie, false, 'the last truth-teller can\'t switch');
+    assert.strictEqual(honest.state.you.canSwitch, false);
+  }
+  const switched = honest.state.you.lie === true;
   for (const p of ps) p.submit({ text: `${p.nickname}'s story` });
   const j = await h.phase('tt-judge');
   assert.strictEqual(j.gameState.answers.length, 4);
   await until(() => ps.every((p) => p.state.phase === 'tt-judge'), 'phones judging');
   assert.strictEqual(ps[0].state.gameState.answers.length, 3, "you don't judge your own");
   // Everyone calls every answer "real": right for truth-tellers' answers, fooled by the liars.
-  const isLiar = new Set([...liars, honest].map((p) => p.id));
+  const isLiar = new Set([...liars, ...(switched ? [honest] : [])].map((p) => p.id));
   for (const p of ps) p.submit({ calls: Object.fromEntries(ps.filter((x) => x !== p).map((x) => [x.id, true])) });
   await until(() => h.state.phase === 'tt-reveal' && h.state.gameState.done, 'all revealed', 15000);
   for (const p of ps) {

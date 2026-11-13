@@ -41,6 +41,8 @@ const ORDER = /** @type {SceneId[]} */ ((process.env.RUMPUS_LL_ORDER || '').spli
 
 /** @typedef {{ x: number, y: number, vx: number, vy: number }} Body */
 
+/** A tilt older than this is a phone that stopped sending (it resends every 200 ms). */
+const TILT_STALE_MS = 1000;
 /** @param {number} v @param {number} lo @param {number} hi */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -116,6 +118,8 @@ class LanternGame extends BaseGame {
     this.tiltSeq = new Map();
     /** @type {Map<string, number[]>} */
     this.tilt = new Map();
+    /** @type {Map<string, number>} when each phone's tilt last arrived */
+    this.tiltAt = new Map();
     /** @type {{ x: number, y: number, gold: boolean, ph: number }[]} */
     this.flies = [];
     this.moon = { x: W / 2, y: H / 2, r: MOON_R };
@@ -161,6 +165,7 @@ class LanternGame extends BaseGame {
       return [id, { x: W / 2 + Math.cos(a) * rx, y: H / 2 + Math.sin(a) * ry, vx: 0, vy: 0 }];
     }));
     this.tilt = new Map();
+    this.tiltAt = new Map();
     this.flies = [];
     this.gained = new Map();
     this.acc = new Map();
@@ -202,6 +207,17 @@ class LanternGame extends BaseGame {
       this.tiltSeq.set(id, n);
     }
     this.tilt.set(id, t);
+    this.tiltAt.set(id, Date.now());
+  }
+
+  /** What a phone is steering with now: its last tilt, unless that's stale — a phone that dropped or
+   * locked (phones resend every 200 ms) mustn't steer, pull the raft or earn on its last tilt forever.
+   * @param {string} id @returns {number[]} */
+  steer(id) {
+    const t = this.tilt.get(id);
+    const p = this.room.players.get(id);
+    if (!t || !p || p.connected === false || Date.now() - (this.tiltAt.get(id) || 0) > TILT_STALE_MS) return [0, 0];
+    return t;
   }
 
   /** @param {string} id @param {number} pts */
@@ -235,10 +251,9 @@ class LanternGame extends BaseGame {
     this.tickNo++;
     this.bumps = [];
     this.caught = [];
-    const zero = [0, 0];
     if (this.scene === 'raft') this.tickRaft();
     else {
-      for (const [id, b] of this.boats) if (!this.out.has(id)) stepBody(b, this.tilt.get(id) || zero, ACCEL, BOAT_R);
+      for (const [id, b] of this.boats) if (!this.out.has(id)) stepBody(b, this.steer(id), ACCEL, BOAT_R);
       const list = [...this.boats.entries()].filter(([id]) => !this.out.has(id));
       if (this.tagCooldown > 0) this.tagCooldown--;
       for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
@@ -354,7 +369,7 @@ class LanternGame extends BaseGame {
   tickRaft() {
     // Everyone's tilt, averaged, steers the one raft.
     const ids = this.playerIds();
-    const tilts = ids.map((id) => this.tilt.get(id) || [0, 0]);
+    const tilts = ids.map((id) => this.steer(id));
     const avg = [tilts.reduce((s, t) => s + t[0], 0) / Math.max(1, ids.length), tilts.reduce((s, t) => s + t[1], 0) / Math.max(1, ids.length)];
     const r = this.raft;
     if (stepBody(r, avg, RAFT_ACCEL, RAFT_R)) this.bumps.push({ x: r.x, y: r.y });
@@ -367,6 +382,8 @@ class LanternGame extends BaseGame {
         if (dot < 0) { r.vx -= 1.8 * dot * nx; r.vy -= 1.8 * dot * ny; this.bumps.push({ x: r.x - nx * RAFT_R, y: r.y - ny * RAFT_R }); }
       }
     }
+    // A rock near the shore can push the raft past it: keep it on the water.
+    r.x = clamp(r.x, RAFT_R, W - RAFT_R); r.y = clamp(r.y, RAFT_R, H - RAFT_R);
     while (this.lanterns.length < 3) this.spawnLantern();
     // Good paddling: pulling toward the nearest lantern earns a personal bonus.
     const near = this.lanterns.reduce((a, l) => (Math.hypot(l.x - r.x, l.y - r.y) < Math.hypot(a.x - r.x, a.y - r.y) ? l : a), this.lanterns[0]);
@@ -403,7 +420,7 @@ class LanternGame extends BaseGame {
       raft: this.scene === 'raft' ? [q(this.raft.x), q(this.raft.y), q(this.raft.vx), q(this.raft.vy)] : null,
       rocks: this.rocks.map((r) => [q(r.x), q(r.y), q(r.r)]),
       lanterns: this.lanterns.map((l) => [q(l.x), q(l.y)]),
-      tilts: this.order.map((id) => this.tilt.get(id) || [0, 0]),
+      tilts: this.order.map((id) => this.steer(id)),
       it: this.scene === 'tag' && this.it ? this.order.indexOf(this.it) : -1,
       pad: this.scene === 'sumo' ? [q(this.pad.x), q(this.pad.y), q(this.pad.r)] : null,
       out: this.scene === 'sumo' ? this.order.map((id) => (this.out.has(id) ? 1 : 0)) : null,
@@ -420,13 +437,24 @@ class LanternGame extends BaseGame {
     this.result = {
       scene: this.scene, name: SCENES[this.scene].name, haul: this.scene === 'raft' ? this.raftHaul : null,
       rows: this.playerIds().map((id) => ({ nickname: this.nick(id), gained: this.gained.get(id) || 0 })).sort((a, b) => b.gained - a.gained),
+      /** everyone on the top score (ties share the win) */
+      top: /** @type {string[]} */ ([]),
     };
+    const best = this.result.rows.length ? this.result.rows[0].gained : 0;
+    this.result.top = best > 0 ? this.result.rows.filter((x) => x.gained === best).map((x) => x.nickname) : [];
     this.phase = 'll-result';
     this.setTimer(RESULT_MS, () => this.nextRound(), false);
     this.push();
   }
 
-  onPlayerLeft() { /* their boat stops being drawn; the scene goes on */ }
+  /** Their boat leaves the lake: it no longer eats fireflies, holds "it" or bumps anyone off the pad.
+   * (`order` keeps its slot, so the TV's colours stay put.) @param {string} id */
+  onPlayerLeft(id) {
+    this.boats.delete(id);
+    this.tilt.delete(id);
+    this.out.delete(id);
+    if (this.it === id) this.it = this.playerIds()[0] || null;
+  }
 
   // --- views -------------------------------------------------------------------
 

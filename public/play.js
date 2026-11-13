@@ -445,7 +445,7 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
         <div class="vote-list">` +
         g.choices.map((/** @type {any} */ c, /** @type {any} */ i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-reveal':
-      return `<h1>${you.wasCorrect ? 'Nice! ✓' : 'Nope ✗'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>${you.streak > 1 ? `<p class="streak">🔥 ${you.streak} in a row!</p>` : ''}`;
+      return `<h1>${you.wasCorrect ? 'Nice! ✓' : you.answered ? 'Nope ✗' : 'No answer ⏱'}</h1><p class="prompt">${esc(g.choices[g.correct])}</p>${you.streak > 1 ? `<p class="streak">🔥 ${you.streak} in a row!</p>` : ''}`;
     case 'cah-submit':
       if (you.isCzar) {
         if (!you.nextOptions) return `<h1>You're the Card Czar</h1><p class="prompt">${esc(g.blackCard)}</p><p>Sit tight — everyone else is picking a card.</p>`;
@@ -473,7 +473,7 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
     case 'fib-bluff': {
       if (you.submitted) return waiting('Lie submitted');
       const oops = you.collidedWithTruth
-        ? '<p class="error">That\'s the real answer! Write a convincing fake instead.</p>' : '';
+        ? '<p class="error">That\'s the real answer! Write a convincing fake instead. (Finding it in the vote won\'t score this round.)</p>' : '';
       return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.prompt)}</h2>
         <p>Make up a fake answer to fool everyone:</p>${oops}
         <form class="text-form"><input name="text" maxlength="120" autocomplete="off" placeholder="Your convincing lie…" required>
@@ -481,7 +481,7 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
     }
     case 'fib-choose':
       if (you.picked) {
-        return `<h1>Guess locked in ✓</h1><p>While you wait: 👍 the answers that made you laugh (+50 each to whoever wrote them).</p><div class="vote-list">` +
+        return `<h1>Guess locked in ✓</h1><p>While you wait: 👍 the answers that made you laugh (+50 each to whoever wrote them, if it's a lie).</p><div class="vote-list">` +
           g.options.map((/** @type {any} */ o) => ((you.liked || []).includes(o.index)
             ? `<button class="vote-btn like-btn on" disabled>👍 ${esc(o.text)}</button>`
             : `<button class="vote-btn like-btn" data-send='{"like":${o.index}}'>${esc(o.text)}</button>`)).join('') + '</div>';
@@ -556,11 +556,14 @@ function render() {
           <button class="ghost-btn" data-team="${other}">Switch to ${other === 'red' ? '🔴 Red' : '🔵 Blue'}</button>`;
       })() : ''}`;
   } else if (state.phase === 'gameover') {
-    const top = g.standings && g.standings[0];
-    const rank = (g.standings || []).findIndex((/** @type {any} */ s) => s.nickname === you.nickname);
+    const list = /** @type {any[]} */ (g.standings || []);
+    const top = list[0];
+    const winners = top ? list.filter((s) => s.score === top.score) : [];
+    const mine = list.findIndex((s) => s.nickname === you.nickname);
+    const place = mine < 0 ? 0 : list[mine].place || mine + 1; // ties share the better placing
     html = '<h1>Game over</h1>' +
-      (top ? `<p class="prompt">${esc(top.nickname)} wins with ${top.score}!</p>` : '') +
-      `<p>You finished #${rank + 1} with <strong>${myScore()}</strong> points.</p>
+      (top ? `<p class="prompt">${winners.length > 1 ? `${winners.map((s) => esc(s.nickname)).join(' & ')} tie with ${top.score}!` : `${esc(top.nickname)} wins with ${top.score}!`}</p>` : '') +
+      `<p>You finished #${place}${place && list.filter((s) => (s.place || 0) === place).length > 1 ? ' (tied)' : ''} with <strong>${myScore()}</strong> points.</p>
       ${you.rated ? '<p class="hint">Thanks — noted! 🙏</p>' : `<p class="hint">How was that game?</p><div class="rate-row"><button class="vote-btn" data-rate="1" aria-label="boring">😴</button><button class="vote-btn" data-rate="2" aria-label="good">🙂</button><button class="vote-btn" data-rate="3" aria-label="great">🤩</button></div>`}
       <p>Watch the TV for the next game.</p>
       <p><a class="hl-link" href="/highlights?room=${esc(state.code)}" target="_blank">📸 Tonight's highlights &amp; hall of fame</a></p>`;

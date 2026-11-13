@@ -115,11 +115,16 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     return p ? playerUrl(p) : '';
   }
 
+  /** Points with their sign: +300, −200 (never "+-200"). @param {number} n */
+  function signed(n) {
+    return n < 0 ? '−' + Math.abs(n) : '+' + n;
+  }
+
   /** @param {{ nickname: string, gained: number }[] | null | undefined} list */
   function scoredList(list) {
     if (!list || !list.length) return '';
     return '<ul class="scored-list">' +
-      list.map((s) => `<li class="correct">${av(s.nickname)} ${esc(s.nickname)} +${s.gained}</li>`).join('') + '</ul>';
+      list.map((s) => `<li class="correct">${av(s.nickname)} ${esc(s.nickname)} ${signed(s.gained)}</li>`).join('') + '</ul>';
   }
 
   // Update `target`'s children to match `html` in place: unchanged nodes are
@@ -140,15 +145,19 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     // (moving a node restarts its CSS animation).
     const wanted = new Set(bn.filter((n) => n.nodeType === 1 && /** @type {Element} */ (n).hasAttribute('data-key')).map((n) => /** @type {Element} */ (n).getAttribute('data-key')));
     for (const c of [...(/** @type {Element} */ (a).children || [])]) if (c.hasAttribute('data-key') && !wanted.has(c.getAttribute('data-key'))) c.remove();
+    /** old keyed nodes already matched (two children with the same key each get their own node) */
+    const used = new Set();
     for (let i = 0; i < bn.length; i++) {
       const y = bn[i], x = a.childNodes[i];
       const key = y.nodeType === 1 ? /** @type {Element} */ (y).getAttribute('data-key') : null;
       if (key != null) {
-        const m = [...(/** @type {Element} */ (a).children || [])].find((c) => c.getAttribute('data-key') === key);
-        if (m) { if (m !== x) a.insertBefore(m, x || null); morphNode(m, y); } else a.insertBefore(y, x || null);
+        const m = [...(/** @type {Element} */ (a).children || [])].find((c) => c.getAttribute('data-key') === key && !used.has(c));
+        if (m) { used.add(m); if (m !== x) a.insertBefore(m, x || null); morphNode(m, y); } else { used.add(y); a.insertBefore(y, x || null); }
         continue;
       }
       if (!x) a.appendChild(y);
+      // An unkeyed node never takes over a keyed one (that would drop its key and rebuild it later).
+      else if (x.nodeType === 1 && /** @type {Element} */ (x).hasAttribute('data-key')) a.insertBefore(y, x);
       else morphNode(x, y);
     }
     while (a.childNodes.length > bn.length) /** @type {ChildNode} */ (a.lastChild).remove();
@@ -325,5 +334,5 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     } catch (e) { /* no haptics here */ }
   }
 
-  return { haptic, qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
+  return { haptic, qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, signed, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })())));

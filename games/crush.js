@@ -114,7 +114,8 @@ class CrushGame extends BaseGame {
     } else if (this.phase === 'cr-reply') {
       const note = this.notes.find((n) => n.id === payload.reply && n.to === id);
       const text = cleanText(payload.text, 80);
-      if (!note || note.reply || !text) return;
+      // Replies are the offered cards and emoji only (the phone shows nothing else).
+      if (!note || note.reply || !text || ![...REPLY_EMOJI, ...this.replyCards].includes(text)) return;
       note.reply = text;
       if (this.notes.every((n) => n.reply || !this.room.players.has(n.to))) this.toPick();
       else this.push();
@@ -207,22 +208,32 @@ class CrushGame extends BaseGame {
     }
     for (const [from, to] of this.winks) if (dated(from, to)) add(from, WINK_DATE);
     // Apply (×1/×2/×3 by evening), never below zero.
+    /** @type {Record<string, number>} what each score really moved (after the zero floor) */
+    const net = {};
     for (const [id, n] of Object.entries(pts)) {
       const p = this.room.players.get(id);
       if (!p) continue;
       const real = n * this.mult();
       const before = p.score;
       p.score = Math.max(0, p.score + real);
-      for (const pr of this.pairs) if (pr.a === id || pr.b === id) pr.gained[id] = p.score - before;
+      net[id] = p.score - before;
+      for (const pr of this.pairs) if (pr.a === id || pr.b === id) pr.gained[id] = net[id];
     }
-    for (const bo of this.bonuses) bo.gained = (bo.kind === 'matchmaker' ? MATCHMADE : GOSSIP_HIT) * this.mult();
+    // The TV's bonus line shows what the score really gained: the bonus, less anything the night cost
+    // them (staying in, the zero floor) — never more than the score moved.
+    for (const bo of this.bonuses) bo.gained = Math.max(0, Math.min((bo.kind === 'matchmaker' ? MATCHMADE : GOSSIP_HIT) * this.mult(), net[bo.by] || 0));
     this.phase = 'cr-reveal';
-    this.setTimer(REVEAL_STEP_MS * (this.pairs.length + 2), () => this.nextRound(), false);
+    // One step per date and per bonus line, plus the intro and the outro.
+    this.setTimer(REVEAL_STEP_MS * (this.pairs.length + this.bonuses.length + 2), () => this.nextRound(), false);
     this.push();
   }
 
   onPlayerLeft() {
-    if (this.phase === 'cr-pick' && this.room.players.size && this.allIn(this.picks)) this.reveal();
+    if (!this.room.players.size) return;
+    // Whoever was still to act may be the one who left: move on instead of waiting out the clock.
+    if (this.phase === 'cr-mingle' && this.playerIds().every((p) => this.sent(p) >= this.budget(p))) this.toReply();
+    else if (this.phase === 'cr-reply' && this.notes.every((n) => n.reply || !this.room.players.has(n.to))) this.toPick();
+    else if (this.phase === 'cr-pick' && this.allIn(this.picks)) this.reveal();
   }
 
   // --- views ---------------------------------------------------------------
@@ -266,7 +277,10 @@ class CrushGame extends BaseGame {
     // Privacy: a phone only ever sees notes it sent or received.
     const inbox = this.notes.filter((n) => n.to === id).map((n) => ({ id: n.id, from: anon(n.from) ? 'Secret admirer' : this.nick(n.from), text: n.text, reply: n.reply }));
     const outbox = this.notes.filter((n) => n.from === id).map((n) => ({ id: n.id, to: this.nick(n.to), text: n.text, reply: n.reply }));
-    const me = this.pairs.find((p) => p.a === id || p.b === id);
+    // You can be in two rows (your pick, and someone's one-sided pick of you): your own date wins —
+    // a mutual one first, then the one you asked for.
+    const mine = this.pairs.filter((p) => p.a === id || p.b === id);
+    const me = mine.find((p) => p.mutual) || mine.find((p) => p.a === id) || mine[0];
     const ag = this.agendas.get(id);
     const setup = this.setups.get(id);
     const pred = this.predictions.get(id);

@@ -38,11 +38,14 @@ class CAHGame extends BaseGame {
     this.blackDeck = this.rng.shuffleIn(BLACK.slice());
     this.hands = new Map(); // playerId -> [cardText]
     this.blackCard = null;
-    this.czarCursor = 0;
+    /** @type {string[]} everyone who has sat at the table, in order: the Czar goes round it */
+    this.seats = [];
     /** @type {string | null} */
     this.czarId = null;
+    /** @type {string | null} who picked the next prompt (kept even if they leave) */
+    this.nextPickBy = null;
     this.submissions = new Map(); // playerId -> cardText
-    /** @type {{ playerId: string, text: string }[]} shuffled at the czar phase */
+    /** @type {{ playerId: string, text: string, gone?: boolean }[]} shuffled at the czar phase (gone: its player left) */
     this.revealList = [];
     /** @type {{ playerId: string, nickname: string, text: string } | null} */
     this.winner = null;
@@ -83,21 +86,35 @@ class CAHGame extends BaseGame {
   // New prompt card, same Card Czar; played cards go back to their owners.
   skipQuestion() {
     if (this.phase !== 'cah-submit') return;
-    for (const [id, text] of this.submissions) {
-      const hand = this.hands.get(id);
-      if (hand) hand.push(text);
-    }
-    this.submissions = new Map();
+    this.returnCards();
     this.blackCard = this.drawBlack();
+    this.pickedBy = null; // a fresh card: nobody chose it
     this.skipSeq = (this.skipSeq || 0) + 1;
     this.setTimer(SUBMIT_MS, () => this.submitTimeUp());
     this.push();
   }
 
-  currentCzar() {
-    const ids = [...this.room.players.keys()];
-    if (ids.length === 0) return null;
-    return ids[this.czarCursor % ids.length];
+  /** The next Czar round the table: the seat after the last Czar that's still here. (A cursor over
+   * whoever is present skipped someone each time a player left.) */
+  nextCzar() {
+    for (const id of this.room.players.keys()) if (!this.seats.includes(id)) this.seats.push(id);
+    const n = this.seats.length;
+    if (!n) return null;
+    const from = this.czarId ? this.seats.indexOf(this.czarId) : -1;
+    for (let k = 1; k <= n; k++) {
+      const id = this.seats[(from + k + n) % n];
+      if (this.room.players.has(id)) return id;
+    }
+    return null;
+  }
+
+  /** Played cards go back to their owners (a round that never got judged). */
+  returnCards() {
+    for (const [id, text] of this.submissions) {
+      const hand = this.hands.get(id);
+      if (hand) hand.push(text);
+    }
+    this.submissions = new Map();
   }
 
   nextRound() {
@@ -112,10 +129,9 @@ class CAHGame extends BaseGame {
     this.round += 1;
     // The previous czar picked this round's prompt from three while they waited.
     const prev = this.nextOptions;
-    this.pickedBy = prev && this.nextPick != null ? this.czarNickname() : null;
+    this.pickedBy = prev && this.nextPick != null ? this.nextPickBy : null;
     this.blackCard = prev ? prev[this.nextPick != null ? this.nextPick : this.rng.int(0, prev.length - 1)] : this.drawBlack();
-    this.czarId = this.currentCzar();
-    this.czarCursor += 1;
+    this.czarId = this.nextCzar();
     this.nextOptions = this.round < this.totalRounds ? [this.drawBlack(), this.drawBlack(), this.drawBlack()] : null;
     this.nextPick = null;
     this.submissions = new Map();
@@ -144,6 +160,7 @@ class CAHGame extends BaseGame {
       const n = payload.nextBlack;
       if (this.nextOptions && this.nextPick == null && Number.isInteger(n) && n >= 0 && n < this.nextOptions.length) {
         this.nextPick = n;
+        this.nextPickBy = this.czarNickname();
         this.push();
       }
       return;
@@ -166,13 +183,13 @@ class CAHGame extends BaseGame {
         // Room favourite: one tap each, any card but your own.
         const f = payload.fav;
         if (this.favVotes.has(playerId) || !Number.isInteger(f) || f < 0 || f >= this.revealList.length) return;
-        if (this.revealList[f].playerId === playerId) return;
+        if (this.revealList[f].playerId === playerId || this.revealList[f].gone) return;
         this.favVotes.set(playerId, f);
         this.push();
         return;
       }
       const choice = payload.choice;
-      if (!Number.isInteger(choice) || choice < 0 || choice >= this.revealList.length) return;
+      if (!Number.isInteger(choice) || choice < 0 || choice >= this.revealList.length || this.revealList[choice].gone) return;
       this.pickWinner(choice);
     }
   }
@@ -186,7 +203,10 @@ class CAHGame extends BaseGame {
     this.favourites = [];
     this.phase = 'cah-czar';
     // The Czar is taking too long (or the TV pressed Skip): a card wins at random.
-    this.setTimer(CZAR_MS, () => { if (this.revealList.length) this.pickWinner(this.rng.int(0, this.revealList.length - 1)); else this.nextRound(); });
+    this.setTimer(CZAR_MS, () => {
+      const live = this.revealList.map((e, i) => (e.gone ? -1 : i)).filter((i) => i >= 0);
+      if (live.length) this.pickWinner(this.rng.pick(live)); else this.nextRound();
+    });
     this.push();
   }
 
@@ -214,12 +234,12 @@ class CAHGame extends BaseGame {
   awardFavourites() {
     /** @type {number[]} */
     const counts = this.revealList.map(() => 0);
-    for (const i of this.favVotes.values()) if (counts[i] != null) counts[i] += 1;
+    for (const [voter, i] of this.favVotes) if (counts[i] != null && this.room.players.has(voter)) counts[i] += 1;
     const top = Math.max(0, ...counts);
     this.favourites = [];
     if (!top) return;
     counts.forEach((n, i) => {
-      if (n !== top) return;
+      if (n !== top || this.revealList[i].gone) return;
       const entry = this.revealList[i];
       const fp = this.room.players.get(entry.playerId);
       if (fp) fp.score += FAV_POINTS * this.mult();
@@ -232,14 +252,23 @@ class CAHGame extends BaseGame {
     if (this.destroyed) return;
     this.hands.delete(playerId);
     this.submissions.delete(playerId);
+    this.favVotes.delete(playerId);
     if (this.room.players.size === 0) return;
-    if (playerId === this.czarId) {
-      // Czar vanished mid-round — no one left to judge, just move on.
+    // Their card can't win or be the favourite any more (points would go to nobody). It's marked,
+    // not removed: phones pick cards by index.
+    for (const e of this.revealList) if (e.playerId === playerId) e.gone = true;
+    const judging = this.phase === 'cah-submit' || this.phase === 'cah-czar';
+    if (playerId === this.czarId && judging) {
+      // Czar vanished mid-round — no one left to judge: everyone gets their card back, next round.
+      // (During the reveal the round is already decided: it plays out.)
+      this.returnCards();
       this.nextRound();
       return;
     }
-    if (this.phase === 'cah-submit' && this.submissions.size >= this.neededSubmissions()) {
-      this.finishSubmitting();
+    if (this.phase === 'cah-submit' && (this.room.players.size < 2 || this.submissions.size >= this.neededSubmissions())) {
+      if (this.room.players.size < 2) this.nextRound(); else this.finishSubmitting();
+    } else if (this.phase === 'cah-czar' && this.revealList.every((e) => e.gone)) {
+      this.nextRound(); // only the Czar is left with cards to judge: don't make them stare at nothing
     }
   }
 
@@ -267,10 +296,10 @@ class CAHGame extends BaseGame {
       case 'cah-czar':
         return {
           ...base,
-          submissions: this.revealList.map((/** @type {{ text: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text })),
-          favCount: this.favVotes.size,
+          submissions: this.revealList.map((s, i) => ({ index: i, text: s.text, gone: !!s.gone })).filter((s) => !s.gone).map(({ index, text }) => ({ index, text })),
+          favCount: [...this.favVotes.keys()].filter((id) => this.room.players.has(id)).length,
           // Who can still vote: everyone but the Czar who has someone else's card to pick.
-          favNeeded: [...this.room.players.keys()].filter((id) => id !== this.czarId && this.revealList.some((e) => e.playerId !== id)).length,
+          favNeeded: [...this.room.players.keys()].filter((id) => id !== this.czarId && this.revealList.some((e) => e.playerId !== id && !e.gone)).length,
         };
       case 'cah-reveal':
         return { ...base, winner: this.winner, favourites: this.favourites, favPoints: FAV_POINTS * this.mult() };
@@ -306,7 +335,7 @@ class CAHGame extends BaseGame {
           gameState: {
             ...base,
             // The Czar judges them all; everyone else sees them too, to pick a room favourite.
-            submissions: this.revealList.map((/** @type {{ text: string, playerId: string }} */ s, /** @type {number} */ i) => ({ index: i, text: s.text, mine: s.playerId === playerId })),
+            submissions: this.revealList.map((s, i) => ({ index: i, text: s.text, mine: s.playerId === playerId, gone: !!s.gone })).filter((s) => !s.gone).map(({ gone, ...rest }) => rest),
           },
           you: { isCzar: playerId === this.czarId, fav: this.favVotes.has(playerId) ? this.favVotes.get(playerId) : null },
         };

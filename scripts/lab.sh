@@ -15,4 +15,4 @@ trap '"$CT" rm -f cabin-fever-lab >/dev/null 2>&1 || true' EXIT
 for _ in $(seq 1 40); do curl -sf "http://localhost:$PORT/api/info" >/dev/null && break; sleep 0.5; done
 mkdir -p test/lab/out
 in_playwright cabin-fever test/lab 'node /pw/lab/run.js' --network host -e BASE_URL="http://localhost:$PORT" \
-  -e LAB_GAMES="${1:-}" -e LAB_PROFILE="${LAB_PROFILE:-}" -e LAB_NO_NET="${LAB_NO_NET:-}" -e LAB_OUT=/out -v "$PWD/test/lab/out":/out:z
+  -e LAB_GAMES="${1:-}" -e LAB_PROFILE="${LAB_PROFILE:-}" -e LAB_NO_NET="${LAB_NO_NET:-}" -e LAB_FLASH="${LAB_FLASH:-}" -e LAB_STRICT="${LAB_STRICT:-}" -e LAB_OUT=/out -v "$PWD/test/lab/out":/out:z

@@ -79,6 +79,7 @@ const allPages = t.pages;
     const r = await ctx.newPage();
     t.watch(r, 'remote-tv');
     try {
+      await r.goto(BASE + '/api/info'); // a page to go back to
       await r.goto(BASE + '/host?debug=1');
       await r.waitForSelector('#start-overlay:not([hidden])');
       await r.keyboard.press('Enter');
@@ -94,12 +95,20 @@ const allPages = t.pages;
         const after = await at();
         if (after.x !== before.x || after.y !== before.y) assert.ok(test(before, after), `${key} moved the focus that way (${JSON.stringify(before)} → ${JSON.stringify(after)})`);
       }
+      // Back once: stays (a stray press mid-round must not end the night) and says how to leave.
+      await r.keyboard.press('Backspace');
+      await r.waitForSelector('#remote-toast:not([hidden])');
+      assert.match(r.url(), /\/host/, 'still on the TV page');
       // OK on a switch toggles it (browsers only do that for Space).
       await r.focus('#set-spicy');
       const was = await r.isChecked('#set-spicy');
       await r.keyboard.press('Enter');
       await r.waitForFunction((w) => /** @type {HTMLInputElement} */ (document.getElementById('set-spicy')).checked !== w, was);
       await r.keyboard.press('Enter');
+      // Back twice within 3 s: leaves (back to the page before).
+      await r.keyboard.press('Backspace');
+      await r.keyboard.press('Backspace');
+      await r.waitForURL((u) => !/\/host/.test(String(u)), { timeout: 5000 });
     } finally { await ctx.close(); }
   });
 
@@ -530,6 +539,12 @@ const allPages = t.pages;
     }
     await tv.waitForFunction(() => /WINS|TIE|NOBODY/.test(document.getElementById('phase-view').textContent), null, { timeout: 30000 });
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'minigames');
+    // "NOBODY" can be a fair result (a wrong Campfire Sequence), but every phone's input must have
+    // registered: a result row of "— —" means the phone's taps never reached the game (how the
+    // Campfire Sequence bug slipped through, game-bug-reports.md).
+    const rows = await tv.evaluate(() => [...document.querySelectorAll('#phase-view ol li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()));
+    assert.ok(rows.length >= phones.length, `a result row per phone (${kind}): ${JSON.stringify(rows)}`);
+    assert.deepStrictEqual(rows.filter((r) => /— —/.test(r)), [], `every phone's ${kind} registered`);
     await shot(tv, '08-minigame-result');
   });
 

@@ -138,10 +138,6 @@ class BaseGame {
     return this.doubleFinal === false ? 1 : flow.stage(this.round, this.totalRounds);
   }
 
-  isFinal() {
-    return this.mult() > 1;
-  }
-
   // Majority voted to skip: replay this round with fresh content.
   skipQuestion() {
     if (!(this.skippablePhases || []).includes(this.phase)) return;
@@ -187,10 +183,13 @@ class BaseGame {
     return this.playerIds().every((id) => ex.has(id) || set.has(id));
   }
 
+  /** Final order. Ties share the better placing (900, 900, 100 → 1st, 1st, 3rd), like night points. */
   standings() {
-    return [...this.room.players.values()]
-      .map((p) => ({ nickname: p.nickname, score: p.score }))
+    const rows = [...this.room.players.values()]
+      .map((p) => ({ nickname: p.nickname, score: p.score, place: 0 }))
       .sort((a, b) => b.score - a.score);
+    rows.forEach((r, i) => { r.place = i > 0 && r.score === rows[i - 1].score ? rows[i - 1].place : i + 1; });
+    return rows;
   }
 
   gameOver() {

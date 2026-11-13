@@ -3,6 +3,20 @@
 One read-only review per game. Only HIGH-severity bugs were fixed (owner's call); everything else is
 listed here to decide on. Severity is the reviewer's; line numbers are as of Nov 11 2026.
 
+**Nov 13 2026: every MEDIUM and LOW below is fixed** (owner: "work on all of the bugs"), each checked in
+`test/unit/bug-reports.test.js` (all of them fail on the old code). Two judgement calls:
+- Fish Tales "liking the truth pays nothing": kept the 👍 on the truth — hiding it would tell the player
+  which one is true before the reveal. The phone now says likes pay "if it's a lie".
+- Closest Cast Double Down: it now pays only in the top half (rank < ⌊n/2⌋, at least 1st place), so
+  it's a real risk with 2–3 players; the phone text says so.
+Other choices worth knowing: Most Likely needs 2+ votes on a name to score (an even split scores
+nobody); Fish Tales probing the truth costs your truth points that round; Porch Confessions replays a
+round with fewer than 2 confessions once (and says so); Campfire Consensus merges nothing on a herd-vote
+tie; Storm Watch tells nobody (phones, board, narrator) a chore's fate until the cards have flipped;
+Loon Call's tune-up waits for the title card and plays no jingle or narrator over its clicks;
+"End this round" in Cottage Olympics ends the minigame and keeps Dock Balance / Woodpile Stack progress;
+standings share placings on ties (podium, phone, narrator).
+
 ## Cabin Superlatives (games/mostlikely.js) — no high
 - MEDIUM: phone always says "+100" (public/games.js:411); server awards 100×stakes (×2/×3 later). Send real gain in `you`.
 - LOW: an even split (1/1/1) scores every voter; self-votes allowed → all pick themselves = points every round (mostlikely.js:96). Award only when max ≥ 2.

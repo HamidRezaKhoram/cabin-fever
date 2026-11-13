@@ -19,8 +19,14 @@ const scope = new URL('./', self.location.href).href;
 /** @param {string} rel @param {string} h */
 const key = (rel, h) => scope + rel + '?v=' + h;
 
+/** A download that stalls (slow cottage Wi-Fi) is given up after this long; the file is then fetched
+ * the first time the game uses it. Without it one stuck file held the bar at 97% for good. */
+const TIMEOUT = /** @type {Record<string, number>} */ ({ phone: 20000, core: 20000, media: 90000 });
+/** How far each stage has got, re-sent to a page that asks again. @type {Record<string, [number, number]>} */
+const at = {};
 /** Tell every open page how far saving has got. @param {string} stage @param {number} done @param {number} total */
 async function progress(stage, done, total) {
+  at[stage] = [done, total];
   const all = await /** @type {any} */ (self).clients.matchAll({ includeUncontrolled: true, type: 'window' });
   for (const c of all) c.postMessage({ cf: 'progress', stage, done, total });
 }
@@ -36,10 +42,14 @@ async function save(list, stage) {
       const [rel, h] = next;
       try {
         if (!(await cache.match(key(rel, h)))) { // unchanged since the last visit: nothing to fetch
-          const res = await fetch(scope + rel, { cache: 'no-cache' });
-          if (res.ok) await cache.put(key(rel, h), res);
+          const stop = new AbortController();
+          const timer = setTimeout(() => stop.abort(), TIMEOUT[stage] || 20000);
+          try {
+            const res = await fetch(scope + rel, { cache: 'no-cache', signal: stop.signal });
+            if (res.ok) await cache.put(key(rel, h), res); // (the body streams in here: the timeout covers it)
+          } finally { clearTimeout(timer); }
         }
-      } catch (e) { /* offline or a hiccup: fetched on first use instead */ }
+      } catch (e) { /* offline, a hiccup or too slow: fetched on first use instead */ }
       done++;
       if (done % 3 === 0 || done === total) void progress(stage, done, total);
     }
@@ -122,7 +132,7 @@ self.addEventListener('message', (/** @type {any} */ e) => {
   // The TV: every game file (progress bar), then music + the voice in the background.
   if (e.data === 'cache-tv') {
     if (!tvSaving) tvSaving = save(Object.entries(FILES), 'core').then(() => save(Object.entries(MEDIA), 'media')).finally(() => { tvSaving = null; });
-    else void progress('core', 1, 1); // already saving: a second TV tab just needs to know the game is there
+    else for (const [stage, [done, total]] of Object.entries(at)) void progress(stage, done, total); // already saving: say how far
     e.waitUntil(tvSaving);
   }
 });

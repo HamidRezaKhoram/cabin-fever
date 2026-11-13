@@ -73,6 +73,9 @@ class MinigamesGame extends BaseGame {
     this.early = new Set();
     /** @type {Map<string, number>} number guesses / hold ms / skips / swats / balance % / stack height */
     this.entries = new Map();
+    /** @type {Map<string, number>} Dock Balance / Woodpile Stack so far (phones report as they go), used
+     * if the round is ended early — the final result only comes at the end */
+    this.partial = new Map();
     /** @type {Map<string, number>} throws used (skip) */
     this.throws = new Map();
     /** @type {Map<string, Set<number>>} mosquitoes swatted */
@@ -107,7 +110,7 @@ class MinigamesGame extends BaseGame {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
     this.mini = this.nextMini();
-    this.taps = new Map(); this.reactions = new Map(); this.early = new Set(); this.entries = new Map();
+    this.taps = new Map(); this.reactions = new Map(); this.early = new Set(); this.entries = new Map(); this.partial = new Map();
     this.throws = new Map(); this.swatted = new Map(); this.lastThrow = new Map();
     this.result = null; this.sub = ''; this.params = this.makeParams(this.mini);
     this.phase = 'mg-intro';
@@ -257,6 +260,7 @@ class MinigamesGame extends BaseGame {
         const v = Number(payload[this.mini]);
         const max = this.mini === 'balance' ? 100 : 40;
         if (!Number.isFinite(v) || v < 0 || v > max || this.entries.has(id)) return;
+        if (payload.partial === true) { this.partial.set(id, Math.round(v)); return; } // progress, not done
         this.entries.set(id, Math.round(v));
         if (!this.maybeDone()) this.push();
         return;
@@ -289,7 +293,8 @@ class MinigamesGame extends BaseGame {
       case 'tug': case 'paddle': return this.taps.get(id) || 0;
       case 'quickdraw': case 'spot': case 'simon': return this.reactions.has(id) ? /** @type {number} */ (this.reactions.get(id)) : null;
       case 'swat': return (this.swatted.get(id) || new Set()).size;
-      default: return this.entries.has(id) ? /** @type {number} */ (this.entries.get(id)) : null;
+      // Ended early ("End this round", Skip): what they had so far counts.
+      default: return this.entries.has(id) ? /** @type {number} */ (this.entries.get(id)) : this.partial.has(id) ? /** @type {number} */ (this.partial.get(id)) : null;
     }
   }
 
@@ -322,11 +327,12 @@ class MinigamesGame extends BaseGame {
       } else {
         const best = rank[0];
         const tied = best && rank.filter((r) => r[1] === best[1]).map((r) => this.teamOf(r[0]));
-        winnerTeam = !best ? 'tie' : new Set(tied).size > 1 ? 'tie' : /** @type {'red'|'blue'} */ (this.teamOf(best[0]));
+        // Nobody has a valid result: nobody scores (as in solo play) — not a 100-each "tie".
+        winnerTeam = !best ? null : new Set(tied).size > 1 ? 'tie' : /** @type {'red'|'blue'} */ (this.teamOf(best[0]));
       }
       for (const id of this.playerIds()) {
         const t = this.teamOf(id);
-        const pts = winnerTeam === 'tie' ? 100 : t === winnerTeam ? 200 : 0;
+        const pts = !winnerTeam ? 0 : winnerTeam === 'tie' ? 100 : t === winnerTeam ? 200 : 0;
         if (pts) gained.set(id, this.award(id, pts));
       }
     } else {
@@ -360,9 +366,21 @@ class MinigamesGame extends BaseGame {
 
   /** @param {string} id */
   onPlayerLeft(id) {
-    this.taps.delete(id); this.entries.delete(id); this.reactions.delete(id);
-    if (this.phase === 'mg-play' && this.room.players.size && !['tug', 'paddle', 'swat', 'skip'].includes(String(this.mini))) this.maybeDone();
+    this.taps.delete(id); this.entries.delete(id); this.reactions.delete(id); this.partial.delete(id);
+    if (this.phase !== 'mg-play' || !this.room.players.size) return;
+    if (this.mini === 'skip') { if (this.playerIds().every((x) => (this.throws.get(x) || 0) >= 3)) this.finish(); }
+    else if (!['tug', 'paddle', 'swat'].includes(String(this.mini))) this.maybeDone();
   }
+
+  /** "End this round" / the TV's Skip during play ends the minigame — not just its current step
+   * (a watch or wait step used to only move on to the next step). */
+  skip() {
+    if (this.phase === 'mg-play' && !this.destroyed) return this.finish();
+    super.skip();
+  }
+
+  /** Pace votes (hurry / end this round) start over at each step of a minigame. */
+  get subject() { return this.sub; }
 
   destroy() {
     super.destroy();

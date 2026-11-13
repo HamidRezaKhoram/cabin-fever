@@ -31,7 +31,7 @@ const SIDE_BETS = {
 };
 
 /** @typedef {{ prompt: string, authors: string[], answers: (string | null)[] }} Matchup */
-/** @typedef {{ text: string, nickname: string, votes: number, gained: number, shutout: boolean, pct: number, voters: string[], bet: { kind: string, label: string, won: boolean, pts: number } | null }} Side */
+/** @typedef {{ text: string, nickname: string, votes: number, gained: number, shutout: boolean, shutoutPts: number, pct: number, voters: string[], bet: { kind: string, label: string, won: boolean, pts: number } | null }} Side */
 
 class QuiplashGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
@@ -61,6 +61,11 @@ class QuiplashGame extends BaseGame {
     if (this.totalRounds < 2) return 1;
     const last = this.round === this.totalRounds && this.matchups && this.matchIndex === this.matchups.length - 1;
     return last ? 3 : 2;
+  }
+
+  /** The music's stage follows Quips' own stakes (×1, ×2, the last matchup ×3), not the generic one. */
+  base() {
+    return { ...super.base(), stage: this.mult() };
   }
 
   nextRound() {
@@ -154,14 +159,16 @@ class QuiplashGame extends BaseGame {
     if (m.answers[0] == null && m.answers[1] != null) { tally[1] = voterCount; tally[0] = 0; }
     if (m.answers[1] == null && m.answers[0] != null) { tally[0] = voterCount; tally[1] = 0; }
     const totalVotes = tally[0] + tally[1];
+    // A forfeit takes the votes (the points) but isn't a SHUTOUT: nobody chose it over anything.
+    const forfeit = m.answers[0] == null || m.answers[1] == null;
     /** @param {number} i @returns {Side} */
     const side = (i) => {
       const id = m.authors[i];
-      const shutout = totalVotes >= 2 && tally[i] === totalVotes;
+      const shutout = !forfeit && totalVotes >= 2 && tally[i] === totalVotes;
       const gained = this.award(id, tally[i] * POINTS_PER_VOTE + (shutout ? SHUTOUT_BONUS : 0));
       return {
         text: m.answers[i] ?? '(no answer — forfeit!)',
-        nickname: this.nick(id), votes: tally[i], gained, shutout,
+        nickname: this.nick(id), votes: tally[i], gained, shutout, shutoutPts: shutout ? SHUTOUT_BONUS * this.mult() : 0,
         pct: totalVotes ? Math.round((tally[i] / totalVotes) * 100) : 0,
         voters: [...this.votes].filter(([, c]) => c === i).map(([v]) => this.nick(v)),
         bet: null,
@@ -185,7 +192,7 @@ class QuiplashGame extends BaseGame {
     });
     sides.forEach((sd, i) => { if (sd.shutout) stats.feat(this.room, m.authors[i], 'shutouts'); });
     const best = tally[0] === tally[1] ? -1 : tally[0] > tally[1] ? 0 : 1;
-    if (best >= 0 && sides[best].votes > 0 && m.answers[best] != null) {
+    if (best >= 0 && sides[best].votes > 0 && !forfeit) {
       stats.highlight(this.room, { game: 'Campfire Quips', prompt: m.prompt, text: sides[best].text, by: sides[best].nickname,
         note: `${sides[best].votes} vote${sides[best].votes === 1 ? '' : 's'}${sides[best].shutout ? ' · SHUTOUT' : ''}` });
     }

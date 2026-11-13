@@ -48,17 +48,32 @@ jobs:
         run: for i in 1 2 3; do echo "== run $i =="; node --test --test-concurrency=4 --test-timeout=900000 test/unit/ || exit 1; done
 
   # Cottage Lab: every game on a simulated mid-range Samsung TV + 3 phones, scored per screen
-  # against the feel budgets (docs/future-features/feel-plan.md). Report only: it doesn't fail the run yet.
+  # against the feel budgets (docs/future-features/feel-plan.md). LAB_STRICT fails the run on what
+  # doesn't depend on machine speed (text size, tap targets, clipping, games ending); timing is
+  # report-only until calibrated on real devices with /bench.
   lab:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - name: Cottage Lab (all games)
-        run: ./scripts/lab.sh
+        run: LAB_STRICT=1 ./scripts/lab.sh
       - name: Scorecard
         if: always()
         run: if [ -f test/lab/out/report.md ]; then cat test/lab/out/report.md >> "$GITHUB_STEP_SUMMARY"; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: lab-report, path: test/lab/out/, if-no-files-found: ignore }
+
+  # Flash safety on what the TV really shows (canvas wipes, confetti, lightning): screenshots ~10×/s,
+  # WCAG 2.3.1 (≤ 3 flashes in any second). Its own run: screenshots slow the TV down.
+  lab-flash:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cottage Lab flash pass (all games)
+        run: LAB_FLASH=1 LAB_STRICT=1 ./scripts/lab.sh
+      - name: Scorecard
+        if: always()
+        run: if [ -f test/lab/out/report.md ]; then cat test/lab/out/report.md >> "$GITHUB_STEP_SUMMARY"; fi

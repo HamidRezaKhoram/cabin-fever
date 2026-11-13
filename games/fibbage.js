@@ -53,6 +53,8 @@ class FibbageGame extends BaseGame {
     this.bluffs = new Map();
     /** @type {Set<string>} players whose last try accidentally was the truth */
     this.collided = new Set();
+    /** @type {Set<string>} players who hit the truth while lying this round (no truth points for them) */
+    this.peeked = new Set();
     /** @type {Map<string, number>} playerId → option index */
     this.picks = new Map();
     /** @type {Map<number, Set<string>>} option index → who liked it */
@@ -95,6 +97,7 @@ class FibbageGame extends BaseGame {
     this.answer = q.answer;
     this.bluffs = new Map();
     this.collided = new Set();
+    this.peeked = new Set();
     this.picks = new Map();
     this.likes = new Map();
     this.options = [];
@@ -113,14 +116,16 @@ class FibbageGame extends BaseGame {
       if (!text) return;
       if (this.bluffs.has(playerId)) return; // one lie each
       if (normalize(text) === normalize(this.answer)) {
-        // They stumbled onto the real answer — reject it and nudge them.
+        // They stumbled onto the real answer — reject it and nudge them. But probing ("Audi? Toyota?")
+        // mustn't pay: once you've hit the truth here, finding it in the vote scores nothing this round.
         this.collided.add(playerId);
+        this.peeked.add(playerId);
         this.push();
         return;
       }
       this.collided.delete(playerId);
       this.bluffs.set(playerId, text);
-      if (this.bluffs.size >= this.room.players.size) {
+      if (this.allIn(this.bluffs)) {
         this.finishBluffing();
       } else {
         this.push();
@@ -141,7 +146,7 @@ class FibbageGame extends BaseGame {
       if (this.options[choice].authorIds.has(playerId)) return; // can't pick your own lie
       if (this.picks.has(playerId)) return; // one pick each
       this.picks.set(playerId, choice);
-      if (this.picks.size >= this.room.players.size) {
+      if (this.allIn(this.picks)) {
         this.finishChoosing();
       } else {
         this.push();
@@ -184,7 +189,7 @@ class FibbageGame extends BaseGame {
       if (opt.isTruth) {
         // Only the truth to pick from (yours was the only lie, or nobody lied): no free points.
         const choices = this.options.filter((o) => !o.authorIds.has(playerId)).length;
-        if (choices >= 2) add(playerId, TRUTH_POINTS);
+        if (choices >= 2 && !this.peeked.has(playerId)) add(playerId, TRUTH_POINTS);
       } else {
         for (const authorId of opt.authorIds) add(authorId, FOOL_POINTS);
       }
@@ -226,7 +231,7 @@ class FibbageGame extends BaseGame {
         pickedBy: pickedBy[i].map(nick),
         likes: (this.likes.get(i) || new Set()).size,
       })),
-      scored: [...gained.entries()]
+      scored: [...gained.entries()].filter(([id]) => this.room.players.has(id))
         .map(([id, n]) => ({ nickname: nick(id), gained: n }))
         .sort((a, b) => b.gained - a.gained),
     };
@@ -238,16 +243,17 @@ class FibbageGame extends BaseGame {
   /** @param {string} playerId */
   onPlayerLeft(playerId) {
     if (this.destroyed) return;
-    this.bluffs.delete(playerId);
+    // Their lie leaves with them while lies are still being written. A pick they already made stays:
+    // whoever's lie fooled them earned those points before they left.
+    if (this.phase === 'fib-bluff') this.bluffs.delete(playerId);
     this.collided.delete(playerId);
-    this.picks.delete(playerId);
     if (this.room.players.size === 0) return;
     if (this.phase === 'fib-bluff') {
-      if (this.bluffs.size >= this.room.players.size) this.finishBluffing();
+      if (this.allIn(this.bluffs)) this.finishBluffing();
     } else if (this.phase === 'fib-choose') {
       // A departing author may have been the only thing blocking someone's
       // pick; recount against the remaining players.
-      if (this.picks.size >= this.room.players.size) this.finishChoosing();
+      if (this.allIn(this.picks)) this.finishChoosing();
     }
   }
 

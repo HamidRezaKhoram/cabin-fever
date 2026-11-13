@@ -63,6 +63,20 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 
 ## Done
 
+- **Fix: website loading stuck at 97%** (Nov 13 2026, reported at the cottage): the service worker had no
+  timeout on a download, so one stalled file (music, the voice model) never finished; and the browser stops a
+  worker after ~5 min on one job, which left the save short of 100%. Now each download times out (20 s game
+  files, 90 s media; skipped files are fetched on first use), the TV re-asks after 20 s of no progress (a
+  stopped worker restarts and skips what's saved), gives up quietly after 5 tries, and the 60 s fail-safe
+  stays hidden. `test/unit/offline-sw.test.js` runs the worker with a download that never ends.
+- **Flake fixed: game-night bot test** (Nov 13 2026): failed when every bot scored 0 in a random game (no night
+  points, as designed). It now checks the rule exactly: night points > 0 ⇔ someone has scored.
+- **Cottage Lab pass 2** (Nov 13 2026): TV labels ≥ 28 px even when the stage zooms (`--unzoom` rule),
+  phone tap targets ≥ 48 px, crowded screens (6+ results) get a smaller headline and Closest's results
+  go in two columns, the TV marks the screen it shows (`#phase-view[data-phase]`), Back twice leaves via
+  `history.back()`. Lab fixes: number boxes get numbers, timed-out taps aren't counted, stale screens
+  aren't measured, `LAB_GAMES` keeps order and repeats.
+
 - **2.9 Game errors are shown** (Nov 11 2026): a throw in a game's timer, answer, skip or bot move sends the TV `room:event {type:'glitch'}` (at most one per 5 s) → banner "Something went wrong — press Skip, or End if it stays stuck". `glitch`/`safely` in `core/rooms.js`, `guarded(fn, what, game)` in `games/base.js`; `/api/debug/glitch` (debug only) fakes one for tests.
 - **2.5 Lite image** (Nov 11 2026): `docker build --target lite` (or `target: lite` in compose.yaml) leaves out the voice model and sets `RUMPUS_SERVER_VOICE=0`; the default build is unchanged (`full`).
 - **2.8 Second TV tab says so** (Nov 11 2026): `secondTabNote()` in `web/host-entry.js`; checked in `test/ui/pages.js` (offline check opens a second TV tab).

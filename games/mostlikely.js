@@ -57,6 +57,8 @@ class MostLikelyGame extends BaseGame {
     this.poolName = 'mostlikely';
     /** @type {PoolItem | null} */
     this.item = null;
+    /** @type {Map<string, number>} voter → points this round */
+    this.gainedBy = new Map();
   }
 
   start() { this.nextRound(); }
@@ -94,13 +96,18 @@ class MostLikelyGame extends BaseGame {
     const tally = new Map();
     for (const t of this.votes.values()) tally.set(t, (tally.get(t) || 0) + 1);
     const max = Math.max(0, ...tally.values());
-    const top = [...tally.entries()].filter(([, n]) => n === max && max > 0).map(([t]) => t);
+    // A crowd needs at least two votes on one name: an even 1/1/1 split (or everyone voting for
+    // themselves) isn't agreeing with anyone, so it scores nobody.
+    const top = [...tally.entries()].filter(([, n]) => n === max && max >= 2).map(([t]) => t);
     const topSet = new Set(top);
     /** @type {{ nickname: string, gained: number }[]} */
     const gained = [];
+    this.gainedBy = new Map(); // what each voter really got (×2/×3 later): the phone shows it
     for (const [voter, t] of this.votes) {
       if (topSet.has(t)) {
-        gained.push({ nickname: this.nick(voter), gained: this.award(voter, 100) });
+        const g = this.award(voter, 100);
+        this.gainedBy.set(voter, g);
+        gained.push({ nickname: this.nick(voter), gained: g });
       }
     }
     this.result = {
@@ -119,8 +126,12 @@ class MostLikelyGame extends BaseGame {
   /** @param {string} id */
   onPlayerLeft(id) {
     if (this.phase !== 'ml-vote') return;
-    for (const [v, t] of this.votes) if (v === id || t === id) this.votes.delete(v);
+    let freed = false;
+    for (const [v, t] of this.votes) {
+      if (v === id || t === id) { this.votes.delete(v); if (v !== id) freed = true; }
+    }
     if (this.room.players.size && this.allIn(this.votes)) this.reveal();
+    else if (freed) this.push(); // their pick left: those phones get the ballot back to vote again
   }
 
   targets() {
@@ -142,7 +153,7 @@ class MostLikelyGame extends BaseGame {
     const mine = this.votes.get(id);
     return {
       gameState: { prompt: this.prompt, result: this.result },
-      you: { withCrowd: mine != null && !!this.result && this.result.topIds.includes(mine), picked: mine != null },
+      you: { withCrowd: mine != null && !!this.result && this.result.topIds.includes(mine), picked: mine != null, gained: this.gainedBy.get(id) || 0 },
     };
   }
 }

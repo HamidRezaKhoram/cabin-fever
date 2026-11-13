@@ -5,6 +5,8 @@
  *   await probe(page);                               // before goto: long tasks, input delay, DOM quiet
  *   const m = await take(page);                      // { longTasks, events, quietMaxMs, heapMb } and reset
  *   const ms = await tapLatency(page, '#btn');       // click → visible change → painted (ms)
+ *   await audioProbe(page); … await takeAudio(page)  // peak/loudness dBFS + clipping of what it plays
+ *   await heapMb(page)                              // live heap after a forced GC (leak checks)
  *   const stop = await cpuProfile(page); …; const top = await stop();  // top self-time functions
  *   stats([..]) → { n, median, p95, max }
  * Numbers from a throttled desktop are an estimate of the real device: calibrate the CPU factor
@@ -73,6 +75,62 @@ function tapLatency(page, sel, timeoutMs = 2000) {
   }), [sel, timeoutMs]);
 }
 
+/** Listen to everything the page plays: an analyser is wired beside the speakers (every connect() to
+ * an AudioContext's destination also feeds it), sampled 10×/s. Call before page.goto.
+ * @param {any} page */
+async function audioProbe(page) {
+  await page.addInitScript(() => {
+    /** @type {any} */ const A = { peak: 0, sumSq: 0, n: 0, clipped: 0 };
+    /** @type {any} */ (window).__audio = A;
+    const taps = new WeakMap();
+    const orig = AudioNode.prototype.connect;
+    /** @this {AudioNode} @param {any} dest @param {...any} rest */
+    function connect(dest, ...rest) {
+      const out = /** @type {any} */ (orig).call(this, dest, ...rest);
+      try {
+        if (dest && dest === this.context.destination) {
+          let an = taps.get(this.context);
+          if (!an) {
+            an = this.context.createAnalyser(); an.fftSize = 2048; taps.set(this.context, an);
+            const buf = new Float32Array(an.fftSize);
+            setInterval(() => {
+              an.getFloatTimeDomainData(buf);
+              let pk = 0, sq = 0;
+              for (const v of buf) { const a = Math.abs(v); if (a > pk) pk = a; sq += v * v; }
+              if (pk > 1e-4) { A.peak = Math.max(A.peak, pk); A.sumSq += sq / buf.length; A.n++; if (pk >= 0.999) A.clipped++; }
+            }, 100);
+          }
+          /** @type {any} */ (orig).call(this, an);
+        }
+      } catch (e) { /* measuring must never break the page */ }
+      return out;
+    }
+    /** @type {any} */ (AudioNode.prototype).connect = connect;
+  });
+}
+/** Read and reset what audioProbe heard: loudest peak and average loudness (dBFS), clipped samples.
+ * @param {any} page */
+function takeAudio(page) {
+  return page.evaluate(() => {
+    /** @type {any} */ const A = /** @type {any} */ (window).__audio;
+    if (!A || !A.n) return { peakDb: null, rmsDb: null, clipped: 0 };
+    const db = (/** @type {number} */ x) => Math.round(20 * Math.log10(Math.max(x, 1e-6)) * 10) / 10;
+    const out = { peakDb: db(A.peak), rmsDb: db(Math.sqrt(A.sumSq / A.n)), clipped: A.clipped };
+    A.peak = 0; A.sumSq = 0; A.n = 0; A.clipped = 0;
+    return out;
+  });
+}
+
+/** Live JS heap in MB after a full garbage collection (what the page really keeps), via CDP.
+ * @param {any} page */
+async function heapMb(page) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('HeapProfiler.collectGarbage');
+  const { usedSize } = await cdp.send('Runtime.getHeapUsage');
+  await cdp.detach();
+  return Math.round((usedSize / 1048576) * 10) / 10;
+}
+
 /** Start a CPU profile; the returned function stops it and gives the top self-time functions.
  * @param {any} page @param {number} [top] */
 async function cpuProfile(page, top = 20) {
@@ -102,4 +160,4 @@ function stats(xs) {
   return { n: s.length, median: Math.round(q(0.5)), p95: Math.round(q(0.95)), max: Math.round(s.length ? s[s.length - 1] : 0) };
 }
 
-module.exports = { device, probe, take, tapLatency, cpuProfile, stats };
+module.exports = { device, probe, take, tapLatency, cpuProfile, heapMb, audioProbe, takeAudio, stats };

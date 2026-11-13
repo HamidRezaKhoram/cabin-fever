@@ -11,6 +11,7 @@ const { BaseGame, guarded } = require('./base');
 
 const env = (/** @type {string} */ k, /** @type {number} */ d) => Number(process.env[k] || d);
 const LEAD_MS = env('RUMPUS_LC_LEAD_MS', 1800);      // time for every screen to get the schedule
+const INTRO_MS = env('RUMPUS_LC_INTRO_MS', 4500);    // the TV's title card, before the tune-up clicks
 const RESULT_MS = env('RUMPUS_LC_RESULT_MS', 5000);
 const GRACE_MS = env('RUMPUS_LC_GRACE_MS', 600);     // late taps/batches after a window closes
 const TEMPO = env('RUMPUS_LC_TEMPO', 1);              // tests/playtest speed everything up
@@ -109,12 +110,12 @@ function calibrate(clicks, taps) {
  * A player's own call: taps → 8th-note steps of the bar starting at `barStart`.
  * @param {number[]} taps @param {number} barStart @param {number} barMs
  */
-function quantise(taps, barStart, barMs) {
-  const step = barMs / STEPS;
+function quantise(taps, barStart, barMs, steps = STEPS) {
+  const step = barMs / steps;
   const out = new Set();
   for (const t of taps) {
     const s = Math.round((t - barStart) / step);
-    if (s >= 0 && s < STEPS) out.add(s);
+    if (s >= 0 && s < steps) out.add(s);
   }
   return [...out].sort((a, b) => a - b);
 }
@@ -170,12 +171,12 @@ class LoonCallGame extends BaseGame {
 
   // --- schedules -------------------------------------------------------------
 
-  /** @param {Omit<Schedule, 'startAt' | 'barMs' | 'endAt' | 'phrases' | 'clicks' | 'beats' | 'steps' | 'feel'> & { phrases?: number[][], clicks?: number, beats?: number, steps?: number, feel?: string }} spec */
+  /** @param {Omit<Schedule, 'startAt' | 'barMs' | 'endAt' | 'phrases' | 'clicks' | 'beats' | 'steps' | 'feel'> & { phrases?: number[][], clicks?: number, beats?: number, steps?: number, feel?: string, lead?: number }} spec */
   schedule(spec) {
     const bpm = spec.bpm * TEMPO;
     const beats = spec.beats || 4, steps = spec.steps || STEPS;
     const barMs = (beats * 60000) / bpm;
-    const startAt = Date.now() + LEAD_MS;
+    const startAt = Date.now() + LEAD_MS + (spec.lead || 0);
     const beat = barMs / beats;
     const firstBar = startAt + spec.countIn * barMs;
     /** @type {Phrase[]} */
@@ -202,7 +203,8 @@ class LoonCallGame extends BaseGame {
 
   tune() {
     this.phase = 'lc-tune';
-    const s = this.schedule({ kind: 'tune', name: TUNE.name, bpm: TUNE.bpm, root: 392, countIn: 0, clicks: TUNE.clicks, caller: null });
+    // The first clicks wait for the title card to go (they used to start under it).
+    const s = this.schedule({ kind: 'tune', name: TUNE.name, bpm: TUNE.bpm, root: 392, countIn: 0, clicks: TUNE.clicks, caller: null, lead: INTRO_MS });
     this.setTimer(s.endAt + GRACE_MS - Date.now(), () => this.endTune(), false);
     this.push();
   }
@@ -246,7 +248,10 @@ class LoonCallGame extends BaseGame {
   }
 
   compose() {
-    const ids = this.playerIds();
+    // A phone that's asleep (or a player who's gone) can't write a call: pick from the awake ones.
+    const all = this.playerIds();
+    const awake = all.filter((id) => (this.player(id) || { connected: false }).connected !== false);
+    const ids = awake.length ? awake : all;
     const fresh = ids.filter((id) => !this.callers.has(id));
     const pool = fresh.length ? fresh : ids;
     const low = Math.min(...pool.map((id) => (this.player(id) || { score: 0 }).score));
@@ -255,8 +260,10 @@ class LoonCallGame extends BaseGame {
     this.composer = caller;
     const song = this.current();
     this.phase = 'lc-compose';
-    // One bar of count-in clicks, then the caller taps their call over the second bar.
-    const s = this.schedule({ kind: 'call', name: 'Your Call', bpm: song.bpm, root: song.root, countIn: 0, clicks: 8, caller });
+    // One bar of count-in clicks, then the caller taps their call over the second bar — in the
+    // song's own metre (a waltz is 3 beats a bar), on an 8th-note grid.
+    const beats = song.beats;
+    const s = this.schedule({ kind: 'call', name: 'Your Call', bpm: song.bpm, root: song.root, beats, steps: beats * 2, countIn: 0, clicks: beats * 2, caller });
     this.setTimer(s.endAt + GRACE_MS - Date.now(), () => this.callSong(), false);
     this.push();
   }
@@ -265,11 +272,11 @@ class LoonCallGame extends BaseGame {
     const s = /** @type {Schedule} */ (this.sched);
     const caller = /** @type {string} */ (this.composer);
     const recStart = s.startAt + s.barMs; // the second bar of clicks
-    let steps = quantise((this.taps.get(caller) || []).map((t) => t - (this.calib.get(caller) || 0)), recStart, s.barMs);
-    if (steps.length < 2) steps = [0, 2, 4, 6]; // too shy: the loon helps out
+    let steps = quantise((this.taps.get(caller) || []).map((t) => t - (this.calib.get(caller) || 0)), recStart, s.barMs, s.steps);
+    if (steps.length < 2) steps = Array.from({ length: s.beats }, (_, i) => i * 2); // too shy: the loon helps out (one per beat)
     const song = this.current();
     this.phase = 'lc-song';
-    const next = this.schedule({ kind: 'call', name: `${this.nick(caller)}'s Call`, bpm: song.bpm, root: song.root, countIn: 1, clicks: 4, phrases: Array(CALL_REPEATS).fill(steps), caller });
+    const next = this.schedule({ kind: 'call', name: `${this.nick(caller)}'s Call`, bpm: song.bpm, root: song.root, beats: s.beats, steps: s.steps, countIn: 1, clicks: s.beats, phrases: Array(CALL_REPEATS).fill(steps), caller });
     this.setTimer(next.endAt + GRACE_MS + 100 - Date.now(), () => this.results(), false);
     this.push();
   }
@@ -364,7 +371,12 @@ class LoonCallGame extends BaseGame {
 
   results() {
     const s = /** @type {Schedule} */ (this.sched);
-    s.phrases.forEach((_, i) => this.scorePhrase(i));
+    // Score the bars that were played. Ended early (Skip, "end the round"): the bars that never came
+    // aren't counted as all-miss — that made everyone "Off the beat".
+    const now = Date.now();
+    this.phraseTimers.forEach(clearTimeout); // (an unplayed bar's timer must not score it after this)
+    this.phraseTimers = [];
+    s.phrases.forEach((p, i) => { if (p.echoAt + s.barMs <= now) this.scorePhrase(i); });
     const rows = this.playerIds().map((id) => {
       const js = [...(this.judged.get(id) || /** @type {Map<number, ReturnType<typeof judge>>} */ (new Map())).values()];
       const notes = js.reduce((n, j) => n + j.hits.length, 0);

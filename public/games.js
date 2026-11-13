@@ -9,7 +9,7 @@
 'use strict';
 
 (function () {
-  const { esc, register, scoredList, av } = window.Rumpus;
+  const { esc, register, scoredList, av, signed } = window.Rumpus;
   const T = '<span class="timer"></span>';
 
   /** @param {{ round?: number, totalRounds?: number }} g @param {string} [label] */
@@ -60,10 +60,10 @@
             ${esc(sd.text)}
             <div class="vs-meta">${av(sd.nickname, 'avatar')} ${esc(sd.nickname)}</div>
             <div class="vs-bar"><i style="width:${sd.pct}%"></i></div>
-            <div class="vs-meta"><b>${sd.pct}%</b> · ${sd.votes} vote${sd.votes === 1 ? '' : 's'} · +${sd.gained}
+            <div class="vs-meta"><b>${sd.pct}%</b> · ${sd.votes} vote${sd.votes === 1 ? '' : 's'} · ${signed(sd.gained)}
               <span class="voters">${sd.voters.map((/** @type {any} */ n) => av(n)).join('')}</span></div>
-            ${sd.shutout ? '<span class="sweep">SHUTOUT! +250</span>' : ''}
-            ${sd.bet ? `<div class="vs-meta">🎲 ${esc(sd.bet.label)}: ${sd.bet.won ? `won +${sd.bet.pts}` : `lost ${sd.bet.pts}`}</div>` : ''}
+            ${sd.shutout ? `<span class="sweep">SHUTOUT! +${sd.shutoutPts || 250}</span>` : ''}
+            ${sd.bet ? `<div class="vs-meta">🎲 ${esc(sd.bet.label)}: ${sd.bet.won ? `won +${Math.abs(sd.bet.pts)}` : `lost ${Math.abs(sd.bet.pts)}`}</div>` : ''}
           </div>`).join('')}
         </div>`;
     },
@@ -89,7 +89,7 @@
       if (you.side >= 0) {
         const me = r.sides[you.side];
         return `<h1>${r.winner === you.side ? 'You won the matchup! 🏆' : r.winner === -1 ? 'Dead heat!' : 'Ouch. 💀'}</h1>
-          <p class="prompt">${me.pct}% of the votes · +${me.gained}</p>${me.shutout ? '<p class="sweep">SHUTOUT!</p>' : ''}`;
+          <p class="prompt">${me.pct}% of the votes · ${signed(me.gained)}</p>${me.shutout ? '<p class="sweep">SHUTOUT!</p>' : ''}`;
       }
       return watchTv();
     },
@@ -306,6 +306,8 @@
           c.strokeStyle = isIn ? '#7ed957' : '#ffd23f'; c.lineWidth = 8; c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
           if (finger) { c.fillStyle = '#fff'; c.fillRect(finger.x - 5, finger.y - 5, 10, 10); }
           if (frames % 10 === 0) label.textContent = `${frames ? Math.round((100 * inside) / frames) : 0}% inside`;
+          // Tell the server how it's going about once a second: if the round is ended early, this counts.
+          if (!sent && frames && frames % 60 === 0) api.send({ balance: Math.round((100 * inside) / frames), partial: true });
           if (g.endsAt && now() > g.endsAt - 400) send();
         }));
         const move = (/** @type {PointerEvent} */ e) => { const r = bal.getBoundingClientRect(); finger = { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -383,6 +385,7 @@
           label.textContent = `${pile.length - 1} logs`;
           window.Rumpus.haptic(Math.abs(r - l - top.w) < 0.01 ? 30 : 15);
           if (pile.length > 40) finish();
+          else api.send({ stack: pile.length - 1, partial: true }); // counts if the round is ended early
         });
       }
     },
@@ -400,7 +403,7 @@
       const max = r.tally.length ? r.tally[0].votes : 1;
       return `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
         <div class="bars">${r.tally.map((/** @type {any} */ t, /** @type {any} */ i) => `
-          <div class="bar-row ${r.winners.includes(t.nickname) ? 'winner' : ''}" style="animation-delay:${(r.tally.length - 1 - i) * 0.6}s">
+          <div class="bar-row ${(r.topIds || []).includes(t.id) ? 'winner' : ''}" style="animation-delay:${(r.tally.length - 1 - i) * 0.6}s">
             <span class="bar-label">${av(t.nickname, 'avatar')} ${esc(t.nickname)}</span>
             <span class="bar" style="width:${(t.votes / max) * 100}%"></span>
             <span class="bar-n">${t.votes}</span>
@@ -416,7 +419,7 @@
           g.targets.map((/** @type {any} */ t) => sendBtn({ target: t.id }, av(t.nickname) + ' ' + esc(t.nickname) + (t.id === you.playerId ? ' (you)' : ''))).join('') +
           '</div>';
       }
-      return `<h1>${you.withCrowd ? 'With the crowd! +100' : you.picked ? 'Against the grain ✗' : 'No vote'}</h1>
+      return `<h1>${you.withCrowd ? `With the crowd! +${you.gained || 100}` : you.picked ? 'Against the grain ✗' : 'No vote'}</h1>
         <p class="prompt">${g.result.winners.map(esc).join(' & ') || '—'}</p>`;
     },
   });
@@ -498,17 +501,17 @@
       const r = g.result;
       return `${roundTag(g)}<h1 class="prompt">${esc(g.question)}</h1>
         <p class="big-answer">${fmt(r.answer)} ${esc(r.unit)}</p>
-        <ol class="answers results suspense">${r.list.map((/** @type {any} */ e, /** @type {any} */ i) => `
+        <ol class="answers results suspense${r.list.length > 5 ? ' two-col' : ''}">${r.list.map((/** @type {any} */ e, /** @type {any} */ i) => `
           <li class="${e.rank === 0 ? 'winner' : ''}" style="animation-delay:${(r.list.length - 1 - i) * 0.6 + 0.8}s">${av(e.nickname)} ${esc(e.nickname)}: ${fmt(e.guess)}${e.exact ? ' <span class="sweep">BULLSEYE!</span>' : ''}${e.double ? ' <span class="streak">🎲</span>' : ''}
             <span class="byline">(off by ${fmt(+e.off.toFixed(3))})</span>
-            ${e.gained ? `<span class="votes">+${e.gained}</span>` : ''}</li>`).join('')}</ol>`;
+            ${e.gained ? `<span class="votes">${signed(e.gained)}</span>` : ''}</li>`).join('')}</ol>`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
       if (s.phase === 'cg-guess') {
         if (you.submitted) return waiting('Guess locked');
         return `${roundTag(g)}<h2 class="prompt">${esc(g.question)}</h2>
-          ${you.canDouble ? '<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if you place · −200 if not (once per game)</button>' : ''}
+          ${you.canDouble ? '<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if you finish in the top half · −200 if not (once per game)</button>' : ''}
           <form class="number-form">
             <input name="number" type="text" inputmode="decimal" pattern="-?[0-9.,]+" autocomplete="off"
               placeholder="Your guess${g.unit ? ' (' + esc(g.unit) + ')' : ''}" required>
@@ -518,7 +521,7 @@
       const m = you.mine;
       return `<h1>${m ? (m.rank === 0 ? 'Closest! 🎯' : `#${m.rank + 1}`) : 'No guess'}</h1>
         <p class="prompt">Answer: ${fmt(g.result.answer)} ${esc(g.result.unit)}</p>
-        ${m ? `<p>You said ${fmt(m.guess)}${m.gained ? ` — +${m.gained}` : ''}</p>` : ''}`;
+        ${m ? `<p>You said ${fmt(m.guess)}${m.gained ? ` — ${signed(m.gained)}` : ''}</p>` : ''}`;
     },
   });
 
@@ -547,6 +550,7 @@
           <p class="big-sub">Real or made up? Call each one on your phone ${T}</p>${count(g.judgedCount, g.totalPlayers, 'calls in')}${waitingRow(g.waitingOn, 'deciding')}`;
       }
       const c = g.current;
+      if (g.empty) return `${head}<p class="big-sub">Not enough confessions came in — new prompt coming up!</p>`;
       if (!c || g.done) {
         return `${head}<ol class="answers results tt-done">${(g.revealed || []).map((/** @type {any} */ x) => `<li class="${x.lie ? 'lie' : 'winner'}">${av(x.author)} ${esc(x.author)}: ${esc(x.text)} <span class="votes">${x.lie ? '🤥 LIE' : '✅ TRUE'}</span></li>`).join('')}</ol>
           ${scoredList(g.gained)}`;
@@ -581,9 +585,10 @@
         }).join('')}</ul><button class="wide" data-tt-lock ${ttCalls.size ? '' : 'disabled'}>Lock in ${ttCalls.size}/${list.length}</button>`;
       }
       const c = g.current;
-      if (!c || g.done) return `<h1>Round over</h1><p class="prompt">+${you.gained} this round</p>`;
+      if (g.empty) return '<h1>Too quiet! 🤫</h1><p class="prompt">Not enough confessions — new prompt coming up.</p>';
+      if (!c || g.done) return `<h1>Round over</h1><p class="prompt">${signed(you.gained)} this round</p>`;
       if (you.isAuthor) return `<h1>${c.lie ? 'Your lie' : 'Your truth'} is up!</h1><p class="prompt">${c.gained ? `You fooled them: +${c.gained}` : 'Nobody fooled 😅'}</p>`;
-      return `<h1>${you.right === true ? 'Called it! +100' : you.right === false ? 'Fooled ✗' : '📺 Watch the TV'}</h1><p>${esc(c.author)}: ${c.lie ? 'made it up' : 'it really happened'}</p>`;
+      return `<h1>${you.right === true ? `Called it! +${100 * (g.multiplier || 1)}` : you.right === false ? 'Fooled ✗' : '📺 Watch the TV'}</h1><p>${esc(c.author)}: ${c.lie ? 'made it up' : 'it really happened'}</p>`;
     },
     bind(root, api) {
       root.querySelectorAll('[data-tt]').forEach((b) => b.addEventListener('click', () => {
@@ -598,9 +603,9 @@
   });
 
   // ---------------------------------------------------------------- Odd Duck Out
-  const outcomeText = (/** @type {{ outcome: string, imposter: string }} */ r) => (/** @type {Record<string, string>} */ ({
-    escaped: `${esc(r.imposter)} got away with it! +300`,
-    stole: `${esc(r.imposter)} was caught but guessed the word! +200`,
+  const outcomeText = (/** @type {{ outcome: string, imposter: string, impGained?: number }} */ r) => (/** @type {Record<string, string>} */ ({
+    escaped: `${esc(r.imposter)} got away with it! +${r.impGained || 300}`,
+    stole: `${esc(r.imposter)} was caught but guessed the word! +${r.impGained || 200}`,
     caught: `Caught! ${esc(r.imposter)} was the imposter.`,
   }))[r.outcome];
   // meter: show each suspect's suspicion bar (vote phase); clues pop in one by one.
@@ -1119,7 +1124,10 @@
     narrate(s) {
       const g = s.gameState;
       if (s.phase === 'll-intro') return `${g.sceneName}! ${g.rule}`;
-      if (s.phase === 'll-result' && g.result && g.result.rows[0]) return g.result.haul !== null ? `The raft caught ${g.result.haul} lanterns!` : `${g.result.rows[0].nickname} glides to the top!`;
+      if (s.phase === 'll-result' && g.result && g.result.rows[0]) {
+        const top = g.result.top || [g.result.rows[0].nickname];
+        return g.result.haul !== null ? `The raft caught ${g.result.haul} lanterns!` : top.length ? `${top.join(' and ')} ${top.length > 1 ? 'glide' : 'glides'} to the top!` : null;
+      }
       return null;
     },
     host(s) {
@@ -1129,7 +1137,7 @@
       if (s.phase === 'll-result') {
         const r = g.result;
         return `${tag}<h1>${esc(r.name)}</h1>${r.haul !== null ? `<p class="big-sub">🏮 The raft caught ${r.haul} lantern${r.haul === 1 ? '' : 's'}!</p>` : ''}
-          <ol class="answers">${r.rows.map((/** @type {any} */ x, /** @type {number} */ i) => `<li class="${i === 0 ? 'winner' : ''}">${av(x.nickname)} ${esc(x.nickname)} <span class="votes">+${x.gained}</span></li>`).join('')}</ol>`;
+          <ol class="answers">${r.rows.map((/** @type {any} */ x, /** @type {number} */ i) => `<li class="${(r.top || []).includes(x.nickname) ? 'winner' : ''}">${av(x.nickname)} ${esc(x.nickname)} <span class="votes">+${x.gained}</span></li>`).join('')}</ol>`;
       }
       if (s.phase === 'll-intro') { llTrails = []; llFx = []; window.Rumpus.frame = null; }
       const strip = (g.boats || []).map((/** @type {{ nickname: string, gained: number }} */ b, /** @type {number} */ i) => `<span class="ll-chip" style="--c:${LL_COLOURS[i % LL_COLOURS.length]}">${av(b.nickname)} ${esc(b.nickname)} <b>${b.gained}</b></span>`).join('');
@@ -1302,6 +1310,8 @@
         if (!you.isLeader) return `<h2>🏮 ${esc(g.leader)} is picking ${g.crewSize} for the crew</h2><p>Talk it over!</p>${hunch}${peek}${snoop}${card}`;
         const key = `${g.choreIndex}|${g.leader}|${g.crewSize}`;
         if (key !== stPickKey) { stPick.clear(); stPickKey = key; }
+        // Someone picked may have left (or can't go, Bear Sighting): drop them, or Send could never work.
+        for (const id of [...stPick]) if (!you.candidates.some((/** @type {{ id: string }} */ c) => c.id === id)) stPick.delete(id);
         return `<h2>🏮 You lead! Pick ${g.crewSize} for “${esc(g.choreNames[g.choreIndex])}”</h2>
           <p class="hint">${esc(g.event.name)}: ${esc(g.event.desc)}</p>
           <div class="vote-list storm-pick">${you.candidates.map((/** @type {{ id: string, nickname: string }} */ c) => `<button type="button" class="vote-btn" data-st-pick="${esc(c.id)}" aria-pressed="${stPick.has(c.id)}">${av(c.nickname)} ${esc(c.nickname)}</button>`).join('')}</div>
@@ -1319,7 +1329,8 @@
             <button type="button" class="vote-btn" data-st-card="help">🔨 Help</button>
             ${you.canSabotage ? '<button type="button" class="vote-btn bad" data-st-card="sabotage">🦝 Sabotage</button>' : ''}</div>${card}`;
       }
-      if (s.phase === 'st-reveal') return watchTv(`<p>${g.reveal && g.reveal.ok ? 'Chore done?' : 'Chore ruined?'} Watch the cards flip…</p>`) + peek + snoop;
+      // The result only arrives once the TV's cards have all flipped (no spoilers on the phone).
+      if (s.phase === 'st-reveal') return watchTv(`<p>${g.reveal ? (g.reveal.ok ? '✔ The chore is done!' : '✘ The chore was ruined!') : 'Watch the cards flip…'}</p>`) + peek + snoop;
       if (s.phase === 'st-accuse' && you.hunting) return you.accused ? waiting('Guess in', 'Did you find the Lookout?') : `<h2>🦝 Last chance!</h2><p>The cottage won — but if you raccoons can name the <b>Lookout</b>, you steal the win.</p><div class="vote-list">${you.accuseTargets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ accuse: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('')}</div>`;
       if (s.phase === 'st-accuse') return you.accused ? waiting('Accused') : `<h2>Who was a raccoon?</h2><div class="vote-list">${you.accuseTargets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ accuse: t.id }, `${av(t.nickname)} ${esc(t.nickname)}`)).join('')}</div>`;
       if (s.phase === 'st-final') return `<h1>${you.won ? 'Your side won! 🎉' : 'Your side lost'}</h1><p class="prompt">+${you.gained} points</p>${card}`;
@@ -1363,7 +1374,8 @@
       if (s.phase === 'st-roles') return 'A storm is rolling in over the lake. Check your secret role — and trust no one.';
       if (s.phase === 'st-talk') return `${g.choreNames[g.choreIndex]}. ${g.event.name}: ${g.event.desc} ${g.leader}, choose ${g.crewSize} for your crew.`;
       if (s.phase === 'st-votes') return g.votes && g.votes.approved ? 'The crew heads out into the wind.' : g.storm >= 3 ? 'Too much arguing. The storm is here.' : 'Voted down! The storm creeps closer.';
-      if (s.phase === 'st-reveal') return g.reveal ? (g.reveal.ok ? 'The chore is done!' : 'Sabotage! Someone ruined it.') : null;
+      // Said as the cards start to flip, so it mustn't give the result away (the TV shows it at the end).
+      if (s.phase === 'st-reveal') return g.reveal ? 'The crew is back. Let\'s see the cards…' : null;
       if (s.phase === 'st-accuse') return g.winner === 'cottage' ? 'The cottage is ready. But the raccoons are hunting for the Lookout…' : 'The raccoons win! Now — who were they?';
       if (s.phase === 'st-final') return 'The masks come off.';
       return null;

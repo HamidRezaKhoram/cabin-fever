@@ -46,7 +46,8 @@ function allowedVotes(game) {
   // Real-time games (tapping, tilting, rhythm): nobody is "still answering", so the vote ends the round.
   if (game.realtime) return game.timerFn ? ['wrap'] : [];
   const out = [];
-  if (game.timerFn) out.push('hurry');
+  // (A game can say its current clock can't be hurried: Campfire Consensus's short bet window.)
+  if (game.timerFn && !game.noHurry) out.push('hurry');
   if (typeof game.skipQuestion === 'function' && (game.skippablePhases || []).includes(phase)) out.push('skipq');
   return out;
 }

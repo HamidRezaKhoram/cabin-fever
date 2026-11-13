@@ -2,7 +2,7 @@
  * Rumpus trivia ("Lakeside Quiz") — multiple-choice, speed-scored, with
  * category segments: every 3–5 questions the player in LAST place picks the
  * next category from three random ones (a comeback mechanic). Streaks add
- * bonus points; the final question is worth double.
+ * bonus points; stakes rise through the game (×2, then ×3 on the last question: BaseGame.mult).
  * Licensed under AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -115,6 +115,8 @@ class TriviaGame extends BaseGame {
   // Majority voted to skip: same round, fresh question from the same category.
   skipQuestion() {
     if (this.phase !== 'trivia-question') return;
+    // The skipped question never counted: its Double Downs are given back.
+    for (const [id, a] of this.answers) if (a.double) this.doubled.delete(id);
     this.skipSeq = (this.skipSeq || 0) + 1;
     this.round -= 1;
     this.segmentLeft += 1;
@@ -149,8 +151,11 @@ class TriviaGame extends BaseGame {
     const fresh = cats.filter((c) => !this.usedCategories.has(c));
     if (fresh.length >= 3) cats = fresh;
     this.categoryOptions = this.rng.shuffleIn(cats).slice(0, 3);
-    // Comeback mechanic: the player in last place chooses (ties: random).
-    const players = this.rng.shuffleIn([...this.room.players.values()]);
+    // Comeback mechanic: the player in last place chooses (ties: random). Someone whose phone is
+    // asleep can't pick — everyone would wait out the clock — so connected players go first.
+    const all = [...this.room.players.values()];
+    const awake = all.filter((p) => p.connected !== false);
+    const players = this.rng.shuffleIn(awake.length ? awake : all);
     players.sort((/** @type {Player} */ a, /** @type {Player} */ b) => a.score - b.score);
     this.chooserId = players.length ? players[0].id : null;
     this.phase = 'trivia-category';
@@ -276,7 +281,9 @@ class TriviaGame extends BaseGame {
       multiplier: this.phase === 'trivia-category' ? 1 : this.mult(),
       stage: flow.stage(this.round, this.totalRounds),
       skipSeq: this.skipSeq || 0,
-      category: this.category ? prettyCategory(this.category) : (this.question && prettyCategory(this.question.cat)),
+      // During a question the banner names that question's own category: when the chosen one runs dry
+      // the question comes from elsewhere, and the banner mustn't claim otherwise.
+      category: (() => { const c = this.phase === 'trivia-category' || !this.question ? this.category : this.question.cat; return c ? prettyCategory(c) : null; })(),
       segmentLeft: this.segmentLeft,
       chooser: chooser ? chooser.nickname : null,
       source: this.phase === 'trivia-category' || !this.question ? null : this.question.src || null,

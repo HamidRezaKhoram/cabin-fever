@@ -45,6 +45,10 @@ class TwoTruthsGame extends BaseGame {
     this.poolName = 'confessions';
     /** @type {PoolItem | null} */
     this.item = null;
+    /** fewer than two confessions came in this round */
+    this.empty = false;
+    /** this round is already a replay of an empty one (replay once only) */
+    this.retried = false;
   }
 
   start() { this.nextRound(); }
@@ -66,6 +70,7 @@ class TwoTruthsGame extends BaseGame {
     this.revealIndex = -1;
     this.revealed = [];
     this.gained = new Map();
+    this.empty = false;
     this.phase = 'tt-write';
     this.setTimer(WRITE_MS, () => this.judge());
     this.push();
@@ -75,7 +80,12 @@ class TwoTruthsGame extends BaseGame {
   handleSubmit(id, payload) {
     if (this.phase === 'tt-write') {
       // Nothing true comes to mind: a truth-teller may switch to lying (never the other way).
-      if (payload.switchToLie && !this.answers.has(id) && this.liars.get(id) === false) { this.liars.set(id, true); return this.push(); }
+      // …as long as someone else is still telling the truth (a round of only lies isn't the game).
+      if (payload.switchToLie && !this.answers.has(id) && this.liars.get(id) === false) {
+        if ([...this.liars.values()].filter((v) => !v).length < 2) return;
+        this.liars.set(id, true);
+        return this.push();
+      }
       const text = cleanText(payload.text, 110);
       if (!text || this.answers.has(id) || !this.liars.has(id)) return;
       this.answers.set(id, { text, lie: !!this.liars.get(id) });
@@ -98,7 +108,19 @@ class TwoTruthsGame extends BaseGame {
 
   judge() {
     if (this.phase !== 'tt-write') return;
-    if (this.answers.size < 2) { this.clearTimer(); return this.nextRound(); } // nothing to judge
+    if (this.answers.size < 2) {
+      // Nothing to judge. Say so on the TV (it used to just move on), and play the round again once
+      // with a new prompt so a quiet round — the last one included — isn't simply lost.
+      this.clearTimer();
+      if (!this.retried) { this.retried = true; this.round -= 1; } else this.retried = false;
+      this.empty = true;
+      this.order = [];
+      this.revealIndex = 0;
+      this.phase = 'tt-reveal';
+      this.setTimer(STEP_MS, () => this.nextRound(), false);
+      return this.push();
+    }
+    this.retried = false;
     this.order = this.rng.shuffle([...this.answers.keys()]);
     this.phase = 'tt-judge';
     this.setTimer(JUDGE_MS, () => this.reveal());
@@ -150,6 +172,8 @@ class TwoTruthsGame extends BaseGame {
   /** @param {string} id */
   onPlayerLeft(id) {
     this.liars.delete(id);
+    // While writing, their confession leaves with them (once judging starts it stays: it's on the TV).
+    if (this.phase === 'tt-write') this.answers.delete(id);
     if (this.phase === 'tt-write' && this.room.players.size && this.allIn(this.answers)) this.judge();
     else if (this.phase === 'tt-judge' && this.room.players.size && this.allIn(this.calls)) this.reveal();
   }
@@ -163,27 +187,32 @@ class TwoTruthsGame extends BaseGame {
     return [...this.room.players.values()].filter((p) => p.connected && !set.has(p.id)).map((p) => p.nickname);
   }
 
+  /** How many people still here are in `set` (a leaver's entry mustn't show "3 / 2 in"). @param {{ has(id: string): boolean }} set */
+  present(set) {
+    return this.playerIds().filter((id) => set.has(id)).length;
+  }
+
   hostView() {
     const base = { prompt: this.prompt };
-    if (this.phase === 'tt-write') return { ...base, submittedCount: this.answers.size, totalPlayers: this.room.players.size, waitingOn: this.waitingOn(this.answers) };
-    if (this.phase === 'tt-judge') return { ...base, answers: this.list().map(({ nickname, text }) => ({ nickname, text })), judgedCount: this.calls.size, totalPlayers: this.room.players.size, waitingOn: this.waitingOn(this.calls) };
+    if (this.phase === 'tt-write') return { ...base, submittedCount: this.present(this.answers), totalPlayers: this.room.players.size, waitingOn: this.waitingOn(this.answers) };
+    if (this.phase === 'tt-judge') return { ...base, answers: this.list().map(({ nickname, text }) => ({ nickname, text })), judgedCount: this.present(this.calls), totalPlayers: this.room.players.size, waitingOn: this.waitingOn(this.calls) };
     const cur = this.revealed[this.revealIndex] || null;
-    return { ...base, current: cur, revealed: this.revealed, total: this.order.length, done: this.revealIndex >= this.order.length,
-      gained: this.revealIndex >= this.order.length ? [...this.gained].map(([id, g]) => ({ nickname: this.nick(id), gained: g })).sort((a, b) => b.gained - a.gained) : null };
+    return { ...base, current: cur, revealed: this.revealed, total: this.order.length, done: this.revealIndex >= this.order.length, empty: !!this.empty,
+      gained: this.revealIndex >= this.order.length ? [...this.gained].filter(([id]) => this.room.players.has(id)).map(([id, g]) => ({ nickname: this.nick(id), gained: g })).sort((a, b) => b.gained - a.gained) : null };
   }
 
   /** @param {string} id */
   playerOnly(id) {
     const base = { prompt: this.prompt };
     if (this.phase === 'tt-write') {
-      return { gameState: base, you: { lie: !!this.liars.get(id), submitted: this.answers.has(id), canSwitch: this.liars.get(id) === false && !this.answers.has(id) } };
+      return { gameState: base, you: { lie: !!this.liars.get(id), submitted: this.answers.has(id), canSwitch: this.liars.get(id) === false && !this.answers.has(id) && [...this.liars.values()].filter((v) => !v).length >= 2 } };
     }
     if (this.phase === 'tt-judge') {
       return { gameState: { ...base, answers: this.list().filter((a) => a.id !== id) }, you: { judged: this.calls.has(id), mine: this.answers.has(id) ? /** @type {{ text: string }} */ (this.answers.get(id)).text : null } };
     }
     const cur = this.revealed[this.revealIndex] || null;
     return {
-      gameState: { ...base, current: cur, done: this.revealIndex >= this.order.length },
+      gameState: { ...base, current: cur, done: this.revealIndex >= this.order.length, empty: !!this.empty },
       you: { gained: this.gained.get(id) || 0, isAuthor: !!cur && cur.author === this.nick(id),
         right: !!cur && (cur.believed.includes(this.nick(id)) ? !cur.lie : cur.doubted.includes(this.nick(id)) ? cur.lie : null) },
     };

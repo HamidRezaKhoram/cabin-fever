@@ -122,12 +122,16 @@ test('game night: phones vote the next game, placings earn night points, a champ
     assert.strictEqual(v.gameState.options.length, 3);
     assert.strictEqual(new Set(v.gameState.options.map((o) => o.id)).size, 3, 'three different games');
     const played = [];
+    let scoredYet = false;
     for (let i = 0; i < 2; i++) {
       if (i > 0) await h.phase('night-vote', 20000);
       await until(() => h.state.gameState.gameId && h.state.gameState.gameId !== 'night', `game ${i + 1} starts`, 20000);
       played.push(h.state.gameState.gameId);
       await until(() => h.state.phase === 'gameover' && h.state.night && h.state.night.played === i + 1, `game ${i + 1} counted`, 90000);
-      assert.ok(h.state.night.standings.some((x) => x.points > 0), 'night points awarded');
+      // Placings earn night points, but only for players who scored: a game where every bot scored 0
+      // (random games, random bots) rightly gives none. So: points so far > 0 ⇔ someone has scored.
+      scoredYet = scoredYet || h.state.players.some((p) => p.score > 0);
+      assert.strictEqual(h.state.night.standings.some((x) => x.points > 0), scoredYet, `night points awarded iff someone scored (${played.join(', ')})`);
     }
     await h.phase('night-final', 20000);
     assert.notStrictEqual(played[0], played[1], 'no repeats within a night');
