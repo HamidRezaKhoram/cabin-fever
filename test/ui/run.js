@@ -139,11 +139,52 @@ const allPages = t.pages;
     assert.ok(blurb && (await tv.textContent('#game-detail') || '').includes(blurb.slice(0, 20)), 'the full description, not a cut-off one');
   });
 
+  await check('the shelf turns like a wheel: the picked cartridge comes to the middle, and it clicks as it turns', async () => {
+    await tv.evaluate(() => {
+      const w = /** @type {any} */ (window), m = w.Rumpus.music;
+      w.__wheel = { clicks: 0, sfx: m.sfx.wheel, on: m.isEnabled };
+      m.sfx.wheel = () => { w.__wheel.clicks++; };
+      m.isEnabled = () => true;
+    });
+    /** Wait until the focused cartridge sits in the middle of the shelf; return the clicks so far. */
+    const centred = async () => {
+      await tv.waitForFunction(() => {
+        const a = document.activeElement, shelf = document.querySelector('.shelf');
+        if (!a || !a.matches('.game-pick') || !shelf) return false;
+        const b = a.getBoundingClientRect(), s = shelf.getBoundingClientRect();
+        return Math.abs(b.left + b.width / 2 - (s.left + s.width / 2)) < 4;
+      }, null, { timeout: 4000 });
+      return tv.evaluate(() => /** @type {any} */ (window).__wheel.clicks);
+    };
+    try {
+      const n = await tv.$$eval('.shelf .game-pick', (els) => els.length);
+      await tv.focus('.shelf .game-pick');
+      await centred(); // even the first one: there is room at the ends
+      const c0 = await tv.evaluate(() => /** @type {any} */ (window).__wheel.clicks);
+      await tv.keyboard.press('ArrowRight');
+      await tv.keyboard.press('ArrowRight');
+      const c1 = await centred();
+      assert.ok(c1 > c0, `turning clicks (${c0} → ${c1})`);
+      assert.strictEqual(await tv.evaluate(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement))), 2);
+      // Round from the last to the first: the wheel spins back past every cartridge, clicking as it goes.
+      await tv.focus(`.shelf .game-pick:nth-child(${n})`);
+      const c2 = await centred();
+      await tv.keyboard.press('ArrowRight');
+      const c3 = await centred();
+      assert.strictEqual(await tv.evaluate(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement))), 0, 'last → first');
+      assert.ok(c3 - c2 >= Math.min(3, n - 1), `a spin clicks once per cartridge passing (${c3 - c2} clicks, ${n} cartridges)`);
+    } finally {
+      await tv.evaluate(() => { const w = /** @type {any} */ (window), m = w.Rumpus.music; m.sfx.wheel = w.__wheel.sfx; m.isEnabled = w.__wheel.on; });
+    }
+  });
+
   await check('menu links: House rules (save, reload, add + delete a prompt) and Hall of fame (every tab) work; the Rounds setting sticks', async () => {
     // Click the real links (regression: they pointed at URLs the server didn't serve).
     const open = async (href) => {
-      if (await tv.isHidden('.settings-more')) await tv.click('[data-act="more"]'); // the links live in ⚙ Settings
-      const [page] = await Promise.all([tv.context().waitForEvent('page'), tv.click(`.settings-more a[href="${href}"]`)]);
+      // House rules is in ⚙ Settings; the hall of fame is in 🏆 Stats (its own box beside it).
+      const box = href === '/admin' ? '.settings-more' : '.stats-box';
+      if (await tv.isHidden(box)) await tv.click(href === '/admin' ? '[data-act="more"]' : '[data-act="stats"]');
+      const [page] = await Promise.all([tv.context().waitForEvent('page'), tv.click(`${box} a[href="${href}"]`)]);
       page.on('pageerror', (e) => errors.push(`${href}: ${e.message}`));
       page.on('console', (m) => { if (m.type() === 'error') errors.push(`${href} console: ${m.text()}`); });
       await page.waitForLoadState('domcontentloaded');
@@ -329,6 +370,14 @@ const allPages = t.pages;
     await phones[2].click('[data-shy]');
     await phones[2].waitForSelector('[data-shy][aria-pressed="false"]');
     await tv.waitForSelector('.lobby-crew .shy', { state: 'detached' });
+  });
+
+  await check('players are removed through ✏️ Edit: no ✕ on the avatars until then', async () => {
+    assert.strictEqual(await tv.$$eval('.lobby-crew .lobby-kick', (l) => l.length), 0, 'no ✕ by default');
+    await tv.click('[data-act="edit-players"]');
+    await tv.waitForFunction(() => document.querySelectorAll('.lobby-crew .lobby-kick').length === document.querySelectorAll('.lobby-crew figure').length);
+    await tv.click('[data-act="edit-players"]'); // ✓ Done
+    await tv.waitForSelector('.lobby-crew .lobby-kick', { state: 'detached' });
   });
 
   await check('🕊 Calm (TV setting) stops shakes, wipes and flashes, and is remembered on this TV', async () => {

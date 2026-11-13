@@ -10,8 +10,9 @@
 
   const clock = () => window.Rumpus.clock;
 
-  // ---- Pixel wipe: blocks fill the screen in random order, then clear.
-  // 9 frames in + 9 frames out at 30 fps (~0.6 s total).
+  // ---- Screen wipe, old-console style: black "blinds" — each row of blocks sweeps across (alternate
+  // rows from opposite sides) behind a coloured leading edge, the screen swaps, then they open again.
+  // 9 frames in + 9 frames out at 30 fps (~0.6 s total). One dark sweep, not a flash.
   const WIPE_FRAMES = 9;
   /** @type {HTMLCanvasElement | null} */
   let wipeCanvas = null;
@@ -39,9 +40,10 @@
     const g = /** @type {CanvasRenderingContext2D} */ (wc.getContext('2d'));
     /** @type {number[][]} */
     const cells = [];
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) cells.push([x, y, (x + y * 0.6) / (cols + rows * 0.6) + Math.random() * 0.25]);
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) cells.push([x, y, (y % 2 ? cols - 1 - x : x) / cols + (y % 3) * 0.015]);
     cells.sort((p, q) => p[2] - q[2]);
-    const col = colors[(Math.random() * colors.length) | 0];
+    const edge = colors[(Math.random() * (colors.length - 1)) | 0]; // (the last colour is the dark one)
+    const col = colors[colors.length - 1];
     wipeState = { midpoint, f: 0 };
     wc.style.display = 'block';
     const off = clock().add(() => {
@@ -53,10 +55,14 @@
       if (st.f <= WIPE_FRAMES) {
         const n = Math.round((st.f / WIPE_FRAMES) * cells.length);
         for (let i = 0; i < n; i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
+        g.fillStyle = edge; // the leading edge of each row
+        if (n < cells.length) for (let i = Math.max(0, n - rows); i < n; i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
         if (st.f === WIPE_FRAMES) st.midpoint();
       } else {
         const n = Math.round(((st.f - WIPE_FRAMES) / WIPE_FRAMES) * cells.length);
         for (let i = n; i < cells.length; i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
+        g.fillStyle = edge;
+        if (n > 0) for (let i = n; i < Math.min(cells.length, n + rows); i++) g.fillRect(cells[i][0], cells[i][1], 1, 1);
         if (st.f >= WIPE_FRAMES * 2) {
           off();
           wc.style.display = 'none';

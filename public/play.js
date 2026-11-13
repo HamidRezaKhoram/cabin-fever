@@ -676,7 +676,7 @@ function renderStatus() {
     const n = state.players.length;
     text = state.hostConnected === false ? 'TV is offline — waiting for it…' : n < 2 ? 'Waiting for more players to join…' : 'Waiting for the host to pick a game…';
     spin = true;
-  } else if (ph === 'gameover') { text = state.night ? 'Next game coming up — vote on your phone soon' : 'Game over — waiting for the host to pick the next game'; spin = true; }
+  } else if (ph === 'gameover') { text = state.night ? 'Next game of the lineup coming up…' : 'Game over — waiting for the host to pick the next game'; spin = true; }
   else if (late && !myTurn) { text = 'Time\'s up — waiting for the TV…'; spin = true; }
   else if (myTurn) text = '👉 Your turn';
   else if (/intro|roles|title/.test(ph)) { text = 'Get ready — the game is starting'; spin = true; }

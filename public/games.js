@@ -1386,38 +1386,39 @@
   /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number }[] }} NightView */
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */
   const nightTable = (night, between = false) => `<div class="night-table">
-      <p class="round-tag">🎉 Game night · ${night.played} of ${night.total} played${between && night.played < night.total ? ' · next vote coming up…' : ''}</p>
+      <p class="round-tag">🎞 Lineup · ${night.played} of ${night.total} played${between && night.played < night.total ? ' · next game coming up…' : ''}</p>
       <ol class="answers standings">${night.standings.map((/** @type {{ nickname: string, points: number }} */ s) => `<li>${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.points} pts</span></li>`).join('')}</ol>
     </div>`;
   window.Rumpus.nightTable = nightTable;
+  /** The lineup as a row of small cartridges: played ✓, the next one lit, then the rest. @param {any} night */
+  const lineupRow = (night) => `<div class="lineup-row">${(night.list || []).map((/** @type {{ id: string, name: string }} */ x, /** @type {number} */ i) =>
+    window.Rumpus.cartHtml(x.id, x.name, `mini ${i < night.played ? 'done' : i === night.played ? 'now' : ''}`)).join('')}</div>`;
   register('night', {
     host(s) {
-      const g = s.gameState, night = s.night || { played: 0, total: 0, standings: [] };
+      const g = s.gameState, night = s.night || { played: 0, total: 0, standings: [], list: [] };
       if (s.phase === 'night-final') {
         const top = night.standings[0];
-        return `<h1>🏆 Grand champion of the night</h1>
+        return `<h1>🏆 Champion of the lineup</h1>
           ${top ? `<p class="big-answer">${av(top.nickname, 'avatar big bob')} ${esc(top.nickname)} — ${top.points} pts</p>` : ''}
           ${nightTable(night)}<p class="big-sub">Press End to go back to the menu.</p>`;
       }
-      if (s.phase === 'night-pick') {
-        return `<p class="round-tag">🎉 Game ${night.played + 1} of ${night.total}</p><h1>Next up:</h1>
-          <p class="big-answer">${esc(g.options[g.chosen].name)}!</p>`;
-      }
-      return `<p class="round-tag">🎉 Game night · game ${night.played + 1} of ${night.total}</p>
-        <h1>What do we play next?</h1><p class="big-sub">Vote on your phones! ${T}</p>
-        <ol class="answers">${g.options.map((/** @type {{ name: string }} */ o, /** @type {number} */ i) => `<li>${esc(o.name)} <span class="votes">${'▮'.repeat(g.tally[i])}</span></li>`).join('')}</ol>
-        ${count(g.votedCount, g.totalPlayers, 'votes in')}
-        ${night.played ? nightTable(night) : ''}`;
+      // Between games: the next cartridge comes to the middle of the screen.
+      const top3 = night.standings.slice(0, 3).filter((/** @type {{ points: number }} */ x) => x.points > 0);
+      return `<div class="next-screen">
+        <p class="round-tag lineup-tag">🎞 Lineup · game ${night.played + 1} of ${night.total}</p>
+        <div class="next-up"><p class="next-label">▶ NEXT GAME</p>${g.next ? window.Rumpus.cartHtml(g.next.id, g.next.name, 'big') : ''}
+          <p class="next-name">${esc(g.next ? g.next.name : '')}</p></div>
+        ${lineupRow(night)}
+        ${top3.length ? `<p class="big-sub lineup-leaders">🏆 ${top3.map((/** @type {{ nickname: string, points: number }} */ x) => `${esc(x.nickname)} ${x.points}`).join(' · ')}</p>` : ''}
+      </div>`;
     },
     player(s) {
       const g = s.gameState, you = s.you, night = s.night || { standings: [] };
       if (s.phase === 'night-final') {
         const rank = night.standings.findIndex((/** @type {{ nickname: string }} */ x) => x.nickname === you.nickname);
-        return `<h1>${rank === 0 ? '🏆 You are the champion!' : `You finished #${rank + 1}`}</h1><p>${(night.standings[rank] || {}).points || 0} night points</p>`;
+        return `<h1>${rank === 0 ? '🏆 You are the champion!' : `You finished #${rank + 1}`}</h1><p>${(night.standings[rank] || {}).points || 0} lineup points</p>`;
       }
-      if (s.phase === 'night-pick') return watchTv(`<p>Next up: <strong>${esc(g.options[g.chosen].name)}</strong></p>`);
-      if (you.voted) return waiting('Vote in');
-      return '<h2>What do we play next?</h2><div class="vote-list">' + g.options.map((/** @type {{ name: string }} */ o, /** @type {number} */ i) => sendBtn({ choice: i }, esc(o.name))).join('') + '</div>';
+      return watchTv(`<p>Next game: <strong>${esc(g.next ? g.next.name : '')}</strong></p>`);
     },
   });
 

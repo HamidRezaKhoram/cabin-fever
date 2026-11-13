@@ -8,9 +8,9 @@
 
 (function () {
   const W = 320, H = 180, HORIZON = 112;
-  // Motion speeds were designed in "ticks"; 0.4 ticks per 30 fps frame keeps
-  // the original pace while every frame now moves a little (smooth, no jumps).
-  const TICKS_PER_FRAME = 0.4;
+  // Motion speeds are in "ticks". 0.2 ticks per 30 fps frame: a calm evening (0.4 felt hurried — the
+  // smoke, the shimmer and the fireflies all at double speed).
+  const TICKS_PER_FRAME = 0.2;
 
   /** @param {number} seed @returns {() => number} */
   function rand(seed) {
@@ -328,6 +328,48 @@
     return c;
   }
 
+  /** Pixel sprite: rows of characters, each a colour from `pal` ('.' = clear). Drawn at (x, y),
+   * mirrored when `flip`. @param {CanvasRenderingContext2D} g @param {string[]} rows @param {Record<string, string>} pal @param {number} x @param {number} y @param {boolean} [flip] */
+  function sprite(g, rows, pal, x, y, flip) {
+    for (const [c, col] of Object.entries(pal)) {
+      g.fillStyle = col;
+      rows.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] === c) g.fillRect(x + (flip ? row.length - 1 - i : i), y + j, 1, 1); });
+    }
+  }
+  const DUCK = ['.hh.', 'hhbk', '.bbb', 'bbbb'];
+  const DUCKLING = ['yy', 'yo'];
+  const FOX = ['f..f', 'ffff', 'fewf', '.ww.'];
+  const RACCOON = ['g..g', 'gmmg', 'gggg', 'gggg', 'g.g.'];
+  /** Life around the cottage, slow and quiet, one thing at a time: a duck family paddles across the
+   * lake, a fox peeks out from the pines, a raccoon wanders up to the door and slips inside.
+   * (This replaced the avatars that marched along the bottom of the menu.) @param {CanvasRenderingContext2D} g @param {number} frame */
+  function life(g, frame) {
+    const s = frame / 30; // seconds
+    // Ducks: cross every 70 s, taking 45 s about it; a little V of ripples behind.
+    const dk = s % 70;
+    if (dk < 45) {
+      const x = Math.round(-16 + (dk / 45) * (W + 32)), y = HORIZON + 26 + Math.round(Math.sin(s * 1.3));
+      g.fillStyle = 'rgba(169,163,217,0.25)';
+      for (let k = 1; k < 4; k++) { g.fillRect(x - 3 * k, y + 4 + (k >> 1), 2, 1); g.fillRect(x - 3 * k, y + 2 - (k >> 1), 2, 1); }
+      sprite(g, DUCK, { h: '#2f7d4a', b: '#8a6a4a', k: '#f2a33a' }, x, y);
+      sprite(g, DUCKLING, { y: '#ffd84a', o: '#f2a33a' }, x - 8, y + 2);
+      sprite(g, DUCKLING, { y: '#ffd84a', o: '#f2a33a' }, x - 13, y + 2);
+    }
+    // Fox: every 50 s, at the pines on the left, rises, looks about for 4 s, ducks down.
+    const fk = (s + 20) % 50;
+    if (fk < 6) {
+      const up = fk < 1 ? fk : fk > 5 ? 6 - fk : 1; // 0 → 1 → 0
+      const look = fk > 2.5 && fk < 4; // turns its head
+      sprite(g, FOX, { f: '#e2702a', e: '#1a1016', w: '#f4f1e8' }, 74, HORIZON - Math.round(up * 4), look);
+    }
+    // Raccoon: every 90 s, walks along the shore from the left to the cottage door (16 s) and in.
+    const rk = (s + 40) % 90;
+    if (rk < 16) {
+      const x = Math.round(150 + (rk / 16) * 69), y = HORIZON - 5 + ((frame >> 3) & 1);
+      sprite(g, RACCOON, { g: '#6b6d78', m: '#1a1016' }, x, y);
+    }
+  }
+
   /** @param {HTMLCanvasElement} canvas */
   function start(canvas) {
     canvas.width = W; canvas.height = H;
@@ -377,13 +419,16 @@
       for (let k = 0; k < 3; k++) { const h = 2 + ((frame + k * 5) % 4); g.fillStyle = k === 1 ? '#ffd23f' : '#ff8a3d'; g.fillRect(fx - 1 + k, fy - h, 1, h); }
       if (frame % 20 < 3) { g.fillStyle = '#ffd23f'; g.fillRect(fx + ((frame >> 2) % 3) - 1, fy - 6 - (frame % 20), 1, 1); }
       for (let y = HORIZON + 1; y < HORIZON + 10; y += 2) { g.fillStyle = 'rgba(255,150,60,0.22)'; g.fillRect(fx - 1 + Math.round(Math.sin((y + t) / 2)), y, 3, 1); }
-      // chimney smoke
-      g.fillStyle = 'rgba(200,200,220,0.25)';
-      for (let i = 0; i < 6; i++) {
-        const yy = Math.round(HORIZON - 32 - i * 4 - ((t * 3) % 4));
-        const xx = 233 + Math.round(Math.sin((t + i * 7) / 9) * 2) + i;
-        g.fillRect(xx, yy, 3 + (i >> 1), 2);
+      // chimney smoke: slow puffs that rise, drift with the breeze, grow and fade
+      for (let i = 0; i < 7; i++) {
+        const age = ((t * 0.012 + i / 7) % 1); // 0 = just out of the chimney, 1 = gone
+        const yy = Math.round(HORIZON - 31 - age * 30);
+        const xx = Math.round(232 + age * 14 + Math.sin(age * 6 + i) * 1.5);
+        const size = 2 + Math.round(age * 4);
+        g.fillStyle = `rgba(205,205,222,${(0.32 * (1 - age)).toFixed(2)})`;
+        g.fillRect(xx, yy, size, Math.max(2, size - 1));
       }
+      life(g, frame);
       // reflections + shimmer
       g.fillStyle = th.glowFill || (th.glowFill = `rgba(${th.glow},0.35)`);
       for (let y = HORIZON + 2; y < H; y += 2) {

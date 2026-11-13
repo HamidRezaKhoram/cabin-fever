@@ -61,8 +61,8 @@ interface Room {
   highlights?: { game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }[];
   /** Phones that rated the game just finished (😴 / 🙂 / 🤩), cleared when a game starts. */
   rated?: Set<string>;
-  /** Game night playlist (server.js) or null. */
-  night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
+  /** The lineup (core/rooms.js): the games the host picked, in order, played back to back; or null. */
+  night?: { total: number, list: string[], played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
   game: GameLike | null;
   closed: boolean;
   settings: RoomSettings;

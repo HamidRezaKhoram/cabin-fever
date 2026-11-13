@@ -25,6 +25,9 @@
   const img = /** @type {HTMLImageElement} */ (el.querySelector('.rocco-img'));
   const bubble = /** @type {HTMLElement} */ (el.querySelector('.rocco-bubble'));
   let talkUntil = 0, cheerUntil = 0, bubbleUntil = 0;
+  /** The last moment Rocco had something to say or cheer about: he hides a little after it. */
+  let lastActive = 0;
+  el.classList.add('away');
   let enabled = R.store('rumpus.narrator') !== false; // on by default; lobby toggle
   /** @type {HTMLAudioElement | null} */
   let voice = null;
@@ -333,6 +336,10 @@
     const bob = cheering ? -Math.abs(Math.sin(frame / 4)) * 18 : (frame % 30 < 15 ? 0 : -3);
     img.style.transform = `translateY(${Math.round(bob)}px)`;
     if (bubbleUntil && now > bubbleUntil) { bubble.hidden = true; bubbleUntil = 0; }
+    // He pops up from the bottom edge to say his line (or cheer), and ducks back down after it.
+    if (talking || cheering || !bubble.hidden) lastActive = now;
+    const away = now - lastActive > 700;
+    if (away !== el.classList.contains('away')) el.classList.toggle('away', away);
   });
 
   /** Spoken version of on-screen text: blanks read as "blank". @param {string} text */
