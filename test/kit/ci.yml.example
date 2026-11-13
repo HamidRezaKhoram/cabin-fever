@@ -1,0 +1,33 @@
+# GitHub Actions shape for a small project (copy to .github/workflows/ci.yml and fill in the <…> parts).
+name: ci
+on: { push: {}, pull_request: {}, workflow_dispatch: {} }
+permissions: { contents: read }          # least privilege; only deploy gets more
+concurrency:                              # a newer push cancels an older run, except on main
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  checks:                                 # fast: types, lint, unit tests (+ coverage)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: <npm run typecheck && npm run lint>
+      - run: <npx c8 node --test test/unit/>
+  browser:                                # real browsers against the real app
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: <./scripts/test-browser.sh>  # e.g. uses test/kit/containers.sh in_playwright
+  deploy:                                 # only main, only after everything passed
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [browser]
+    runs-on: ubuntu-24.04
+    concurrency: { group: deploy, cancel-in-progress: false }   # never cancel half a deploy
+    steps:
+      - uses: actions/checkout@v4
+      - run: <build and publish>

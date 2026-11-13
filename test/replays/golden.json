@@ -1,0 +1,106 @@
+{
+ "trivia": {
+  "phases": [
+   "trivia-category#0",
+   "trivia-question#1",
+   "trivia-reveal#1",
+   "trivia-question#2",
+   "trivia-reveal#2",
+   "trivia-question#3",
+   "trivia-reveal#3"
+  ],
+  "scores": {
+   "Ann": 1000,
+   "Ben": 0,
+   "Cat": 1930,
+   "Dan": 0,
+   "Eve": 0
+  }
+ },
+ "quiplash": {
+  "phases": [
+   "answering#1",
+   "voting#1",
+   "results#1",
+   "voting#1",
+   "results#1",
+   "voting#1",
+   "results#1",
+   "voting#1",
+   "results#1",
+   "voting#1",
+   "results#1",
+   "answering#2",
+   "voting#2",
+   "results#2",
+   "voting#2",
+   "results#2",
+   "voting#2",
+   "results#2",
+   "voting#2",
+   "results#2",
+   "voting#2",
+   "results#2",
+   "answering#3",
+   "voting#3",
+   "results#3",
+   "voting#3",
+   "results#3",
+   "voting#3",
+   "results#3",
+   "voting#3",
+   "results#3",
+   "voting#3",
+   "results#3"
+  ],
+  "scores": {
+   "Ann": 1300,
+   "Ben": 2950,
+   "Cat": 1800,
+   "Dan": 1500,
+   "Eve": 1400
+  }
+ },
+ "storm": {
+  "phases": [
+   "st-roles#0",
+   "st-talk#1",
+   "st-vote#1",
+   "st-votes#1",
+   "st-talk#1",
+   "st-vote#1",
+   "st-votes#1",
+   "st-crew#1",
+   "st-reveal#1",
+   "st-talk#2",
+   "st-vote#2",
+   "st-votes#2",
+   "st-crew#2",
+   "st-reveal#2",
+   "st-talk#3",
+   "st-vote#3",
+   "st-votes#3",
+   "st-crew#3",
+   "st-reveal#3",
+   "st-talk#4",
+   "st-vote#4",
+   "st-votes#4",
+   "st-crew#4",
+   "st-reveal#4",
+   "st-talk#5",
+   "st-vote#5",
+   "st-votes#5",
+   "st-crew#5",
+   "st-reveal#5",
+   "st-accuse#5",
+   "st-final#5"
+  ],
+  "scores": {
+   "Ann": 700,
+   "Ben": 0,
+   "Cat": 650,
+   "Dan": 100,
+   "Eve": 0
+  }
+ }
+}

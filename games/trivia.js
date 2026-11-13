@@ -7,9 +7,7 @@
  */
 'use strict';
 
-const house = require('./house');
-const { guarded } = require('./base');
-const { makeRng, newSeed } = require('./rng');
+const { BaseGame } = require('./base');
 
 const { QUESTIONS } = require('./data/trivia-questions');
 const library = require('./library');
@@ -32,17 +30,12 @@ function prettyCategory(cat) {
 
 /** @typedef {{ q: string, choices: string[], correct: number, cat?: string, src?: string, id?: string }} TriviaQ */
 
-class TriviaGame {
+class TriviaGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
-    /** Every random choice in this game comes from here (seeded, replayable: see games/rng.js). */
-    this.seed = newSeed();
-    this.rng = makeRng(this.seed);
-    this.room = room;
-    this.push = push;
+    super(room, push);
     this.phase = 'trivia-question';
-    this.round = 0;
-    this.totalRounds = (room.settings && room.settings.rounds) || TOTAL_ROUNDS;
+    this.totalRounds = this.rounds(TOTAL_ROUNDS);
     /** @type {TriviaQ | null} */
     this.question = null;
     /** @type {Map<string, { choice: number, answeredAt: number, double: boolean }>} */
@@ -53,14 +46,6 @@ class TriviaGame {
     this.streaks = new Map();
     this.roundStartedAt = 0;
     this.questionWindow = 0;
-    /** @type {NodeJS.Timeout | null} */
-    this.timer = null;
-    /** @type {(() => void) | null} */
-    this.timerFn = null;
-    /** @type {number | null} */
-    this.endsAt = null;
-    this.destroyed = false;
-    /** @type {((what: string, e: unknown) => void) | null} set by the room (see games/base.js guarded) */ this.onGlitch = null;
     /** @type {string | null} raw category of the current segment */
     this.category = null;
     this.segmentLeft = 0;       // questions left in this category segment
@@ -73,7 +58,6 @@ class TriviaGame {
     this.categoryAuto = false;
     /** @type {Set<string>} franchises/titles already asked about this game */
     this.usedTopics = new Set();
-    this.skipSeq = 0;
     this.poolName = 'trivia';
     /** @type {TriviaQ | null} */
     this.item = null;
@@ -126,38 +110,6 @@ class TriviaGame {
     this.push();
   }
 
-  destroy() {
-    this.destroyed = true;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-  }
-
-  /** @param {number} ms @param {() => void} fn */
-  setTimer(ms, fn) {
-    if (this.timer) clearTimeout(this.timer);
-    const scale = ((this.room.settings && this.room.settings.timerScale) || 1) * house.timerFor('trivia');
-    ms = Math.round(ms * scale);
-    this.endsAt = Date.now() + ms;
-    this.timerFn = fn;
-    this.timer = setTimeout(() => {
-      this.timerFn = null;
-      if (!this.destroyed) guarded(fn, 'trivia timer', this, true);
-    }, ms);
-  }
-
-  // Escalating stakes: first half ×1, second half ×2, final question ×3.
-  mult() {
-    return flow.stage(this.round, this.totalRounds);
-  }
-
-  isFinal() {
-    return this.mult() > 1;
-  }
-
-  spicy() {
-    return !(this.room.settings && this.room.settings.spicy === false);
-  }
-
   get skippablePhases() { return ['trivia-question']; }
 
   // Majority voted to skip: same round, fresh question from the same category.
@@ -167,16 +119,6 @@ class TriviaGame {
     this.round -= 1;
     this.segmentLeft += 1;
     this.askQuestion();
-  }
-
-  // Host pressed "skip": run the pending phase transition now.
-  skip() {
-    if (!this.timerFn || this.destroyed) return;
-    const fn = this.timerFn;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.timerFn = null;
-    fn();
   }
 
   // Categories with enough questions for the current 18+ setting.
@@ -305,15 +247,7 @@ class TriviaGame {
     if (question.id) library.recordAnswers('trivia', question.id, scored.filter((x) => x.correct).length, scored.length);
     this.roundResult = { correct, scored };
     this.phase = 'trivia-reveal';
-    this.setTimer(REVEAL_MS, () => this.nextRound());
-    this.push();
-  }
-
-  gameOver() {
-    this.phase = 'gameover';
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-    this.endsAt = null;
+    this.setTimer(REVEAL_MS, () => this.nextRound(), false);
     this.push();
   }
 
@@ -327,12 +261,6 @@ class TriviaGame {
     } else if (this.phase === 'trivia-question' && this.answers.size >= this.room.players.size) {
       this.reveal();
     }
-  }
-
-  standings() {
-    return [...this.room.players.values()]
-      .map((p) => ({ nickname: p.nickname, score: p.score }))
-      .sort((a, b) => b.score - a.score);
   }
 
   // --- views ---------------------------------------------------------------

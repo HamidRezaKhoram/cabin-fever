@@ -150,6 +150,35 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   can't pinch/double-tap zoom or select text; the status line under the header always says what's
   happening; timers use server time (`Rumpus.time.now()`), never `Date.now()`.
 
+## Feel on cheap devices (Cottage Lab, docs/future-features/feel-plan.md)
+
+- **The TV is driven by a remote**: arrow keys move a big focus ring to the nearest control in that
+  direction (`host.js` "TV remote"), OK presses it (and toggles switches), OK on the title screen
+  starts. Every TV control must be a real `button`/`select`/`input` so the remote can reach it.
+- **2022 Samsung TVs run Chromium 85**: `test/unit/tv-compat.test.js` fails on newer JS syntax/APIs or
+  CSS (`inset`, `aspect-ratio`, `:has()`, …) in the TV page unless the line has a fallback and says
+  `/* old TVs: … */` (or `/* phone only */`). Use top/right/bottom/left, not `inset`.
+- **Don't make the TV re-fit for nothing**: `layoutStage()` skips the fit when the screen size, the
+  element count and the big text are unchanged; `morph` keeps `data-fit` text's inline font size.
+  Pass `layoutStage(true)` when something outside the text changed size.
+- **Background (`bg.js`)**: set a fill colour once per group of rects, pre-render repeated shapes —
+  per-pixel `fillStyle` strings were a top TV cost.
+- **Flash safety**: `test/unit/flash-safety.test.js` — no CSS animation flashes > 3 times a second.
+- **Fit text off-screen**: `Rumpus.fit` searches the size on a hidden copy in a `contain: strict` box
+  (a layout root), and `fitAll` reads every size before writing any. Keep it that way: a search on the
+  real element lays out the whole TV screen at every step.
+- **Responsible play**: 🙈 `player:prefs {shy}` — a shy player is never a Most Likely answer and gets no
+  Crush notes, winks or date picks (`BaseGame.targetIds()` / `targetable(id)`; new games that single
+  people out must use them). 😴/🙂/🤩 `player:rate` at game over → `stats.rate` → /highlights Ratings tab.
+  🕊 Calm (TV, `body.calm`, stored per TV) turns off shakes, wipes, confetti and the lightning flash.
+  The title screen says when 18+ prompts are on. No filtering of what players type (user's call).
+- **Calibrate the lab**: `/bench` times a fixed workload; `/bench?base=<lab ms>` on the real TV/phone shows
+  the CPU factor to put in `test/lab/run.js` PROFILES (the lab report prints the lab's ms).
+- **Lab**: `./scripts/lab.sh [games]` plays games on a simulated 2022 Samsung TV (CPU ÷6) + 3 Galaxy A15
+  phones (CPU ÷4) and writes `test/lab/out/report.md` (per-screen tap latency, long tasks, worst frame,
+  dead air, smallest text, phone frames, smallest tap target). `LAB_PROFILE=1` adds the TV's and a phone's top CPU functions. Device factors are
+  estimates until calibrated on real hardware. Runs nightly (report only).
+
 ## Screen layout (10-foot UI)
 
 - Design against 1080p and size relative to screen height: body ≥ 3.2vh (~35px), secondary ≥ 2.6vh,
@@ -247,6 +276,24 @@ in the browser test). New screens are covered by the recorded snapshots in `test
 (re-recorded when bots play a changed game — commit them).
 When a test is flaky, fix the race (wait for the right state) — don't add sleeps or retries.
 
+**CI/CD** (`.github/workflows/ci.yml`, plan in `docs/future-features/testing-plan.md`): `checks` (generated
+files, mypy, tsc, eslint, ratchet, unit tests + coverage with `BOT_GAMES=all`) → `browser`
+(`UI_ONLY=1 test-all.sh`) and `docker` (`scripts/docker-smoke.sh`: `docker compose up`, full + lite, pages
+load, `test/smoke.js` plays a room, still up 10 s later) → `deploy` (Pages, main only). Older runs on a
+branch are cancelled. `nightly.yml`: load-harsh, chaos with 3 fresh seeds (`SEED=<n>` replays one), and the
+unit suite 3× to find flaky tests.
+
+**Test kit** (`test/kit/`, README there): generic helpers meant to be copied into other projects:
+`wait.js` (until/once/sleep), `process.js` (startApp), `browser.js` (suite/check/watch), `seeded.js`,
+`golden.js`, `perf.js` (CDP device throttling + feel probes), `containers.sh` (`in_node` / `in_playwright`, node_modules cached per lockfile). Cabin
+Fever's own helpers (`makeHost`, `makePlayer`, `makeRoom`, `startServer`) stay in `test/helpers.js`.
+Keep the kit free of anything Cabin Fever-specific.
+
+**Golden replays** (`test/unit/replays.test.js`, `test/replays/golden.json`): trivia, quiplash and storm
+played in-process with seed 4242, bots and a fake clock must give the recorded phases and scores. A rule,
+scoring or content-pool change that alters them is re-recorded on purpose: `RECORD=1 node --test
+test/unit/replays.test.js` (say why in the commit).
+
 ## Future work
 
 `docs/future-features/` holds researched designs that are too big for one change (teams +
@@ -255,8 +302,8 @@ new features and update it when something ships.
 
 ## Common tasks
 
-- Play in a browser (no install): https://hamidrezakhoram.github.io/cabin-fever/ — `.github/workflows/pages.yml`
-  deploys on every push to main. Build locally: `node tools/build-pages.js dist` (node container).
+- Play in a browser (no install): https://hamidrezakhoram.github.io/cabin-fever/ — the `deploy` job in
+  `.github/workflows/ci.yml` publishes it from main, only after the browser and docker jobs pass. Build locally: `node tools/build-pages.js dist` (node container).
   `?net=local` uses tab-to-tab connections (tests, one-computer play) instead of PeerJS.
 - Run locally: `docker compose up -d --build` → TV `http://<lan-ip>:8012/host`. The https twin
   (`RUMPUS_HTTPS_PORT`, default 8443 in compose, self-signed cert in `data/certs/`) exists for phone

@@ -4,7 +4,9 @@
 'use strict';
 
 (function () {
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Calm: the system's reduce-motion setting, or this TV's 🕊 Calm switch (body.calm, host.js): no wipes,
+  // confetti or shakes — for anyone motion or flashes bother (feel-plan.md §4).
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('calm');
 
   const clock = () => window.Rumpus.clock;
 
@@ -17,7 +19,7 @@
   let wipeState = null;
   /** @param {() => void} midpoint @param {string[]} [colors] */
   function wipe(midpoint, colors = ['#ffb02e', '#5ee0a0', '#ff5d73', '#7c5cff', '#14121f']) {
-    if (reduced) { midpoint(); return; }
+    if (calm()) { midpoint(); return; }
     if (wipeState) {
       // Already wiping. Before the middle: swap in the newest screen there.
       // Past the middle: the screen was already swapped, so apply this one now
@@ -74,7 +76,7 @@
   let confOff = null;
   /** @param {number} [n] */
   function confetti(n = 160) {
-    if (reduced) return;
+    if (calm()) return;
     if (!confCanvas) {
       confCanvas = document.createElement('canvas');
       confCanvas.className = 'confetti';
@@ -145,7 +147,7 @@
   function shake(delay = 0) {
     setTimeout(() => {
       const el = document.getElementById('phase-view');
-      if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (!el || calm()) return;
       el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
       setTimeout(() => el.classList.remove('shake'), 320);
     }, delay);

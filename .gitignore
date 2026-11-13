@@ -11,3 +11,4 @@ test/.music-fixture/
 coverage/
 dist/
 vendor/kokoro/
+test/lab/out/

@@ -1,10 +1,16 @@
-# Nightly (and on demand): the harsh load run — bad Wi-Fi (netem delay + loss) and a server
-# starved to 1/4 CPU (scripts/load-harsh.sh, ~2 min). Too slow and noisy for every push.
+# Nightly (and on demand): the slow and the random checks — too slow or noisy for every push.
+#   load-harsh → bad Wi-Fi (netem delay + loss) and a server starved to 1/4 CPU (scripts/load-harsh.sh)
+#   chaos      → chaos phones with 3 fresh seeds; a failure prints SEED=… so it can be replayed:
+#                SEED=<n> BOT_GAMES=all node --test test/unit/chaos.test.js
+#   flakes     → the whole unit suite 3 times; a test that fails once is flaky: fix the race
+#                (wait for the right state), never add a retry (CLAUDE.md)
 name: nightly
 on:
   schedule:
     - cron: '17 7 * * *'
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   load-harsh:
     runs-on: ubuntu-24.04
@@ -13,3 +19,46 @@ jobs:
       - uses: actions/checkout@v4
       - name: Harsh load (bad Wi-Fi, starved server)
         run: ./scripts/load-harsh.sh
+
+  chaos:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix: { run: [1, 2, 3] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Chaos phones with a fresh seed (every game)
+        env: { BOT_GAMES: all }
+        run: SEED=$((RANDOM * 32768 + RANDOM)) node --test --test-timeout=1800000 test/unit/chaos.test.js
+
+  flakes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Unit suite 3 times in a row
+        env: { BOT_GAMES: all }
+        run: for i in 1 2 3; do echo "== run $i =="; node --test --test-concurrency=4 --test-timeout=900000 test/unit/ || exit 1; done
+
+  # Cottage Lab: every game on a simulated mid-range Samsung TV + 3 phones, scored per screen
+  # against the feel budgets (docs/future-features/feel-plan.md). Report only: it doesn't fail the run yet.
+  lab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cottage Lab (all games)
+        run: ./scripts/lab.sh
+      - name: Scorecard
+        if: always()
+        run: if [ -f test/lab/out/report.md ]; then cat test/lab/out/report.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: lab-report, path: test/lab/out/, if-no-files-found: ignore }

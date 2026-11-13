@@ -60,11 +60,11 @@
     '🔄 Skip this question': '🔄 Passer cette question', '⏩ Hurry them up': '⏩ On accélère', '▶ Next': '▶ Suivant',
     'Voted to skip': 'Vote pour passer', 'Voted to hurry': 'Vote pour accélérer',
     // TV
-    'PRESS START': 'APPUIE SUR START', 'click anywhere · turns on music': 'clique n\'importe où · lance la musique',
+    'PRESS START': 'APPUIE SUR START', 'press OK on the remote (or click) · turns on music': 'appuie sur OK sur la télécommande (ou clique) · lance la musique',
     'Scan to join · room code': 'Scanne pour jouer · code', 'Scan or go to': 'Scanne ou va sur', 'Nobody here yet': "Personne pour l'instant",
     'Choose a game': 'Choisis un jeu', 'Play again?': 'On rejoue ?', 'Rounds': 'Manches', 'Timers': 'Minuteurs', 'Default': 'Par défaut',
     'Fast': 'Rapide', 'Normal': 'Normal', 'Relaxed': 'Détendu', 'Extra slow': 'Très lent', '🌶 18+ content': '🌶 Contenu 18+',
-    '👥 Teams': '👥 Équipes', '👁 Colour-blind colours': '👁 Couleurs daltoniens', '🗣 Narrator voice': '🗣 Voix du narrateur',
+    '👥 Teams': '👥 Équipes', '👁 Colour-blind colours': '👁 Couleurs daltoniens', '🕊 Calm': '🕊 Calme', '🗣 Narrator voice': '🗣 Voix du narrateur',
     '⚙ House rules & content': '⚙ Règles maison et contenu', '🏆 Hall of fame': '🏆 Temple de la renommée', 'Skip ⏭': 'Passer ⏭', 'End': 'Fin',
     '🏆 Final scores': '🏆 Scores finaux', '🏆 Grand champion of the night': '🏆 Grand champion de la soirée',
     'Press End to go back to the menu.': 'Appuie sur Fin pour revenir au menu.', 'Check your phone 🤫': 'Regarde ton téléphone 🤫',

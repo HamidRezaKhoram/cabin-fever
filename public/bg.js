@@ -21,7 +21,7 @@
   /**
    * Per-game scenes: same lake/cottage/pines, different time of day and palette.
    * @typedef {{ sky: string[], hills: string, pines: string, lake: string[], orb: string, orbShade: string,
-   *             stars: boolean, fly: string, glow: string, window: string, name?: string }} Theme
+   *             stars: boolean, fly: string, glow: string, window: string, name?: string, glowFill?: string }} Theme
    * @type {Record<string, Theme>}
    */
   const THEMES = {
@@ -305,6 +305,29 @@
     if (sc) sc(g);
   }
 
+  // The campfire glow (a dithered disc that pulses): drawn once per pulse level (16 steps) and checker
+  // parity into a small canvas, then pasted each frame. It used to be ~57 one-pixel fills with a new
+  // colour string each, every frame: the TV's top cost after layout (Cottage Lab profile, feel-plan.md).
+  /** @type {Map<number, HTMLCanvasElement>} */
+  const glowSprites = new Map();
+  /** @param {number} pulse 0.7–1 @param {number} parity frame & 1 */
+  function glowSprite(pulse, parity) {
+    const level = Math.round(((pulse - 0.7) / 0.3) * 15);
+    const id = level * 2 + parity;
+    let c = glowSprites.get(id);
+    if (!c) {
+      c = document.createElement('canvas'); c.width = 21; c.height = 11;
+      const gg = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+      const p = 0.7 + (level / 15) * 0.3;
+      for (let y = -8; y <= 2; y++) for (let x = -10; x <= 10; x++) {
+        const d = Math.hypot(x / 10, y / 7);
+        if (d < 1 && (x + y + parity) % 2 === 0) { gg.fillStyle = `rgba(255,150,60,${(0.16 * (1 - d) * p).toFixed(3)})`; gg.fillRect(x + 10, y + 8, 1, 1); }
+      }
+      glowSprites.set(id, c);
+    }
+    return c;
+  }
+
   /** @param {HTMLCanvasElement} canvas */
   function start(canvas) {
     canvas.width = W; canvas.height = H;
@@ -326,12 +349,15 @@
     function draw(frame) {
       const t = frame * TICKS_PER_FRAME;
       g.drawImage(layer, 0, 0);
-      for (const s of th.stars ? stars : []) {
-        const tw = Math.sin(t / 6 + s.p) * 0.5 + 0.5;
-        if (tw < 0.25 && s.b < 0.6) continue;
-        g.fillStyle = tw > 0.85 && s.b > 0.7 ? '#ffffff' : '#a9a3d9';
-        g.fillRect(s.x, s.y, 1, 1);
-        if (s.b > 0.93 && tw > 0.8) { g.fillRect(s.x - 1, s.y, 3, 1); g.fillRect(s.x, s.y - 1, 1, 3); }
+      // Stars, one colour at a time (switching the fill colour per star is what costs).
+      for (const bright of [false, true]) {
+        g.fillStyle = bright ? '#ffffff' : '#a9a3d9';
+        for (const s of th.stars ? stars : []) {
+          const tw = Math.sin(t / 6 + s.p) * 0.5 + 0.5;
+          if ((tw < 0.25 && s.b < 0.6) || (tw > 0.85 && s.b > 0.7) !== bright) continue;
+          g.fillRect(s.x, s.y, 1, 1);
+          if (s.b > 0.93 && tw > 0.8) { g.fillRect(s.x - 1, s.y, 3, 1); g.fillRect(s.x, s.y - 1, 1, 3); }
+        }
       }
       if (!shooting && Math.random() < 0.0016) shooting = { x: 40 + Math.random() * 180, y: 6 + Math.random() * 30, l: 0 };
       if (shooting) {
@@ -347,11 +373,7 @@
       // campfire on the shore: flickering flames, sparks, a warm glow and its reflection
       const fx = 190, fy = HORIZON - 2;
       // round, dithered glow (a flat rectangle read as a grey box)
-      const pulse = 0.85 + 0.15 * Math.sin(frame / 5);
-      for (let y = -8; y <= 2; y++) for (let x = -10; x <= 10; x++) {
-        const d = Math.hypot(x / 10, y / 7);
-        if (d < 1 && (x + y + frame) % 2 === 0) { g.fillStyle = `rgba(255,150,60,${(0.16 * (1 - d) * pulse).toFixed(3)})`; g.fillRect(fx + x, fy + y, 1, 1); }
-      }
+      g.drawImage(glowSprite(0.85 + 0.15 * Math.sin(frame / 5), frame & 1), fx - 10, fy - 8);
       for (let k = 0; k < 3; k++) { const h = 2 + ((frame + k * 5) % 4); g.fillStyle = k === 1 ? '#ffd23f' : '#ff8a3d'; g.fillRect(fx - 1 + k, fy - h, 1, h); }
       if (frame % 20 < 3) { g.fillStyle = '#ffd23f'; g.fillRect(fx + ((frame >> 2) % 3) - 1, fy - 6 - (frame % 20), 1, 1); }
       for (let y = HORIZON + 1; y < HORIZON + 10; y += 2) { g.fillStyle = 'rgba(255,150,60,0.22)'; g.fillRect(fx - 1 + Math.round(Math.sin((y + t) / 2)), y, 3, 1); }
@@ -363,15 +385,16 @@
         g.fillRect(xx, yy, 3 + (i >> 1), 2);
       }
       // reflections + shimmer
+      g.fillStyle = th.glowFill || (th.glowFill = `rgba(${th.glow},0.35)`);
       for (let y = HORIZON + 2; y < H; y += 2) {
         const wob = Math.round(Math.sin((y + t) / 3) * 2);
         const w = 4 + (Math.round(y * 7 + t) % 5);
-        g.fillStyle = `rgba(${th.glow},0.35)`;
         g.fillRect(262 - (w >> 1) + wob, y, w, 1);
-        if (y < HORIZON + 22) {
-          g.fillStyle = 'rgba(255,207,90,0.35)';
-          g.fillRect(211 + wob, y, 5, 1); g.fillRect(228 + wob, y, 5, 1);
-        }
+      }
+      g.fillStyle = 'rgba(255,207,90,0.35)';
+      for (let y = HORIZON + 2; y < HORIZON + 22; y += 2) {
+        const wob = Math.round(Math.sin((y + t) / 3) * 2);
+        g.fillRect(211 + wob, y, 5, 1); g.fillRect(228 + wob, y, 5, 1);
       }
       g.fillStyle = 'rgba(169,163,217,0.18)';
       for (let i = 0; i < 26; i++) {
@@ -379,19 +402,18 @@
         const y = HORIZON + 4 + ((i * 29) % (H - HORIZON - 6));
         g.fillRect(x, y, 3 + (i % 4), 1);
       }
+      const lit = [];
       for (const f of flies) {
         f.x += f.vx + Math.sin((t + f.p * 10) / 15) * 0.06;
         f.y += f.vy + Math.cos((t + f.p * 10) / 20) * 0.04;
         if (f.x < 0) f.x = W; if (f.x > W) f.x = 0;
         if (f.y < HORIZON - 40) f.vy = Math.abs(f.vy); if (f.y > HORIZON + 4) f.vy = -Math.abs(f.vy);
-        if (Math.sin(t / 4 + f.p * 3) > 0.2) {
-          const x = Math.round(f.x), y = Math.round(f.y);
-          g.fillStyle = th.fly;
-          g.fillRect(x, y, 1, 1);
-          g.fillStyle = 'rgba(255,255,255,0.18)';
-          g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3);
-        }
+        if (Math.sin(t / 4 + f.p * 3) > 0.2) lit.push(Math.round(f.x), Math.round(f.y));
       }
+      g.fillStyle = th.fly;
+      for (let i = 0; i < lit.length; i += 2) g.fillRect(lit[i], lit[i + 1], 1, 1);
+      g.fillStyle = 'rgba(255,255,255,0.18)';
+      for (let i = 0; i < lit.length; i += 2) { g.fillRect(lit[i] - 1, lit[i + 1], 3, 1); g.fillRect(lit[i], lit[i + 1] - 1, 1, 3); }
       const an = th.name ? ANIM[th.name] : undefined;
       if (an) an(g, t);
     }

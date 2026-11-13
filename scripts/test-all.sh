@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Run every HomeJack test. Must pass before and after each change (see CLAUDE.md).
+# Run every Cabin Fever test. Must pass before and after each change (see CLAUDE.md).
 # Node isn't needed on the host: tests run in containers (podman or docker).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
-CT=$(command -v podman || command -v docker)
-NODE_IMG=docker.io/library/node:20-alpine
-PW_IMG=mcr.microsoft.com/playwright:v1.49.1-noble
+source test/kit/containers.sh   # in_node / in_playwright (CT = podman or docker)
 PORT=${UI_PORT:-18012}
 SKIP_UI=${SKIP_UI:-0}
 
@@ -33,13 +31,11 @@ if [ -z "${BOT_GAMES:-}" ]; then
 fi
 echo "bots will play: $BOT_GAMES"
 mkdir -p "$ROOT/test/ui/snapshots"
-"$CT" run --rm -e BOT_GAMES="$BOT_GAMES" -e SNAP_DIR=/snapshots -v "$ROOT/test/ui/snapshots":/snapshots:Z -v "$ROOT":/src:ro,Z -v cabin-fever-npm:/root/.npm "$NODE_IMG" sh -c '
+in_node cabin-fever '
   (command -v openssl >/dev/null || apk add --no-cache -q openssl >/dev/null 2>&1 || true) &&
-  cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null &&
   npm run -s typecheck && echo "tsc: 0 errors" && npm run -s lint && echo "eslint: 0 problems" &&
   node tools/strict-ratchet.js &&
-  npx c8 node --test --test-concurrency=4 --test-timeout=600000 test/unit/'
-
+  npx c8 node --test --test-concurrency=4 --test-timeout=600000 test/unit/' -e BOT_GAMES="$BOT_GAMES" -e SNAP_DIR=/snapshots -v "$ROOT/test/ui/snapshots":/snapshots:Z
 fi
 if [ "$SKIP_UI" = 1 ]; then echo "(UI tests skipped)"; exit 0; fi
 
@@ -76,20 +72,18 @@ if [ -n "$HOST_IP" ] && [ "$FIRST_LAN" != "http://$HOST_IP:$PORT" ]; then
   echo "Join address is $FIRST_LAN, but this machine's LAN address is $HOST_IP"; exit 1
 fi
 echo "join address: $FIRST_LAN"
+# A real room on the image: a TV makes it, two phones join, a game starts (CI does the same on docker compose).
+in_node cabin-fever 'node test/smoke.js' --network host -e SMOKE_URL="http://localhost:$PORT"
 echo "test server music: $(curl -s "http://localhost:$PORT/api/music")"
 
 step "5/6 browser tests (TV + 3 phones)"
 rm -rf "$ROOT/test/ui/.shots" 2>/dev/null || podman unshare rm -rf "$ROOT/test/ui/.shots" 2>/dev/null || true
 mkdir -p "$ROOT/test/ui/.shots"
-"$CT" run --rm --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots \
-  -v "$ROOT/test/ui":/tests:ro,Z -v "$ROOT/test/ui/.shots":/shots:Z -v cabin-fever-pw:/pw "$PW_IMG" sh -c '
-  cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/run.js /pw/run.js && node /pw/run.js'
+in_playwright cabin-fever test/ui 'node /pw/ui/run.js' --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots -v "$ROOT/test/ui/.shots":/shots:Z
 
 step "6/6 GitHub Pages build (the TV's browser hosts the room; tested with no server)"
 mkdir -p "$ROOT/dist"
-"$CT" run --rm -v "$ROOT":/src:ro,Z -v "$ROOT/dist":/out:Z -v cabin-fever-npm:/root/.npm "$NODE_IMG" sh -c '
-  cp -r /src /app && cd /app && rm -rf node_modules && npm install --silent --no-audit --no-fund >/dev/null && node tools/build-pages.js /out'
-"$CT" run --rm --network host -e DIST=/dist -v "$ROOT/dist":/dist:Z -v "$ROOT/test/ui":/tests:ro,Z -v cabin-fever-pw:/pw "$PW_IMG" sh -c '
-  cd /pw && [ -d node_modules/playwright ] || npm i -s playwright@1.49.1 >/dev/null 2>&1; cp /tests/pages.js /pw/pages.js && node /pw/pages.js'
+in_node cabin-fever 'node tools/build-pages.js /out' -v "$ROOT/dist":/out:Z
+in_playwright cabin-fever test/ui 'node /pw/ui/pages.js' --network host -e DIST=/dist -v "$ROOT/dist":/dist:Z
 
 printf '\n\033[1;32mALL TESTS PASSED\033[0m\n'

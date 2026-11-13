@@ -23,7 +23,7 @@ const MAX_IMAGES = 40; // drawings are big — keep only the newest ones on disk
  * @typedef {{ name: string, games: number, wins: number, points: number, nightWins: number,
  *   fooled: number, shutouts: number, favs: number, perGame: Record<string, { played: number, wins: number }> }} PlayerStats
  * @typedef {{ game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }} Highlight
- * @typedef {{ players: Record<string, PlayerStats>, highlights: Highlight[] }} StatsFile
+ * @typedef {{ players: Record<string, PlayerStats>, highlights: Highlight[], ratings?: Record<string, [number, number, number]> }} StatsFile
  */
 
 /** @type {StatsFile} */
@@ -33,6 +33,17 @@ try { data = { players: {}, highlights: [], ...JSON.parse(fs.readFileSync(FILE, 
 // "constructor" or "__proto__" are just names (on a normal object they broke or poisoned the stats).
 data.players = Object.assign(Object.create(null), data.players && typeof data.players === 'object' ? data.players : {});
 if (!Array.isArray(data.highlights)) data.highlights = [];
+data.ratings = Object.assign(Object.create(null), data.ratings && typeof data.ratings === 'object' ? data.ratings : {});
+
+/** A phone's 1-tap verdict on the game just played: 1 😴, 2 🙂, 3 🤩 (feel-plan.md §5: do the lab
+ * numbers predict what people feel?). @param {string} gameId @param {number} score */
+function rate(gameId, score) {
+  if (![1, 2, 3].includes(score) || !/^[a-z0-9-]{1,30}$/.test(gameId)) return;
+  const r = /** @type {Record<string, [number, number, number]>} */ (data.ratings);
+  const row = r[gameId] = Array.isArray(r[gameId]) && r[gameId].length === 3 ? r[gameId] : [0, 0, 0];
+  row[score - 1]++;
+  save();
+}
 
 /** @type {NodeJS.Timeout | null} */
 let timer = null;
@@ -131,10 +142,10 @@ function summary(room) {
   const players = Object.values(data.players)
     .map((r) => ({ ...r, achievements: achievements(r) }))
     .sort((a, b) => b.wins - a.wins || b.points - a.points);
-  return { tonight: room ? room.highlights || [] : [], allTime: data.highlights.slice(0, 60), players };
+  return { tonight: room ? room.highlights || [] : [], allTime: data.highlights.slice(0, 60), players, ratings: { ...data.ratings } };
 }
 
 /** For tests: forget everything (in memory). */
-function _reset() { data = { players: Object.create(null), highlights: [] }; }
+function _reset() { data = { players: Object.create(null), highlights: [], ratings: Object.create(null) }; }
 
-module.exports = { feat, highlight, recordGame, nightWin, achievements, summary, flush, _reset };
+module.exports = { feat, highlight, recordGame, nightWin, achievements, summary, rate, flush, _reset };

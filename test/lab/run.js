@@ -1,0 +1,220 @@
+/*
+ * Cottage Lab (docs/future-features/feel-plan.md): plays every game on a simulated mid-range
+ * Samsung TV and three mid-range Samsung phones, measures how each screen feels, and writes a
+ * scorecard (out/report.md + out/report.json). Run: ./scripts/lab.sh [game,game…]
+ * The device numbers are ESTIMATES until calibrated on the real TV and phone (see PROFILES).
+ */
+'use strict';
+const fs = require('fs');
+const { chromium } = require('playwright');
+const { device, probe, take, tapLatency, cpuProfile, stats } = require('../kit/perf');
+
+const BASE = process.env.BASE_URL || 'http://localhost:18012';
+const OUT = process.env.LAB_OUT || '/out';
+const NO_NET = process.env.LAB_NO_NET === '1'; // experiment: no network emulation (it records every frame)
+const ONLY = (process.env.LAB_GAMES || '').split(',').filter(Boolean);
+const GAME_MS = Number(process.env.LAB_GAME_MS || 360000);
+
+// Assumed devices (feel-plan.md §1). cpu = how many times slower than this machine: a guess until
+// /bench is run on the real devices. Phones render at DPR 1 here: headless Chrome rasterises in
+// software, so a 2.8× screen would measure this machine's CPU, not the phone's GPU.
+const PROFILES = {
+  tv: { name: '2022 Samsung Crystal UHD (Tizen 6.5, Chromium 85)', viewport: { width: 1920, height: 1080 }, cpu: 6, latencyMs: 15 },
+  phone: { name: 'Galaxy A15 (Dimensity 6100+)', viewport: { width: 384, height: 832 }, cpu: 4, latencyMs: 30, isMobile: true, hasTouch: true },
+};
+// Budgets (feel-plan.md §2), checked per screen.
+const BUDGET = { phoneMaxFrame: 100, tapTarget: 44, tapP95: 80, inpMax: 200, longPerScreen: 2, longMax: 200, tvMaxFrame: 100, deadAir: 8000, minFontPx: 28, tvLoadMs: 5000, phoneJoinMs: 4000, menuPresses: 6, heapGrowth: 0.2 };
+
+const sleep = (/** @type {number} */ ms) => new Promise((r) => setTimeout(r, ms));
+async function views(/** @type {string} */ code) { try { return await (await fetch(`${BASE}/api/debug/views?room=${code}`)).json(); } catch (e) { return null; } }
+
+(async () => {
+  const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--enable-precise-memory-info'] });
+  /** @type {Record<string, any>} */ const report = { profiles: PROFILES, budget: BUDGET, startup: {}, screens: {}, games: {} };
+
+  // --- Calibration (/bench): this machine as it is, then as the simulated TV and phone -------
+  /** @param {any} prof */
+  const bench = async (prof) => {
+    const ctx = await browser.newContext({ viewport: prof ? prof.viewport : { width: 1280, height: 800 } });
+    const p = await ctx.newPage();
+    if (prof) await device(p, { cpu: prof.cpu });
+    await p.goto(BASE + '/bench');
+    const r = await p.waitForFunction(() => /** @type {any} */ (window).cfBench, null, { timeout: 120000 }).then((h) => h.jsonValue());
+    await ctx.close();
+    return r.total;
+  };
+  report.calibration = { labMs: await bench(null), tvMs: await bench(PROFILES.tv), phoneMs: await bench(PROFILES.phone) };
+
+  // --- TV: cold start to PRESS START (M6) --------------------------------------------------
+  const tvCtx = await browser.newContext({ viewport: PROFILES.tv.viewport });
+  const tv = await tvCtx.newPage();
+  tv.on('dialog', (/** @type {any} */ d) => d.accept());
+  await device(tv, PROFILES.tv);
+  await probe(tv, '#phase-view');
+  let t0 = Date.now();
+  await tv.goto(BASE + '/host?bots=1'); // not ?debug=1: the debug panel costs the TV seconds of CPU (it was half the profile)
+  await tv.waitForFunction(() => /^[A-Z]{4}$/.test((document.getElementById('start-code') || {}).textContent || ''), null, { timeout: 60000 });
+  report.startup.tvLoadMs = Date.now() - t0;
+  const code = String(await tv.textContent('#start-code'));
+  await tv.keyboard.press('Enter'); // the remote's OK button
+  await tv.waitForSelector('#start-overlay', { state: 'hidden' });
+
+  // --- 3 phones join (M6) ------------------------------------------------------------------
+  const phones = [];
+  for (const [i, nick] of ['Lab A', 'Lab B', 'Lab C'].entries()) {
+    const ctx = await browser.newContext({ viewport: PROFILES.phone.viewport, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+    const p = await ctx.newPage();
+    await device(p, NO_NET ? { cpu: PROFILES.phone.cpu } : PROFILES.phone);
+    await probe(p, '#game-view');
+    t0 = Date.now();
+    await p.goto(`${BASE}/play?code=${code}`);
+    await p.fill('#nick-input', nick);
+    await p.click('#join-form button[type=submit]');
+    await p.waitForSelector('#game-view:not([hidden])', { timeout: 30000 });
+    (report.startup.phoneJoinMs = report.startup.phoneJoinMs || []).push(Date.now() - t0);
+    phones.push({ p, i, taps: /** @type {number[]} */ ([]) });
+  }
+  await tv.click('[data-act="bots"][data-n="3"]').catch(() => {}); // 6 players: every game can start
+  await tv.selectOption('#set-rounds', '1').catch(() => {});
+  await sleep(1500);
+
+  // --- Menu by remote (M7): presses from the first card to every other card ------------------
+  report.startup.menuPresses = await tv.evaluate(() => {
+    const cards = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.game-pick')]);
+    const c = cards.map((el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    // Rows and columns of a grid: presses = column distance + row distance.
+    const xs = [...new Set(c.map((p) => Math.round(p[0])))].sort((a, b) => a - b), ys = [...new Set(c.map((p) => Math.round(p[1])))].sort((a, b) => a - b);
+    return Math.max(...c.map((p) => xs.indexOf(Math.round(p[0])) + ys.indexOf(Math.round(p[1]))));
+  });
+  // CPU profiles (LAB_PROFILE=1): the TV, and one phone (they all run the same page).
+  const stopTv = process.env.LAB_PROFILE ? await cpuProfile(tv, 25) : null;
+  const stopPhone = process.env.LAB_PROFILE ? await cpuProfile(phones[0].p, 20) : null;
+  await take(tv);
+  /** Memory after the first game (once its assets are in), compared with the end of the run. */
+  let heap0 = 0;
+
+  const games = /** @type {string[]} */ (await tv.$$eval('.game-pick', (els) => els.map((e) => /** @type {HTMLElement} */ (e).dataset.gameId || '')));
+  for (const gameId of games.filter((g) => !ONLY.length || ONLY.includes(g))) {
+    const g0 = Date.now();
+    await tv.click(`.game-pick[data-game-id="${gameId}"]`).catch(() => {});
+    let key = '', since = Date.now(), done = false;
+    /** @param {string} k */
+    const close = async (k) => {
+      if (!k) return;
+      const m = await take(tv);
+      const clock = await tv.evaluate(() => window.Rumpus.clock.stats());
+      const font = await tv.evaluate(() => {
+        let min = Infinity, who = '';
+        // Mid-animation sizes (a podium rising, a card flipping) aren't what people read: skip them.
+        const moving = document.getAnimations().filter((a) => a.playState === 'running').map((a) => /** @type {any} */ (a.effect).target).filter(Boolean);
+        for (const el of document.querySelectorAll('#phase-view *')) {
+          const h = /** @type {HTMLElement} */ (el);
+          if (!h.childNodes.length || ![...h.childNodes].some((n) => n.nodeType === 3 && (n.textContent || '').trim())) continue;
+          if (moving.some((m) => m.contains(h))) continue;
+          const r = h.getBoundingClientRect();
+          // What it really is on screen: font size × the stage zoom (host.js shrinkToStage).
+          const px = parseFloat(getComputedStyle(h).fontSize) * (r.height / (h.offsetHeight || r.height));
+          if (r.width && r.height && px < min) { min = px; who = `${h.tagName.toLowerCase()}.${[...h.classList].join('.')} "${(h.textContent || '').trim().slice(0, 30)}"`; }
+        }
+        return { px: min === Infinity ? 0 : Math.round(min), who };
+      });
+      const ph = await Promise.all(phones.map((x) => take(x.p)));
+      const pc = await Promise.all(phones.map((x) => x.p.evaluate(() => {
+        const c = window.Rumpus.clock.stats(); window.Rumpus.clock.resetStats();
+        // Smallest thing you can tap: guidelines say ≥ 44–48 px (Apple 44 pt, Material 48 dp).
+        let target = Infinity, what = '';
+        for (const el of document.querySelectorAll('#game-view button:not([disabled]), #game-view [data-send], #game-view input, #game-view select')) {
+          const r = el.getBoundingClientRect();
+          if (!r.width || !r.height || /** @type {HTMLElement} */ (el).offsetParent === null) continue;
+          const side = Math.min(r.width, r.height);
+          if (side < target) { target = side; what = `${el.tagName.toLowerCase()}.${[...el.classList].join('.')} "${(el.textContent || '').trim().slice(0, 24)}"`; }
+        }
+        return { maxFrame: c.maxMs, target: target === Infinity ? 0 : Math.round(target), what };
+      })));
+      const s = report.screens[k] = report.screens[k] || { visits: 0, tvLong: [], tvEvents: [], phoneEvents: [], phoneLong: [], taps: [], deadAir: 0, maxFrame: 0, phoneMaxFrame: 0, minFont: Infinity, minTarget: Infinity };
+      s.visits++; s.tvLong.push(...m.longTasks); s.tvEvents.push(...m.events);
+      ph.forEach((x) => { s.phoneEvents.push(...x.events); s.phoneLong.push(...x.longTasks); });
+      for (const c of pc) {
+        s.phoneMaxFrame = Math.max(s.phoneMaxFrame, Math.round(c.maxFrame));
+        if (c.target && c.target < s.minTarget) { s.minTarget = c.target; s.smallTarget = c.what; }
+      }
+      phones.forEach((x) => s.taps.push(...x.taps.splice(0)));
+      s.deadAir = Math.max(s.deadAir, Math.round(m.quietMaxMs));
+      s.maxFrame = Math.max(s.maxFrame, Math.round(clock.maxMs));
+      if (font.px && font.px < s.minFont) { s.minFont = font.px; s.smallest = font.who; }
+      await tv.evaluate(() => window.Rumpus.clock.resetStats());
+    };
+    while (!done && Date.now() - g0 < GAME_MS) {
+      const v = await views(code);
+      const phase = v && v.host ? v.host.phase : '?';
+      const k = `${gameId}:${phase}`;
+      if (k !== key) { await close(key); key = k; since = Date.now(); }
+      if (phase === 'gameover' || (phase === 'lobby' && Date.now() - g0 > 5000)) done = true;
+      // Each phone does what a person would: answer a form, or tap a choice.
+      for (const x of phones) {
+        const what = await x.p.evaluate((n) => {
+          const gv = document.getElementById('game-view');
+          if (!gv) return '';
+          for (const el of gv.querySelectorAll('[data-lab-pick]')) el.removeAttribute('data-lab-pick');
+          const inp = /** @type {HTMLInputElement | null} */ (gv.querySelector('form input:not([type=hidden]):not([disabled]), form textarea:not([disabled])'));
+          if (inp && !inp.value && inp.offsetParent) {
+            inp.value = inp.type === 'number' ? String(10 + n) : `lab answer ${n}`;
+            const b = /** @type {HTMLElement | null} */ (inp.form && inp.form.querySelector('button[type=submit], button:not([type])'));
+            if (b) { b.setAttribute('data-lab-pick', ''); return 'form'; }
+          }
+          const btns = /** @type {HTMLElement[]} */ ([...gv.querySelectorAll('[data-send]:not([disabled]):not(.sent)')]).filter((b) => b.offsetParent);
+          if (!btns.length) return '';
+          btns[Math.floor(Math.random() * btns.length)].setAttribute('data-lab-pick', '');
+          return 'tap';
+        }, x.i);
+        if (what) x.taps.push(await tapLatency(x.p, '[data-lab-pick]'));
+      }
+      await sleep(400);
+    }
+    await close(key);
+    if (!heap0) heap0 = (await take(tv, { heap: true })).heapMb;
+    report.games[gameId] = { seconds: Math.round((Date.now() - g0) / 1000), finished: done };
+    if (!done) await tv.click('[data-act="end"]').catch(() => {});
+    await tv.click('[data-act="picknext"]').catch(() => {});
+    await sleep(2500);
+    void since;
+  }
+  if (stopTv) report.profile = await stopTv();
+  if (stopPhone) report.phoneProfile = await stopPhone();
+  report.startup.heapGrowth = heap0 ? ((await take(tv, { heap: true })).heapMb - heap0) / heap0 : 0;
+
+  // --- Scorecard ----------------------------------------------------------------------------
+  const ok = (/** @type {boolean} */ b) => (b ? '✔' : '✖');
+  const rows = [];
+  let fails = 0;
+  for (const [k, s] of Object.entries(report.screens)) {
+    const tap = stats(s.taps), lt = stats(s.tvLong), inp = stats([...s.tvEvents, ...s.phoneEvents]);
+    const long = s.tvLong.filter((/** @type {number} */ d) => d > 50).length / Math.max(1, s.visits);
+    const checks = [tap.n === 0 || tap.p95 <= BUDGET.tapP95, inp.max <= BUDGET.inpMax, long <= BUDGET.longPerScreen && lt.max <= BUDGET.longMax, s.maxFrame <= BUDGET.tvMaxFrame, s.deadAir <= BUDGET.deadAir, !s.minFont || s.minFont === Infinity || s.minFont >= BUDGET.minFontPx, s.phoneMaxFrame <= BUDGET.phoneMaxFrame, s.minTarget === Infinity || s.minTarget >= BUDGET.tapTarget];
+    fails += checks.filter((c) => !c).length;
+    rows.push(`| ${k} | ${tap.n ? `${tap.median}/${tap.p95}` : '–'} ${ok(checks[0])} | ${inp.max} ${ok(checks[1])} | ${long.toFixed(1)} · ${lt.max} ${ok(checks[2])} | ${s.maxFrame} ${ok(checks[3])} | ${(s.deadAir / 1000).toFixed(1)} ${ok(checks[4])} | ${s.minFont === Infinity ? '–' : s.minFont} ${ok(checks[5])} | ${s.phoneMaxFrame} ${ok(checks[6])} | ${s.minTarget === Infinity ? '–' : s.minTarget} ${ok(checks[7])} |`);
+    s.summary = { tap, inp, longPerVisit: long, longMax: lt.max };
+  }
+  const st = report.startup;
+  const md = [
+    '# Cottage Lab scorecard', '',
+    `TV: ${PROFILES.tv.name}, CPU ÷${PROFILES.tv.cpu}. Phones: ${PROFILES.phone.name}, CPU ÷${PROFILES.phone.cpu}. **Estimates until calibrated on real devices.**`, '',
+    `**Calibrate:** \`/bench\` takes ${report.calibration.labMs} ms on this machine (simulated TV ${report.calibration.tvMs} ms, phone ${report.calibration.phoneMs} ms). Open \`http://<server>:8012/bench?base=${report.calibration.labMs}\` on the real TV and phone: the "× the lab machine" it shows is the right \`cpu\` for PROFILES in test/lab/run.js.`, '',
+    `- TV cold start → PRESS START: **${st.tvLoadMs} ms** ${ok(st.tvLoadMs <= BUDGET.tvLoadMs)} (budget ${BUDGET.tvLoadMs})`,
+    `- Phone open → in the lobby: **${stats(st.phoneJoinMs).max} ms** worst ${ok(stats(st.phoneJoinMs).max <= BUDGET.phoneJoinMs)} (budget ${BUDGET.phoneJoinMs})`,
+    `- Remote presses from the first game card to the furthest: **${st.menuPresses}** ${ok(st.menuPresses <= BUDGET.menuPresses)} (budget ${BUDGET.menuPresses})`,
+    `- TV memory growth over the run: **${Math.round(st.heapGrowth * 100)}%** ${ok(st.heapGrowth <= BUDGET.heapGrowth)} (budget ${BUDGET.heapGrowth * 100}%)`,
+    `- Games: ${Object.entries(report.games).map(([g, x]) => `${g} ${x.seconds}s${x.finished ? '' : ' (did not finish)'}`).join(', ')}`, '',
+    `| screen | tap→paint median/p95 ms (≤${BUDGET.tapP95}) | worst input delay ms (≤${BUDGET.inpMax}) | TV long tasks per visit · max ms (≤${BUDGET.longPerScreen} · ≤${BUDGET.longMax}) | TV worst frame ms (≤${BUDGET.tvMaxFrame}) | dead air s (≤${BUDGET.deadAir / 1000}) | smallest TV text px (≥${BUDGET.minFontPx}) | phone worst frame ms (≤${BUDGET.phoneMaxFrame}) | smallest phone tap target px (≥${BUDGET.tapTarget}) |`,
+    '|---|---|---|---|---|---|---|---|---|', ...rows, '', `${fails} screen check(s) over budget.`, '',
+    '**Smallest TV text per screen:**', ...Object.entries(report.screens).map(([k, s]) => `- ${k}: ${s.smallest || '–'}`),
+    '', '**Smallest phone tap target per screen:**', ...Object.entries(report.screens).map(([k, s]) => `- ${k}: ${s.smallTarget || '–'}`),
+    ...(report.profile ? ['', '**TV CPU, top self time:**', '```', ...report.profile, '```'] : []),
+    ...(report.phoneProfile ? ['', '**Phone CPU (one phone), top self time:**', '```', ...report.phoneProfile, '```'] : []),
+  ].join('\n');
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(report, (k, v) => (v === Infinity ? null : v), 1));
+  fs.writeFileSync(`${OUT}/report.md`, md + '\n');
+  console.log(md);
+  await browser.close();
+})().catch((e) => { console.error(e); process.exit(1); });

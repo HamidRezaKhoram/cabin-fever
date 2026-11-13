@@ -25,6 +25,8 @@ interface Player {
   avatar: number;
   team?: 'red' | 'blue' | null;
   look?: Record<string, number> | null;
+  /** "Leave me out": can't be voted for in who's-most-likely or sent Crush notes/dates (feel-plan.md §4). */
+  shy?: boolean;
   dropTimer?: NodeJS.Timeout | null;
   lastReact?: number;
   /** Test bot (driven by games/bot-brain.js). */
@@ -57,6 +59,8 @@ interface Room {
   /** A saved game to pick up when the TV is back after a restart (core/rooms.js, todo 2.1). */
   resumeGame?: { id: string, data: any } | null;
   highlights?: { game: string, prompt?: string, text?: string, image?: string, by: string, note: string, at?: number }[];
+  /** Phones that rated the game just finished (😴 / 🙂 / 🤩), cleared when a game starts. */
+  rated?: Set<string>;
   /** Game night playlist (server.js) or null. */
   night?: { total: number, played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
   game: GameLike | null;

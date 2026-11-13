@@ -8,6 +8,7 @@ const assert = require('node:assert');
 const { startServer, until, makeHost, makePlayer, QUICK } = require('../helpers');
 const { decide } = require('../../games/bot-brain');
 const { makeRng } = require('../../games/rng');
+const { seeded } = require('../kit/seeded');
 
 // skipq is rationed (once a game per phone): a room that votes to replace every question never finishes.
 const VOTES = ['hurry', 'wrap', 'ready', 'nonsense', '', '__proto__'];
@@ -61,6 +62,8 @@ test('chaos phones (late, repeated, empty, junk, wrong-screen input, random vote
     'RUMPUS_IMP_CLUE_MS', 'RUMPUS_IMP_GUESS_MS', 'RUMPUS_IMP_VOTE_MS', 'RUMPUS_MR_ANSWER_MS', 'RUMPUS_ML_VOTE_MS', 'RUMPUS_ANSWER_MS', 'RUMPUS_VOTE_MS',
     'RUMPUS_ST_TALK_MS', 'RUMPUS_ST_VOTE_MS', 'RUMPUS_ST_CREW_MS', 'RUMPUS_ST_ACCUSE_MS', 'RUMPUS_TEL_DESCRIBE_MS', 'RUMPUS_TEL_DRAW_MS', 'RUMPUS_TEL_VOTE_MS',
     'RUMPUS_TEL_WRITE_MS', 'RUMPUS_TT_WRITE_MS', 'RUMPUS_TRIVIA_QUESTION_MS'].map((k) => [k, '2500']));
+  // Fixed seed by default (same run every push); the nightly run sets SEED to a fresh one.
+  const { seed } = seeded('chaos', 1000);
   const srv = await startServer({ ...QUICK, ...SHORT });
   /** @type {(() => void)[]} */
   const stops = [];
@@ -68,7 +71,7 @@ test('chaos phones (late, repeated, empty, junk, wrong-screen input, random vote
     const h = await makeHost(srv);
     /** @type {any[]} */ const glitches = [];
     h.sock.on('room:event', (/** @type {any} */ e) => { if (e.type === 'glitch') glitches.push(e); });
-    for (const [i, n] of ['Chaos', 'Mayhem', 'Havoc'].entries()) stops.push(chaos(await makePlayer(srv, h.code, n), 1000 + i));
+    for (const [i, n] of ['Chaos', 'Mayhem', 'Havoc'].entries()) stops.push(chaos(await makePlayer(srv, h.code, n), seed + i));
     h.emit('host:settings', { rounds: 2 });
     h.emit('host:addBots', { count: 2, speed: 20 });
     await until(() => h.state && h.state.players.length === 5, '3 chaos phones + 2 bots');

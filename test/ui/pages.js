@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const { chromium } = require('playwright');
+const { suite } = require('../kit/browser');
 
 const DIST = process.env.DIST || '/dist';
 const PORT = Number(process.env.PAGES_PORT || 18090);
@@ -31,21 +32,16 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 
-let passed = 0;
-/** @type {any[]} every tab, for the failure dump */
-const pages = [];
-/** @param {string} name @param {() => Promise<void>} fn */
-async function check(name, fn) {
-  const t0 = Date.now();
-  try { await fn(); passed++; console.log(`  ✔ ${name} (${Date.now() - t0} ms)`); } catch (e) {
-    console.error(`  ✖ ${name}\n`, e);
+const t = suite({
+  name: 'Pages', warnings: true,
+  async diagnose(pages) {
     for (const [i, pg] of pages.entries()) {
       const info = await pg.evaluate(() => ({ url: location.pathname + location.search, text: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 400), log: window.Rumpus && window.Rumpus.debug ? window.Rumpus.debug.tail(15) : '' })).catch((er) => ({ url: '?', text: String(er), log: '' }));
       console.error(`\n  ---- tab ${i} ${info.url}\n  ${info.text}\n${info.log}`);
     }
-    process.exit(1);
-  }
-}
+  },
+});
+const { check, errors } = t;
 
 (async () => {
   await new Promise((r) => server.listen(PORT, r));
@@ -53,12 +49,7 @@ async function check(name, fn) {
   // real WebRTC links); in a container the .local names Chromium uses instead don't resolve.
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--disable-features=WebRtcHideLocalIpsWithMdns'] });
   const ctx = await browser.newContext(); // one browser: the tabs reach each other (?net=local)
-  const errors = [];
-  const watch = (p, who) => {
-    pages.push(p);
-    p.on('pageerror', (e) => errors.push(`${who}: ${e.message}`));
-    p.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') { errors.push(`${who} console: ${m.text()}`); console.error(`    [${who} ${m.type()}] ${m.text().slice(0, 300)}`); } });
-  };
+  const watch = (/** @type {any} */ p, /** @type {string} */ who) => t.watch(p, who);
   const tv = await ctx.newPage();
   watch(tv, 'tv');
   let code = '';
@@ -335,5 +326,5 @@ async function check(name, fn) {
 
   await browser.close();
   server.close();
-  console.log(`\nPages: ${passed} checks passed`);
+  t.done();
 })().catch((e) => { console.error(e); process.exit(1); });
