@@ -990,6 +990,10 @@ body.host ol.answers.two-col li { break-inside: avoid; }
 .settings-more .toggle input { width: clamp(16px, 2.4vh, 26px); height: clamp(16px, 2.4vh, 26px); }
 .settings-more .voice-status { color: var(--dim); font-size: 0.8em; }
 .settings-more .hl-link, .settings-more .link-btn { font-size: inherit; }
+/* Settings' Fullscreen, House rules and Fresh room are real buttons, not underlined links: a link's
+   background only hugged the text, so the remote's ring sat around a half-filled box (Nov 13). */
+body.host .settings-more .link-btn, body.host .settings-more .hl-link { display: inline-flex; align-items: center; gap: 0.5vw;
+  background: var(--panel2); color: var(--ink); text-decoration: none; padding: 0.8vh 1.1vw; line-height: 1.2; text-align: left; }
 .settings-more .more-close { grid-column: 1 / -1; justify-self: end; font-size: clamp(10px, 1.6vh, 18px); }
 
 /* ---- Phone join + lobby, cleaner (Nov 13): name and look up top, Join always in reach; the full
@@ -1069,8 +1073,6 @@ body.spinning .shelf { scroll-snap-type: none; } /* mid-turn (host.js centreCart
 .cart-label .game-art { flex: 1 1 auto; min-height: 0; display: grid; place-items: center; }
 .cart-label .game-art img { height: 78%; width: auto; max-width: 90%; object-fit: contain; image-rendering: pixelated; }
 .cart-label .game-name { flex: 0 0 auto; background: #121019; color: #fff; text-align: center; font-size: clamp(8px, 1.45vh, 16px); line-height: 1.3; padding: 0.7vh 0.4vw 0.8vh; }
-.cart-lock { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-size: 5vh; filter: drop-shadow(0 0.4vh 0 #17151f); }
-.game-menu .shelf button.cart.locked .cart-label { filter: grayscale(1) brightness(0.55); }
 .cart-num { position: absolute; top: -1.4vh; right: -1.2vh; z-index: 3; min-width: 4.4vh; height: 4.4vh; line-height: 4.4vh; text-align: center; font-family: var(--pixel); font-size: 2.2vh;
   color: #14121f; background: var(--accent); box-shadow: 0 0 0 3px #17151f; }
 .game-menu .shelf button.cart .game-lang { position: absolute; top: 1vh; right: 1vh; font-family: var(--body); font-size: max(28px, 2.6vh); line-height: 1; background: #121019; padding: 0.3vh 0.4vw; }
@@ -1125,8 +1127,31 @@ body.host.picking .now-playing.show { transform: none; }
 .lineup-title { color: #fff; white-space: nowrap; }
 .lineup-item { position: relative; display: inline-flex; align-items: flex-end; gap: 0.3vw; }
 .lineup-item b { color: var(--accent); font-weight: 400; }
-.lineup-item .cart-shell.mini { --cart-h: 10vh; }
+.lineup-item .cart-shell.mini, .lineup-ghost .cart-shell.mini { --cart-h: 10vh; }
 .lineup-item .lineup-del { position: absolute; top: -1vh; right: -1vh; min-height: 0; } /* drawn as a quiet ✕ below (Corner, stats, quiet ✕) */
+/* More than 4 games: the minis shrink (5–6, then 7+) and the "Lineup" word goes; a lineup that still doesn't
+   fit scrolls inside the bar (the remote's focus brings each ✕ into view) instead of running out of it. */
+.lineup-items { display: flex; align-items: flex-end; gap: 1.2vw; min-width: 0; flex: 1 1 auto; overflow-x: auto; overflow-y: hidden;
+  padding: 1.2vh 1.4vh 0 0.4vh; scrollbar-width: none; }
+.lineup-bar.has-items { padding-top: 0.2vh; } /* the row's own top padding (room for the ✕) replaces the bar's */
+.lineup-items::-webkit-scrollbar { display: none; }
+.lineup-items:empty { display: none; }
+body.host .lineup-items[data-size="m"] .cart-shell.mini { --cart-h: 7vh; }
+body.host .lineup-items[data-size="s"] .cart-shell.mini { --cart-h: 5.5vh; }
+body.host .lineup-items[data-size="s"] { gap: 0.8vw; }
+.lineup-bar.many .lineup-title { display: none; }
+/* Smaller minis: the ✕ would cover the cartridge, so it shows on the one pointed at or focused (the remote
+   still reaches it; "✕ Remove from lineup" and Clear work too). The row keeps the full-size height. */
+body.host .lineup-items[data-size="m"] .lineup-del, body.host .lineup-items[data-size="s"] .lineup-del { opacity: 0; }
+body.host .lineup-items .lineup-item:hover .lineup-del, body.host .lineup-items .lineup-del:focus { opacity: 1; }
+.lineup-items { min-height: calc(10vh + 1.2vh); }
+@media (max-height: 800px) { .lineup-items { min-height: calc(8vh + 1.2vh); } }
+/* 720p/768p: a two-line description (28 px text) made the box reach over the lineup bar. The genre tag goes
+   (it's the least needed line) and the description stops at two lines. */
+@media (max-height: 800px) {
+  body.host .game-detail .detail-meta { display: none; }
+  body.host .game-detail .detail-blurb { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+}
 .lineup-play { font-size: clamp(9px, 1.6vh, 18px); padding: 1vh 1.2vw 1.3vh; white-space: nowrap; }
 .next-up { display: flex; flex-direction: column; align-items: center; gap: 1.6vh; }
 .next-screen { display: flex; flex-direction: column; align-items: center; gap: 2vh; padding: 3vh 4vw 3.5vh; align-self: center;
@@ -1162,7 +1187,6 @@ body.host .game-menu .join-addr { font-size: max(28px, 2.6vh); overflow-wrap: an
 body.host .settings-more { font-size: max(28px, 2.6vh); }
 body.host .settings-more h3, body.host .settings-more .more-close, body.host .settings-more .voice-status { font-size: max(28px, 2.6vh); }
 body.host .settings-more h2 { font-size: max(32px, 3.2vh); }
-body.host .press small { font-size: max(28px, 2.6vh); }
 /* NEXT GAME: sized so the box fits the screen unzoomed (zoomed, its name came out at 25 px). */
 body.host .next-up .cart-shell.big { --cart-h: 34vh; }
 body.host .lineup-row .cart-shell.mini { --cart-h: 11vh; }
@@ -1173,7 +1197,12 @@ body.play .playbar .link-btn { min-height: 48px; min-width: 48px; }
 body.play .avatar-mode button { min-height: 48px; }
 body.calm .nope, body.calm .game-menu .shelf button.cart.nope { animation: none; }
 body.host .game-menu .settings.menu-foot { font-size: max(28px, 2.6vh); }
-body.host #start-overlay .press small { font-size: max(28px, 2.6vh); }
+/* The lines under PRESS START: 28 px, in the body font (in the pixel font a 28 px line was 1000+ px wide and
+   pushed the whole title screen off-centre, over the join card). */
+body.host #start-overlay .press small { font-family: var(--body); font-size: max(28px, 2.6vh); line-height: 1.3; display: inline-block; text-shadow: 2px 2px 0 var(--edge); }
+body.host .start-main { max-width: 46vw; text-align: center; }
+body.host #start-overlay { background: rgba(10, 8, 20, 0.92); }
+body.host .lineup-hint { font-family: var(--body); }
 body.host .cart-num { font-size: max(28px, 2.6vh); min-width: max(36px, 4.4vh); height: max(36px, 4.4vh); line-height: max(36px, 4.4vh); }
 body.play #text-size, body.play #cb-btn { min-height: 48px; min-width: 48px; }
 body.host .game-detail .detail-actions { display: flex; justify-content: center; align-items: center; gap: 1.4vw; flex-wrap: wrap; }
@@ -1185,7 +1214,7 @@ body.host .next-up { overflow: hidden; padding-top: 1vh; }
   .shelf { padding-top: calc(5.2vh + 24px); padding-bottom: 0.5vh; }
   .game-menu .shelf button.cart:hover, .game-menu .shelf button.cart:focus { transform: translateY(-2.5vh) scale(1.2); }
   .cart-shell { --cart-h: 27vh; }
-  body.host .lineup-item .cart-shell.mini { --cart-h: 8vh; }
+  body.host .lineup-item .cart-shell.mini, body.host .lineup-ghost .cart-shell.mini { --cart-h: 8vh; }
 }
 /* Narrow phones: the top bar's buttons are 48 px, so it packs tighter and Leave is just 🚪. */
 @media (max-width: 420px) {
@@ -1206,6 +1235,9 @@ body.host .cmd-group .link-btn, body.host .cmd-group .ghost { background: var(--
 /* The command bar is always one row; the players heading one line (720p: the "Lineup" word goes). */
 body.host .game-menu .settings.cmd-bar { flex-wrap: nowrap; }
 .cmd-info .lineup-bar { flex-wrap: nowrap; }
+/* No games in the lineup yet: the bar stays (no collapse); an invisible mini cartridge keeps its height. */
+.lineup-ghost { visibility: hidden; display: inline-flex; }
+body.host .lineup-hint { color: var(--dim); font-size: max(28px, 2.6vh); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.host .game-menu .crew-head { flex-wrap: nowrap; gap: 0.6vw; white-space: nowrap; }
 body.host .game-menu .crew-head span { font-family: var(--body); }
 @media (max-height: 800px) {
