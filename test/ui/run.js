@@ -166,13 +166,23 @@ const allPages = t.pages;
       const c1 = await centred();
       assert.ok(c1 > c0, `turning clicks (${c0} → ${c1})`);
       assert.strictEqual(await tv.evaluate(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement))), 2);
-      // Round from the last to the first: the wheel spins back past every cartridge, clicking as it goes.
+      // The shelf stops at its ends: ▶ on the last cartridge stays there (going round to the first flung the
+      // wheel back across the screen), and nothing clicks.
       await tv.focus(`.shelf .game-pick:nth-child(${n})`);
-      const c2 = await centred();
+      await centred();
+      // Fully stopped (the turn's last click can land just after it's within 4 px of the middle).
+      const still = async () => { await tv.waitForFunction(() => !document.body.classList.contains('spinning'), null, { timeout: 4000 }); await tv.waitForTimeout(250); return tv.evaluate(() => /** @type {any} */ (window).__wheel.clicks); };
+      const c2 = await still();
       await tv.keyboard.press('ArrowRight');
-      const c3 = await centred();
-      assert.strictEqual(await tv.evaluate(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement))), 0, 'last → first');
-      assert.ok(c3 - c2 >= Math.min(3, n - 1), `a spin clicks once per cartridge passing (${c3 - c2} clicks, ${n} cartridges)`);
+      await centred();
+      const c3 = await still();
+      assert.strictEqual(await tv.evaluate(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement))), n - 1, '▶ on the last stays on the last');
+      assert.strictEqual(c3, c2, 'no turn, no clicks at the end');
+      // A long turn (last → first, picked directly) clicks once per cartridge passing. Focused as the page's own
+      // code does (preventScroll): Playwright's focus() lets the browser jump the shelf there, so nothing turns.
+      await tv.evaluate(() => /** @type {HTMLElement} */ (document.querySelector('.shelf .game-pick')).focus({ preventScroll: true }));
+      const c4 = await centred();
+      assert.ok(c4 - c3 >= Math.min(3, n - 1), `a spin clicks once per cartridge passing (${c4 - c3} clicks, ${n} cartridges)`);
     } finally {
       await tv.evaluate(() => { const w = /** @type {any} */ (window), m = w.Rumpus.music; m.sfx.wheel = w.__wheel.sfx; m.isEnabled = w.__wheel.on; });
     }
@@ -386,7 +396,7 @@ const allPages = t.pages;
     for (const id of [ids[2], ids[3]]) {
       await tv.focus(`.game-pick[data-game-id="${id}"]`);
       await tv.click('#game-detail .lineup-add');
-      await tv.waitForSelector(`.lineup-item:nth-child(${id === ids[2] ? 2 : 3})`);
+      await tv.waitForFunction((k) => document.querySelectorAll('.lineup-item').length === k, id === ids[2] ? 1 : 2);
     }
     // One palette: ▶ Play is the one white button; the others are grey; the title screen keeps its colours.
     const pal = await tv.evaluate(() => ({
@@ -421,14 +431,27 @@ const allPages = t.pages;
       for (const el of [c, m]) el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       return [c.classList.contains('tap'), m.classList.contains('tap')];
     }), [false, true]);
-    // The mouse wheel steps from the picked cartridge: from the last one a notch goes round to the first.
+    // The mouse wheel steps from the picked cartridge, and the shelf stops at its ends: from the last one a
+    // notch on stays there (going round to the first flung the wheel across the screen), a notch back steps back.
     const n = await tv.$$eval('.shelf .game-pick', (l) => l.length);
+    const at = () => tv.evaluate(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement)));
     await tv.focus(`.shelf .game-pick:nth-child(${n})`);
     await tv.waitForFunction(() => !document.body.classList.contains('spinning'), null, { timeout: 4000 });
     const box = /** @type {{ x: number, y: number, width: number, height: number }} */ (await (await tv.$('.shelf')).boundingBox());
     await tv.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await tv.mouse.wheel(0, 120);
-    await tv.waitForFunction(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement)) === 0);
+    await tv.waitForTimeout(300);
+    assert.strictEqual(await at(), n - 1, 'a notch past the last cartridge stays on it');
+    await tv.keyboard.press('ArrowRight');
+    assert.strictEqual(await at(), n - 1, '▶ on the last cartridge stays on it');
+    await tv.waitForTimeout(200); // one notch per flick: the next must not come within the wheel's 140 ms
+    await tv.mouse.wheel(0, -120);
+    await tv.waitForFunction((last) => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement)) === last - 1, n - 1, { timeout: 4000 })
+      .catch(async () => assert.fail(`a notch back from the last: ${JSON.stringify(await tv.evaluate(() => { const a = /** @type {HTMLElement} */ (document.activeElement); const sh = /** @type {HTMLElement} */ (document.querySelector('.shelf'));
+        return { at: [...document.querySelectorAll('.shelf .game-pick')].indexOf(a), active: a.tagName + '.' + a.className, scroll: sh.scrollLeft, max: sh.scrollWidth - sh.clientWidth, spinning: document.body.classList.contains('spinning') }; }))}`));
+    await tv.waitForFunction(() => !document.body.classList.contains('spinning'), null, { timeout: 4000 });
+    // A long turn (to the first cartridge) for the snapping check below (focused as the page does: preventScroll).
+    await tv.evaluate(() => /** @type {HTMLElement} */ (document.querySelector('.shelf .game-pick')).focus({ preventScroll: true }));
     // Mid-turn the snapping is off through a body class (a lobby redraw rewrites the shelf's own attributes).
     const spin = await tv.evaluate(() => { const s = /** @type {HTMLElement} */ (document.querySelector('.shelf')); return { on: document.body.classList.contains('spinning'), snap: getComputedStyle(s).scrollSnapType, inline: s.getAttribute('style') }; });
     assert.ok(spin.on && /none/.test(spin.snap) && !spin.inline, `snapping off for the turn: ${JSON.stringify(spin)}`);
@@ -462,6 +485,16 @@ const allPages = t.pages;
     await tv.waitForFunction((v) => Math.abs(Rumpus.music.volumes().music - v) < 0.011, v0);
     await tv.keyboard.press('ArrowDown');
     assert.ok(await tv.evaluate(() => !document.activeElement.matches('input[data-vol="music"]') && !!document.activeElement.closest('.settings-more')), 'ArrowDown leaves the slider');
+    // ◀ ▶ on a dropdown step its choices (Chrome doesn't open a <select> on Enter, older TV browsers can't at all);
+    // the focus stays on it, and the room's setting follows.
+    await tv.focus('#set-rounds');
+    const r0 = await tv.$eval('#set-rounds', (el) => /** @type {HTMLSelectElement} */ (el).selectedIndex);
+    await tv.keyboard.press('ArrowRight');
+    await tv.waitForFunction((i) => /** @type {HTMLSelectElement} */ (document.getElementById('set-rounds')).selectedIndex === i + 1 && document.activeElement && document.activeElement.id === 'set-rounds', r0);
+    await tv.waitForFunction(() => new Function('return state')().settings.rounds != null);
+    await tv.keyboard.press('ArrowLeft');
+    await tv.waitForFunction((i) => /** @type {HTMLSelectElement} */ (document.getElementById('set-rounds')).selectedIndex === i, r0);
+    await tv.waitForFunction(() => new Function('return state')().settings.rounds == null);
     await tv.keyboard.press('Escape');
     await tv.waitForSelector('.settings-more', { state: 'hidden' });
   });
@@ -870,6 +903,27 @@ const allPages = t.pages;
           return ` (focus on ${a.tagName}.${a.className} top ${Math.round(a.getBoundingClientRect().top)}, shelf top ${Math.round(s.top)}, spinning ${document.body.classList.contains('spinning')})`; });
         assert.deepStrictEqual(m, { scroll: 0, page: 0, games: m.of, of: m.of, players: 12, settings: true, join: true, code: true, ring: true }, `${w}×${h}${why}`);
         assert.ok(m.of >= 15);
+      }
+      // The lineup with every game in it stays inside its bar (the minis shrink, then the row scrolls), and the
+      // bar keeps one height from empty to full (it used to collapse when empty and run out past 4 games).
+      for (const [w, h] of [[1280, 720], [1920, 1080]]) {
+        await tv.setViewportSize({ width: w, height: h });
+        const bar = () => tv.evaluate(() => {
+          const b = /** @type {Element} */ (document.querySelector('.settings.cmd-bar')).getBoundingClientRect();
+          const items = document.querySelector('.lineup-items'), play = document.querySelector('.lineup-play');
+          return { h: Math.round(b.height), top: Math.round(b.top), inside: !items || !play || items.getBoundingClientRect().right <= play.getBoundingClientRect().left, page: document.documentElement.scrollWidth - innerWidth };
+        });
+        const empty = await bar();
+        const all = await tv.$$eval('.shelf .game-pick', (l) => l.map((e) => /** @type {HTMLElement} */ (e).dataset.gameId));
+        for (const id of all) {
+          await tv.focus(`.game-pick[data-game-id="${id}"]`);
+          await tv.click('#game-detail .lineup-add');
+        }
+        await tv.waitForFunction((n) => document.querySelectorAll('.lineup-item').length === n, all.length);
+        const full = await bar();
+        assert.deepStrictEqual(full, { ...empty, inside: true, page: 0 }, `${w}×${h}: ${all.length} games in the lineup — empty ${JSON.stringify(empty)}`);
+        await tv.click('[data-act="lineup-clear"]');
+        await tv.waitForFunction(() => !document.querySelector('.lineup-item'));
       }
     } finally {
       await tv.evaluate(() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); document.body.classList.remove('kbd'); });

@@ -771,8 +771,20 @@
     busy: () => !!(rMusic || rSfx),
   };
 
+  /** @type {GainNode | null} */
+  let voiceIn = null;
+  /** The one AudioContext of the page, and where the host's voice goes in (through the master limiter,
+   * not ducked). A second AudioContext for the voice made some TVs switch the output's sample rate:
+   * the songs then played too fast and high, and the two outputs added up past full scale (clipping).
+   * @returns {{ ctx: AudioContext, out: AudioNode }} */
+  function audio() {
+    const c = ensure();
+    if (!voiceIn) { voiceIn = c.createGain(); voiceIn.gain.value = 1; voiceIn.connect(master); }
+    return { ctx: c, out: voiceIn };
+  }
+
   window.Rumpus.music = {
-    rhythm,
+    rhythm, audio,
     enable, play, setVolume, setHurry, setIntensity, duck, sfx: SFX, status,
     /** Test/debug: simulate the music dying (pause without any event) — the watchdog must revive it. */
     debugStop() { if (customAudio) customAudio.pause(); decks.forEach((d) => fadeOut(d, 0.1)); },

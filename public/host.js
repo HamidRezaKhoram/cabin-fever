@@ -278,9 +278,9 @@ document.addEventListener('click', (e) => {
   }
   const pickBtn = hit(e.target, '.game-pick');
   if (pickBtn && pickBtn.getAttribute('aria-disabled') === 'true') {
-    // A locked cartridge: say why (it stays selectable, so its description can be read).
+    // Too few players for it: say what it needs (only on a press; nothing on the cartridge itself).
     pickBtn.classList.remove('nope'); void pickBtn.offsetWidth; pickBtn.classList.add('nope');
-    remoteToast(`🔒 ${pickBtn.dataset.min || ''}`);
+    remoteToast(pickBtn.dataset.min || '');
     return;
   }
   if (pickBtn) {
@@ -492,10 +492,9 @@ function showDetail(card) {
   const id = card.dataset.gameId || '';
   const name = (card.querySelector('.game-name') || card).textContent || '';
   const tag = GAME_TAGS[id] || '';
-  const locked = card.getAttribute('aria-disabled') === 'true';
   detailColour = /** @type {Record<string, string>} */ (ART_BG)[id] || '';
   detailHtml = `<b class="detail-name">${esc(name)}</b><span class="detail-blurb">${esc(card.dataset.blurb || '')}</span>
-    <span class="detail-meta">${locked ? '🔒' : '👥'} ${esc(card.dataset.min || '')}${tag ? ` · ${esc(tag)}` : ''}</span>
+    ${tag ? `<span class="detail-meta">${esc(tag)}</span>` : ''}
     <span class="detail-actions"><button class="lineup-add" data-act="lineup" data-id="${esc(id)}">${lineup.includes(id) ? `✕ Remove from lineup (#${lineup.indexOf(id) + 1})` : '＋ Add to lineup'}</button></span>`;
   detailId = id;
   placeDetail(card);
@@ -623,7 +622,7 @@ phaseView.addEventListener('wheel', (e) => {
   // Step from the pick (focused, or the one the wheel was turned to), not from whatever passes the middle mid-turn.
   const a = document.activeElement;
   const from = (a instanceof HTMLElement && carts.includes(a) && a) || carts.find((c) => c.dataset.gameId === pickId) || middleCart(shelf);
-  const next = carts[(carts.indexOf(/** @type {HTMLElement} */ (from)) + Math.sign(d) + carts.length) % carts.length];
+  const next = carts[Math.max(0, Math.min(carts.length - 1, carts.indexOf(/** @type {HTMLElement} */ (from)) + Math.sign(d)))]; // stops at the ends
   if (next && next !== a) next.focus({ preventScroll: true }); // focusin shows its description and turns the wheel
 }, { passive: false });
 // The pointer follows its cartridge when the screen changes size, too.
@@ -678,10 +677,12 @@ function gamePicker(/** @type {any} */ label) {
   // The menu itself is the shelf; every setting lives in ⚙ Settings (a retro dialog box).
   const vols = music.volumes();
   // The lineup: picked games in order, as little cartridges, each with ✕; then ▶ Play.
-  const lineupBar = lineup.length ? `<div class="lineup-bar">
+  // Empty, the bar keeps its place (an invisible cartridge holds its height) so the menu doesn't jump.
+  const lineupBar = `<div class="lineup-bar${lineup.length ? ' has-items' : ' empty'}${lineup.length > 4 ? ' many' : ''}">
           <span class="lineup-title">🎞 Lineup</span>
-          ${lineup.map((id, i) => { const gm = (state.availableGames || []).find((/** @type {any} */ x) => x.id === id); return `<span class="lineup-item"><b>${i + 1}</b>${cartHtml(id, gm ? gm.name : id, 'mini')}<button class="lineup-del" data-act="lineup-del" data-i="${i}" aria-label="Take ${esc(gm ? gm.name : id)} out">✕</button></span>`; }).join('')}
-        </div>` : '';
+          ${lineup.length ? '' : `<span class="lineup-ghost" aria-hidden="true">${cartHtml('', '', 'mini')}</span><span class="lineup-hint">Pick games with ＋ Add to lineup</span>`}
+          <span class="lineup-items" data-size="${lineup.length <= 4 ? 'l' : lineup.length <= 6 ? 'm' : 's'}">${lineup.map((id, i) => { const gm = (state.availableGames || []).find((/** @type {any} */ x) => x.id === id); return `<span class="lineup-item"><b>${i + 1}</b>${cartHtml(id, gm ? gm.name : id, 'mini')}<button class="lineup-del" data-act="lineup-del" data-i="${i}" aria-label="Take ${esc(gm ? gm.name : id)} out">✕</button></span>`; }).join('')}</span>
+        </div>`;
   // Every menu button sits together in one group at the end of the command bar.
   const commands = `<div class="cmd-group">
           ${state.phase === 'gameover' ? '<button data-act="scores" class="ghost">◀ Scores</button>' : ''}
@@ -744,11 +745,12 @@ function gamePicker(/** @type {any} */ label) {
     (state.availableGames || []).map((/** @type {any} */ gm) => {
       const locked = count < gm.minPlayers;
       // An old-console cartridge: grey shell, grip ridges, a label with the art and the name. Nothing else.
-      return `<button class="game-pick cart ${locked ? 'locked' : ''}" data-game-id="${esc(gm.id)}" data-blurb="${esc(gm.blurb)}"
-          data-min="${locked ? `Needs ${gm.minPlayers}+ players` : `${gm.minPlayers}+ players`}" ${locked ? 'aria-disabled="true"' : ''}
+      // Too few players: it looks like the others (no lock, no players-needed line; the user's call, Nov 13)
+      // and a press says what it needs instead of starting.
+      return `<button class="game-pick cart" data-game-id="${esc(gm.id)}" data-blurb="${esc(gm.blurb)}"
+          data-min="Needs ${gm.minPlayers}+ players" ${locked ? 'aria-disabled="true"' : ''}
 >
         ${cartHtml(gm.id, gm.name)}
-        ${locked ? '<span class="cart-lock" aria-hidden="true">🔒</span>' : ''}
         ${lineup.includes(gm.id) ? `<span class="cart-num" aria-label="number ${lineup.indexOf(gm.id) + 1} in the lineup">${lineup.indexOf(gm.id) + 1}</span>` : ''}
         ${st.lang === 'fr' && !FRENCH_GAMES.includes(gm.id) ? '<span class="game-lang" title="Questions in English">EN</span>' : ''}
       </button>`;
@@ -1296,10 +1298,12 @@ document.addEventListener('keydown', (e) => {
     if (cur && cur.matches('input[type="text"], input:not([type])')) return; // typing: arrows move the caret
     const [dx, dy] = ARROWS[e.key];
     if (dx && cur && cur.matches('input[type="range"]')) return; // ◀ ▶ turn a volume slider (the browser fires input/change); ▲ ▼ leave it
+    if (dx && cur instanceof HTMLSelectElement) { e.preventDefault(); stepSelect(cur, dx, false); return; } // ◀ ▶ step a dropdown's choices
     e.preventDefault();
-    // Along the cartridge shelf: the next one in line, round from the last to the first.
+    // Along the cartridge shelf: the next one in line. The shelf stops at its first and last cartridge
+    // (going round from the last to the first flung the whole wheel back across the screen).
     const shelf = cur && dx && cur.matches('.game-pick') ? [.../** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.shelf .game-pick'))] : null;
-    const along = shelf && cur ? shelf[(shelf.indexOf(cur) + dx + shelf.length) % shelf.length] : null;
+    const along = shelf && cur ? shelf[Math.max(0, Math.min(shelf.length - 1, shelf.indexOf(cur) + dx))] : null;
     const next = along || (onControl ? nearest(/** @type {HTMLElement} */ (cur), dx, dy)
       : ((openBox() ? null : /** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])'))) || remoteTargets()[0] || null));
     wantFocus = !next; // nothing to focus yet (the menu isn't drawn): it lands as soon as it is (keepFocus)
@@ -1309,9 +1313,33 @@ document.addEventListener('keydown', (e) => {
       if (!next.matches('.game-pick')) { next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' }); sfx.select(); }
       else if (!along) sfx.select();
     }
+  } else if (e.key === 'Enter' && onControl && cur instanceof HTMLSelectElement) {
+    // OK on a dropdown: open its list where the browser can (Chrome won't open a <select> on Enter), else
+    // step to the next choice (older TV browsers have no showPicker()).
+    e.preventDefault();
+    const sel = /** @type {HTMLSelectElement & { showPicker?: () => void }} */ (cur);
+    let opened = false;
+    if (typeof sel.showPicker === 'function') { try { sel.showPicker(); opened = true; } catch (er) { /* not allowed here */ } }
+    if (!opened) stepSelect(sel, 1, true);
+    pressFx(cur);
   } else if (e.key === 'Enter' && onControl && cur && cur.matches('input[type="checkbox"]')) {
     e.preventDefault(); cur.click(); // OK toggles a switch (browsers only do that for Space)
     pressFx(cur.closest('.toggle'));
   } else if (e.key === 'Enter' && onControl && cur) pressFx(cur);
 });
+/** Move a dropdown to its next/previous choice (skipping disabled ones) and tell the page, as a pick would.
+ * @param {HTMLSelectElement} sel @param {number} dir @param {boolean} round go round from the last to the first */
+function stepSelect(sel, dir, round) {
+  const n = sel.options.length;
+  let i = sel.selectedIndex;
+  for (let k = 0; k < n; k++) {
+    i += dir;
+    if (i < 0 || i >= n) { if (!round) return; i = (i + n) % n; }
+    if (!sel.options[i].disabled) break;
+  }
+  if (i === sel.selectedIndex || sel.options[i].disabled) return;
+  sel.selectedIndex = i;
+  sel.dispatchEvent(new Event('change', { bubbles: true }));
+  sfx.select();
+}
 document.addEventListener('mousedown', () => { document.body.classList.remove('kbd'); wantFocus = false; });

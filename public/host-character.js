@@ -139,9 +139,16 @@
   /** @type {AudioContext | null} */
   let actx = null;
   function audio() {
-    if (!actx) { try { actx = new AudioContext(); } catch (e) { return null; } }
-    if (actx.state !== 'running') void actx.resume();
-    return actx;
+    // The music's AudioContext, not a second one (see music.js audio()).
+    if (!actx) {
+      try {
+        const m = window.Rumpus.music;
+        actx = m && m.audio ? /** @type {AudioContext} */ (m.audio().ctx) : new AudioContext();
+      } catch (e) { return null; }
+    }
+    const c = /** @type {AudioContext} */ (actx);
+    if (c.state !== 'running') void c.resume();
+    return c;
   }
   /** @type {AudioBufferSourceNode[]} */
   let playing = [];
@@ -165,9 +172,10 @@
     line = null;
   }
 
-  // The voice has its own AudioContext, so it doesn't pass the music's limiter: on a real TV the two
-  // add up in the system mixer and clipped. Each part is scaled to a fixed peak (VOICE_PEAK) and the
-  // voice goes through its own limiter, leaving headroom for the (ducked) music underneath.
+  // The voice shares the music's AudioContext and ends in its master limiter (a second context made
+  // some TVs resample the songs high-pitched, and the two outputs clipped in the system mixer). Each
+  // part is scaled to a fixed peak (VOICE_PEAK) and goes through a voice limiter first, leaving
+  // headroom for the (ducked) music underneath.
   const VOICE_PEAK = 0.5;
   /** @type {AudioNode | null} */
   let voiceOut = null;
@@ -176,7 +184,8 @@
     if (voiceOut) return voiceOut;
     const lim = ctx.createDynamicsCompressor();
     lim.threshold.value = -9; lim.knee.value = 2; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.15;
-    lim.connect(ctx.destination);
+    const m = window.Rumpus.music;
+    lim.connect(m && m.audio && m.audio().ctx === ctx ? m.audio().out : ctx.destination);
     voiceOut = lim;
     return lim;
   }
