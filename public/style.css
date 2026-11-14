@@ -329,7 +329,7 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .swatch.on { box-shadow: 0 0 0 2px var(--edge), 0 0 0 5px var(--accent2); }
 .draw-row { display: flex; gap: 8px; margin-top: 10px; }
 .draw-row button { padding: 8px 10px 11px; font-size: 10px; }
-.size { background: var(--panel); display: grid; place-items: center; width: 44px; }
+.size { background: var(--panel); display: grid; place-items: center; width: 48px; }
 .size.on { background: var(--accent2); }
 .size span { background: var(--ink); display: block; }
 .tool-btn { background: var(--panel2); color: var(--ink); }
@@ -710,7 +710,7 @@ body.mode-storm #phase-view { position: relative; box-shadow: inset 0 0 0 1.4vh 
 body.mode-storm #phase-view::before { content: ''; position: absolute; top: 2.2vh; right: 2.2vh; bottom: 2.2vh; left: 2.2vh; pointer-events: none; background: linear-gradient(90deg, transparent calc(50% - 0.6vh), #3b2716 calc(50% - 0.6vh), #3b2716 calc(50% + 0.6vh), transparent calc(50% + 0.6vh)); opacity: 0.25; }
 .storm-rain { width: 100%; height: 100%; image-rendering: pixelated; }
 .storm-bg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 0; opacity: 0.85; pointer-events: none; }
-.storm-board { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 2vh; padding: 3vh 4vh; }
+.storm-board { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 1.4vh; padding: 2vh 4vh; } /* tighter (Nov 13): with 28 px labels the crew screen needed 59.8% zoom */
 .storm-head { display: flex; align-items: center; gap: 3vh; flex-wrap: wrap; justify-content: center; }
 .storm-chores { list-style: none; display: flex; gap: 1.2vh; padding: 0; margin: 0; }
 .storm-chores li { width: 14vh; min-height: 11vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--panel); box-shadow: 0 0 0 4px var(--edge); padding: 0.8vh; font-size: 2.2vh; }
@@ -943,7 +943,20 @@ body.host ul.scored-list { font-size: calc(max(28px, 3.2vh) / var(--unzoom)); }
 body.host .cat-banner { padding: 0.8vh 1.4vh; }
 body.host .storm-chores li { width: 20vh; }
 body.host .storm-card { width: 24vh; }
-body.host .cat-card div { font-size: max(28px, 2.6vh); }
+/* More labels the Cottage Lab nightly found under 28 px once the stage zoom applied (Nov 13).
+   Short single labels (category cards, timers, "nobody", Loon Call's PERFECT tag, sub-lines, "hiding among
+   you") grow by the whole 1/zoom. Things repeated per player or whole sentences (names, points, hunches,
+   vote marks, who believed it, Storm's event card) grow only down to a 75% zoom: grown by the whole 1/zoom
+   they cancelled the zoom on a crowded screen (Storm's talk and final screens fell to 48%, under the 60% the
+   UI test allows). On a 1080p TV most screens zoom 75–100%, so they still show at 28 px. */
+body.host .phase-view.in-game { --unzoom75: max(var(--shrink, 1), 0.75); }
+body.host .cat-card div, body.host .phase-view .timer, body.host .tt-card small, body.host .lc-tag { font-size: calc(max(28px, 2.6vh) / var(--unzoom)); }
+body.host .phase-view .big-sub, body.host .storm-hidden { font-size: calc(max(28px, 3.2vh) / var(--unzoom)); }
+body.host .phase-view .pname, body.host .phase-view .votes, body.host .storm-hunch,
+body.host .storm-event b, body.host .storm-event span { font-size: calc(max(28px, 2.6vh) / var(--unzoom75, 1)); }
+body.host .tt-calls { font-size: calc(max(28px, 3vh) / var(--unzoom75, 1)); }
+body.host .storm-mark { font-size: calc(max(28px, 3.4vh) / var(--unzoom75, 1)); }
+body.host .phase-view .big-sub, body.host .storm-hidden, body.host .tt-calls, body.host .storm-mark { font-size: calc(max(28px, 3.2vh) / var(--unzoom)); }
 body.host .podium .pts { font-size: max(28px, 2.6vh); }
 body.host .phase-view .hint { font-size: max(28px, 2.6vh); }
 .start-spicy { margin-top: 1.4vh; font-size: max(28px, 2.6vh); color: var(--danger); }

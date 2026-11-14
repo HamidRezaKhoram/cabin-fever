@@ -847,7 +847,10 @@ const allPages = t.pages;
         // The remote's focus on a cartridge in the middle of the shelf: lifted, its ring must not be cut off at the top.
         await tv.keyboard.press('Shift');
         await tv.evaluate(() => { const c = document.querySelectorAll('.shelf .game-pick'); /** @type {HTMLElement} */ (c[Math.floor(c.length / 2)]).focus({ preventScroll: true }); });
-        await tv.waitForTimeout(250);
+        // Measured once the wheel has stopped and the pick's lift has finished (a fixed 250 ms was sometimes mid-way).
+        await tv.waitForFunction(() => !document.body.classList.contains('spinning') && !!document.activeElement
+          && document.activeElement.getAnimations().every((an) => an.playState !== 'running'), null, { timeout: 4000 }).catch(() => {});
+        await tv.waitForTimeout(100);
         const m = await tv.evaluate(() => {
           const stage = /** @type {HTMLElement} */ (document.getElementById('stage')).getBoundingClientRect();
           const inside = (/** @type {Element} */ e) => { const r = e.getBoundingClientRect(); return r.height > 20 && r.top >= stage.top - 1 && r.bottom <= stage.bottom + 1; };
@@ -863,7 +866,9 @@ const allPages = t.pages;
             ring: (() => { const a = /** @type {Element} */ (document.activeElement), s = /** @type {Element} */ (document.querySelector('.shelf')).getBoundingClientRect(); return a.matches('.game-pick') && a.getBoundingClientRect().top - 17 >= s.top - 1; })(),
           };
         });
-        assert.deepStrictEqual(m, { scroll: 0, page: 0, games: m.of, of: m.of, players: 12, settings: true, join: true, code: true, ring: true }, `${w}×${h}`);
+        const why = m.ring ? '' : await tv.evaluate(() => { const a = /** @type {Element} */ (document.activeElement), s = /** @type {Element} */ (document.querySelector('.shelf')).getBoundingClientRect();
+          return ` (focus on ${a.tagName}.${a.className} top ${Math.round(a.getBoundingClientRect().top)}, shelf top ${Math.round(s.top)}, spinning ${document.body.classList.contains('spinning')})`; });
+        assert.deepStrictEqual(m, { scroll: 0, page: 0, games: m.of, of: m.of, players: 12, settings: true, join: true, code: true, ring: true }, `${w}×${h}${why}`);
         assert.ok(m.of >= 15);
       }
     } finally {

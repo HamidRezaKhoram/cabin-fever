@@ -550,14 +550,16 @@
           <p class="big-sub">Real or made up? Call each one on your phone ${T}</p>${count(g.judgedCount, g.totalPlayers, 'calls in')}${waitingRow(g.waitingOn, 'deciding')}`;
       }
       const c = g.current;
-      if (g.empty) return `${head}<p class="big-sub">Not enough confessions came in — new prompt coming up!</p>`;
+      // The reveal keeps the question but not "Confess…": with 28 px labels the screen was too full (UI test, 60% zoom).
+      const head2 = `${roundTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>`;
+      if (g.empty) return `${head2}<p class="big-sub">Not enough confessions came in — new prompt coming up!</p>`;
       if (!c || g.done) {
-        return `${head}<ol class="answers results tt-done">${(g.revealed || []).map((/** @type {any} */ x) => `<li class="${x.lie ? 'lie' : 'winner'}">${av(x.author)} ${esc(x.author)}: ${esc(x.text)} <span class="votes">${x.lie ? '🤥 LIE' : '✅ TRUE'}</span></li>`).join('')}</ol>
+        return `${head2}<ol class="answers results tt-done">${(g.revealed || []).map((/** @type {any} */ x) => `<li class="${x.lie ? 'lie' : 'winner'}">${av(x.author)} ${esc(x.author)}: ${esc(x.text)} <span class="votes">${x.lie ? '🤥 LIE' : '✅ TRUE'}</span></li>`).join('')}</ol>
           ${scoredList(g.gained)}`;
       }
       const voters = (/** @type {string[]} */ list) => list.map((n) => av(n)).join('') || '<small>nobody</small>';
-      return `${head}<div class="tt-card">
-          <p class="tt-by">${av(c.author, 'avatar big bob')} ${esc(c.author)} confessed:</p>
+      return `${head2}<div class="tt-card">
+          <p class="tt-by">${av(c.author, 'avatar bob')} ${esc(c.author)} confessed:</p>
           <p class="big-answer">“${esc(c.text)}”</p>
           <p class="tt-stamp ${c.lie ? 'lie' : 'true'}">${c.lie ? '🤥 MADE IT UP!' : '✅ IT\'S TRUE!'}</p>
           <p class="tt-calls">Believed it: ${voters(c.believed)} · Doubted it: ${voters(c.doubted)}${c.gained ? ` · ${esc(c.author)} fooled them: +${c.gained}` : ''}</p>
@@ -1305,8 +1307,7 @@
       const rain = '<canvas class="storm-rain storm-bg" width="480" height="270"></canvas>';
       let mid = '';
       if (s.phase === 'st-roles') mid = `<h1>Check your secret role</h1><p class="big-sub">Press and hold the card on your phone — don't let anyone see! ${T}</p>${count(g.readyCount, g.totalPlayers, 'ready')}`;
-      else if (s.phase === 'st-talk') mid = `<p class="round-tag">Chore ${g.choreIndex + 1}: ${esc(g.choreNames[g.choreIndex])}</p>
-          <h1>🏮 ${av(g.leader)} ${esc(g.leader)} picks a crew of ${g.crewSize}</h1>${stEvent(g.event)}<p class="big-sub">Talk it over — who do you trust? ${T}</p>`;
+      else if (s.phase === 'st-talk') mid = `<h1>🏮 ${av(g.leader)} ${esc(g.leader)} picks a crew of ${g.crewSize}</h1>${stEvent(g.event)}<p class="big-sub">Talk it over — who do you trust? ${T}</p>`;
       else if (s.phase === 'st-vote') mid = `<h1>Send this crew?</h1>${stCrew(g.crew)}${stEvent(g.event)}<p class="big-sub">Vote ✔ or ✘ on your phones ${T}</p>${count(g.votedCount, g.totalPlayers, 'voted')}`;
       else if (s.phase === 'st-votes') {
         const v = g.votes;
