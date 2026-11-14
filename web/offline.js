@@ -87,7 +87,11 @@ function offline(role) {
     } else if (m.stage === 'media') {
       if (updateNote) return;
       if (m.done >= m.total && m.noRoom) {
-        // A private window (or a full disk) has no room for ~300 MB: say so once, then get out of the way.
+        // A private window (or a full disk) has no room for ~300 MB: say so once on this device (not
+        // on every reload of the TV page), then get out of the way.
+        let said = false;
+        try { said = localStorage.getItem('cf.noRoomSaid') === '1'; localStorage.setItem('cf.noRoomSaid', '1'); } catch (e) { /* no storage: say it */ }
+        if (said) { corner.hidden = true; return; }
         corner.hidden = false;
         corner.textContent = '💾 No room to save music & voice on this device — they\'ll play from the internet';
         setTimeout(() => { if (!updateNote) corner.hidden = true; }, 8000);

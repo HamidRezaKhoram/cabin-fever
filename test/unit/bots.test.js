@@ -135,6 +135,8 @@ test('lineup: the games play back to back in the chosen order, "NEXT GAME" betwe
     }
     await h.phase('night-final', 20000);
     assert.deepStrictEqual(played, ['closest', 'trivia'], 'in the chosen order; Storm Watch (needs 4) skipped');
+    // …and the TV shows it as skipped, not played (no ✓ on its cartridge).
+    assert.deepStrictEqual(h.state.night.list.map((/** @type {any} */ x) => !!x.skipped), [false, true, false], 'Storm Watch is marked skipped');
     h.emit('host:endGame');
     await until(() => h.state.phase === 'lobby' && h.state.night === null, 'back to the menu');
   } finally { await s2.stop(); }

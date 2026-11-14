@@ -143,11 +143,11 @@ class TelephoneGame extends BaseGame {
     /** @type {Entry} */
     let entry;
     if (this.phase === 'tel-draw') {
-      if (!validImage(payload.image)) return;
+      if (!validImage(payload.image)) return false;
       entry = { type: 'drawing', by: id, content: payload.image };
     } else {
       const text = cleanText(payload.text, 80);
-      if (!text) return;
+      if (!text) return false;
       entry = { type: 'text', by: id, content: text };
     }
     chain.entries.push(entry);
@@ -272,28 +272,49 @@ class TelephoneGame extends BaseGame {
   }
 
   onPlayerLeft() {
+    if (!this.room.players.size) return;
     if (['tel-write', 'tel-draw', 'tel-describe'].includes(this.phase)) {
-      if (this.room.players.size && this.allIn(this.done)) this.finishStep();
+      if (this.allIn(this.done)) this.finishStep();
+    } else if (this.phase === 'tel-vote') {
+      // The last one still to vote left: everyone who can vote has.
+      const canVote = this.playerIds().filter((pid) => this.drawingList.some((x) => x.by !== pid));
+      if (canVote.every((pid) => this.votes.has(pid))) this.finishVote();
+    } else if (this.phase === 'tel-reveal' && this.favOpen) {
+      const votes = this.favs[this.revealIndex];
+      if (this.favVoters().every((v) => votes.has(v))) { this.clearTimer(); this.advanceReveal(); }
     }
+  }
+
+  // --- pictures: each screen gets each drawing once (core/rooms.js sendState) ----------------
+  /** A drawing as the view names it: `cfimg:<key>`, its data added to `out` (the view's `images`).
+   * @param {Record<string, string>} out @param {string} key @param {string | null} data */
+  pic(out, key, data) {
+    if (!data) return null;
+    const k = `${this.seed}-${key}`; // unique across games: a cached key never means another picture
+    out[k] = data;
+    return 'cfimg:' + k;
   }
 
   // --- views ---------------------------------------------------------------
 
-  /** @param {Chain} c @param {number} [ci] */
-  chainView(c, ci = -1) {
-    const votes = ci >= 0 && this.favs ? [...this.favs[ci].values()] : [];
+  /** @param {Chain} c @param {number} ci @param {Record<string, string>} images */
+  chainView(c, ci, images) {
+    const votes = this.favs && this.favs[ci] ? [...this.favs[ci].values()] : [];
     return {
       owner: this.nick(c.owner),
-      entries: c.entries.map((e, i) => ({ type: e.type, by: this.nick(e.by), content: e.content, favs: votes.filter((v) => v === i).length })),
+      entries: c.entries.map((e, i) => ({ type: e.type, by: this.nick(e.by), content: e.type === 'drawing' ? this.pic(images, `${ci}:${i}`, e.content) : e.content, favs: votes.filter((v) => v === i).length })),
     };
   }
 
   hostView() {
+    /** @type {Record<string, string>} */
+    const images = {};
     if (this.phase === 'tel-reveal') {
       return {
         chainIndex: this.revealIndex,
         chainCount: this.chains.length,
-        chain: this.chainView(this.chains[this.revealIndex], this.revealIndex),
+        chain: this.chainView(this.chains[this.revealIndex], this.revealIndex, images),
+        images,
         entryMs: ENTRY_SHOW_MS,
         favOpen: !!this.favOpen,
         favCount: this.favs ? this.favs[this.revealIndex].size : 0,
@@ -302,7 +323,8 @@ class TelephoneGame extends BaseGame {
     }
     if (this.phase === 'tel-vote') {
       return {
-        drawings: this.drawingList.map((d) => ({ key: d.key, image: d.image })),
+        drawings: this.drawingList.map((d) => ({ key: d.key, image: this.pic(images, d.key, d.image) })),
+        images,
         votedCount: this.votes.size,
         totalPlayers: this.room.players.size,
       };
@@ -313,12 +335,15 @@ class TelephoneGame extends BaseGame {
       totalPlayers: this.room.players.size,
       // Who the room is waiting for — shown on the TV so it's never a silent counter.
       waitingOn: this.order.filter((id) => this.room.players.has(id) && !this.done.has(id)).map((id) => this.nick(id)),
-      scribbles: this.scribbles.map((d) => ({ key: d.key, image: d.image, by: this.nick(d.by) })),
+      scribbles: this.scribbles.map((d) => ({ key: d.key, image: this.pic(images, 's' + d.key, d.image), by: this.nick(d.by) })),
+      images,
     };
   }
 
   /** @param {string} id */
   playerOnly(id) {
+    /** @type {Record<string, string>} */
+    const images = {};
     if (this.phase === 'tel-reveal') {
       if (!this.favOpen) return { gameState: { favOpen: false }, you: {} };
       const c = this.chains[this.revealIndex];
@@ -326,14 +351,15 @@ class TelephoneGame extends BaseGame {
       return {
         gameState: {
           favOpen: true,
-          entries: c.entries.map((e, i) => ({ type: e.type, content: e.content, by: this.nick(e.by), ok: this.favable(id, i) })),
+          entries: c.entries.map((e, i) => ({ type: e.type, content: e.type === 'drawing' ? this.pic(images, `${this.revealIndex}:${i}`, e.content) : e.content, by: this.nick(e.by), ok: this.favable(id, i) })),
+          images,
         },
         you: { fav: mine == null ? null : mine, canFav: this.favVoters().includes(id) },
       };
     }
     if (this.phase === 'tel-vote') {
       return {
-        gameState: { drawings: this.drawingList.filter((d) => d.by !== id).map((d) => ({ key: d.key, image: d.image })) },
+        gameState: { drawings: this.drawingList.filter((d) => d.by !== id).map((d) => ({ key: d.key, image: this.pic(images, d.key, d.image) })), images },
         you: { voted: this.votes.has(id) },
       };
     }
@@ -344,7 +370,8 @@ class TelephoneGame extends BaseGame {
       gameState: {
         stepType: this.stepType(this.step),
         step: this.step,
-        prev: prev ? { type: prev.type, content: prev.content } : null,
+        prev: prev ? { type: prev.type, content: prev.type === 'drawing' ? this.pic(images, `${ci}:${this.step - 1}`, prev.content) : prev.content } : null,
+        images,
       },
       you: { submitted: this.done.has(id), suggestion: this.suggestions.get(id),
         scribblesLeft: this.done.has(id) ? SCRIBBLES_PER_STEP - (this.scribbled.get(id) || 0) : 0 },

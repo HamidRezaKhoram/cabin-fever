@@ -845,38 +845,66 @@
     return { mode: k % 2 === 0 ? 'call' : 'echo', beat: Math.floor(inBar / beatMs), bar: k, callNote, step: Math.floor((inBar * s.steps) / s.barMs), phrase: Math.floor(k / 2) };
   }
 
-  // One 30 fps clock hook drives every live beat meter (TV and phone); it does nothing when none is on screen.
+  // One 30 fps clock hook drives every live beat meter (TV and phone); it does nothing when none is on
+  // screen. The lists are live (the browser keeps them current, so reading them doesn't search the
+  // page), and each meter's parts are built once per phrase, then only their text and classes change.
+  const lcMeters = document.getElementsByClassName('lc-meter');
+  const lcLeads = document.getElementsByClassName('lc-lead');
+  const lcTaps = document.getElementsByClassName('lc-tap');
+  /** @typedef {{ key: string, mode: HTMLElement, dots: HTMLElement, cells: HTMLElement[], modeCls: string, label: string, dotsTxt: string, step: number, laneMode: string }} LcMeterParts */
+  /** @type {WeakMap<Element, LcMeterParts>} */
+  const lcParts = new WeakMap();
+  /** Clock frames with no Loon Call element on screen: after 3 s the song is forgotten. */
+  let lcIdle = 0;
   window.Rumpus.clock.add(() => {
     const s = lcSched;
     if (!s) return;
-    const meters = document.querySelectorAll('[data-lc-meter]');
-    const leads = document.querySelectorAll('[data-lc-lead]');
-    const taps = document.querySelectorAll('[data-lc-label]');
-    if (!meters.length && !leads.length && !taps.length) return;
+    if (!lcMeters.length && !lcLeads.length && !lcTaps.length) {
+      if (++lcIdle > 90) { lcSched = null; lcIdle = 0; } // left Loon Call (or a result screen): nothing to drive
+      return;
+    }
+    lcIdle = 0;
     const w = lcWhere(s, window.Rumpus.time.now());
     const nb = s.beats || 4;
     const dots = (/** @type {number} */ b) => Array.from({ length: nb }, (_, i) => (i === ((b % nb) + nb) % nb ? '●' : '○')).join(' ');
-    const label = w.mode === 'call' ? `🐦 ${s.caller ? esc(s.caller) : 'CALL'}` : w.mode === 'echo' ? '🎵 ECHO!' : w.mode === 'count' ? `${nb - (((w.beat % nb) + nb) % nb)}…` : w.mode === 'clicks' ? '🥁 TAP!' : w.mode === 'ready' ? 'GET READY' : '';
+    const label = w.mode === 'call' ? `🐦 ${s.caller ? s.caller : 'CALL'}` : w.mode === 'echo' ? '🎵 ECHO!' : w.mode === 'count' ? `${nb - (((w.beat % nb) + nb) % nb)}…` : w.mode === 'clicks' ? '🥁 TAP!' : w.mode === 'ready' ? 'GET READY' : '';
     // The rhythm lane: the bar's grid; the call's notes light up as the loon sings them, so a tricky
     // rhythm (swing, 16ths) can be seen as well as heard. During the echo only the playhead moves.
     const p = w.phrase >= 0 ? s.phrases[w.phrase] : null;
-    const lane = p && (w.mode === 'call' || w.mode === 'echo') ? `<span class="lc-lane" style="--n:${s.steps}">${Array.from({ length: s.steps }, (_, k) => {
-      const note = p.steps.includes(k);
-      const cls = [k === w.step ? 'now' : '', note && w.mode === 'call' && k <= w.step ? 'note' : '', k % (s.steps / nb) === 0 ? 'beat' : ''].filter(Boolean).join(' ');
-      return `<i class="${cls}"></i>`;
-    }).join('')}</span>` : '';
-    meters.forEach((el) => {
-      const modeCls = w.mode === 'echo' ? 'lc-echo' : w.mode === 'clicks' ? 'lc-clicks' : '';
-      const html = `<span class="lc-mode ${modeCls}">${label}</span><span class="lc-dots">${w.mode === 'done' || w.mode === 'ready' ? '' : dots(w.beat)}</span>${lane}`;
-      if (el.innerHTML !== html) el.innerHTML = html;
-    });
-    leads.forEach((el) => el.classList.toggle('singing', w.callNote));
-    taps.forEach((el) => {
-      const own = /** @type {HTMLElement} */ (el).dataset.lcLabel || '';
+    const laneOn = !!p && (w.mode === 'call' || w.mode === 'echo');
+    const key = laneOn ? `${s.startAt}/${w.phrase}/${s.steps}/${nb}` : '-';
+    const modeCls = w.mode === 'echo' ? 'lc-echo' : w.mode === 'clicks' ? 'lc-clicks' : '';
+    const dotsTxt = w.mode === 'done' || w.mode === 'ready' ? '' : dots(w.beat);
+    for (let i = 0; i < lcMeters.length; i++) {
+      const el = lcMeters[i];
+      let m = lcParts.get(el);
+      if (!m || m.key !== key || m.mode.parentNode !== el) {
+        // Built once per phrase (and for a meter that's new on screen).
+        el.innerHTML = `<span class="lc-mode"></span><span class="lc-dots"></span>${laneOn ? `<span class="lc-lane" style="--n:${s.steps}">${Array.from({ length: s.steps }, (_, k) => `<i class="${k % (s.steps / nb) === 0 ? 'beat' : ''}"></i>`).join('')}</span>` : ''}`;
+        const lane = el.querySelector('.lc-lane');
+        m = { key, mode: /** @type {HTMLElement} */ (el.firstChild), dots: /** @type {HTMLElement} */ (/** @type {HTMLElement} */ (el.firstChild).nextSibling), cells: lane ? /** @type {HTMLElement[]} */ ([...lane.children]) : [], modeCls: '', label: '', dotsTxt: '', step: -2, laneMode: '' };
+        lcParts.set(el, m);
+      }
+      if (m.modeCls !== modeCls) { m.modeCls = modeCls; m.mode.className = `lc-mode ${modeCls}`; }
+      if (m.label !== label) { m.label = label; m.mode.textContent = label; }
+      if (m.dotsTxt !== dotsTxt) { m.dotsTxt = dotsTxt; m.dots.textContent = dotsTxt; }
+      if (laneOn && p && (m.step !== w.step || m.laneMode !== w.mode)) {
+        m.step = w.step; m.laneMode = w.mode;
+        for (let k = 0; k < m.cells.length; k++) {
+          const c = m.cells[k].classList;
+          c.toggle('now', k === w.step);
+          c.toggle('note', w.mode === 'call' && k <= w.step && p.steps.includes(k));
+        }
+      }
+    }
+    for (let i = 0; i < lcLeads.length; i++) lcLeads[i].classList.toggle('singing', w.callNote);
+    for (let i = 0; i < lcTaps.length; i++) {
+      const el = /** @type {HTMLElement} */ (lcTaps[i]);
+      const own = el.dataset.lcLabel || '';
       const txt = own || (w.mode === 'echo' || w.mode === 'clicks' ? 'TAP!' : w.mode === 'call' ? 'LISTEN…' : w.mode === 'count' ? 'GET READY' : '…');
       if (el.textContent !== txt) el.textContent = txt;
       el.classList.toggle('go', w.mode === 'echo' || w.mode === 'clicks');
-    });
+    }
   });
 
   /** @param {any} g */
@@ -1089,10 +1117,11 @@
     }
   }
 
-  // The 30 fps clock draws the lake whenever its canvas is on screen.
+  // The 30 fps clock draws the lake whenever its canvas is on screen (a live list: no page search per frame).
+  const llLakes = document.getElementsByClassName('ll-lake');
   window.Rumpus.clock.add((tick) => {
-    const cv = /** @type {HTMLCanvasElement | null} */ (document.querySelector('canvas.ll-lake'));
-    if (cv) llDraw(cv, tick);
+    const cv = llLakes[0];
+    if (cv && cv.nodeName === 'CANVAS') llDraw(/** @type {HTMLCanvasElement} */ (cv), tick);
   });
 
   // ---- phone controller: tilt (secure pages) or touch steering (always works)
@@ -1223,8 +1252,11 @@
   // ---------------------------------------------------------------- Storm Watch (strategy)
   /** Rain + lightning on the 30 fps clock, behind the Storm Watch board and in its transition. */
   let stFlashAt = -999;
+  const stRains = document.getElementsByClassName('storm-rain'); // live: no page search per frame
   window.Rumpus.clock.add((tick) => {
-    document.querySelectorAll('canvas.storm-rain').forEach((el) => {
+    if (!stRains.length) return;
+    Array.prototype.forEach.call(stRains, (/** @type {Element} */ el) => {
+      if (el.nodeName !== 'CANVAS') return;
       const cv = /** @type {HTMLCanvasElement} */ (el);
       const g = cv.getContext('2d');
       if (!g) return;
@@ -1390,9 +1422,12 @@
       <ol class="answers standings">${night.standings.map((/** @type {{ nickname: string, points: number }} */ s) => `<li>${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.points} pts</span></li>`).join('')}</ol>
     </div>`;
   window.Rumpus.nightTable = nightTable;
-  /** The lineup as a row of small cartridges: played ✓, the next one lit, then the rest. @param {any} night */
-  const lineupRow = (night) => `<div class="lineup-row">${(night.list || []).map((/** @type {{ id: string, name: string }} */ x, /** @type {number} */ i) =>
-    window.Rumpus.cartHtml(x.id, x.name, `mini ${i < night.played ? 'done' : i === night.played ? 'now' : ''}`)).join('')}</div>`;
+  /** The lineup as a row of small cartridges: played ✓, skipped (too few players) faded with a —,
+   * the next one lit, then the rest. @param {any} night */
+  const lineupRow = (night) => `<div class="lineup-row">${(night.list || []).map((/** @type {{ id: string, name: string, skipped?: boolean }} */ x, /** @type {number} */ i) =>
+    (x.skipped && i < night.played
+      ? `<span class="lineup-skipped" title="Skipped: not enough players" style="position:relative;display:inline-block;opacity:0.4">${window.Rumpus.cartHtml(x.id, x.name, 'mini skipped')}<span aria-label="skipped" style="position:absolute;left:0;right:0;top:40%;text-align:center;font-size:4vh;color:#f4f1e8;text-shadow:0 0.3vh 0 #17151f">—</span></span>`
+      : window.Rumpus.cartHtml(x.id, x.name, `mini ${i < night.played ? 'done' : i === night.played ? 'now' : ''}`))).join('')}</div>`;
   register('night', {
     host(s) {
       const g = s.gameState, night = s.night || { played: 0, total: 0, standings: [], list: [] };
@@ -1423,11 +1458,35 @@
   });
 
   // ---------------------------------------------------------------- Message in a Bottle
+  // Drawings come once per screen (core/rooms.js sendState): a view says `cfimg:<key>` and the data
+  // arrives in some `gameState.images` = { key: data URL }, kept here by key. (Older/recorded states
+  // still carry plain data URLs: those are used as they are.)
+  /** @type {Map<string, string>} */
+  const pics = new Map();
+  const PICS_KEPT = 200;
+  /** Keep the pictures a state brings. @param {any} g */
+  const learnPics = (g) => {
+    const imgs = g && g.images;
+    if (!imgs || typeof imgs !== 'object') return;
+    for (const k of Object.keys(imgs)) {
+      const v = imgs[k];
+      if (typeof v !== 'string' || !/^data:image\//.test(v)) continue;
+      pics.delete(k); pics.set(k, v); // newest last
+    }
+    while (pics.size > PICS_KEPT) { const first = pics.keys().next().value; if (first === undefined) break; pics.delete(first); }
+  };
+  window.Rumpus.learnPics = learnPics;
+  /** The src for a drawing reference ('' while it is still on its way). @param {unknown} ref */
+  const pic = (ref) => {
+    if (typeof ref !== 'string') return '';
+    if (ref.startsWith('cfimg:')) return esc(pics.get(ref.slice(6)) || '');
+    return /^data:image\//.test(ref) ? esc(ref) : '';
+  };
   /** @param {{ type: string, content: string | null, by: string, favs?: number }} e @param {number} i @param {number} ms */
   const entryHtml = (e, i, ms) => `
     <div class="chain-entry" style="animation-delay:${(i * ms) / 1000}s">
       ${e.type === 'drawing'
-        ? (e.content ? `<img src="${e.content}" alt="drawing">` : '<div class="blank-drawing">(blank)</div>')
+        ? (e.content ? `<img src="${pic(e.content)}" alt="drawing">` : '<div class="blank-drawing">(blank)</div>')
         : `<p class="chain-text">${esc(e.content)}</p>`}
       <span class="byline">${i === 0 ? 'started by' : e.type === 'drawing' ? 'drawn by' : 'guessed by'} ${av(e.by)} ${esc(e.by)}</span>
       ${e.favs ? `<span class="favs">❤ ${e.favs}</span>` : ''}
@@ -1435,6 +1494,7 @@
   register('telephone', {
     host(s) {
       const g = s.gameState;
+      learnPics(g);
       if (s.phase === 'tel-reveal') {
         return `<p class="round-tag">Chain ${g.chainIndex + 1} of ${g.chainCount} — ${av(g.chain.owner)} ${esc(g.chain.owner)}'s</p>
           <div class="chain">${g.chain.entries.map((/** @type {any} */ e, /** @type {any} */ i) => entryHtml(e, i, g.entryMs)).join('')}</div>
@@ -1443,7 +1503,7 @@
       if (s.phase === 'tel-vote') {
         return `<h1>Vote for the best doodle!</h1><p class="big-sub">${T}</p>
           <div class="doodle-grid">${g.drawings.map((/** @type {any} */ d, /** @type {any} */ i) =>
-            `<figure><img src="${d.image}" alt=""><figcaption>${i + 1}</figcaption></figure>`).join('')}</div>
+            `<figure><img src="${pic(d.image)}" alt=""><figcaption>${i + 1}</figcaption></figure>`).join('')}</div>
           ${count(g.votedCount, g.totalPlayers, 'votes in')}`;
       }
       const msg = /** @type {Record<string, string>} */ ({
@@ -1454,26 +1514,27 @@
       const verb = /** @type {Record<string, string>} */ ({ write: 'writing', draw: 'drawing', describe: 'guessing' })[g.stepType];
       // Doodles from people who are done float across the screen (keyed, so morph keeps them moving).
       const sea = (g.scribbles || []).length ? `<div class="scribble-sea" aria-hidden="true">${g.scribbles.map((/** @type {any} */ d) =>
-        `<figure class="scribble" data-key="${d.key}" style="top:${8 + (d.key * 37) % 70}%"><img src="${d.image}" alt=""><figcaption>${esc(d.by)}</figcaption></figure>`).join('')}</div>` : '';
+        `<figure class="scribble" data-key="${d.key}" style="top:${8 + (d.key * 37) % 70}%"><img src="${pic(d.image)}" alt=""><figcaption>${esc(d.by)}</figcaption></figure>`).join('')}</div>` : '';
       return `${roundTag(g, 'Step')}<h1>${msg}</h1><p class="big-sub">${T}</p>
         ${count(g.submittedCount, g.totalPlayers, 'done')}
         ${waitingRow(g.waitingOn, verb)}${sea}`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
+      learnPics(g);
       if (s.phase === 'tel-reveal') {
         if (!g.favOpen) return watchTv('<p>The chains are being revealed…</p>');
         if (you.fav != null) return waiting('Favourite picked ❤');
         if (!you.canFav) return watchTv('<p>Everyone else is picking a favourite step…</p>');
         return `<h2>Favourite step? ❤</h2><div class="fav-pick">` + g.entries.map((/** @type {any} */ e, /** @type {any} */ i) => e.ok
-          ? sendBtn({ fav: i }, e.type === 'drawing' ? `<img src="${e.content}" alt="drawing by ${esc(e.by)}">` : `“${esc(e.content)}”`, 'vote-btn fav-btn')
+          ? sendBtn({ fav: i }, e.type === 'drawing' ? `<img src="${pic(e.content)}" alt="drawing by ${esc(e.by)}">` : `“${esc(e.content)}”`, 'vote-btn fav-btn')
           : '').join('') + '</div>';
       }
       if (s.phase === 'tel-vote') {
         if (you.voted) return waiting('Vote cast');
         if (!g.drawings.length) return '<h1>Nothing to vote on</h1>';
         return `<h2>Best doodle?</h2><div class="doodle-pick">` +
-          g.drawings.map((/** @type {any} */ d) => sendBtn({ key: d.key }, `<img src="${d.image}" alt="">`, 'doodle-btn')).join('') + '</div>';
+          g.drawings.map((/** @type {any} */ d) => sendBtn({ key: d.key }, `<img src="${pic(d.image)}" alt="">`, 'doodle-btn')).join('') + '</div>';
       }
       if (you.submitted) {
         // Scribble pad while the others finish: up to 3 doodles a step float across the TV.
@@ -1491,7 +1552,7 @@
           <div id="pad"></div><button id="draw-done" class="wide">Done</button>`;
       }
       return `${roundTag(g, 'Step')}<h2>What is this?</h2>
-        ${g.prev && g.prev.content ? `<img class="describe-img" src="${g.prev.content}" alt="">` : '<div class="blank-drawing">(they drew nothing!)</div>'}
+        ${g.prev && g.prev.content ? `<img class="describe-img" src="${pic(g.prev.content)}" alt="">` : '<div class="blank-drawing">(they drew nothing!)</div>'}
         ${textForm('Describe it…', 80)}`;
     },
     bind(root, api) {

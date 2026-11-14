@@ -188,10 +188,19 @@ window.fetch = async (input, init) => {
 };
 
 // ---- keep tonight's highlights readable from the /highlights tab; follow /admin edits
+// The summary carries every highlight's drawing, so it is only built and written when it could have
+// changed: every stats change is saved to stats.json (games/stats.js) and a room's own highlights are
+// added at the front of room.highlights — a cheap fingerprint of both, instead of a big write every 5 s.
+/** @type {Map<string, string>} room code → fingerprint of the summary last written */
+const tonightSaved = new Map();
 setInterval(() => {
   if (!booted) return;
+  const statsSaves = fsShim.saveCount('/stats.json');
   for (const room of /** @type {Map<string, any>} */ (core().rooms).values()) {
-    try { localStorage.setItem('cf.tonight.' + room.code, JSON.stringify(stats().summary(room))); } catch (e) { /* full */ }
+    const hl = room.highlights || [];
+    const mark = `${statsSaves}|${hl.length}|${hl.length ? hl[0].at : ''}`;
+    if (tonightSaved.get(room.code) === mark) continue;
+    try { localStorage.setItem('cf.tonight.' + room.code, JSON.stringify(stats().summary(room))); tonightSaved.set(room.code, mark); } catch (e) { /* full: try again next time */ }
   }
 }, 5000);
 addEventListener('storage', (e) => {

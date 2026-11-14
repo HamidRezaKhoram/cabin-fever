@@ -42,7 +42,7 @@ function decide(view, rnd = Math.random) {
   const write = (/** @type {Record<string, any>} */ payload) => ({ payload, kind: /** @type {'write'} */ ('write') });
   switch (view.phase) {
     // Campfire Quips
-    case 'answering': return !you.submitted && g.prompt ? write({ text: pick(LINES, rnd) }) : null;
+    case 'answering': return !you.submitted && g.prompt ? write({ text: pick(LINES, rnd), ...(Number.isInteger(g.slot) ? { slot: g.slot } : {}) }) : null;
     case 'voting':
       if (you.isAuthor) return !you.bet && rnd() < 0.6 ? tap({ bet: rnd() < 0.7 ? 'win' : 'landslide' }) : null;
       return !you.voted ? tap({ choice: rnd() < 0.5 ? 0 : 1 }) : null;

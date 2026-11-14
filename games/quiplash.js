@@ -105,11 +105,21 @@ class QuiplashGame extends BaseGame {
   handleSubmit(id, payload) {
     if (this.phase === 'answering') {
       const text = cleanText(payload.text, 100);
-      const next = this.remaining(id)[0];
-      if (!text || !next) return;
-      this.matchups[next.mi].answers[next.side] = text;
+      const left = this.remaining(id);
+      // The phone says which prompt it answers (`slot`, the matchup it was shown): a double tap or a
+      // late resend of prompt 1 must not fill prompt 2 with the same text.
+      const slot = payload.slot;
+      const asked = slot === undefined ? left[0] : left.find((x) => x.mi === slot);
+      if (!asked) {
+        // Already answered that one (a resend): it is in, nothing to change. Anything else is turned down.
+        const mine = (this.todo.get(id) || []).some((x) => x.mi === slot);
+        return slot !== undefined && mine;
+      }
+      if (!text) return false;
+      this.matchups[asked.mi].answers[asked.side] = text;
       if (this.playerIds().every((p) => this.remaining(p).length === 0)) this.startVoting();
       else this.push();
+      return true;
     } else if (this.phase === 'voting' && payload.bet !== undefined) {
       // Authors aren't idle while the room votes: a side bet on their own matchup.
       const m = this.matchIndex == null ? undefined : this.matchups[this.matchIndex];
@@ -125,6 +135,7 @@ class QuiplashGame extends BaseGame {
       if (this.voters().every((v) => this.votes.has(v))) this.finishMatchup();
       else this.push();
     }
+    return undefined;
   }
 
   voters() {
@@ -236,7 +247,7 @@ class QuiplashGame extends BaseGame {
       const left = this.remaining(id);
       const next = left[0];
       return {
-        gameState: { prompt: next ? this.matchups[next.mi].prompt : null, promptNumber: 3 - left.length, promptTotal: 2 },
+        gameState: { prompt: next ? this.matchups[next.mi].prompt : null, slot: next ? next.mi : null, promptNumber: 3 - left.length, promptTotal: 2 },
         you: { submitted: !next },
       };
     }

@@ -69,3 +69,33 @@ test('TV scripts and CSS use nothing newer than Chromium 85 without a fallback',
   for (const f of CSS) found.push(...later(fs.readFileSync(path.join(PUB, f), 'utf8'), CSS_LATER, f));
   assert.deepStrictEqual(found, []);
 });
+
+// A selector Chromium 85 doesn't know drops the WHOLE rule it's listed in (`a:focus, a:focus-visible {…}` styles
+// nothing there), so selectors newer than Chromium 85 must stand alone in their own rule.
+const SELECTOR_LATER = [[':focus-visible', /:focus-visible/, 86]];
+/** Top-level selector lists of every rule (comments and @-rule preludes left out). @param {string} css */
+function selectorLists(css) {
+  const out = [];
+  const src = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+  for (const m of src.matchAll(/(^|[{};])([^{};@]+)\{/g)) {
+    const sel = m[2].trim();
+    if (!sel || /^(from|to|\d+%)/.test(sel)) continue; // keyframe steps
+    out.push({ sel, line: src.slice(0, m.index + m[1].length).split('\n').length + (m[2].match(/^\s*/)[0].match(/\n/g) || []).length });
+  }
+  return out;
+}
+test('TV CSS: a selector newer than Chromium 85 (:focus-visible) never shares a rule with others', () => {
+  const found = [];
+  for (const f of CSS) {
+    for (const { sel, line } of selectorLists(fs.readFileSync(path.join(PUB, f), 'utf8'))) {
+      const top = sel.replace(/\([^()]*\)/g, '()'); // commas inside :not(a, b) don't make a list
+      for (const [what, re, v] of SELECTOR_LATER) if (re.test(sel) && top.includes(',')) found.push(`${f}:${line} ${what} (Chromium ${v}+) in a selector list: ${sel.replace(/\s+/g, ' ').slice(0, 100)}`);
+    }
+  }
+  assert.deepStrictEqual(found, []);
+});
+test('the selector-list check finds :focus-visible in a list (and not alone)', () => {
+  const lists = selectorLists('a:focus { x: 1 }\n/* b, c:focus-visible { } */\nb:focus,\nb:focus-visible { y: 2 }\n:focus-visible { z: 3 }\n@media (max-width: 9px) { d, e:focus-visible { w: 4 } }');
+  const bad = lists.filter((l) => /:focus-visible/.test(l.sel) && l.sel.includes(','));
+  assert.deepStrictEqual(bad.map((l) => l.line), [3, 6]);
+});

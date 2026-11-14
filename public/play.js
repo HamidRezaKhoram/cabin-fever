@@ -203,10 +203,14 @@ gameView.addEventListener('submit', (e) => {
   const f = /** @type {HTMLFormElement} */ (e.target);
   const input = /** @type {HTMLInputElement | null} */ (f.querySelector('input'));
   if (!input) return;
+  // Already sent (a double tap, Enter + the button): once is enough — the ack gives it back if it failed.
+  if (f.querySelector('button.sent')) { e.preventDefault(); return; }
   if (f.matches('form.text-form')) {
     e.preventDefault();
     const v = input.value;
-    if (v.trim()) { formSent(f); send({ text: v }); } else nope(f);
+    // Which prompt this answers (Campfire Quips asks two in a row): the TV never files it under the next one.
+    const g = (state && state.gameState) || {};
+    if (v.trim()) { formSent(f); send(Number.isInteger(g.slot) ? { text: v, slot: g.slot } : { text: v }); } else nope(f);
   } else if (f.matches('form.number-form')) {
     e.preventDefault();
     const n = parseFloat(input.value.replace(/,/g, ''));
@@ -265,11 +269,21 @@ function askToJoin(takeover) {
     // Keep a more precise message if the connection already gave one (e.g. "same Wi-Fi as the TV").
     if (!joinError.textContent) joinError.textContent = 'The TV did not respond. Check the room code and try again.';
   }, 10000);
-  socket.emit('player:joinRoom', {
+  lastJoin = {
     code: codeInput.value, nickname: nickInput.value, avatar: myAvatar, device: DEVICE,
     look: avatarMode === 'make' ? myLook : undefined, ...(takeover ? { takeover: true } : {}),
-  });
+  };
+  socket.emit('player:joinRoom', lastJoin);
   void keepAwake();
+}
+/** The last join asked for, and — while this phone waits in line for a role game to end — the one to
+ * send again after the link drops (the TV forgets a queued phone when it disconnects). @type {any} */
+let lastJoin = null;
+/** @type {any} */
+let queuedJoin = null;
+/** Back in line after a reconnect / a revived link (only while queued and not seated). */
+function requeue() {
+  if (queuedJoin && !me && !ended) socket.emit('player:joinRoom', queuedJoin);
 }
 joinForm.addEventListener('submit', (e) => { e.preventDefault(); askToJoin(); });
 joinError.addEventListener('click', (e) => { if (hit(e.target, '[data-thats-me]')) askToJoin(true); });
@@ -308,11 +322,13 @@ socket.on('connect', () => {
   const seat = mySeat || store('rumpus.seat');
   if (ended) return;
   if (seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
+  requeue();
 });
 // Browser build: the TV saw this phone's direct link come back after a nap — re-take the seat.
 socket.on('net:resync', () => {
   const seat = mySeat || store('rumpus.seat');
   if (!ended && seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
+  requeue();
 });
 socket.on('player:rejoinFailed', () => {
   mySeat = null;
@@ -324,9 +340,12 @@ socket.on('player:rejoinFailed', () => {
 socket.on('player:queued', (/** @type {any} */ msg) => {
   // The TV did answer: no "did not respond" timeout while we wait in line (the button stays off).
   if (joinTimer !== null) { clearTimeout(joinTimer); joinTimer = null; }
+  queuedJoin = lastJoin;
+  joinBtn.disabled = true;
   joinError.textContent = `You're next! ${String(msg.game || 'A game')} is on right now — you'll join as soon as it ends. Keep this page open.`;
 });
 socket.on('player:joinError', (/** @type {any} */ msg) => {
+  queuedJoin = null;
   resetJoinBtn();
   joinError.textContent = msg.reason || 'Could not join.';
   // The name is in use by someone who is connected. If that's this person on another browser or
@@ -410,6 +429,7 @@ function wakeHint() {
 document.addEventListener('pointerdown', () => { if (me && !ended) void keepAwake(true); }, { passive: true });
 
 socket.on('player:joined', (/** @type {any} */ msg) => {
+  queuedJoin = null;
   resetJoinBtn();
   me = { playerId: msg.playerId };
   mySeat = { code: msg.roomState.code, token: msg.token };
@@ -425,13 +445,22 @@ socket.on('player:kicked', () => {
   store('rumpus.seat', null);
   showMessage('<h1>You were removed from the room</h1><p><a href="/play">Join again</a></p>');
 });
-socket.on('room:stateUpdate', (/** @type {any} */ msg) => { state = msg; render(); });
+socket.on('room:stateUpdate', (/** @type {any} */ msg) => {
+  // Drawings come once (core/rooms.js sendState): keep them even if this update isn't drawn.
+  if (msg && msg.gameState && msg.gameState.images && window.Rumpus.learnPics) window.Rumpus.learnPics(msg.gameState);
+  state = msg; render();
+});
 socket.on('disconnect', () => {
   if (ended) return;
   setConn('wait');
   if (joinTimer !== null) {
     resetJoinBtn();
     joinError.textContent = 'Connection lost. Try joining again when the TV reconnects.';
+  } else if (queuedJoin && !me) {
+    // Waiting in line: the TV dropped us from it. We get back in line by ourselves on reconnect
+    // (requeue); meanwhile the button works again, in case they'd rather tap.
+    resetJoinBtn();
+    joinError.textContent = 'Connection lost — getting back in line when it reconnects…';
   }
   // Brief blips heal by themselves; only say something if it lasts.
   if (lostTimer) clearTimeout(lostTimer);
@@ -558,7 +587,7 @@ function send(/** @type {any} */ payload) {
     for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) { x.disabled = false; x.classList.remove('sent'); }
     for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('form button.sent'))) { x.classList.remove('sent'); x.textContent = (x.dataset && x.dataset.label) || 'Send it'; }
     if (window.Rumpus && window.Rumpus.haptic) window.Rumpus.haptic([30, 80, 30]); // it didn't go: a buzz you can feel
-    banner.textContent = 'That didn\'t reach the TV — tap again';
+    banner.textContent = res && res.rejected ? 'The TV didn\'t take that — try again' : 'That didn\'t reach the TV — tap again';
     banner.hidden = false;
     setTimeout(() => { if (socket.connected) banner.hidden = true; }, 3000);
   });

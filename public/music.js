@@ -353,6 +353,12 @@
   // A "deck" plays one compiled track into its own gain (for crossfades).
   /** @type {Deck[]} */
   let decks = [];
+  // Notes are booked this far ahead on the audio clock, by a timer every TICK_MS. The TV's screen
+  // changes block the page for 200–400 ms on a slow CPU: a 0.15 s look-ahead ran dry then and the
+  // late notes bunched up. 0.5 s ahead with a 100 ms timer rides those out (a hurry/intensity change
+  // takes up to ~0.5 s to be heard; a fade-out still covers the notes already booked, as the deck's
+  // gain fades them). Rhythm games book their whole song at once (`rhythm` below) — not affected.
+  const LOOKAHEAD = 0.5, TICK_MS = 100;
   let hurry = false;
   let intensity = 1; // 1 = round 1, 2 = round 2 (faster, busier); the final round has its own cue
   /** @type {((e: { cue: string, name: string }) => void)[]} */
@@ -374,7 +380,10 @@
     const tempo = tr.bpm * boost;
     const six = 60 / tempo / 4;
     const out = d.gain;
-    while (!d.stopping && d.next < ctx.currentTime + 0.15) {
+    // Fell behind anyway (a page stall longer than the look-ahead): skip the missed steps instead of
+    // playing them all at once (a one-shot keeps its last step, which ends it).
+    while (!d.stopping && d.next < ctx.currentTime - 0.02 && !(tr.once && d.step + 1 >= tr.steps)) { d.step++; d.next += six; }
+    while (!d.stopping && d.next < ctx.currentTime + LOOKAHEAD) {
       const s = d.step % tr.steps;
       const inBar = s % 16;
       let t = d.next;
@@ -469,6 +478,7 @@
       if (follow && currentCue === cue) startCue(follow);
     });
     decks.push(deck);
+    scheduleDeck(deck); // book its first notes now, not up to a timer tick late
     listeners.forEach((fn) => fn({ cue, name: tr.name }));
   }
 
@@ -615,7 +625,7 @@
     enabled = true;
     await loadCategories();
     setInterval(loadCategories, 60000); // pick up newly added tracks; recover from a failed fetch
-    setInterval(tickAll, 25);
+    setInterval(tickAll, TICK_MS);
     setInterval(watchdog, 4000);
     const first = pendingCue || 'title';
     pendingCue = null;

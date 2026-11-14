@@ -144,6 +144,10 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - **Offline after first load** (`web/offline.js` + `sw-template.js`): the TV shows a progress bar
   while every game file is saved, then music + voice save in the background; phones save their
   own files. `test/ui/pages.js` reloads both pages with the network off.
+  Downloads stream into the Cache API (never buffered). Files > 20 MB (the voice model) come alone, in
+  8 MB Range pieces saved as they arrive, so a worker the browser stops after ~5 min carries on instead
+  of starting over; the pieces are then joined (`test/unit/offline-sw.test.js`). The website's `fs`
+  (`web/shims/fs.js`) keeps `.tmp` writes in memory, so write-then-rename is one localStorage write.
 - **Every random choice in a game comes from `this.rng`** (`games/rng.js`, seeded per game,
   `RUMPUS_SEED` replays one) and stays inside set bounds (`rng.int(lo, hi)`, `rng.range`).
 - **Feel**: `Rumpus.haptic(ms | pattern)` on every tap (Android vibrate, iPhone switch-tick). Phones
@@ -192,14 +196,16 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   the `calc(max(28px, …vh) / var(--unzoom))` rule in style.css so the stage zoom can't shrink them.
   The TV marks the screen it shows with `#phase-view[data-phase]`.
 - Phones: everything tappable is ≥ 48px (`body.play #game-view button` etc.); the lab checks it.
-- **TV menu** (Nov 13 redesign, retro): a console-style game select — "▶ CHOOSE A GAME", one shelf of
-  old-console cartridges (`.shelf .cart`: grey shell, grip ridges, a label with art + name, nothing else),
-  and a footer (control hints + ⚙ Settings). The picked cartridge comes forward and its description
-  (`#game-detail`, from `data-blurb`/`data-min` + `GAME_TAGS`) sits under it (`placeDetail`). ◀ ▶ wrap
-  round the shelf; locked games stay selectable (`aria-disabled`) and say why. No top bar on the menu:
-  every setting (game, sound, screen, narrator, language, links) is in ⚙ Settings (`.settings-more`,
-  `moreOpen`), and 🎉 Game night is one button with its own box (`nightOpen`); Back/Escape closes them.
-  Dialogs are old-console boxes (`.retro-box`). The lab's remote-press budget is 8 (half the shelf).
+- **TV menu** (`gamePicker` in host.js, retro console): title ("Choose a game" / "Play again?") with
+  🏆 Stats and ⚙ Settings in its top-right corner; a shelf of old-console cartridges (`.shelf .cart`:
+  grey shell, grip ridges, a label with art + name, nothing else) that turns like a wheel: the picked
+  cartridge sits in the middle (`centreCart`) and each one that passes clicks (`sfx.wheel`); ◀ ▶ wrap
+  round. Under it a fixed description box (`#game-detail`, from `data-blurb`/`data-min` + `GAME_TAGS`;
+  only its pointer moves, `placeDetail`). Locked games stay selectable (`aria-disabled`) and say why.
+  Every setting is in ⚙ Settings (`.settings-more`, `moreOpen`); Back/Escape closes a box. Dialogs are
+  old-console boxes (`.retro-box`). **One palette**: white, a soft grey for small print, the dark panels
+  and the games' own art — no yellow/green/red on the menu (style.css "One palette on the TV menu").
+  The lab's remote-press budget is 8 (half the shelf, computed from its size).
 - **Menu layout pattern**: every area has one place. Main column: title → shelf → description (a fixed
   box; only its pointer moves to the pick, `--arrow-x`) → command bar (`.cmd-bar`: the lineup on the
   left, every button together in `.cmd-group` on the right, one style and size). No "press OK to…"
@@ -208,7 +214,7 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   corner of the main column: 🏆 Stats (its own box: tonight, hall of fame) and ⚙ Settings (settings
   only). Lineup actions go in `.cmd-group`; menus go in the corner.
 - **The lineup** (replaced game night's vote, Nov 13): ▼ from a cartridge → "＋ Add to the lineup"; the
-  footer shows it as mini cartridges (`lineup` in host.js) and ▶ Play sends `host:startNight {games}`.
+  command bar shows it as mini cartridges (`lineup` in host.js) and ▶ Play sends `host:startNight {games}`.
   The server (`room.night.list`, `nightNext` in core/rooms.js) plays them in order, skipping a game that
   needs more players; between games `NightGame` shows `night-next` (the next cartridge, "NEXT GAME") for
   `RUMPUS_NIGHT_NEXT_MS`. Cartridges come from one helper, `cartHtml(id, name, 'mini' | 'big')`.
@@ -219,7 +225,7 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - **Phone join/lobby**: the join page is name + look + Join (sticky); the full character maker opens with
   "Customise" (`editor(..., { open: false })`). The lobby is one card plus two buttons; "Change my look"
   opens one panel with Character / Animal.
-- Every image load refits the TV (debounced 50 ms) — even avatars: an unloaded `<img alt="">` takes no space, so a loading avatar does move the layout (tried skipping them: the snapshot test overflowed).
+- Every image load refits the TV (debounced 50 ms), except an avatar whose box is the size recorded at the last fit (host.js `loadingBoxes`): an unloaded `<img alt="">` can take no space, so a loading avatar may move the layout (skipping all avatars made the snapshot test overflow).
 - Main prompts/answers get `data-fit` and are grown by `Rumpus.fit()` to fill their box.
 - A browser test asserts the TV prompt is ≥ 5% of the screen height.
 - **The TV never scrolls in a game**: `host.js` `shrinkToStage()` zooms the screen's content down

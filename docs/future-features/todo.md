@@ -63,6 +63,13 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 
 ## Done
 
+- **Website save: memory, slow Wi-Fi, small fixes** (Nov 13 2026, review): downloads stream into the cache
+  (the 169 MB voice model used to sit in memory twice, ~340 MB: a TV/phone could crash); saved copies drop
+  Content-Encoding/Length; a failed response's body is cancelled. Files > 20 MB download alone in 8 MB Range
+  pieces saved as they come, so a worker stopped after ~5 min carries on from the last piece instead of
+  starting the model over for ever (then the pieces are joined). "No room to save" shows once per device.
+  Website `fs`: write-then-rename is one localStorage write; `cf.tonight` is only rewritten when the stats or
+  the room's highlights changed. Lab: sets the fewest rounds in ⚙ Settings again (it was playing full games).
 - **Fix: website loading stuck at 97%** (Nov 13 2026, reported at the cottage): the service worker had no
   timeout on a download, so one stalled file (music, the voice model) never finished; and the browser stops a
   worker after ~5 min on one job, which left the save short of 100%. Now each download times out (20 s game

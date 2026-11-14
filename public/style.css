@@ -367,8 +367,10 @@ body.play { padding-bottom: 120px; }
   background: var(--panel2); color: var(--accent); box-shadow: 0 3px 0 var(--edge); pointer-events: none; }
 .intro-card { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 55; display: grid; place-items: center; background: rgba(10,8,20,0.88); animation: intro-in 0.4s steps(12) both; }
 .intro-card.out { animation: intro-out 0.5s steps(15) forwards; }
-@keyframes intro-in { from { clip-path: inset(50% 0 50% 0); } to { clip-path: inset(0 0 0 0); } }
-@keyframes intro-out { to { clip-path: inset(50% 0 50% 0); } }
+/* Opens from (and closes to) the middle line: scaleY, not clip-path — a transform is composited on old TVs
+   (Chromium 85 repainted the whole screen for every step of a clip-path). */
+@keyframes intro-in { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes intro-out { to { transform: scaleY(0); } }
 .intro-inner { text-align: center; }
 .intro-cart { display: flex; justify-content: center; }
 .intro-cart .cart-shell { --cart-h: 34vh; animation: cart-insert 0.9s steps(27) both; }
@@ -787,8 +789,6 @@ body.play button img, body.play [data-send] img { pointer-events: none; }
 body.play input, body.play textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 .lobby-crew figure { position: relative; }
 .lobby-crew figure.offline img { opacity: 0.45; filter: grayscale(1); }
-.lobby-crew .lobby-kick { position: absolute; top: -6px; right: -10px; font-size: 14px; padding: 2px 5px; opacity: 0.55; }
-.lobby-crew .lobby-kick:hover, .lobby-crew .lobby-kick:focus { opacity: 1; }
 /* TV: in-game content scales down to fit the stage (host.js shrinkToStage) — never a scrollbar. */
 body.host .phase-view.in-game > * { zoom: var(--shrink, 1); }
 body.host.in-game #stage { overflow: hidden; }
@@ -898,21 +898,21 @@ body.host.picking #sidebar { display: none; }
 body.host.picking #phase-view { height: 100%; }
 .game-menu { display: grid; height: 100%; gap: 1.2vh 1.2vw; grid-template-columns: minmax(0, 1fr) clamp(220px, 23vw, 470px);
   grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "top side" "games side" "settings side"; }
-.lobby-top { grid-area: top; display: flex; align-items: center; gap: 0.6vh 2vw; flex-wrap: wrap; min-width: 0; }
+.lobby-top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 2vw; flex-wrap: nowrap; min-width: 0; }
 .lobby-top h1 { margin: 0; font-size: clamp(16px, 4vh, 44px); line-height: 1.1; }
 /* Right column: join card on top, the players underneath (Rocco only comes out to talk, so no room is kept for him). */
 .lobby-side { grid-area: side; display: flex; flex-direction: column; gap: 1.2vh; min-height: 0; min-width: 0; padding-bottom: 2vh; }
 .game-menu .join-card { flex: 0 0 auto; flex-wrap: nowrap; justify-content: flex-start; gap: 1vw; padding: 1.2vh 0.8vw; }
-.game-menu .qr-big { flex: 0 0 auto; width: clamp(88px, 16vh, 190px); height: clamp(88px, 16vh, 190px); padding: 0.5vh; }
+/* A big QR: it's what people point their phones at. */
+.game-menu .qr-big { flex: 0 0 auto; width: clamp(96px, 19vh, 220px); height: clamp(96px, 19vh, 220px); padding: 0.5vh; }
 .game-menu .join-text { gap: 0.2vh; min-width: 0; }
 .game-menu .join-label { font-size: clamp(11px, 1.8vh, 20px); }
-.game-menu .join-addr { font-size: clamp(11px, 1.9vh, 22px); overflow-wrap: anywhere; line-height: 1.1; }
-.game-menu .join-code { font-size: clamp(18px, 3.4vh, 40px); letter-spacing: 0.08em; }
+.game-menu .join-addr { overflow-wrap: anywhere; line-height: 1.1; }
+.game-menu .join-code { font-size: clamp(28px, 3.4vh, 40px); letter-spacing: 0.08em; } /* ≥ 28 px: 720p too */
 /* Players: 4 across; the rows share the height there is (never more than 13vh each), so 12 fit as well as 2. */
 .game-menu .lobby-crew { flex: 1 1 0; min-height: 0; max-height: calc(var(--rows, 1) * 13.5vh); margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows, 1), minmax(0, 1fr)); gap: 0.8vh 0.4vw; overflow: hidden; }
 .game-menu .lobby-crew figure { display: flex; flex-direction: column; align-items: center; min-height: 0; font-size: clamp(10px, 1.6vh, 19px); line-height: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .game-menu .lobby-crew figure img { flex: 1 1 0; min-height: 0; width: auto; max-width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; margin: 0; } /* old TVs: the image's own square shape */
-.game-menu .lobby-crew .lobby-kick { top: 0; right: 0; font-size: clamp(9px, 1.3vh, 14px); }
 .game-menu .lobby-crew .hint { grid-column: 1 / -1; margin: 0; font-size: clamp(12px, 2vh, 22px); }
 .game-menu .lobby-crew.teams { grid-template-columns: 1fr 1fr; }
 .game-menu .lobby-crew.teams { grid-template-rows: minmax(0, 1fr); max-height: calc(var(--rows, 1) * 13.5vh + 4vh); }
@@ -926,7 +926,8 @@ body.host.picking #phase-view { height: 100%; }
 .next-row { text-align: center; margin: 2vh 0 0; }
 .next-game-btn { font-size: clamp(12px, 2.2vh, 22px); padding: 1.4vh 2vw; }
 /* TV remote (host.js): the focused control gets a thick pixel ring you can see from the couch. */
-body.kbd :focus, body.kbd :focus-visible { outline: 6px solid var(--accent) !important; outline-offset: 4px; box-shadow: 0 0 0 14px rgba(255, 176, 46, 0.25); }
+/* (:focus alone: Chromium 85 doesn't know :focus-visible, and one unknown selector in a list drops the whole rule.) */
+body.kbd :focus { outline: 6px solid var(--accent) !important; outline-offset: 4px; box-shadow: 0 0 0 14px rgba(255, 176, 46, 0.25); }
 /* 10-foot rule: secondary TV text ≥ 2.6vh / 28 px. The round tag and category banner were 17 px and
    13 px (Cottage Lab scorecard, feel-plan.md). */
 /* The stage zoom (host.js shrinkToStage, --shrink) must not push these labels under 28 px: they grow by
@@ -965,11 +966,8 @@ body.host ol.answers.two-col { columns: 2; column-gap: 4vw; }
 body.host ol.answers.two-col li { break-inside: avoid; }
 
 /* ---- Menu, cleaner (Nov 13): four game settings on the bar, the rest in ⚙ (the cartridge shelf is below). */
-.game-menu .settings { font-size: clamp(12px, 2vh, 22px); gap: 0.6vh 1.4vw; }
-.game-menu .settings .more-btn { font-size: clamp(9px, 1.4vh, 15px); padding: 0.7vh 1vw; background: var(--panel2); color: var(--ink); margin-left: auto; min-height: 0; }
-.settings-more { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 90; width: min(92vw, 1100px); max-height: 86vh; overflow: auto;
-  background: var(--panel); box-shadow: 0 0 0 6px var(--edge), 0 0 0 10px var(--accent), 0 0 0 100vmax rgba(10, 8, 20, 0.6);
-  padding: 3vh 2.4vw; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2vh 2vw; font-size: clamp(14px, 2.2vh, 24px); }
+.settings-more { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 90; width: min(94vw, 1500px); max-height: 86vh; overflow: auto;
+  padding: 3vh 2.4vw; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2vh 2vw; }
 .settings-more[hidden] { display: none; }
 .settings-more h2 { grid-column: 1 / -1; margin: 0; font-size: clamp(14px, 2.6vh, 30px); }
 .settings-more .more-group { display: flex; flex-direction: column; gap: 1.2vh; align-items: flex-start; min-width: 0; }
@@ -980,8 +978,6 @@ body.host ol.answers.two-col li { break-inside: avoid; }
 .settings-more .voice-status { color: var(--dim); font-size: 0.8em; }
 .settings-more .hl-link, .settings-more .link-btn { font-size: inherit; }
 .settings-more .more-close { grid-column: 1 / -1; justify-self: end; font-size: clamp(10px, 1.6vh, 18px); }
-/* The join card: a bigger QR (it's what people point their phones at). */
-.game-menu .qr-big { width: clamp(100px, 21vh, 240px); height: clamp(100px, 21vh, 240px); }
 
 /* ---- Phone join + lobby, cleaner (Nov 13): name and look up top, Join always in reach; the full
    character maker opens with "Customise"; the lobby fits one screen. */
@@ -1008,8 +1004,6 @@ body.host .now-playing.show { transform: none; }
 .settings-more label.more-select { flex-wrap: wrap; }
 .settings-more label.more-select select { width: 100%; min-width: 0; }
 .settings-more .more-group > * { max-width: 100%; }
-.game-menu .qr-big { width: clamp(96px, 19vh, 220px); height: clamp(96px, 19vh, 220px); }
-.game-menu .join-addr { font-size: clamp(10px, 1.6vh, 19px); }
 .lobby-maker { scroll-margin-top: 64px; }
 .lobby-maker-head { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: stretch; margin-bottom: 10px; }
 .lobby-maker-head .avatar-mode { display: contents; }
@@ -1037,10 +1031,14 @@ body.calm #game-view .sent { animation: none; }
    grip ridges and a label (art + name) — nothing else. The picked one comes forward and its
    description appears under it. The row scrolls (remote ◀ ▶ wraps round; the mouse wheel scrolls). */
 .shelf-wrap { grid-area: games; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.shelf { display: flex; gap: 2.2vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none;
-  padding: 5.5vh 3vw 3vh; margin: 0 -1vw; flex: 0 0 auto;
+/* The shelf is a wheel (host.js centreCart): room at both ends so the first and last cartridge can sit in the
+   middle too, and a flick of the trackpad always stops with one cartridge centred. Room on top for the picked
+   cartridge: lifted 3.5vh and scaled ×1.2 (+0.1 × its height), its number badge and the remote's ring (~20 px). */
+.shelf { display: flex; gap: 2.2vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding: calc(6.5vh + 24px) calc(50% - 10vh) 2vh; margin: 0 -1vw; flex: 0 0 auto;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3vw, #000 calc(100% - 3vw), transparent 100%); }
 .shelf::-webkit-scrollbar { display: none; }
+body.spinning .shelf { scroll-snap-type: none; } /* mid-turn (host.js centreCart): snapping would jump it each frame */
 .cart-shell { --cart-h: 30vh; position: relative; display: block; width: calc(var(--cart-h) * 0.87); height: var(--cart-h); color: #fff; font-family: var(--pixel);
   background: linear-gradient(180deg, #b2b0b8 0%, #9c9aa3 55%, #8a8891 100%);
   box-shadow: inset 0.5vh 0.5vh 0 rgba(255, 255, 255, 0.35), inset -0.6vh -0.6vh 0 rgba(0, 0, 0, 0.22), 0 0 0 3px #17151f, 0 1vh 0 #17151f; }
@@ -1062,20 +1060,21 @@ body.calm #game-view .sent { animation: none; }
 .game-menu .shelf button.cart.locked .cart-label { filter: grayscale(1) brightness(0.55); }
 .cart-num { position: absolute; top: -1.4vh; right: -1.2vh; z-index: 3; min-width: 4.4vh; height: 4.4vh; line-height: 4.4vh; text-align: center; font-family: var(--pixel); font-size: 2.2vh;
   color: #14121f; background: var(--accent); box-shadow: 0 0 0 3px #17151f; }
-.game-menu .shelf button.cart .game-lang { position: absolute; top: 1vh; right: 1vh; font-size: 1.3vh; background: #121019; padding: 0.3vh 0.4vw; }
+.game-menu .shelf button.cart .game-lang { position: absolute; top: 1vh; right: 1vh; font-family: var(--body); font-size: max(28px, 2.6vh); line-height: 1; background: #121019; padding: 0.3vh 0.4vw; }
 /* The pick comes forward: bigger, lifted, its shadow on the shelf; its art bobs. */
 .game-menu .shelf button.cart:hover, .game-menu .shelf button.cart:focus { transform: translateY(-3.5vh) scale(1.2); z-index: 2; }
 .game-menu .shelf button.cart:hover .cart-shell, .game-menu .shelf button.cart:focus .cart-shell {
   box-shadow: inset 0.5vh 0.5vh 0 rgba(255, 255, 255, 0.4), inset -0.6vh -0.6vh 0 rgba(0, 0, 0, 0.22), 0 0 0 3px #17151f, 0 0 0 0.7vh var(--accent), 0 4vh 3vh rgba(0, 0, 0, 0.55); }
 .game-menu .shelf button.cart:focus .game-art img, .game-menu .shelf button.cart:hover .game-art img { animation: bob 0.6s steps(18) infinite; }
+.game-menu .shelf button.cart.tap { animation: none; } /* the pop's transform would knock the pick out of its lift */
 .game-menu .shelf button.cart.nope { animation: nope-shake 0.3s steps(9); }
 body.calm .game-menu .shelf button.cart { transition: none; }
 body.calm .game-menu .shelf button.cart .game-art img { animation: none !important; }
 /* The description, under the picked cartridge (host.js placeDetail sets `left`). */
-.game-detail { position: relative; align-self: flex-start; transform: translateX(-50%); left: 50%; width: min(100%, 64vh); margin: 0.6vh 0 0; padding: 1.4vh 1.4vw 1.5vh;
-  background: var(--panel); box-shadow: 0 0 0 3px var(--edge), 0 0 0 0.6vh var(--art-bg, var(--edge)); color: var(--dim); text-align: center;
-  font-size: clamp(13px, 2.2vh, 26px); line-height: 1.35; display: flex; flex-direction: column; gap: 0.6vh; }
-.game-detail::before { content: ''; position: absolute; left: 50%; top: -2.2vh; transform: translateX(-50%); border: 1.2vh solid transparent; border-bottom-color: var(--art-bg, var(--edge)); }
+/* One fixed box under the shelf (a retro box, below); the pointer on its top edge finds the picked cartridge (--arrow-x). */
+.game-detail { position: relative; align-self: center; width: min(100%, 120vh); margin: 0.8vh 0 0; padding: 1.4vh 1.4vw 1.5vh;
+  color: var(--dim); text-align: center; line-height: 1.35; display: flex; flex-direction: column; gap: 0.6vh; }
+.game-detail::before { content: ''; position: absolute; left: var(--arrow-x, 50%); top: -2.2vh; transform: translateX(-50%); border: 1.2vh solid transparent; border-bottom-color: #f4f1e8; }
 .game-detail:not(.on)::before { display: none; }
 .game-detail.on { color: var(--ink); }
 .game-detail .detail-name { font-family: var(--pixel); font-weight: 400; color: var(--accent); font-size: clamp(11px, 2.2vh, 26px); }
@@ -1088,27 +1087,22 @@ body.host.picking #topbar { display: none; }
 .game-menu { position: relative; }
 .game-menu::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; z-index: 1;
   background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.13) 0 2px, transparent 2px 4px); }
-.lobby-top { justify-content: space-between; }
-.retro-title { text-transform: uppercase; letter-spacing: 0.08em; color: #fff; text-shadow: 0.45vh 0.45vh 0 #c0392b, 0.9vh 0.9vh 0 #17151f; }
+.retro-title { text-transform: uppercase; letter-spacing: 0.08em; color: #fff; text-shadow: 0.45vh 0.45vh 0 #17151f; }
 .retro-title::before { content: '▶ '; color: var(--accent); animation: blink-cursor 1s steps(30) infinite; }
 @keyframes blink-cursor { 50% { opacity: 0; } }
 body.calm .retro-title::before { animation: none; }
-.shelf { padding-top: 8vh; }
 .game-menu .settings.menu-foot { display: flex; align-items: center; justify-content: space-between; gap: 1vw; font-family: var(--pixel); font-size: clamp(9px, 1.5vh, 16px); color: var(--dim); }
-.game-menu .settings .more-btn { margin-left: auto; font-size: clamp(9px, 1.6vh, 18px); padding: 1vh 1.2vw 1.3vh; background: var(--accent); color: #221a00; }
 /* Old-console dialog boxes: the settings, game night, the description and the join card. */
 .retro-box, .game-menu .game-detail, .game-menu .join-card { background: #0b0a10; box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge); }
-.settings-more.retro-box { box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--accent), 0 0 0 100vmax rgba(10, 8, 20, 0.65); grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(94vw, 1500px); }
+/* The dialogs (Settings, Stats, NEXT GAME) also dim the screen behind them. */
+.settings-more.retro-box { box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge), 0 0 0 100vmax rgba(10, 8, 20, 0.65); }
 .settings-more .more-group input[type=range] { width: 100%; }
-.game-menu .game-detail { border-left: 0; }
 /* On the menu (no top bar) the "now playing" toast slides in at the bottom of the players column (empty space). */
 body.host.picking .now-playing { top: auto; bottom: 3vh; left: auto; right: 2.4vw; transform: translateX(calc(100% + 4vw)); }
 body.host.picking .now-playing.show { transform: none; }
 /* The players column says what it is, and each player has a clear ✕ to remove them. */
 .game-menu .crew-head { margin: 0.6vh 0 0; font-size: clamp(10px, 2vh, 22px); display: flex; justify-content: space-between; align-items: baseline; color: #fff; }
 .game-menu .crew-head span { font-size: 0.75em; color: var(--accent2); }
-.game-menu .lobby-crew .lobby-kick { opacity: 1; top: 2px; right: 2px; z-index: 2; background: var(--danger); color: #fff; font-family: var(--pixel);
-  font-size: clamp(9px, 1.4vh, 15px); line-height: 1; padding: 0.5vh 0.45vw 0.6vh; box-shadow: 0 0 0 2px #17151f; min-height: 0; }
 
 /* ---- The lineup (Nov 13): pick games in an order, play them back to back. On the menu the lineup is a
    row of small cartridges in the footer; between games the next cartridge comes to the middle of the
@@ -1119,12 +1113,12 @@ body.host.picking .now-playing.show { transform: none; }
 .lineup-item { position: relative; display: inline-flex; align-items: flex-end; gap: 0.3vw; }
 .lineup-item b { color: var(--accent); font-weight: 400; }
 .lineup-item .cart-shell.mini { --cart-h: 10vh; }
-.lineup-item .lineup-del { position: absolute; top: -1vh; right: -1vh; font-size: 1.2vh; padding: 0.3vh 0.35vw; min-height: 0; background: var(--danger); color: #fff; box-shadow: 0 0 0 2px #17151f; }
+.lineup-item .lineup-del { position: absolute; top: -1vh; right: -1vh; min-height: 0; } /* drawn as a quiet ✕ below (Corner, stats, quiet ✕) */
 .lineup-play { font-size: clamp(9px, 1.6vh, 18px); padding: 1vh 1.2vw 1.3vh; white-space: nowrap; }
 .next-up { display: flex; flex-direction: column; align-items: center; gap: 1.6vh; }
 .next-screen { display: flex; flex-direction: column; align-items: center; gap: 2vh; padding: 3vh 4vw 3.5vh; align-self: center;
-  background: #0b0a10; box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--accent), 0 0 0 100vmax rgba(8, 6, 16, 0.7); }
-.next-up .next-label { margin: 0; font-family: var(--pixel); font-size: clamp(18px, 5vh, 56px); color: var(--accent); letter-spacing: 0.14em; text-shadow: 0.5vh 0.5vh 0 #c0392b; }
+  background: #0b0a10; box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge), 0 0 0 100vmax rgba(10, 8, 20, 0.65); }
+.next-up .next-label { margin: 0; font-family: var(--pixel); font-size: clamp(18px, 5vh, 56px); color: var(--accent); letter-spacing: 0.14em; text-shadow: 0.45vh 0.45vh 0 #17151f; }
 .next-up .next-name { margin: 0; font-family: var(--pixel); font-size: clamp(16px, 4vh, 46px); color: #fff; text-transform: uppercase; text-shadow: 0.4vh 0.4vh 0 #17151f; }
 .next-up .cart-shell { animation: cart-insert 0.9s steps(27) both; }
 @keyframes cart-insert { from { transform: translateY(70vh) scale(0.6); } 70% { transform: translateY(-2vh) scale(1.03); } to { transform: none; } }
@@ -1146,11 +1140,9 @@ body.host .cart-shell.big .game-name { font-size: max(28px, 3vh); }
 body.host .game-detail { font-size: max(28px, 2.6vh); }
 body.host .game-detail .detail-name { font-size: max(28px, 3vh); }
 body.host .game-detail .detail-meta { font-size: max(28px, 2.6vh); }
-body.host .lineup-add, body.host .game-menu .settings .more-btn, body.host .lineup-play,
+body.host .lineup-add, body.host .lineup-play,
 body.host .lineup-title, body.host .lineup-item b, body.host .lineup-bar .link-btn, body.host .menu-foot, body.host .game-menu .crew-head,
 body.host .game-menu .crew-head span, body.host .game-menu .lobby-crew figure, body.host .game-menu .join-label { font-size: max(28px, 2.6vh); }
-body.host .game-menu .lobby-crew .lobby-kick, body.host .lineup-item .lineup-del { font-size: max(28px, 2.6vh); padding: 0.2vh 0.5vw 0.4vh; }
-body.host .lineup-item .lineup-del { top: -2vh; right: -1.6vh; }
 body.host .game-menu .join-card { flex-wrap: wrap; }
 body.host .game-menu .join-at { flex: 1 1 100%; margin: 0; display: flex; flex-wrap: wrap; gap: 0 0.6vw; align-items: baseline; }
 body.host .game-menu .join-addr { font-size: max(28px, 2.6vh); overflow-wrap: anywhere; }
@@ -1176,7 +1168,9 @@ body.host .game-detail .lineup-add { margin: 0; }
 /* The slide-in starts below the box: keep it inside, or the stage measures it as overflow and zooms. */
 body.host .next-up { overflow: hidden; padding-top: 1vh; }
 @media (max-height: 800px) {
-  .shelf { padding-top: 6vh; padding-bottom: 2vh; }
+  /* The pick lifts a little less here (2.5vh): its top room (lift + ×1.2 + ring) then costs the menu no height. 24px, not 18: the ring had 1 px to spare. */
+  .shelf { padding-top: calc(5.2vh + 24px); padding-bottom: 0.5vh; }
+  .game-menu .shelf button.cart:hover, .game-menu .shelf button.cart:focus { transform: translateY(-2.5vh) scale(1.2); }
   .cart-shell { --cart-h: 27vh; }
   body.host .lineup-item .cart-shell.mini { --cart-h: 8vh; }
 }
@@ -1196,10 +1190,6 @@ body.host .game-menu .settings.cmd-bar { display: flex; align-items: center; jus
 .cmd-group { flex: 0 0 auto; display: flex; align-items: center; gap: 1vw; }
 body.host .game-menu .cmd-group button { font-family: var(--body); font-size: max(28px, 2.6vh); padding: 0.8vh 1.1vw 1.1vh; margin: 0; min-height: 0; line-height: 1.1; white-space: nowrap; }
 body.host .cmd-group .link-btn, body.host .cmd-group .ghost { background: var(--panel2); color: var(--ink); text-decoration: none; }
-body.host .cmd-group .more-btn { margin-left: 0; }
-/* The description: one fixed box under the shelf; the pointer on its top edge finds the picked cartridge. */
-body.host .game-menu .game-detail { position: relative; left: auto; transform: none; align-self: center; width: min(100%, 120vh); margin: 0.8vh 0 0; }
-body.host .game-menu .game-detail::before { left: var(--arrow-x, 50%); }
 /* The command bar is always one row; the players heading one line (720p: the "Lineup" word goes). */
 body.host .game-menu .settings.cmd-bar { flex-wrap: nowrap; }
 .cmd-info .lineup-bar { flex-wrap: nowrap; }
@@ -1214,12 +1204,12 @@ body.host .game-menu .crew-head span { font-family: var(--body); }
 /* ---- Corner, stats, quiet ✕ (Nov 13). Settings and Stats sit together in the menu's top-right corner;
    Stats is its own box (tonight's highlights, the hall of fame). The remove ✕ only shows in ✏️ Edit,
    and is drawn small and dark (two thin bars, the text is for screen readers). */
-.lobby-top { display: flex; align-items: center; justify-content: space-between; }
 .corner-group { display: flex; gap: 1vw; align-items: center; }
 body.host .corner-group button, body.host .game-menu .crew-head .edit-players { font-family: var(--body); font-size: max(28px, 2.6vh); padding: 0.8vh 1.1vw 1.1vh; margin: 0; min-height: 0; line-height: 1.1; white-space: nowrap; }
 body.host .corner-group .stats-btn, body.host .game-menu .crew-head .edit-players { background: var(--panel2); color: var(--ink); }
 body.host .game-menu .crew-head .edit-players { margin-left: auto; font-size: max(28px, 2.6vh); padding: 0.4vh 0.8vw 0.6vh; }
 body.host .game-menu .crew-head span { margin-left: 0.4vw; }
+body.host .game-menu .lobby-crew .lobby-kick { position: absolute; top: 2px; right: 2px; z-index: 2; min-height: 0; }
 body.host .game-menu .lobby-crew .lobby-kick, body.host .lineup-item .lineup-del {
   font-size: 0; width: max(26px, 2.6vh); height: max(26px, 2.6vh); padding: 0; background: rgba(11, 10, 16, 0.85); box-shadow: 0 0 0 2px #f4f1e8; }
 body.host .game-menu .lobby-crew .lobby-kick::before, body.host .game-menu .lobby-crew .lobby-kick::after,
@@ -1228,10 +1218,9 @@ body.host .lineup-item .lineup-del::before, body.host .lineup-item .lineup-del::
 body.host .game-menu .lobby-crew .lobby-kick::after, body.host .lineup-item .lineup-del::after { transform: rotate(-45deg); }
 body.host .game-menu .lobby-crew .lobby-kick:hover, body.host .game-menu .lobby-crew .lobby-kick:focus,
 body.host .lineup-item .lineup-del:hover, body.host .lineup-item .lineup-del:focus { background: var(--danger); }
-body.host .lineup-item .lineup-del { top: -1vh; right: -1vh; }
 .stats-box { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 90; width: min(90vw, 900px); padding: 3vh 2.4vw;
   display: flex; flex-direction: column; gap: 1.6vh; font-size: max(28px, 2.6vh);
-  box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--accent), 0 0 0 100vmax rgba(10, 8, 20, 0.65); }
+  box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge), 0 0 0 100vmax rgba(10, 8, 20, 0.65); }
 .stats-box[hidden] { display: none; }
 .stats-box h2 { margin: 0 0 0.6vh; font-size: max(32px, 3.2vh); }
 .stats-box .stats-link { display: flex; flex-direction: column; gap: 0.4vh; padding: 1.4vh 1.2vw; background: var(--panel); color: var(--ink); text-decoration: none; box-shadow: 0 0 0 3px var(--edge); }
@@ -1240,7 +1229,6 @@ body.host .lineup-item .lineup-del { top: -1vh; right: -1vh; }
 .stats-box .stats-link:hover, .stats-box .stats-link:focus { background: var(--panel2); }
 .stats-box .more-close { align-self: flex-end; font-size: max(28px, 2.6vh); }
 /* Title row: never wraps (Stats + Settings stay in their corner); the lineup button uses the body font. */
-body.host .game-menu .lobby-top { flex-wrap: nowrap; gap: 2vw; }
 body.host .game-menu .retro-title { white-space: nowrap; }
 body.host .game-menu .lineup-add { font-family: var(--body); padding: 0.6vh 1.1vw 0.9vh; }
 
@@ -1248,22 +1236,16 @@ body.host .game-menu .lineup-add { font-family: var(--body); padding: 0.6vh 1.1v
    the dark panels, and the games' own art. No yellow, green or red, not even in text: the menu's accent
    tokens are white here. The main action (▶ Play, ✓ Done) is the one white button; rings, badges, the
    picked cartridge and the remote's focus are white too. */
-body.host.picking, body.host .next-screen { --accent: #f4f1e8; --accent2: #f4f1e8; }
-body.host.picking button:not(.cart):not(.lineup-del):not(.lobby-kick), body.host .next-screen button { background: var(--panel2); color: var(--ink); }
+/* (The menu itself, its dialogs inside it, and NEXT GAME — not the whole page: the title screen and the
+   toasts keep their colours.) */
+body.host.picking .game-menu, body.host .next-screen { --accent: #f4f1e8; --accent2: #f4f1e8; }
+body.host.picking button:not(.cart):not(.lineup-del):not(.lobby-kick):not(.lineup-play):not(.more-close), body.host .next-screen button { background: var(--panel2); color: var(--ink); }
 body.host.picking .lineup-play, body.host.picking .more-close { background: #f4f1e8; color: #14121f; }
-body.host.picking .cmd-group .link-btn { background: var(--panel2); color: var(--ink); }
-body.host.picking .settings-more.retro-box, body.host.picking .stats-box, body.host .next-screen {
-  box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge), 0 0 0 100vmax rgba(10, 8, 20, 0.65); }
 body.host .cart-num { color: #14121f; }
 body.host .lineup-row .cart-shell.now { box-shadow: 0 0 0 2px #17151f, 0 0 0 0.6vh #f4f1e8; }
 body.host .lineup-row .cart-shell.done::before { color: #f4f1e8; }
-body.host .retro-title, body.host .next-up .next-label { text-shadow: 0.45vh 0.45vh 0 #17151f; }
-body.host .game-menu .game-detail { box-shadow: 0 0 0 0.45vh #f4f1e8, 0 0 0 0.9vh #0b0a10, 0 0 0 1.25vh var(--edge); }
-body.host .game-menu .game-detail::before { border-bottom-color: #f4f1e8; }
-body.host.picking :focus-visible, body.host.picking.kbd :focus, body.host.picking.kbd :focus-visible {
-  outline-color: #f4f1e8 !important; box-shadow: 0 0 0 14px rgba(244, 241, 232, 0.2); }
+body.host.picking.kbd :focus { outline-color: #f4f1e8 !important; box-shadow: 0 0 0 14px rgba(244, 241, 232, 0.2); }
+/* The white button's ring: a dark gap (filling the outline's offset) between the button and the white outline. */
+body.host.picking.kbd .lineup-play:focus, body.host.picking.kbd .more-close:focus { box-shadow: 0 0 0 4px #0b0a10, 0 0 0 16px rgba(244, 241, 232, 0.2); }
 body.host.picking .settings-more input:focus, body.host.picking .settings-more select:focus { box-shadow: 0 0 0 3px #f4f1e8, inset 0 4px 0 rgba(0, 0, 0, 0.5); }
 body.host.picking .toggle input { accent-color: #f4f1e8; /* old TVs: default colour, cosmetic */ }
-/* The shelf is a wheel (host.js centreCart): room at both ends so the first and last cartridge can sit in
-   the middle too, and a flick of the trackpad always stops with one cartridge centred. */
-body.host .game-menu .shelf { padding-left: calc(50% - 10vh); padding-right: calc(50% - 10vh); scroll-snap-type: x mandatory; }

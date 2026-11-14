@@ -147,7 +147,8 @@ class ClosestGame extends BaseGame {
       const pts = (RANK_POINTS[rank] || 0) + (e.exact ? 200 : 0);
       if (this.doubling.has(e.id)) {
         e.double = true;
-        if (pts > 0 && rank < topHalf) e.gained = this.award(e.id, pts * 2);
+        // Top half is safe even past the paying ranks (8+ players: 4th place pays 0, ×2 = 0, no penalty).
+        if (rank < topHalf) e.gained = this.award(e.id, pts * 2);
         else { const p = this.room.players.get(e.id); const lost = p ? Math.min(p.score, DOUBLE_RISK) : 0; if (p) p.score -= lost; e.gained = -lost; }
       } else e.gained = this.award(e.id, pts);
     });

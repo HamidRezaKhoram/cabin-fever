@@ -16,6 +16,8 @@ const INTRO_MS = env('RUMPUS_LL_INTRO_MS', 4000);
 const PLAY_MS = env('RUMPUS_LL_PLAY_MS', 40000);
 const RESULT_MS = env('RUMPUS_LL_RESULT_MS', 5000);
 const TICK_MS = env('RUMPUS_LL_TICK_MS', 1000 / 30);
+/** In play, a state update goes out at most every this many ticks (~4 Hz at 30 ticks a second). */
+const PUSH_EVERY = 8;
 
 const W = 320, H = 180;                 // world units (the TV canvas is drawn at this size ×N)
 const BOAT_R = 7, ACCEL = 0.42, FRICTION = 0.9, MAX_V = 4.2;
@@ -135,6 +137,10 @@ class LanternGame extends BaseGame {
     this.acc = new Map();
     this.raftHaul = 0;
     this.tickNo = 0;
+    /** a state update is waiting for the next allowed tick (livePush) */
+    this.pushDue = false;
+    /** the tick the last in-play update went out */
+    this.pushedAt = 0;
     /** @type {NodeJS.Timeout | null} */
     this.loop = null;
     /** @type {{ x: number, y: number }[]} */
@@ -187,6 +193,8 @@ class LanternGame extends BaseGame {
   play() {
     this.phase = 'll-play';
     this.tickNo = 0;
+    this.pushDue = false;
+    this.pushedAt = 0;
     this.setTimer(PLAY_MS, () => this.finish(), false);
     this.stopLoop();
     this.loop = setInterval(() => guarded(() => this.tick(), 'lantern tick', this), TICK_MS);
@@ -266,7 +274,7 @@ class LanternGame extends BaseGame {
           this.it = ia === this.it ? ib : ia;
           this.tagCooldown = TAG_IMMUNE;
           this.caught.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, who: this.order.indexOf(this.it), gold: false });
-          this.push();
+          this.livePush();
         }
       }
       if (this.scene === 'fireflies') this.tickFlies();
@@ -276,7 +284,18 @@ class LanternGame extends BaseGame {
       else this.tickHerd();
     }
     this.frame(this.frameData());
+    // At most ~4 updates a second while playing (catches can come every tick; the TV draws the
+    // lake from the 30 Hz frames). Phase changes (finish) push straight away, so nothing is lost.
+    if (this.pushDue && this.phase === 'll-play' && this.tickNo - this.pushedAt >= PUSH_EVERY) {
+      this.pushDue = false;
+      this.pushedAt = this.tickNo;
+      this.push();
+    }
   }
+
+  /** A state update is due (a catch, a tag, a splash, or the twice-a-second score tick): it goes
+   * out with the next allowed tick (≤ ~4 Hz, see tick()). */
+  livePush() { this.pushDue = true; }
 
   tickFlies() {
     while (this.flies.length < MAX_FLIES) this.spawnFly();
@@ -293,7 +312,7 @@ class LanternGame extends BaseGame {
       }
       return true;
     });
-    if (scored || this.tickNo % 15 === 0) this.push(); // phones' arrows and scores update twice a second
+    if (scored || this.tickNo % 15 === 0) this.livePush(); // phones' arrows and scores update twice a second
   }
 
   tickMoon() {
@@ -308,7 +327,7 @@ class LanternGame extends BaseGame {
       this.acc.set(id, a - whole);
       if (whole) this.give(id, whole);
     }
-    if (this.tickNo % 15 === 0) this.push(); // scores tick up on the phones twice a second
+    if (this.tickNo % 15 === 0) this.livePush(); // scores tick up on the phones twice a second
   }
 
   /** Points trickle in (whole points, fractions carried) for everyone `who` says. @param {(id: string) => boolean} who @param {number} perS */
@@ -325,7 +344,7 @@ class LanternGame extends BaseGame {
   tickTag() {
     if (this.it && !this.room.players.has(this.it)) this.it = this.rng.pick(this.playerIds());
     this.trickle((id) => id !== this.it, FREE_PTS_PER_S);
-    if (this.tickNo % 15 === 0) this.push();
+    if (this.tickNo % 15 === 0) this.livePush();
   }
 
   tickSumo() {
@@ -337,13 +356,13 @@ class LanternGame extends BaseGame {
       if (Math.hypot(b.x - this.pad.x, b.y - this.pad.y) > this.pad.r + BOAT_R * 0.4) {
         this.out.add(id);
         this.bumps.push({ x: b.x, y: b.y });
-        this.push();
+        this.livePush();
       }
     }
     this.trickle((id) => !this.out.has(id), PAD_PTS_PER_S);
     const left = [...this.boats.keys()].filter((id) => !this.out.has(id) && this.room.players.has(id));
     if (left.length <= 1 && this.boats.size > 1) { for (const id of left) this.give(id, PAD_SURVIVOR); return this.finish(); }
-    if (this.tickNo % 15 === 0) this.push();
+    if (this.tickNo % 15 === 0) this.livePush();
   }
 
   tickHerd() {
@@ -363,7 +382,7 @@ class LanternGame extends BaseGame {
       if (d.last) { this.give(d.last, DUCK_PTS); this.caught.push({ x: d.x, y: d.y, who: this.order.indexOf(d.last), gold: true }); got = true; }
       return this.duckAtShore();
     });
-    if (got || this.tickNo % 15 === 0) this.push();
+    if (got || this.tickNo % 15 === 0) this.livePush();
   }
 
   tickRaft() {
@@ -406,7 +425,7 @@ class LanternGame extends BaseGame {
       got = true;
       return false;
     });
-    if (got || this.tickNo % 15 === 0) this.push();
+    if (got || this.tickNo % 15 === 0) this.livePush();
   }
 
   frameData() {

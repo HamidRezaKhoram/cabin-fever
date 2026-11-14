@@ -54,7 +54,8 @@ const HERD_MS = parseInt(process.env.RUMPUS_MR_HERD_MS || '20000', 10);
 /** @param {string} s */
 function normalize(s) {
   let t = s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '');
-  t = t.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Letters and digits of any script stay (Cyrillic, Persian, CJK…): only punctuation and symbols go.
+  t = t.replace(/[^\p{L}\p{M}\p{N} ]/gu, ' ').replace(/\s+/g, ' ').trim();
   t = t.replace(/^(a|an|the) /, '');
   // Plurals: drop the -s, then the silent -e that -es plurals share ("shoes"/"shoe", "boxes"/"box",
   // "potatoes"/"potato", "horses"/"horse" all meet). Stripping "-es" alone split "shoes" from "shoe".
@@ -63,6 +64,11 @@ function normalize(s) {
     return w.length > 3 && /(ch|sh|x|s|z|o)e$/.test(w) ? w.slice(0, -1) : w;
   }).join(' ');
   return t.replace(/ /g, '');
+}
+/** How answers are grouped: normalized, or — an emoji-only answer ("🍌") normalizes to nothing — by
+ * its own text (lower case, no spaces). @param {string} s */
+function groupKey(s) {
+  return normalize(s) || '#' + s.toLowerCase().replace(/\s+/g, '');
 }
 
 class MajorityGame extends BaseGame {
@@ -113,21 +119,25 @@ class MajorityGame extends BaseGame {
     if (this.phase === 'mr-herd') {
       const groups = this.groups;
       const pick = Array.isArray(payload.herd) ? payload.herd : null;
-      if (!pick || this.herdVotes.has(id)) return;
+      if (!pick) return false;
+      if (this.herdVotes.has(id)) return true; // a resend: it is already in
       const ix = [...new Set(pick.filter((/** @type {unknown} */ i) => Number.isInteger(i) && /** @type {number} */ (i) >= 0 && /** @type {number} */ (i) < groups.length))];
-      if (!ix.length) return;
+      if (!ix.length) return false;
       this.herdVotes.set(id, /** @type {number[]} */ (ix));
       if (this.allIn(this.herdVotes)) return this.score();
       return this.push();
     }
-    if (this.phase !== 'mr-answer') return;
+    if (this.phase !== 'mr-answer') return false;
     if (this.answers.has(id)) {
+      if (payload.bet === undefined) return true; // the answer again (a double tap): it is already in
       const n = payload.bet;
-      if (this.bets.has(id) || !Number.isInteger(n) || n < 0 || n > this.room.players.size - 1) return;
+      if (this.bets.has(id)) return true;
+      if (!Number.isInteger(n) || n < 0 || n > this.room.players.size - 1) return false;
       this.bets.set(id, n);
     } else {
+      // Anything with something in it counts (emoji, any alphabet); a turned-down answer tells the phone.
       const text = cleanText(payload.text, 40);
-      if (!text || !normalize(text)) return;
+      if (!text) return false;
       this.answers.set(id, text);
     }
     if (this.allIn(this.answers) && this.allIn(this.bets)) return this.reveal();
@@ -148,7 +158,7 @@ class MajorityGame extends BaseGame {
     /** @type {Map<string, { label: string, ids: string[] }>} */
     const groups = new Map();
     for (const [id, text] of this.answers) {
-      const k = normalize(text);
+      const k = groupKey(text);
       const g = groups.get(k) || { label: text, ids: [] };
       g.ids.push(id);
       groups.set(k, g);
@@ -283,5 +293,6 @@ MajorityGame.meta = {
   minPlayers: 3,
 };
 MajorityGame.normalize = normalize;
+MajorityGame.groupKey = groupKey;
 
 module.exports = MajorityGame;
