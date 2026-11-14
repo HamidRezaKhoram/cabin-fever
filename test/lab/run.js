@@ -172,9 +172,11 @@ async function views(/** @type {string} */ code) { try { return await (await fet
         let target = Infinity, what = '';
         for (const el of document.querySelectorAll('#game-view button:not([disabled]), #game-view [data-send], #game-view input, #game-view select')) {
           // A checkbox is tapped through its label: the label is the target.
-          const r = (el.closest('label') || el).getBoundingClientRect();
-          if (!r.width || !r.height || /** @type {HTMLElement} */ (el).offsetParent === null) continue;
-          const side = Math.min(r.width, r.height);
+          // Its layout size, not getBoundingClientRect(): a screen measured as it closes is often the next
+          // one popping in (screen-in scales from 0.85), which made 48 px buttons read 41 px.
+          const box = /** @type {HTMLElement} */ (el.closest('label') || el);
+          if (!box.offsetWidth || !box.offsetHeight || /** @type {HTMLElement} */ (el).offsetParent === null) continue;
+          const side = Math.min(box.offsetWidth, box.offsetHeight);
           if (side < target) { target = side; what = `${el.tagName.toLowerCase()}.${[...el.classList].join('.')} "${(el.textContent || '').trim().slice(0, 24)}"`; }
         }
         return { maxFrame: c.maxMs, target: target === Infinity ? 0 : Math.round(target), what };
