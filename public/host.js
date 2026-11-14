@@ -53,6 +53,8 @@ const scene = window.Rumpus.background(document.getElementById('bg'), { fps: 12 
 /** @type {number | null} */
 let sidebarTimer = null;
 let rosterKey = '';
+/** The in-game buttons (#controls) as last drawn: redrawn only when they change. */
+let controlsHtml = '';
 /** In a game the player strip is hidden; flash it for 5 s when someone joins, leaves or reconnects. */
 function peekSidebar() {
   document.body.classList.add('sidebar-peek');
@@ -293,14 +295,22 @@ document.addEventListener('click', (e) => {
   if (act.dataset.act === 'picknext' || act.dataset.act === 'scores') { pickNext = act.dataset.act === 'picknext'; render(); }
   if (act.dataset.act === 'lineup' || act.dataset.act === 'lineup-del' || act.dataset.act === 'lineup-clear') {
     const id = act.dataset.id || '';
+    const delAt = Number(act.dataset.i);
+    const pickedId = detailId; // before render(): a redraw that drops the focused ✕ can move the focus (and the pick)
     if (act.dataset.act === 'lineup') lineup = lineup.includes(id) ? lineup.filter((x) => x !== id) : [...lineup, id];
     else if (act.dataset.act === 'lineup-del') lineup.splice(Number(act.dataset.i), 1);
     else lineup = [];
     sfx.pop();
     render();
-    const card = /** @type {HTMLElement | null} */ (document.querySelector(`.game-pick[data-game-id="${detailId}"]`));
+    const card = /** @type {HTMLElement | null} */ (document.querySelector(`.game-pick[data-game-id="${pickedId}"]`));
     if (card) showDetail(card); // the button says what it does now
-    const again = /** @type {HTMLElement | null} */ (document.querySelector(act.dataset.act === 'lineup' ? '.lineup-add' : '.lineup-play, .game-pick'));
+    // With the remote, the focus stays where the press was: ＋ Add stays on ＋ Add; a ✕ goes to the ✕ that
+    // took its place (or the one before it), then ▶ Play; Clear (nothing left) goes back to the picked cartridge.
+    // (A plain '.lineup-play, .game-pick' query returned the first cartridge, and the wheel spun back to it.)
+    const q = (/** @type {string} */ sel) => /** @type {HTMLElement | null} */ (document.querySelector(sel));
+    const again = act.dataset.act === 'lineup' ? q('.lineup-add')
+      : (act.dataset.act === 'lineup-del' && (q(`.lineup-del[data-i="${delAt}"]`) || q(`.lineup-del[data-i="${delAt - 1}"]`))) ||
+        q('.lineup-play') || q(`.shelf .game-pick[data-game-id="${pickedId}"]`) || q('.shelf .game-pick');
     if (again && document.body.classList.contains('kbd')) again.focus({ preventScroll: true });
   }
   if (act.dataset.act === 'lineup-play' && lineup.length) {
@@ -358,7 +368,8 @@ document.addEventListener('change', (e) => {
 function pressFx(el) {
   const b = /** @type {HTMLElement | null} */ (el && el.closest('button, .toggle'));
   if (!b || /** @type {HTMLButtonElement} */ (b).disabled) return;
-  b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
+  // Not on a cartridge: the pop's transform would knock the picked cartridge out of its lift (it has its own feel).
+  if (!b.matches('.cart')) { b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); }
   if (!b.matches('.game-pick, [data-act="more"]')) sfx.tick(); // (a game start or the panel has its own sound/feel)
 }
 document.addEventListener('pointerdown', (e) => pressFx(e.target instanceof Element ? e.target : null), { passive: true });
@@ -503,43 +514,76 @@ function placeDetail(card) {
 }
 document.addEventListener('focusin', (e) => {
   const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
-  if (card) { showDetail(card); centreCart(card, true); }
+  if (card) { showDetail(card); centreCart(card, true); } // the one place the wheel is turned to a pick
 });
 document.addEventListener('mouseover', (e) => {
   const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
   if (card && card.dataset.gameId !== detailId) showDetail(card);
 });
 // The shelf is a wheel: the picked cartridge sits in the middle, and each cartridge that passes the
-// middle clicks (sfx.wheel), like a prize wheel's pegs. A mouse wheel turns it one cartridge a notch.
+// middle clicks (sfx.wheel), like a prize wheel's pegs. Focusing a cartridge turns it (focusin → centreCart:
+// the remote's ◀ ▶, the mouse wheel and a click all just move the focus). A mouse wheel notch moves the
+// pick one cartridge from the picked one (not from whichever is passing the middle mid-turn). Hovering only
+// shows a description: it never turns the wheel, and a redraw only re-centres a new shelf or a focused
+// cartridge that is off-centre.
 /** @type {string | null} */ let centredId = null;
+/** The cartridge the wheel was last turned to (focus or wheel; not hover). */
+let pickId = '';
 let clickAt = 0;
-let spinUntil = 0; // a turn in progress: a redraw mustn't jump it
 /** @type {(() => void) | null} */ let spinOff = null; // the turn in progress, on the shared 30 fps clock
+/** During a turn: where each cartridge's centre sits in the shelf's scroll space, measured once when the
+ * turn starts (the scroll handler used to measure every cartridge on every frame of it).
+ * @type {{ shelf: Element, ids: string[], centres: number[], half: number, detailDx: number, detailW: number } | null} */
+let spinCache = null;
+/** @param {Element} shelf */
+function measureShelf(shelf) {
+  const s = shelf.getBoundingClientRect();
+  const d = document.getElementById('game-detail');
+  const box = d ? d.getBoundingClientRect() : s;
+  const carts = /** @type {HTMLElement[]} */ ([...shelf.querySelectorAll('.game-pick')]);
+  const centres = carts.map((c) => { const b = c.getBoundingClientRect(); return b.left + b.width / 2 - s.left + shelf.scrollLeft; });
+  return { shelf, ids: carts.map((c) => c.dataset.gameId || ''), centres, half: s.width / 2, detailDx: s.left - box.left, detailW: box.width };
+}
+function stopSpin() {
+  if (spinOff) { spinOff(); spinOff = null; }
+  spinCache = null;
+  document.body.classList.remove('spinning');
+}
 /** Turn the shelf so this cartridge is in the middle. Turned by hand, not the browser's smooth scroll
  * (which jumps several cartridges a frame, so they'd pass without a click): quick, then easing out,
  * like a prize wheel, so each cartridge clicks past the middle. @param {HTMLElement} card @param {boolean} [smooth] */
 function centreCart(card, smooth = false) {
   const shelf = /** @type {HTMLElement | null} */ (card.closest('.shelf'));
   if (!shelf) return;
+  pickId = card.dataset.gameId || '';
   const s = shelf.getBoundingClientRect(), c = card.getBoundingClientRect();
   const from = shelf.scrollLeft;
   const to = Math.max(0, Math.min(shelf.scrollWidth - shelf.clientWidth, from + (c.left + c.width / 2) - (s.left + s.width / 2)));
-  if (spinOff) { spinOff(); spinOff = null; shelf.style.scrollSnapType = ''; }
+  stopSpin();
   if (Math.abs(to - from) < 2) return;
   if (!smooth || document.body.classList.contains('calm')) { shelf.scrollLeft = to; return; }
   const steps = Math.max(1, Math.round(Math.abs(to - from) / Math.max(1, c.width)));
   const ms = Math.min(1100, 160 + steps * 70);
   const t0 = performance.now();
-  spinUntil = Date.now() + ms + 100;
-  shelf.style.scrollSnapType = 'none'; // a snapping shelf would jump each frame to a cartridge
+  spinCache = measureShelf(shelf);
+  // A snapping shelf would jump each frame to a cartridge. A body class, not the shelf's inline style: a
+  // lobby redraw (morph) mid-turn rewrites the shelf's attributes and would turn snapping back on.
+  document.body.classList.add('spinning');
   spinOff = clock.add(() => {
     const k = Math.min(1, (performance.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    if (!shelf.isConnected) { stopSpin(); return; } // the screen changed under the turn
     shelf.scrollLeft = from + (to - from) * e;
-    if (k >= 1 && spinOff) { spinOff(); spinOff = null; shelf.style.scrollSnapType = ''; }
+    if (k >= 1) stopSpin();
   });
 }
-/** The cartridge in the middle of the shelf now. @param {Element} shelf */
+/** The cartridge in the middle of the shelf now. @param {Element} shelf @returns {HTMLElement | null} */
 function middleCart(shelf) {
+  if (spinCache && spinCache.shelf === shelf) {
+    const mid = shelf.scrollLeft + spinCache.half;
+    let bi = -1, gap = Infinity;
+    spinCache.centres.forEach((x, i) => { const d = Math.abs(x - mid); if (d < gap) { gap = d; bi = i; } });
+    return bi < 0 ? null : /** @type {HTMLElement | null} */ (shelf.querySelector(`.game-pick[data-game-id="${spinCache.ids[bi]}"]`));
+  }
   const s = shelf.getBoundingClientRect(), mid = s.left + s.width / 2;
   let best = null, gap = Infinity;
   for (const c of /** @type {NodeListOf<HTMLElement>} */ (shelf.querySelectorAll('.game-pick'))) {
@@ -548,19 +592,27 @@ function middleCart(shelf) {
   }
   return best;
 }
-/** After a redraw (the shelf is new, scrolled to the start): put the pick back in the middle, silently. */
+/** The shelf element centreShelf last saw (a new one starts scrolled to the start). @type {Element | null} */
+let lastShelf = null;
+/** After a redraw: a new shelf (scrolled to the start) gets its pick back in the middle, silently; on the same
+ * shelf only a focused cartridge that is off-centre is put back. Never mid-turn, never to follow the mouse. */
 function centreShelf() {
   const shelf = document.querySelector('.shelf');
-  if (!shelf || Date.now() < spinUntil) return;
+  const fresh = shelf !== lastShelf;
+  lastShelf = shelf;
+  if (!shelf || spinOff) return;
   const a = document.activeElement;
-  const card = /** @type {HTMLElement | null} */ ((a instanceof HTMLElement && a.matches('.game-pick') && a) ||
-    shelf.querySelector(`.game-pick[data-game-id="${detailId}"]`) || shelf.querySelector('.game-pick'));
+  const focused = a instanceof HTMLElement && a.matches('.game-pick') && shelf.contains(a) ? a : null;
+  if (!fresh && !focused) return;
+  const card = /** @type {HTMLElement | null} */ (focused || shelf.querySelector(`.game-pick[data-game-id="${pickId}"]`) || shelf.querySelector('.game-pick'));
   if (!card) return;
   centredId = card.dataset.gameId || null;
   centreCart(card);
 }
 let wheelAt = 0;
-document.addEventListener('wheel', (e) => {
+// On the screen, not the document: a non-passive wheel listener on the document makes every scroll on the
+// page wait for script. (phase-view stays; the shelf inside it is redrawn.)
+phaseView.addEventListener('wheel', (e) => {
   const shelf = e.target instanceof Element ? e.target.closest('.shelf') : null;
   if (!shelf) return;
   e.preventDefault();
@@ -568,12 +620,11 @@ document.addEventListener('wheel', (e) => {
   if (!d || Date.now() - wheelAt < 140) return; // one notch per flick, not one per pixel
   wheelAt = Date.now();
   const carts = [.../** @type {NodeListOf<HTMLElement>} */ (shelf.querySelectorAll('.game-pick'))];
-  const from = middleCart(shelf);
+  // Step from the pick (focused, or the one the wheel was turned to), not from whatever passes the middle mid-turn.
+  const a = document.activeElement;
+  const from = (a instanceof HTMLElement && carts.includes(a) && a) || carts.find((c) => c.dataset.gameId === pickId) || middleCart(shelf);
   const next = carts[(carts.indexOf(/** @type {HTMLElement} */ (from)) + Math.sign(d) + carts.length) % carts.length];
-  if (!next) return;
-  next.focus({ preventScroll: true });
-  showDetail(next);
-  centreCart(next, true);
+  if (next && next !== a) next.focus({ preventScroll: true }); // focusin shows its description and turns the wheel
 }, { passive: false });
 // The pointer follows its cartridge when the screen changes size, too.
 window.addEventListener('resize', () => {
@@ -583,12 +634,23 @@ window.addEventListener('resize', () => {
 // The shelf scrolls under the description: keep it under its cartridge.
 document.addEventListener('scroll', (e) => {
   if (!(e.target instanceof Element) || !e.target.classList.contains('shelf')) return;
-  const mid = middleCart(e.target);
+  const shelf = e.target;
+  const mid = middleCart(shelf);
   if (mid && mid.dataset.gameId !== centredId) {
     centredId = mid.dataset.gameId || null;
     if (Date.now() - clickAt > 25) { clickAt = Date.now(); sfx.wheel(); }
   }
-  const card = /** @type {HTMLElement | null} */ (e.target.querySelector(`.game-pick[data-game-id="${detailId}"]`));
+  const sc = spinCache && spinCache.shelf === shelf ? spinCache : null;
+  const at = sc ? sc.ids.indexOf(detailId) : -1;
+  const el = document.getElementById('game-detail');
+  if (sc && at >= 0 && el) {
+    // Mid-turn: from the measurements taken when it started (no layout reads per frame).
+    const x = Math.max(24, Math.min(sc.detailW - 24, sc.centres[at] - shelf.scrollLeft + sc.detailDx));
+    detailLeft = `--arrow-x:${Math.round(x)}px`;
+    el.style.setProperty('--arrow-x', Math.round(x) + 'px');
+    return;
+  }
+  const card = /** @type {HTMLElement | null} */ (shelf.querySelector(`.game-pick[data-game-id="${detailId}"]`));
   if (card) placeDetail(card);
 }, true);
 
@@ -792,14 +854,25 @@ function renderSidebar(/** @type {any} */ phase) {
       `<span class="pname">${esc(p.nickname)}${p.connected ? '' : ' <small>(zzz)</small>'}${p.net === 'relay' ? ' <small title="Connected through the internet (slower)">🌐</small>' : ''}${p.shy ? ' <small class="shy" title="Left out of votes and notes about people">🙈</small>' : ''}</span>` +
       `<span class="pscore">${p.score}</span><button class="kick" data-kick="${esc(p.id)}" title="Kick ${esc(p.nickname)}">✕</button></li>`;
   }).join(''));
-  // Score pop-ups
+  // Score pop-ups (render() shows them once it knows whether the strip is on screen).
+  /** @type {[Element, number][]} */
+  const pops = [];
   for (const p of state.players) {
     const before = prevScores.get(p.id);
-    if (before != null && p.score > before) {
-      fx.scorePop(playerList.querySelector(`li[data-id="${p.id}"] .pscore`), p.score - before);
-    }
+    const el = before != null && p.score > before ? playerList.querySelector(`li[data-id="${p.id}"] .pscore`) : null;
+    if (el && before != null) pops.push([el, p.score - before]);
   }
   prevScores = new Map(state.players.map((/** @type {any} */ p) => [p.id, p.score]));
+  return pops;
+}
+/** "+300" next to each scorer in the player strip — only when the strip is on screen (in a game it's hidden,
+ * and a hidden element's position is 0,0: the pops landed in the corner). Every position is read before any
+ * pop is added, so it's one layout, not one per scorer. @param {[Element, number][]} pops */
+function showScorePops(pops) {
+  const b = document.body.classList;
+  if (!pops.length || b.contains('lobby') || b.contains('picking') || (b.contains('in-game') && !b.contains('sidebar-peek'))) return;
+  const rects = pops.map(([el]) => el.getBoundingClientRect());
+  pops.forEach(([, d], i) => fx.scorePop(rects[i], d));
 }
 
 function updateTimerBar(/** @type {any} */ endsAt) {
@@ -817,6 +890,7 @@ clock.add(() => {
 });
 
 function render() {
+  const focusedBefore = /** @type {Element | null} */ (document.activeElement); // keepFocus rescues only a real focus
   window.Rumpus.i18n.setLang(state && state.settings && state.settings.lang);
   if (!state) return;
   const g = state.gameState || {};
@@ -826,7 +900,7 @@ function render() {
   spicyNote.hidden = !(state.settings && state.settings.spicy !== false);
   if (phase !== 'lobby' && phase !== 'gameover' && !loadingEl.hidden) hideLoading();
 
-  renderSidebar(phase);
+  const pops = renderSidebar(phase);
   if (state.players.length > lastPlayerCount && phase === 'lobby') { sfx.join(); music.play(cueFor(state)); }
   lastPlayerCount = state.players.length;
 
@@ -845,7 +919,7 @@ function render() {
   document.body.classList.toggle('mode-storm', inGame && g.gameId === 'storm');
   document.body.classList.toggle('lobby', phase === 'lobby'); // the lobby shows the players itself
   if (phase !== 'gameover') pickNext = false;
-  if (phase !== 'lobby' && phase !== 'gameover') { editPlayers = false; statsOpen = false; } // a game started: menu modes end
+  if (phase !== 'lobby' && phase !== 'gameover') { editPlayers = false; statsOpen = false; moreOpen = false; } // a game started: menu modes end
   // The game menu is on screen (lobby, or "choose the next game" after the scores): fixed layout, no scrolling.
   document.body.classList.toggle('picking', phase === 'lobby' || (phase === 'gameover' && pickNext && !state.night));
   if (!inGame || !wasInGame) { if (sidebarTimer) clearTimeout(sidebarTimer); document.body.classList.remove('sidebar-peek'); }
@@ -857,9 +931,13 @@ function render() {
   const pc = state.pace || { counts: {}, need: 0 };
   const paceTxt = ['skipq', 'hurry', 'wrap', 'ready'].filter((k) => pc.counts[k]).map((k) =>
     `<span class="pace-pill">${{ skipq: '🔄 skip', hurry: '⏩ hurry', wrap: '⏭ end round', ready: '▶ next' }[k]} ${pc.counts[k]}/${pc.need}</span>`).join('');
-  controls.innerHTML = inGame
-    ? `${paceTxt}<button data-act="skip" ${state.canSkip ? '' : 'disabled'}>Skip ⏭</button><button data-act="end" class="danger">End</button>`
+  const controlsNow = inGame
+    ? `${paceTxt}<button data-act="skip" data-key="skip" ${state.canSkip ? '' : 'disabled'}>Skip ⏭</button><button data-act="end" data-key="end" class="danger">End</button>`
     : '';
+  // Only when it changed, and morphed (the buttons stay the same elements): rebuilt on every update, a focused
+  // Skip lost its focus each time, and the remote's focus was put back on it after every render.
+  if (controlsNow !== controlsHtml) { controlsHtml = controlsNow; morph(controls, controlsNow); }
+  showScorePops(pops);
 
   // Work out end-of-game awards before the game-over screen is drawn.
   if (phase === 'gameover' && lastPhaseKey && !lastPhaseKey.startsWith('gameover')) {
@@ -974,6 +1052,7 @@ function render() {
     pendingHtml = html; pendingPhase = phase;
     if (!wiping) {
       wiping = true;
+      wipeFocus = focusedBefore;
       fx.wipe(() => {
         // Whatever happens below, the wipe is over: a throw here must not leave `wiping` set, or
         // every later screen would queue behind it and the TV would freeze on this one.
@@ -981,7 +1060,8 @@ function render() {
           phaseView.innerHTML = pendingHtml || '';
           phaseView.dataset.phase = pendingPhase; // what's on screen (the lab waits for it)
           layoutStage(true);
-          keepFocus(); // the remote's focused control was in the old screen
+          keepFocus(wipeFocus); // the remote's focused control was in the old screen
+          wipeFocus = null;
           centreShelf();
         } finally {
           wiping = false;
@@ -1002,18 +1082,32 @@ function render() {
   srcEl.hidden = !(inGame && g.source);
   if (inGame && g.source && srcEl.textContent !== 'Source: ' + g.source) srcEl.textContent = 'Source: ' + g.source;
   if (!wiping) countdown(g.endsAt, '.timer', tick);
-  keepFocus();
+  keepFocus(focusedBefore);
   centreShelf();
 }
 
-/** With the remote: if the focused control just vanished (the menu hid the top bar, a dialog closed),
- * the focus goes to the screen's first control rather than nowhere. */
-function keepFocus() {
-  if (!document.body.classList.contains('kbd')) return;
+/** What was focused when the running wipe started (keepFocus after it). @type {Element | null} */
+let wipeFocus = null;
+/** An arrow was pressed with nothing to focus yet (before the menu was drawn). */
+let wantFocus = false;
+/** With the remote, on the menu: if the focused control just vanished (a dialog closed, the menu was
+ * redrawn), the focus goes to the open dialog's first control or a cartridge rather than nowhere. Only on the
+ * menu: in a game nothing is focused until an arrow is pressed — parked on Skip ⏭ (the first in-game button),
+ * one OK skipped the question. */
+function keepFocus(/** @type {Element | null} */ before) {
+  const b = document.body.classList;
+  if (!b.contains('kbd') || !b.contains('picking')) return;
+  // Nothing was focused before the redraw (a mouse user, or the focus was let go): nothing to rescue,
+  // unless an arrow asked for a focus before there was anything to focus. Focusing a cartridge here
+  // otherwise would turn the wheel to it on its own.
+  if ((!before || before === document.body) && !wantFocus) return;
   const a = /** @type {HTMLElement | null} */ (document.activeElement);
   if (a && a !== document.body && a.getClientRects().length) return;
-  const t = /** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])')) || remoteTargets()[0];
-  if (t) t.focus({ preventScroll: true });
+  // The picked cartridge first: falling back to the shelf's first one spun the wheel back to the start.
+  const t = /** @type {HTMLElement | null} */ (openBox() ? remoteTargets()[0]
+    : document.querySelector(`.shelf .game-pick[data-game-id="${detailId}"]:not([aria-disabled="true"])`) || document.querySelector('.game-pick:not([aria-disabled="true"])'))
+    || remoteTargets().find((el) => !el.closest('#controls, #topbar'));
+  if (t) { t.focus({ preventScroll: true }); wantFocus = false; }
 }
 
 // Make the main question/prompt fill the stage (TV readability).
@@ -1021,6 +1115,8 @@ function keepFocus() {
  * Fitting forces many full layouts (the costliest thing the TV does: Cottage Lab profile, feel-plan.md),
  * so a small update that changes nothing visible (a phone's tap, a vote) must not redo it. */
 let lastFitKey = '';
+/** Avatars that were still loading at the last fit → their box then ("WxH"). @type {WeakMap<HTMLImageElement, string>} */
+const loadingBoxes = new WeakMap();
 /** @param {boolean} [force] something outside the text changed size (resize, fonts, images, a new screen) */
 function layoutStage(force = false) {
   const inGame = state && !['lobby', 'gameover'].includes(state.phase);
@@ -1041,6 +1137,8 @@ function layoutStage(force = false) {
   phaseView.style.setProperty('--shrink', '1');
   fitAll(phaseView);
   shrinkToStage();
+  // The size each still-loading avatar's box has now (layout is fresh here: these reads are free).
+  for (const img of /** @type {NodeListOf<HTMLImageElement>} */ (phaseView.querySelectorAll('img.avatar'))) if (!img.complete) loadingBoxes.set(img, `${img.offsetWidth}x${img.offsetHeight}`);
 }
 
 /** Never scroll during a game: if the screen's content is taller than the stage (long answers,
@@ -1074,9 +1172,13 @@ if (document.fonts) void document.fonts.ready.then(() => layoutStage(true));
 // Avatars and drawings load after the screen is laid out and make it taller: fit again once they're in.
 /** @type {number | null} */
 let refitTimer = null;
-// Avatars have a fixed CSS size (img.avatar), so their loading can't move anything: skip those. On a
-// slow TV each refit is the whole fit + zoom search, and a reveal with a dozen avatars did it a dozen times.
+// An avatar whose box already had its final size when the screen was fitted can't move anything: skip it.
+// On a slow TV each refit is the whole fit + zoom search, and a reveal with a dozen avatars did it a dozen
+// times. Not every avatar: one that's still loading can take no space (an <img alt=""> before its picture;
+// skipping them all made the snapshot test overflow), so the box is compared, not assumed.
 phaseView.addEventListener('load', (e) => {
+  const img = e.target;
+  if (img instanceof HTMLImageElement && img.classList.contains('avatar') && loadingBoxes.get(img) === `${img.offsetWidth}x${img.offsetHeight}`) return;
   if (refitTimer) return;
   refitTimer = window.setTimeout(() => { refitTimer = null; layoutStage(true); }, 50);
 }, true);
@@ -1114,9 +1216,14 @@ document.addEventListener('cf:voices', () => { if (state && document.body.classL
 const FOCUSABLE = 'button:not([disabled]), select:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 /** @type {Record<string, [number, number]>} key → direction */
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-/** Visible controls, the game cards first (they're what a remote is for). */
+/** The open ⚙ Settings / 🏆 Stats box on the menu, if any: the remote stays inside it until it closes. */
+function openBox() {
+  return /** @type {HTMLElement | null} */ (document.querySelector('.game-menu .retro-box:not([hidden])'));
+}
+/** Visible controls (inside the open dialog box, when there is one). */
 function remoteTargets() {
-  return /** @type {HTMLElement[]} */ ([...document.querySelectorAll(FOCUSABLE)]).filter((el) => {
+  const box = openBox();
+  return /** @type {HTMLElement[]} */ ([...(box || document).querySelectorAll(FOCUSABLE)]).filter((el) => {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && !el.closest('[hidden]');
   });
@@ -1187,21 +1294,24 @@ document.addEventListener('keydown', (e) => {
   const onControl = cur && cur !== document.body && cur.matches(FOCUSABLE);
   if (e.key in ARROWS) {
     if (cur && cur.matches('input[type="text"], input:not([type])')) return; // typing: arrows move the caret
-    e.preventDefault();
     const [dx, dy] = ARROWS[e.key];
+    if (dx && cur && cur.matches('input[type="range"]')) return; // ◀ ▶ turn a volume slider (the browser fires input/change); ▲ ▼ leave it
+    e.preventDefault();
     // Along the cartridge shelf: the next one in line, round from the last to the first.
     const shelf = cur && dx && cur.matches('.game-pick') ? [.../** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.shelf .game-pick'))] : null;
     const along = shelf && cur ? shelf[(shelf.indexOf(cur) + dx + shelf.length) % shelf.length] : null;
     const next = along || (onControl ? nearest(/** @type {HTMLElement} */ (cur), dx, dy)
-      : (/** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])')) || remoteTargets()[0] || null));
+      : ((openBox() ? null : /** @type {HTMLElement | null} */ (document.querySelector('.game-pick:not([aria-disabled="true"])'))) || remoteTargets()[0] || null));
+    wantFocus = !next; // nothing to focus yet (the menu isn't drawn): it lands as soon as it is (keepFocus)
     if (next && next !== cur) {
+      // Onto a cartridge, focusin turns the wheel (its clicks are the sound): no scrollIntoView on top of it.
       next.focus({ preventScroll: true });
-      if (along) centreCart(next, true); // the wheel turns; its clicks are the sound
-      else { next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' }); sfx.select(); }
+      if (!next.matches('.game-pick')) { next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' }); sfx.select(); }
+      else if (!along) sfx.select();
     }
   } else if (e.key === 'Enter' && onControl && cur && cur.matches('input[type="checkbox"]')) {
     e.preventDefault(); cur.click(); // OK toggles a switch (browsers only do that for Space)
     pressFx(cur.closest('.toggle'));
   } else if (e.key === 'Enter' && onControl && cur) pressFx(cur);
 });
-document.addEventListener('mousedown', () => document.body.classList.remove('kbd'));
+document.addEventListener('mousedown', () => { document.body.classList.remove('kbd'); wantFocus = false; });

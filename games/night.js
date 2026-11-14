@@ -13,7 +13,7 @@ const NEXT_MS = parseInt(process.env.RUMPUS_NIGHT_NEXT_MS || '5000', 10);
 const PLACE_POINTS = [10, 6, 4, 3, 2, 1];
 
 /**
- * @typedef {{ total: number, list: string[], played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number }} Night
+ * @typedef {{ total: number, list: string[], played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number, skipped?: number[], won?: boolean }} Night
  * @typedef {{ id: string, name: string, minPlayers: number }} GameMeta
  */
 

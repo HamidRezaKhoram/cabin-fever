@@ -73,7 +73,7 @@ function snapshot(room) {
     players: [...room.players.values()].filter((p) => !p.bot).map((p) => ({
       id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null, shy: !!p.shy,
     })),
-    night: room.night ? { total: room.night.total, list: room.night.list, played: room.night.played, points: [...room.night.points] } : null,
+    night: room.night ? { total: room.night.total, list: room.night.list, played: room.night.played, points: [...room.night.points], skipped: room.night.skipped || [], won: !!room.night.won } : null,
     // A game that can be picked up again (todo 2.1: trivia, Closest Cast so far) saves where it is.
     game: saved ? { id: /** @type {any} */ (g).constructor.meta.id, data: saved } : room.resumeGame || null,
     // A real game was on (not the lobby, a finished game or the game-night vote) and can't resume.
@@ -146,10 +146,24 @@ function restoreRooms() {
       if (p.dropTimer.unref) p.dropTimer.unref();
       room.players.set(p.id, p);
     }
-    if (s.night && Array.isArray(s.night.played) && Array.isArray(s.night.list) && s.night.played.length < s.night.list.length) {
-      const strs = (/** @type {unknown[]} */ a) => a.filter((x) => typeof x === 'string').map(String);
-      const list = strs(s.night.list).filter((id) => /** @type {Record<string, any>} */ (GAMES)[id]);
-      room.night = { total: list.length, list, played: strs(s.night.played), points: new Map(Array.isArray(s.night.points) ? s.night.points : []), timer: null };
+    // A lineup comes back where it was — the final table too (played everything: the champion
+    // stays on screen). `played` is the list's first N games, so both are filtered together: a game
+    // id this version doesn't know drops out of both and the positions after it don't shift.
+    if (s.night && Array.isArray(s.night.played) && Array.isArray(s.night.list) && s.night.played.length <= s.night.list.length) {
+      const oldList = /** @type {unknown[]} */ (s.night.list);
+      const oldSkipped = new Set(Array.isArray(s.night.skipped) ? s.night.skipped : []);
+      /** @type {string[]} */ const list = [];
+      /** @type {string[]} */ const played = [];
+      /** @type {number[]} */ const skipped = [];
+      oldList.forEach((id, i) => {
+        if (typeof id !== 'string' || !/** @type {Record<string, any>} */ (GAMES)[id]) return;
+        if (i < s.night.played.length) { if (oldSkipped.has(i)) skipped.push(list.length); played.push(id); }
+        list.push(id);
+      });
+      if (list.length) {
+        room.night = { total: list.length, list, played, skipped, won: s.night.won === true,
+          points: new Map(Array.isArray(s.night.points) ? s.night.points : []), timer: null };
+      }
     }
     room.closeTimer = setTimeout(() => closeRoom(room), HOST_GRACE_MS);
     if (room.closeTimer.unref) room.closeTimer.unref();
@@ -253,12 +267,43 @@ function broadcast(room) {
   const wait = Math.max(0, (room.lastFlush || 0) + BROADCAST_MS - Date.now());
   room.flushTimer = setTimeout(() => { room.flushTimer = null; flush(room); }, wait);
 }
-/** Send a payload unless this socket already has exactly this view. @param {any} sock @param {Record<string, unknown>} payload */
+/** Pictures (drawings) per update, at most about this much: a WebRTC message over ~256 KB fails, so a
+ * phone that needs eight drawings at once gets them over a few updates (each one ≥ 1 picture). */
+const IMAGE_BUDGET = 150 * 1024;
+/**
+ * Send a payload unless this socket already has exactly this view.
+ * Pictures: a view names them by key (`gameState.images` = { key: data URL } for every picture it
+ * shows, the view itself only says `cfimg:<key>`). Each socket gets each picture once — a phone or
+ * TV that (re)attaches starts with none (attachPlayer / attachHost) — and keeps them by key
+ * (public/games.js). Without this every vote resent every drawing to every screen (~1.7 MB a vote).
+ * @param {any} sock @param {Record<string, any>} payload @returns {boolean} true if pictures are still to come
+ */
 function sendState(sock, payload) {
-  const json = JSON.stringify(payload);
-  if (sock.data && sock.data.lastState === json) return;
+  const gs = payload.gameState;
+  const all = gs && gs.images && typeof gs.images === 'object' ? /** @type {Record<string, string>} */ (gs.images) : null;
+  /** @type {Record<string, string>} */
+  const fresh = {};
+  let more = false;
+  if (all) {
+    const data = sock.data || (sock.data = {});
+    const have = data.images || (data.images = new Set());
+    let size = 0;
+    for (const [k, v] of Object.entries(all)) {
+      if (have.has(k)) continue;
+      if (size && size + v.length > IMAGE_BUDGET) { more = true; continue; }
+      fresh[k] = v;
+      size += v.length;
+    }
+    payload = { ...payload, gameState: { ...gs, images: fresh } };
+  }
+  const keys = Object.keys(fresh);
+  // Compare the view without the picture data (the keys stand for it): cheap, and no big strings kept.
+  const json = JSON.stringify(all ? { ...payload, gameState: { ...payload.gameState, images: keys } } : payload);
+  if (sock.data && sock.data.lastState === json && !keys.length) return more;
   if (sock.data) sock.data.lastState = json;
   sock.emit('room:stateUpdate', payload);
+  if (keys.length) for (const k of keys) sock.data.images.add(k);
+  return more;
 }
 /** Between games (or once a game that takes newcomers is on): deal in the phones that queued.
  * @param {Room} room */
@@ -288,13 +333,15 @@ function flush(room) {
     room.dbgKey = key;
   }
   const base = baseState(room);
+  let more = false;
   // Phones first, then the TV: by the time the TV shows a change, every phone has been sent it.
   for (const p of room.players.values()) {
     if (!p.connected || !p.socket || !p.socket.connected) continue;
     if (p.bot) p.socket.emit('room:stateUpdate', null); // bots read the game directly
-    else sendState(p.socket, playerPayload(room, p, base));
+    else if (sendState(p.socket, playerPayload(room, p, base))) more = true;
   }
-  if (room.hostSocket && room.hostSocket.connected) sendState(room.hostSocket, hostPayload(room, base));
+  if (room.hostSocket && room.hostSocket.connected && sendState(room.hostSocket, hostPayload(room, base))) more = true;
+  if (more) broadcast(room); // the rest of the pictures in the next update
   saveRooms();
 }
 
@@ -386,10 +433,11 @@ function nightNext(room) {
     const id = night.list[night.played.length];
     const G = /** @type {Record<string, any>} */ (GAMES)[id];
     if (G && room.players.size >= (G.meta.minPlayers || 2)) { next = G.meta; break; }
-    night.played.push(id); // can't be played with who's here: skipped
+    skipNight(night); // can't be played with who's here: skipped
   }
   const final = !next;
-  if (final && night.played.length) {
+  if (final && night.played.length && !night.won) {
+    night.won = true; // once: a TV reload on the final table shows it again without a second win
     const best = Math.max(0, ...night.points.values());
     for (const [id, n] of night.points) if (best > 0 && n === best) stats.nightWin(room, id);
   }
@@ -398,11 +446,24 @@ function nightNext(room) {
   room.game = new NightGame(room, () => broadcast(room), {
     next: next ? { id: next.id, name: next.name, minPlayers: next.minPlayers } : null,
     final,
-    onPick: (/** @type {string} */ id) => { const G = /** @type {Record<string, any>} */ (GAMES)[id]; if (room.night && G) startGame(room, G); },
+    onPick: (/** @type {string} */ id) => {
+      const G = /** @type {Record<string, any>} */ (GAMES)[id];
+      if (!room.night || room.night !== night || !G) return;
+      // Someone left during "NEXT GAME": too few now → pass it over instead of starting a broken game.
+      if (room.players.size < (G.meta.minPlayers || 2)) { skipNight(night); nightNext(room); return; }
+      startGame(room, G);
+    },
   });
   watchGlitches(room, room.game);
   const between = room.game;
   safely(room, 'lineup next', () => between.start());
+}
+/** The lineup's next game is passed over (too few players): it counts as gone by, not as played.
+ * @param {NonNullable<Room['night']>} night */
+function skipNight(night) {
+  if (!night.skipped) night.skipped = [];
+  night.skipped.push(night.played.length);
+  night.played.push(night.list[night.played.length]);
 }
 /** A game of the night just ended: add placings, then queue the next vote (or the final table). @param {Room} room */
 function countNight(room) {
@@ -437,8 +498,8 @@ function nightSummary(room) {
   const meta = (/** @type {string} */ id) => { const G = /** @type {Record<string, any>} */ (GAMES)[id]; return { id, name: G ? G.meta.name : id }; };
   return {
     total: night.total, played: night.played.length, nextAt: night.nextAt || null,
-    // The lineup in order (the TV draws it as a row of cartridges: done, now, still to come).
-    list: night.list.map(meta),
+    // The lineup in order (the TV draws it as a row of cartridges: done, skipped, now, still to come).
+    list: night.list.map((id, i) => ({ ...meta(id), skipped: !!(night.skipped && night.skipped.includes(i)) })),
     standings: [...room.players.values()].map((p) => ({ nickname: p.nickname, points: night.points.get(p.id) || 0 }))
       .sort((a, b) => b.points - a.points),
   };
@@ -507,7 +568,7 @@ function botTick(room, p, speed) {
     if (!now) return;
     const g = room.game; safely(room, 'bot answer', () => g.handleSubmit(p.id, now.payload));
     // Some screens have a follow-up (bet after answering, likes, mashing): think again.
-    setImmediate(() => botTick(room, p, speed));
+    setTimeout(() => botTick(room, p, speed), 0); // (no setImmediate in the browser build)
   }, botBrain.thinkMs(first.kind) / speed);
 }
 
@@ -555,8 +616,12 @@ function attachHost(room, socket) {
   if (room.interrupted) {
     socket.emit('room:event', { type: 'interrupted', game: room.interrupted });
     room.interrupted = null;
-    if (room.night && !room.game) nightNext(room);
   }
+  // A lineup with nothing on screen (restored after a restart — the scores gap, "NEXT GAME" or the
+  // final table): pick it up where it stopped.
+  if (room.night && !room.game) nightNext(room);
+  socket.data.lastState = null;
+  socket.data.images = null;
   broadcast(room);
 }
 
@@ -571,6 +636,7 @@ function attachPlayer(room, p, socket) {
   p.dropTimer = null;
   p.socket = socket;
   socket.data.lastState = null; // it may have missed updates: send the full view again
+  socket.data.images = null; // …and every picture it needs
   p.connected = true;
   socket.data.role = 'player';
   socket.data.room = room;
@@ -690,7 +756,10 @@ function connection(socket) {
     if (phase !== 'lobby' && phase !== 'gameover') return;
     const list = (Array.isArray(msg && msg.games) ? msg.games : []).filter((/** @type {unknown} */ id) => typeof id === 'string' && /** @type {Record<string, any>} */ (GAMES)[id]).slice(0, 15);
     if (!list.length) return;
-    room.night = { total: list.length, list, played: [], points: new Map(), timer: null };
+    // Nobody (or one player) here: it would go straight to an empty final table.
+    const fits = list.some((/** @type {string} */ id) => room.players.size >= (/** @type {Record<string, any>} */ (GAMES)[id].meta.minPlayers || 2));
+    if (room.players.size < 2 || !fits) return;
+    room.night = { total: list.length, list, played: [], skipped: [], points: new Map(), timer: null };
     console.log(`[room ${room.code}] lineup: ${list.join(', ')}`);
     nightNext(room);
   });
@@ -931,8 +1000,11 @@ function connection(socket) {
     if (!room.players.has(socket.data.playerId)) return void done(false);
     const payload = msg && typeof msg.payload === 'object' && msg.payload !== null ? msg.payload : {};
     const game = room.game;
-    safely(room, 'answer', () => game.handleSubmit(socket.data.playerId, payload));
-    done(true);
+    // A game says `false` when it turned the answer down (empty, a duplicate, the wrong prompt): the
+    // phone gets its form back instead of a "✓ Sent" for something that was never counted.
+    let taken = true;
+    safely(room, 'answer', () => { if (game.handleSubmit(socket.data.playerId, payload) === false) taken = false; });
+    if (typeof ack === 'function') ack(taken ? { ok: true } : { ok: false, rejected: true });
   });
 
   socket.on('disconnect', () => {

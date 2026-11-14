@@ -46,12 +46,14 @@
     const au = aussies().map((v) => ['sys:' + v.voiceURI, `Australian — ${v.name.replace(/\s*\(.*?\)\s*/g, ' ').trim()} (this TV's own voice)`]);
     return [...VOICES.slice(0, -1), ...(au.length ? au : [['', 'Australian — this TV\'s browser has none', 'disabled']]), VOICES[VOICES.length - 1]];
   }
+  /** Stop the browser's voice — only when it's saying something (cancel() on an idle engine still costs). */
+  const hush = () => { if (hasSpeech && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel(); };
   if (hasSpeech) speechSynthesis.addEventListener('voiceschanged', () => document.dispatchEvent(new CustomEvent('cf:voices'))); // they load late
   /** Speak with one of the browser's own voices. @param {string} t @returns {boolean} false if it's gone */
   function speakSystem(t) {
     const v = hasSpeech ? speechSynthesis.getVoices().find((x) => 'sys:' + x.voiceURI === voiceId) : null;
     if (!v) return false;
-    speechSynthesis.cancel();
+    hush();
     const u = new SpeechSynthesisUtterance(t);
     u.voice = v; u.lang = v.lang; u.rate = 1.05;
     speechSynthesis.speak(u);
@@ -147,6 +149,8 @@
   /** Recently made parts by voice + text: repeated lines ("Time's up!") start instantly. */
   /** @type {Map<string, AudioBuffer>} */
   const made = new Map();
+  /** Decoded parts kept (each is a few hundred KB of PCM: 80 held tens of MB on a TV). */
+  const MADE_MAX = 20;
   /** Lines in a row whose first part came too late: this TV can't keep up → classic voice. */
   let lateLines = 0;
   /** The first sound of a line must come within this long, or the line is skipped (its text is on
@@ -200,6 +204,7 @@
     playing.push(src);
     src.onended = () => { playing = playing.filter((x) => x !== src); };
     talkUntil = Math.max(talkUntil, Date.now() + (nextAt - ctx.currentTime) * 1000);
+    wake();
   }
 
   /** One line for the lobby: what the 🎙 picker will actually sound like right now. */
@@ -265,7 +270,7 @@
       id,
       onPart: (k, buf) => {
         made.set(key(list[k]), buf);
-        if (made.size > 80) made.delete(/** @type {string} */ (made.keys().next().value));
+        if (made.size > MADE_MAX) made.delete(/** @type {string} */ (made.keys().next().value));
         play(k, buf);
       },
       onError: () => { clearTimeout(late); if (line && line.id === id) { stopNatural(); done(false); classic(t, false); } },
@@ -309,7 +314,7 @@
   /** espeak-ng (server) or the browser's voice. @param {string} t @param {boolean} fr */
   function classic(t, fr) {
     if (C && 'speechSynthesis' in window) {
-      speechSynthesis.cancel();
+      hush();
       const u = new SpeechSynthesisUtterance(t);
       u.lang = fr ? 'fr-FR' : voiceId[0] === 'b' ? 'en-GB' : 'en-US';
       const v = browserVoice(fr);
@@ -321,26 +326,38 @@
     voice = a;
     a.play().catch(() => {
       // No server voice (e.g. running outside the container): use the browser's, if any.
-      if ('speechSynthesis' in window) { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(t)); }
+      if ('speechSynthesis' in window) { hush(); speechSynthesis.speak(new SpeechSynthesisUtterance(t)); }
     });
   }
 
-  // 30 fps clock: bob while idle, flap the mouth while talking, jump when cheering.
-  R.clock.add((frame) => {
+  // 30 fps clock: bob while idle, flap the mouth while talking, jump when cheering. Rocco is on the
+  // clock only while he's out (say/cheer wake him; he leaves it once he's away again), and the DOM is
+  // written only when his pose or height changes.
+  let shownPose = '', shownBob = NaN, isAway = true;
+  /** @type {(() => void) | null} */
+  let offClock = null;
+  /** @param {number} frame */
+  function tick(frame) {
     const now = Date.now();
     const cheering = now < cheerUntil;
     const talking = now < talkUntil;
     const f = cheering ? 'cheer' : talking && frame % 8 < 4 ? 'talk' : 'idle';
-    const src = R.sprites.roccoUrl(f);
-    if (img.getAttribute('src') !== src) img.src = src;
-    const bob = cheering ? -Math.abs(Math.sin(frame / 4)) * 18 : (frame % 30 < 15 ? 0 : -3);
-    img.style.transform = `translateY(${Math.round(bob)}px)`;
+    if (f !== shownPose) { shownPose = f; img.src = R.sprites.roccoUrl(f); }
+    const bob = Math.round(cheering ? -Math.abs(Math.sin(frame / 4)) * 18 : (frame % 30 < 15 ? 0 : -3));
+    if (bob !== shownBob) { shownBob = bob; img.style.transform = `translateY(${bob}px)`; }
     if (bubbleUntil && now > bubbleUntil) { bubble.hidden = true; bubbleUntil = 0; }
     // He pops up from the bottom edge to say his line (or cheer), and ducks back down after it.
     if (talking || cheering || !bubble.hidden) lastActive = now;
     const away = now - lastActive > 700;
-    if (away !== el.classList.contains('away')) el.classList.toggle('away', away);
-  });
+    if (away !== isAway) { isAway = away; el.classList.toggle('away', away); }
+    if (away && offClock) { offClock(); offClock = null; }
+  }
+  /** Put Rocco on the clock (he has something to say or cheer about). */
+  tick(R.clock.frame()); // the idle pose, before he's first needed
+  function wake() {
+    lastActive = Date.now();
+    if (!offClock) offClock = R.clock.add(tick);
+  }
 
   /** Spoken version of on-screen text: blanks read as "blank". @param {string} text */
   const speakable = (text) => text.replace(/_{2,}/g, ' blank ').replace(/\s+/g, ' ').trim().slice(0, 240);
@@ -354,9 +371,10 @@
     const ms = Math.min(9000, 1500 + t.length * 60);
     bubbleUntil = Date.now() + ms;
     talkUntil = Date.now() + Math.min(ms, 600 + t.length * 55);
+    wake();
     if (!enabled) return;
     if (voice) { voice.pause(); voice = null; }
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    hush();
     stopNatural();
     waiting = null;
     const fr = !!(R.i18n && R.i18n.lang() === 'fr');
@@ -368,7 +386,7 @@
     speakNatural(t);
   }
 
-  function cheer() { cheerUntil = Date.now() + 1500; }
+  function cheer() { cheerUntil = Date.now() + 1500; wake(); }
 
   R.host = {
     say, cheer,

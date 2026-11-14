@@ -64,22 +64,29 @@
       s.on('connect', () => { sock.status = 'connected ' + s.id; add('socket', 'connected ' + s.id); });
       s.on('disconnect', (/** @type {string} */ r) => { sock.status = 'DISCONNECTED (' + r + ')'; add('socket', 'disconnect: ' + r); });
       s.on('connect_error', (/** @type {Error} */ e) => { sock.status = 'connect_error'; add('socket', 'connect_error ' + e.message); });
+      // Every socket event is counted. The log keeps its name (and phase changes) always, so a failed
+      // test can print the tail; payloads are JSON-stringified only while the panel is on. The 30 Hz
+      // Lantern frames and the phones' keep-warm are only counted (they'd flush the log in seconds).
       s.onAny((/** @type {string} */ ev, /** @type {any} */ payload) => { // any socket event: JSON from the server
         sock.inCount++;
+        if (ev === 'room:frame') return;
         if (ev === 'room:stateUpdate') {
           sock.lastState = payload;
           const g = payload.gameState || {};
           const key = [payload.phase, g.round, g.matchIndex, g.chainIndex].join('/');
           if (key !== sock.phase) { add('PHASE', `${sock.phase || '-'} → ${key}`); sock.phase = key; }
-          add('◀ state', `phase=${payload.phase} players=${(payload.players || []).length} pace=${short(payload.pace && payload.pace.counts)} g=${short(g).slice(0, 160)}`);
-        } else add('◀ ' + ev, short(payload));
+          if (enabled) add('◀ state', `phase=${payload.phase} players=${(payload.players || []).length} pace=${short(payload.pace && payload.pace.counts)} g=${short(g).slice(0, 160)}`);
+        } else add('◀ ' + ev, enabled ? short(payload) : '');
       });
-      s.onAnyOutgoing((/** @type {string} */ ev, /** @type {unknown} */ payload) => { sock.outCount++; add('▶ ' + ev, short(payload)); });
-      // latency probe
+      s.onAnyOutgoing((/** @type {string} */ ev, /** @type {unknown} */ payload) => {
+        sock.outCount++;
+        if (ev === 'k' || ev === 'debug:ping') return;
+        add('▶ ' + ev, enabled ? short(payload) : '');
+      });
+      // latency probe: only while the panel shows it
       setInterval(() => {
-        if (!s.connected) return;
+        if (!enabled || !s.connected) return;
         const start = performance.now();
-        s.volatile.emit('debug:ping', () => {});
         s.timeout(2000).emit('debug:ping', () => { sock.latency = Math.round(performance.now() - start); });
       }, 3000);
       window.Rumpus.debugSocket = s;

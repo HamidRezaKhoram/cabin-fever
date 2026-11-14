@@ -380,6 +380,121 @@ const allPages = t.pages;
     await tv.waitForSelector('.lobby-crew .lobby-kick', { state: 'detached' });
   });
 
+  await check('TV menu with the remote: one white button, ✕/Clear keep the focus in place, the wheel turns from the pick, Settings keeps the focus inside, ◀ ▶ turn a volume slider', async () => {
+    const WHITE = 'rgb(244, 241, 232)';
+    const ids = await tv.$$eval('.shelf .game-pick:not([aria-disabled="true"])', (l) => l.map((e) => /** @type {HTMLElement} */ (e).dataset.gameId));
+    for (const id of [ids[2], ids[3]]) {
+      await tv.focus(`.game-pick[data-game-id="${id}"]`);
+      await tv.click('#game-detail .lineup-add');
+      await tv.waitForSelector(`.lineup-item:nth-child(${id === ids[2] ? 2 : 3})`);
+    }
+    // One palette: ▶ Play is the one white button; the others are grey; the title screen keeps its colours.
+    const pal = await tv.evaluate(() => ({
+      play: getComputedStyle(/** @type {Element} */ (document.querySelector('.lineup-play'))).backgroundColor,
+      add: getComputedStyle(/** @type {Element} */ (document.querySelector('.lineup-add'))).backgroundColor,
+      stats: getComputedStyle(/** @type {Element} */ (document.querySelector('.stats-btn'))).backgroundColor,
+      press: getComputedStyle(/** @type {Element} */ (document.querySelector('#start-overlay .press'))).color,
+      logo: getComputedStyle(/** @type {Element} */ (document.querySelector('#start-overlay .logo'))).color,
+    }));
+    assert.strictEqual(pal.play, WHITE, '▶ Play is white');
+    assert.notStrictEqual(pal.add, WHITE, '＋ Add is grey');
+    assert.notStrictEqual(pal.stats, WHITE, '🏆 Stats is grey');
+    assert.notStrictEqual(pal.press, WHITE, 'PRESS START keeps its colour');
+    assert.notStrictEqual(pal.logo, WHITE, 'the logo keeps its colour');
+    // The remote's ring on the white button: a dark gap, then the white outline (visible white-on-white).
+    await tv.keyboard.press('Shift'); // a remote key: the focus ring shows (body.kbd)
+    await tv.focus('.lineup-play');
+    const ring = await tv.evaluate(() => { const cs = getComputedStyle(/** @type {Element} */ (document.activeElement)); return { w: parseFloat(cs.outlineWidth), c: cs.outlineColor, sh: cs.boxShadow }; });
+    assert.ok(ring.w >= 6 && ring.c === WHITE && /rgb\(11, 10, 16\) 0px 0px 0px 4px/.test(ring.sh), `ring on ▶ Play: ${JSON.stringify(ring)}`);
+    // ✕ on the first lineup game: the focus goes to the ✕ that took its place, not to the first cartridge.
+    await tv.focus('.lineup-del[data-i="0"]');
+    await tv.keyboard.press('Enter');
+    await tv.waitForFunction(() => document.querySelectorAll('.lineup-item').length === 1 && !!document.activeElement && document.activeElement.matches('.lineup-del[data-i="0"]'));
+    // The last ✕: nothing left in the lineup, so back to the picked cartridge (not the shelf's first one).
+    const picked = await tv.evaluate(() => /** @type {HTMLElement} */ (document.querySelector('#game-detail .lineup-add')).dataset.id);
+    await tv.keyboard.press('Enter');
+    await tv.waitForFunction((id) => !document.querySelector('.lineup-item') && !!document.activeElement && document.activeElement.matches(`.game-pick[data-game-id="${id}"]`), picked);
+    assert.notStrictEqual(picked, ids[0]);
+    // A press on a cartridge doesn't pop (its transform would drop the pick's lift); other buttons do.
+    assert.deepStrictEqual(await tv.evaluate(() => {
+      const c = /** @type {Element} */ (document.querySelector('.shelf .game-pick')), m = /** @type {Element} */ (document.querySelector('.more-btn'));
+      for (const el of [c, m]) el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      return [c.classList.contains('tap'), m.classList.contains('tap')];
+    }), [false, true]);
+    // The mouse wheel steps from the picked cartridge: from the last one a notch goes round to the first.
+    const n = await tv.$$eval('.shelf .game-pick', (l) => l.length);
+    await tv.focus(`.shelf .game-pick:nth-child(${n})`);
+    await tv.waitForFunction(() => !document.body.classList.contains('spinning'), null, { timeout: 4000 });
+    const box = /** @type {{ x: number, y: number, width: number, height: number }} */ (await (await tv.$('.shelf')).boundingBox());
+    await tv.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await tv.mouse.wheel(0, 120);
+    await tv.waitForFunction(() => [...document.querySelectorAll('.shelf .game-pick')].indexOf(/** @type {Element} */ (document.activeElement)) === 0);
+    // Mid-turn the snapping is off through a body class (a lobby redraw rewrites the shelf's own attributes).
+    const spin = await tv.evaluate(() => { const s = /** @type {HTMLElement} */ (document.querySelector('.shelf')); return { on: document.body.classList.contains('spinning'), snap: getComputedStyle(s).scrollSnapType, inline: s.getAttribute('style') }; });
+    assert.ok(spin.on && /none/.test(spin.snap) && !spin.inline, `snapping off for the turn: ${JSON.stringify(spin)}`);
+    await tv.waitForFunction(() => !document.body.classList.contains('spinning') && /mandatory/.test(getComputedStyle(/** @type {Element} */ (document.querySelector('.shelf'))).scrollSnapType), null, { timeout: 4000 });
+    // A redraw doesn't turn the wheel to the cartridge under the mouse (nothing focused: a mouse user).
+    await tv.evaluate(() => /** @type {HTMLElement} */ (document.activeElement).blur());
+    const left = await tv.$eval('.shelf', (s) => s.scrollLeft);
+    const next = /** @type {{ x: number, y: number, width: number, height: number }} */ (await (await tv.$('.shelf .game-pick:nth-child(2)')).boundingBox());
+    await tv.mouse.move(next.x + next.width / 2, next.y + next.height / 2); // (not hover(): it would scroll the shelf itself)
+    await tv.waitForFunction(() => /** @type {HTMLElement} */ (document.querySelector('#game-detail .lineup-add')).dataset.id === /** @type {HTMLElement} */ (document.querySelector('.shelf .game-pick:nth-child(2)')).dataset.gameId);
+    await tv.evaluate(() => new Function('return socket')().emit('host:settings', { timerScale: 1.5 }));
+    await tv.waitForFunction(() => /** @type {HTMLSelectElement} */ (document.getElementById('set-timer')).value === '1.5');
+    await tv.evaluate(() => new Function('return socket')().emit('host:settings', { timerScale: 1 }));
+    await tv.waitForFunction(() => /** @type {HTMLSelectElement} */ (document.getElementById('set-timer')).value === '1');
+    assert.ok(Math.abs(await tv.$eval('.shelf', (s) => s.scrollLeft) - left) < 2, 'the shelf stayed where it was');
+    await tv.mouse.move(5, 5);
+    // ⚙ Settings: the arrows stay inside the box while it's open.
+    await tv.focus('.more-btn');
+    await tv.keyboard.press('Enter');
+    await tv.waitForSelector('.settings-more:not([hidden])');
+    for (const key of ['ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp']) {
+      await tv.keyboard.press(key);
+      assert.ok(await tv.evaluate(() => !!document.activeElement && !!document.activeElement.closest('.settings-more')), `${key}: the focus stays in Settings`);
+    }
+    // ◀ ▶ on the music slider turn it (Up/Down still leave it).
+    await tv.focus('.settings-more input[data-vol="music"]');
+    const v0 = await tv.evaluate(() => Rumpus.music.volumes().music);
+    await tv.keyboard.press(v0 < 1 ? 'ArrowRight' : 'ArrowLeft');
+    await tv.waitForFunction((v) => Rumpus.music.volumes().music !== v && document.activeElement.matches('input[data-vol="music"]'), v0);
+    await tv.keyboard.press(v0 < 1 ? 'ArrowLeft' : 'ArrowRight');
+    await tv.waitForFunction((v) => Math.abs(Rumpus.music.volumes().music - v) < 0.011, v0);
+    await tv.keyboard.press('ArrowDown');
+    assert.ok(await tv.evaluate(() => !document.activeElement.matches('input[data-vol="music"]') && !!document.activeElement.closest('.settings-more')), 'ArrowDown leaves the slider');
+    await tv.keyboard.press('Escape');
+    await tv.waitForSelector('.settings-more', { state: 'hidden' });
+  });
+
+  await check('a game started while the remote is in use: the focus isn\'t parked on Skip, the buttons aren\'t rebuilt, and ⚙ Settings is closed after it', async () => {
+    await tv.click('[data-act="more"]');
+    await tv.waitForSelector('.settings-more:not([hidden])');
+    await tv.focus('#set-rounds');
+    await tv.keyboard.press('Shift'); // the remote is in use (body.kbd)
+    await tv.evaluate(() => {
+      const w = /** @type {any} */ (window), set = w.Rumpus.setState;
+      w.__updates = 0; w.__setState = set;
+      w.Rumpus.setState = (/** @type {any} */ m) => { w.__updates++; return set(m); };
+      new Function('return socket')().emit('host:startGame', { gameId: 'closest' });
+    });
+    await phones[0].waitForSelector('.number-form');
+    await tv.waitForSelector('#controls [data-act="skip"]');
+    await tv.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById('phase-view')).dataset.phase !== 'lobby' && !Rumpus.fx.isWiping());
+    const parked = () => tv.evaluate(() => !!document.activeElement && !!document.activeElement.closest('#controls, #topbar'));
+    assert.strictEqual(await parked(), false, 'no focus on Skip ⏭ / End after the start');
+    await tv.evaluate(() => { const w = /** @type {any} */ (window); w.__skipBtn = document.querySelector('#controls [data-act="skip"]'); w.__seen = w.__updates; });
+    await phones[0].fill('.number-form input', '7');
+    await phones[0].click('.number-form button');
+    await tv.waitForFunction(() => /** @type {any} */ (window).__updates > /** @type {any} */ (window).__seen);
+    assert.strictEqual(await tv.evaluate(() => document.querySelector('#controls [data-act="skip"]') === /** @type {any} */ (window).__skipBtn), true, 'the in-game buttons are the same elements after an update');
+    assert.strictEqual(await parked(), false, 'still no focus on Skip ⏭ after an update');
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+    assert.strictEqual(await tv.isHidden('.settings-more'), true, '⚙ Settings did not come back open');
+    await tv.evaluate(() => { const w = /** @type {any} */ (window); w.Rumpus.setState = w.__setState; });
+  });
+
   await check('🕊 Calm (TV setting) stops shakes, wipes and flashes, and is remembered on this TV', async () => {
     await tv.click('[data-act="more"]');
     await tv.check('#set-calm');
@@ -729,6 +844,9 @@ const allPages = t.pages;
     try {
       for (const [w, h] of [[1280, 720], [1920, 1080], [1366, 768]]) {
         await tv.setViewportSize({ width: w, height: h });
+        // The remote's focus on a cartridge in the middle of the shelf: lifted, its ring must not be cut off at the top.
+        await tv.keyboard.press('Shift');
+        await tv.evaluate(() => { const c = document.querySelectorAll('.shelf .game-pick'); /** @type {HTMLElement} */ (c[Math.floor(c.length / 2)]).focus({ preventScroll: true }); });
         await tv.waitForTimeout(250);
         const m = await tv.evaluate(() => {
           const stage = /** @type {HTMLElement} */ (document.getElementById('stage')).getBoundingClientRect();
@@ -739,12 +857,17 @@ const allPages = t.pages;
             games: [...document.querySelectorAll('.game-pick')].filter(inside).length, of: document.querySelectorAll('.game-pick').length,
             players: [...document.querySelectorAll('.lobby-crew figure')].filter(inside).length,
             settings: inside(/** @type {Element} */ (document.querySelector('.game-menu .settings'))), join: inside(/** @type {Element} */ (document.querySelector('.join-card'))),
+            // 10-foot rule: the room code is ≥ 28 px at 720p too.
+            code: parseFloat(getComputedStyle(/** @type {Element} */ (document.querySelector('.game-menu .join-code'))).fontSize) >= 28,
+            // The picked cartridge + the remote's ring (outline 6 px at 4 px, 14 px glow, ×1.2) fit under the shelf's top edge.
+            ring: (() => { const a = /** @type {Element} */ (document.activeElement), s = /** @type {Element} */ (document.querySelector('.shelf')).getBoundingClientRect(); return a.matches('.game-pick') && a.getBoundingClientRect().top - 17 >= s.top - 1; })(),
           };
         });
-        assert.deepStrictEqual(m, { scroll: 0, page: 0, games: m.of, of: m.of, players: 12, settings: true, join: true }, `${w}×${h}`);
+        assert.deepStrictEqual(m, { scroll: 0, page: 0, games: m.of, of: m.of, players: 12, settings: true, join: true, code: true, ring: true }, `${w}×${h}`);
         assert.ok(m.of >= 15);
       }
     } finally {
+      await tv.evaluate(() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); document.body.classList.remove('kbd'); });
       await tv.setViewportSize(size);
       await tv.evaluate(() => new Function('return socket')().emit('host:removeBots'));
     }

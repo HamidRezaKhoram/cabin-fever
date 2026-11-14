@@ -27,7 +27,7 @@ const PROFILES = {
   phone: { name: 'Galaxy A15 (Dimensity 6100+)', viewport: { width: 384, height: 832 }, cpu: 4, latencyMs: 30, isMobile: true, hasTouch: true },
 };
 // Budgets (feel-plan.md §2), checked per screen.
-const BUDGET = { tapToTv: 150, peakDb: -1, phoneMaxFrame: 100, tapTarget: 44, tapP95: 80, inpMax: 200, longPerScreen: 2, longMax: 200, tvMaxFrame: 100, deadAir: 8000, minFontPx: 28, tvLoadMs: 5000, phoneJoinMs: 4000, menuPresses: 8, heapGrowth: 0.2 };
+const BUDGET = { tapToTv: 150, peakDb: -1, phoneMaxFrame: 100, tapTarget: 44, tapP95: 80, inpMax: 200, longPerScreen: 2, longMax: 200, tvMaxFrame: 100, deadAir: 8000, minFontPx: 28, tvLoadMs: 5000, phoneJoinMs: 4000, menuPressesComputed: 8, heapGrowth: 0.2 };
 
 /** @param {number[]} xs */
 const median = (xs) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[a.length >> 1] : '–'; };
@@ -98,11 +98,20 @@ async function views(/** @type {string} */ code) { try { return await (await fet
   }
   await tv.click('[data-act="bots"][data-n="3"]').catch(() => {}); // 6 players: every game can start
   await sleep(1500);
+  // Short games: Rounds lives in ⚙ Settings. Pick the fewest rounds the select offers, then close the box.
+  await tv.click('[data-act="more"]');
+  await tv.waitForSelector('.settings-more:not([hidden]) #set-rounds');
+  const fewest = await tv.$$eval('#set-rounds option', (os) => os.map((o) => /** @type {HTMLOptionElement} */ (o).value).filter((v) => v !== '').sort((a, b) => +a - +b)[0]);
+  if (!fewest) throw new Error('lab: ⚙ Settings has no Rounds options');
+  await tv.selectOption('#set-rounds', fewest);
+  await tv.click('.settings-more .more-close');
+  await tv.waitForSelector('.settings-more', { state: 'hidden' });
+  report.startup.rounds = Number(fewest);
 
   // --- Menu by remote (M7): presses from the first card to every other card ------------------
-  report.startup.menuPresses = await tv.evaluate(() => {
-    // The games are one shelf of cartridges and ◀ ▶ wrap round (host.js): from the first one, the
-    // furthest is half the shelf away.
+  // COMPUTED from the shelf, not measured by pressing keys: the games are one shelf of cartridges and
+  // ◀ ▶ wrap round (host.js), so from the first one the furthest is half the shelf away.
+  report.startup.menuPressesComputed = await tv.evaluate(() => {
     const n = document.querySelectorAll('.shelf .game-pick').length;
     return Math.max(0, ...Array.from({ length: n }, (_, i) => Math.min(i, n - i)));
   });
@@ -261,7 +270,8 @@ async function views(/** @type {string} */ code) { try { return await (await fet
     `**Calibrate:** \`/bench\` takes ${report.calibration.labMs} ms on this machine (simulated TV ${report.calibration.tvMs} ms, phone ${report.calibration.phoneMs} ms). Open \`http://<server>:8012/bench?base=${report.calibration.labMs}\` on the real TV and phone: the "× the lab machine" it shows is the right \`cpu\` for PROFILES in test/lab/run.js.`, '',
     `- TV cold start → PRESS START: **${st.tvLoadMs} ms** ${ok(st.tvLoadMs <= BUDGET.tvLoadMs)} (budget ${BUDGET.tvLoadMs})`,
     `- Phone open → in the lobby: **${stats(st.phoneJoinMs).max} ms** worst ${ok(stats(st.phoneJoinMs).max <= BUDGET.phoneJoinMs)} (budget ${BUDGET.phoneJoinMs})`,
-    `- Remote presses from the first game card to the furthest: **${st.menuPresses}** ${ok(st.menuPresses <= BUDGET.menuPresses)} (budget ${BUDGET.menuPresses})`,
+    `- Remote presses from the first game card to the furthest (computed from the shelf size, not measured): **${st.menuPressesComputed}** ${ok(st.menuPressesComputed <= BUDGET.menuPressesComputed)} (budget ${BUDGET.menuPressesComputed})`,
+    `- Rounds per game: **${st.rounds}** (the fewest ⚙ Settings offers)`,
     `- TV memory (live heap after GC) from the first game to the end: **${Math.round(st.heapGrowth * 100)}%** ${ok(st.heapGrowth <= BUDGET.heapGrowth)} (budget ${BUDGET.heapGrowth * 100}%). After each game: ${(report.heapTrend || []).map(([g, mb]) => `${g} ${mb} MB`).join(' → ')}`,
     `- Games: ${Object.entries(report.games).map(([g, x]) => `${g} ${x.seconds}s${x.finished ? '' : ' (did not finish)'}`).join(', ')}`, '',
     `| screen | tap→paint median/p95 ms (≤${BUDGET.tapP95}) | worst input delay ms (≤${BUDGET.inpMax}) | TV long tasks per visit · max ms (≤${BUDGET.longPerScreen} · ≤${BUDGET.longMax}) | TV worst frame ms (≤${BUDGET.tvMaxFrame}) | dead air s (≤${BUDGET.deadAir / 1000}) | smallest TV text px (≥${BUDGET.minFontPx}) | phone worst frame ms (≤${BUDGET.phoneMaxFrame}) | smallest phone tap target px (≥${BUDGET.tapTarget}) | tap→TV median/p95 ms (≤${BUDGET.tapToTv}) | sound peak · loudness dBFS (peak ≤${BUDGET.peakDb}, no clipping) |`,

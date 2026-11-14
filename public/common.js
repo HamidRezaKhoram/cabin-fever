@@ -2,11 +2,15 @@
 'use strict';
 
 window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(window.Rumpus || {}, (function () {
+  // Escape text for HTML (text and double-quoted attributes). Same output as the old
+  // `div.textContent = s; div.innerHTML` + `"` → `&quot;` (the HTML serializer escapes & < > and the
+  // no-break space; `'` was never escaped), without making an element per call.
+  /** @type {Record<string, string>} */
+  const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\u00a0': '&nbsp;' };
+  const ESC_RE = /[&<>"\u00a0]/g;
   /** @param {unknown} s */
   function esc(s) {
-    const d = document.createElement('div');
-    d.textContent = String(s == null ? '' : s);
-    return d.innerHTML.replace(/"/g, '&quot;');
+    return String(s == null ? '' : s).replace(ESC_RE, (c) => ESC[c]);
   }
 
   /** Read (one argument) or write (two) a JSON value in localStorage. @param {string} key @param {any} [val] */

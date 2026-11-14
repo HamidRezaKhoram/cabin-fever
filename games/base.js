@@ -118,7 +118,10 @@ class BaseGame {
     if (!this.timerFn || this.destroyed) return;
     const fn = this.timerFn;
     this.clearTimer();
-    fn();
+    // Like the timer itself: a phase that throws stays pending, so the next Skip can retry it
+    // (unguarded, the room was left with no timer and no Skip button).
+    const id = /** @type {any} */ (this.constructor).meta ? /** @type {any} */ (this.constructor).meta.id : '';
+    guarded(fn, `${id} skip`, this, true);
   }
 
   /** @param {string} id */
@@ -219,7 +222,7 @@ class BaseGame {
   get skippablePhases() { return []; }
   start() {}
   nextRound() {}
-  /** @param {string} id @param {Record<string, any>} payload */ handleSubmit(id, payload) {}  
+  /** @param {string} id @param {Record<string, any>} payload @returns {void | boolean} `false` = turned down */ handleSubmit(id, payload) {}  
   /** @param {string} id */ onPlayerLeft(id) {}  
   /** @returns {Record<string, any>} */ hostView() { return {}; }
   /** @param {string} id @returns {{ gameState?: Record<string, any>, you?: Record<string, any> }} */ playerOnly(id) { return {}; }  

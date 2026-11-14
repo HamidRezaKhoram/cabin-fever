@@ -370,8 +370,12 @@
     }
   }
 
-  /** @param {HTMLCanvasElement} canvas */
-  function start(canvas) {
+  /** Draws every `round(30 / fps)` clock frames (the TV asks for 12, phones 4); motion is in clock frames,
+   * so speeds stay the same whatever the rate — only the number of drawings changes.
+   * @param {HTMLCanvasElement} canvas @param {{ fps?: number }} [opts] */
+  function start(canvas, opts) {
+    const fps = opts && opts.fps;
+    const step = fps && fps > 0 ? Math.max(1, Math.round(30 / fps)) : 1;
     canvas.width = W; canvas.height = H;
     const g = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
     const r = rand(42);
@@ -387,9 +391,13 @@
     /** @type {{ x: number, y: number, l: number } | null} */
     let shooting = null;
 
-    /** @param {number} frame */
-    function draw(frame) {
+    let drawn = 0; // drawings so far: the campfire flicker steps per drawing, so it flickers at any rate
+    let lastFrame = 0;
+    /** @param {number} frame clock frame @param {number} dt clock frames since the last drawing (0 = redraw, nothing moves) */
+    function paint(frame, dt) {
       const t = frame * TICKS_PER_FRAME;
+      if (dt) drawn++;
+      const flick = step === 1 ? frame : drawn;
       g.drawImage(layer, 0, 0);
       // Stars, one colour at a time (switching the fill colour per star is what costs).
       for (const bright of [false, true]) {
@@ -401,11 +409,11 @@
           if (s.b > 0.93 && tw > 0.8) { g.fillRect(s.x - 1, s.y, 3, 1); g.fillRect(s.x, s.y - 1, 1, 3); }
         }
       }
-      if (!shooting && Math.random() < 0.0016) shooting = { x: 40 + Math.random() * 180, y: 6 + Math.random() * 30, l: 0 };
+      if (!shooting && dt && Math.random() < 0.0016 * dt) shooting = { x: 40 + Math.random() * 180, y: 6 + Math.random() * 30, l: 0 };
       if (shooting) {
         g.fillStyle = '#ffffff';
         for (let i = 0; i < 8; i++) g.fillRect(Math.round(shooting.x - i * 2), Math.round(shooting.y - i), 1, 1);
-        shooting.x += 1.6; shooting.y += 0.8; shooting.l++;
+        shooting.x += 1.6 * dt; shooting.y += 0.8 * dt; shooting.l += dt;
         if (shooting.l > 45) shooting = null;
       }
       // lit windows flicker
@@ -415,8 +423,8 @@
       // campfire on the shore: flickering flames, sparks, a warm glow and its reflection
       const fx = 190, fy = HORIZON - 2;
       // round, dithered glow (a flat rectangle read as a grey box)
-      g.drawImage(glowSprite(0.85 + 0.15 * Math.sin(frame / 5), frame & 1), fx - 10, fy - 8);
-      for (let k = 0; k < 3; k++) { const h = 2 + ((frame + k * 5) % 4); g.fillStyle = k === 1 ? '#ffd23f' : '#ff8a3d'; g.fillRect(fx - 1 + k, fy - h, 1, h); }
+      g.drawImage(glowSprite(0.85 + 0.15 * Math.sin(frame / 5), flick & 1), fx - 10, fy - 8);
+      for (let k = 0; k < 3; k++) { const h = 2 + ((flick + k * 5) % 4); g.fillStyle = k === 1 ? '#ffd23f' : '#ff8a3d'; g.fillRect(fx - 1 + k, fy - h, 1, h); }
       if (frame % 20 < 3) { g.fillStyle = '#ffd23f'; g.fillRect(fx + ((frame >> 2) % 3) - 1, fy - 6 - (frame % 20), 1, 1); }
       for (let y = HORIZON + 1; y < HORIZON + 10; y += 2) { g.fillStyle = 'rgba(255,150,60,0.22)'; g.fillRect(fx - 1 + Math.round(Math.sin((y + t) / 2)), y, 3, 1); }
       // chimney smoke: slow puffs that rise, drift with the breeze, grow and fade
@@ -449,8 +457,8 @@
       }
       const lit = [];
       for (const f of flies) {
-        f.x += f.vx + Math.sin((t + f.p * 10) / 15) * 0.06;
-        f.y += f.vy + Math.cos((t + f.p * 10) / 20) * 0.04;
+        f.x += (f.vx + Math.sin((t + f.p * 10) / 15) * 0.06) * dt;
+        f.y += (f.vy + Math.cos((t + f.p * 10) / 20) * 0.04) * dt;
         if (f.x < 0) f.x = W; if (f.x > W) f.x = 0;
         if (f.y < HORIZON - 40) f.vy = Math.abs(f.vy); if (f.y > HORIZON + 4) f.vy = -Math.abs(f.vy);
         if (Math.sin(t / 4 + f.p * 3) > 0.2) lit.push(Math.round(f.x), Math.round(f.y));
@@ -462,18 +470,25 @@
       const an = th.name ? ANIM[th.name] : undefined;
       if (an) an(g, t);
     }
+    /** Clock subscriber: draws only every `step` frames. @param {number} frame */
+    function draw(frame) {
+      if (frame - lastFrame < step && frame > lastFrame) return;
+      const dt = frame > lastFrame ? Math.min(frame - lastFrame, step * 4) : step;
+      lastFrame = frame;
+      paint(frame, dt);
+    }
 
-    draw(0);
+    paint(0, 1);
     /** Switch scene palette (game id or 'lobby'). @param {string} name */
     const setTheme = (name) => {
       const next = THEMES[name] || THEMES.lobby;
       if (next === th) return;
       th = next;
       repaint();
-      draw(0);
+      paint(lastFrame, 0);
     };
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return { stop() {}, setTheme };
-    return { stop: window.Rumpus.clock.add(draw), setTheme };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return { stop() {}, setTheme, step };
+    return { stop: window.Rumpus.clock.add(draw), setTheme, step };
   }
 
   window.Rumpus.background = start;

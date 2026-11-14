@@ -124,10 +124,13 @@
   }
 
   // ---- "+300" pop-up next to an element.
-  /** @param {Element | null} el @param {number} delta */
+  /** Pass the element, or its position already read (several pops: read every rect first, then add the pops,
+   * so it's one layout). Nothing for an element that isn't on screen (it would pop in the corner).
+   * @param {Element | DOMRect | null} el @param {number} delta */
   function scorePop(el, delta) {
     if (!el || !delta) return;
-    const r = el.getBoundingClientRect();
+    const r = el instanceof Element ? el.getBoundingClientRect() : el;
+    if (!r.width && !r.height) return;
     const pop = document.createElement('div');
     pop.className = 'score-pop' + (delta < 0 ? ' neg' : '');
     pop.textContent = (delta > 0 ? '+' : '') + delta;

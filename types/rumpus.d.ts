@@ -62,7 +62,9 @@ interface Room {
   /** Phones that rated the game just finished (😴 / 🙂 / 🤩), cleared when a game starts. */
   rated?: Set<string>;
   /** The lineup (core/rooms.js): the games the host picked, in order, played back to back; or null. */
-  night?: { total: number, list: string[], played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number } | null;
+  night?: { total: number, list: string[], played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number,
+    /** positions in `list` passed over (too few players), shown as skipped, not played */ skipped?: number[],
+    /** the champion was already counted in the all-time stats (a restored final table must not count it again) */ won?: boolean } | null;
   game: GameLike | null;
   closed: boolean;
   settings: RoomSettings;
@@ -112,7 +114,8 @@ interface GameLike {
   onGlitch?: ((what: string, e: unknown) => void) | null;
   setTimer(ms: number, fn: () => void, scale?: boolean): void;
   mult?(): number;
-  handleSubmit(playerId: string, payload: Record<string, any>): void;
+  /** `false` = the answer was turned down (the phone gets its form back). */
+  handleSubmit(playerId: string, payload: Record<string, any>): void | boolean;
   onPlayerLeft(playerId: string): void;
   hostGameState(): Record<string, any>;
   playerView(playerId: string): { gameState: Record<string, any>; you: Record<string, any> };
@@ -152,6 +155,8 @@ interface RumpusNS {
   time: { sync(socket: any): void; now(): number; offset(): number; rtt(): number | null };
   /** Game-night leaderboard (games.js). */
   nightTable(night: any, between?: boolean): string;
+  /** Message in a Bottle: keep the drawings a state brings (`gameState.images`, sent once per screen). */
+  learnPics(gameState: any): void;
   esc(s: unknown): string;
   store(key: string, val?: any): any;
   morph(target: Element, html: string): void;
