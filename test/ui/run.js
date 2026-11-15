@@ -548,6 +548,19 @@ const allPages = t.pages;
     await tv.evaluate(() => { const w = /** @type {any} */ (window); w.Rumpus.setState = w.__setState; });
   });
 
+  await check('OK on the menu with nothing focused starts the highlighted game (back from a game, or picked with the mouse)', async () => {
+    await tv.waitForSelector('.game-pick[data-game-id="closest"]');
+    await tv.focus('.game-pick[data-game-id="closest"]');
+    await tv.waitForFunction(() => { const d = document.querySelector('#game-detail .lineup-add'); return !!d && /** @type {HTMLElement} */ (d).dataset.id === 'closest'; });
+    await tv.evaluate(() => /** @type {HTMLElement} */ (document.activeElement).blur()); // the focus let go; the description stays
+    await tv.keyboard.press('Enter');
+    await phones[0].waitForSelector('.number-form', { timeout: 5000 }) // Closest's first question on the phones
+      .catch(async () => assert.fail(`OK didn't start Closest: ${JSON.stringify(await tv.evaluate(() => ({ phase: new Function('return state')().phase, active: document.activeElement && document.activeElement.tagName })))}`));
+    tv.once('dialog', (d) => d.accept());
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.game-pick');
+  });
+
   await check('🕊 Calm (TV setting) stops shakes, wipes and flashes, and is remembered on this TV', async () => {
     await tv.click('[data-act="more"]');
     await tv.check('#set-calm');

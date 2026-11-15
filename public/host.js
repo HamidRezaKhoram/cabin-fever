@@ -1349,6 +1349,15 @@ document.addEventListener('keydown', (e) => {
       if (!next.matches('.game-pick')) { next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: document.body.classList.contains('calm') ? 'auto' : 'smooth' }); sfx.select(); }
       else if (!along) sfx.select();
     }
+  } else if (e.key === 'Enter' && !onControl && document.body.classList.contains('picking') && !openBox()) {
+    // OK on the menu with nothing focused (back from a game, or the mouse showed a game's description):
+    // the highlighted game starts. Nothing highlighted yet: OK lands on a cartridge, as an arrow would.
+    e.preventDefault();
+    const lit = /** @type {HTMLElement | null} */ (detailId ? document.querySelector(`.shelf .game-pick[data-game-id="${detailId}"]`) : null);
+    const card = lit || /** @type {HTMLElement | null} */ (document.querySelector(`.shelf .game-pick[data-game-id="${pickId}"]`) || document.querySelector('.game-pick:not([aria-disabled="true"])'));
+    if (!card) { wantFocus = true; return; }
+    card.focus({ preventScroll: true });
+    if (lit) card.click(); else sfx.select();
   } else if (e.key === 'Enter' && onControl && cur instanceof HTMLSelectElement) {
     // OK on a dropdown: open its list where the browser can (Chrome won't open a <select> on Enter), else
     // step to the next choice (older TV browsers have no showPicker()).
