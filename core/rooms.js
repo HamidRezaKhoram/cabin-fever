@@ -16,6 +16,7 @@ const { cleanLook, LOOK_PARTS } = require('../games/avatar-schema');
 const botBrain = require('../games/bot-brain');
 const { NightGame, placePoints } = require('../games/night');
 const stats = require('../games/stats');
+const { playOptions, TIMER_SCALES } = require('../games/play-options');
 
 const NIGHT_GAP_MS = parseInt(process.env.RUMPUS_NIGHT_GAP_MS || '12000', 10);
 const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS || '12', 10);
@@ -37,7 +38,8 @@ for (const G of [
   require('../games/telephone'), require('../games/minigames'), require('../games/looncall'), require('../games/lantern'),
   require('../games/storm'), require('../games/crush'), require('../games/cah'),
 ]) GAMES[G.meta.id] = G;
-const GAME_LIST = Object.values(GAMES).map((G) => G.meta);
+// Each game with its own length / timer choices (the TV menu's description box shows them).
+const GAME_LIST = Object.values(GAMES).map((G) => ({ ...G.meta, play: playOptions(G.meta.id) }));
 
 // ---------------------------------------------------------------------------
 // Rooms (in-memory, ephemeral)
@@ -123,7 +125,7 @@ function restoreRooms() {
     /** @type {Room} */
     const room = {
       code: s.code, hostToken: s.hostToken, hostSocket: null, players: new Map(), game: null, closed: false,
-      settings: { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en', ...(s.settings || {}) },
+      settings: { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en', ...(s.settings || {}), perGame: s.settings && s.settings.perGame && typeof s.settings.perGame === 'object' ? s.settings.perGame : {} },
       pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set(), wrap: new Set() },
       highlights: Array.isArray(s.highlights) ? s.highlights : [],
       interrupted: typeof s.interrupted === 'string' ? s.interrupted : null,
@@ -695,7 +697,7 @@ function connection(socket) {
       players: new Map(),
       game: null,
       closed: false,
-      settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false', teams: false, lang: process.env.RUMPUS_LANG === 'fr' ? 'fr' : 'en' },
+      settings: { rounds: null, timerScale: 1, spicy: process.env.RUMPUS_SPICY_DEFAULT !== 'false', teams: false, lang: process.env.RUMPUS_LANG === 'fr' ? 'fr' : 'en', perGame: {} },
       pace: { key: null, ready: new Set(), hurry: new Set(), skipq: new Set(), wrap: new Set() },
     };
     rooms.set(code, room);
@@ -717,13 +719,34 @@ function connection(socket) {
   socket.on('host:settings', (msg) => {
     const room = hostRoom(socket);
     if (!room || !msg || typeof msg !== 'object') return;
+    // One game's own rounds / timer (the menu's description box): overrides the room-wide one for it.
+    if (typeof msg.game === 'string') {
+      const G = /** @type {Record<string, any>} */ (GAMES)[msg.game];
+      if (!G) return;
+      const opts = playOptions(msg.game);
+      const per = room.settings.perGame || (room.settings.perGame = {});
+      const mine = { ...(per[msg.game] || {}) };
+      if ('rounds' in msg) {
+        const r = msg.rounds == null || msg.rounds === '' ? null : parseInt(msg.rounds, 10);
+        if (r === null) delete mine.rounds;
+        else if (opts.rounds && opts.rounds.opts.includes(r)) mine.rounds = r;
+      }
+      if ('timerScale' in msg) {
+        const sc = msg.timerScale == null || msg.timerScale === '' ? null : Number(msg.timerScale);
+        if (sc === null) delete mine.timerScale;
+        else if (opts.timed && TIMER_SCALES.includes(sc)) mine.timerScale = sc;
+      }
+      if (Object.keys(mine).length) per[msg.game] = mine; else delete per[msg.game];
+      broadcast(room);
+      return;
+    }
     // Only touch the settings that were sent (the TV sends one at a time).
     if ('rounds' in msg) {
       const rounds = msg.rounds == null ? null : parseInt(msg.rounds, 10);
       if (rounds === null || (rounds >= 1 && rounds <= 20)) room.settings.rounds = rounds;
     }
     const scale = Number(msg.timerScale);
-    if ([0.6, 1, 1.5, 2].includes(scale)) room.settings.timerScale = scale;
+    if (TIMER_SCALES.includes(scale)) room.settings.timerScale = scale;
     if (typeof msg.spicy === 'boolean') room.settings.spicy = msg.spicy;
     if (msg.lang === 'en' || msg.lang === 'fr') room.settings.lang = msg.lang;
     if (typeof msg.teams === 'boolean' && msg.teams !== room.settings.teams) {

@@ -52,7 +52,7 @@ function io() {
       // The TV exists but no link could be made: almost always a phone on another network than the
       // TV (mobile data, a guest or 5 GHz/2.4 GHz network on its own subnet). Say what to do, every few tries.
       if (why === 'no-path' && !sock.data.everJoined && tries % 3 === 0) {
-        sock.fire('player:joinError', { reason: "Found the TV, but can't reach it — put this phone on the same Wi-Fi as the TV (not mobile data or a guest network). Still trying…" });
+        sock.fire('player:joinError', { reason: "Found the TV, but can't reach it. On the TV, press \"📶 Help phones find the TV\" and Allow. Also check this phone is on the same Wi-Fi as the TV (not mobile data or a guest network). Still trying…" });
       }
       // Many failures in a row that aren't "no such room": the phone can't reach the broker (no
       // internet on this Wi-Fi?). Say so once — the join button comes back — and keep trying.

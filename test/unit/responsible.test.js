@@ -37,16 +37,15 @@ test('🙈 leave me out never makes a game unplayable: with fewer than two left,
   assert.strictEqual(by.Ann.state.gameState.targets.length, 3);
 });
 
-test('🙈 leave me out in Cottage Crush: nobody can send you a note, a wink or pick you as a date', async () => {
+test('🙈 leave me out in Cottage Crush: nobody can send you a note or pick you as a date', async () => {
   const { h, by, ps } = await makeRoom(srv, ['Ann', 'Ben', 'Cat', 'Dan']);
   by.Cat.sock.emit('player:prefs', { shy: true });
   await until(() => by.Cat.state.you.shy, 'Cat is left out');
   h.emit('host:startGame', { gameId: 'crush' });
-  await until(() => ps.every((p) => p.state && p.state.phase === 'cr-mingle' && p.state.you.agenda), 'mingle');
+  await until(() => ps.every((p) => p.state && p.state.phase === 'cr-mingle' && p.state.you.notesLeft === 3), 'mingle');
   const targets = by.Ann.state.gameState.targets || by.Ann.state.you.targets;
   assert.ok(targets && !targets.some((/** @type {any} */ t) => t.nickname === 'Cat'), 'Cat is not on Ann\'s list');
   by.Ann.submit({ to: by.Cat.id, text: 'hello Cat' });
-  by.Ann.submit({ wink: by.Cat.id });
   by.Ben.submit({ to: by.Dan.id, text: 'hello Dan' });
   await until(() => by.Dan.state.you.inbox.length === 1, 'Dan got Ben\'s note');
   assert.strictEqual(by.Cat.state.you.inbox.length, 0, 'Cat got nothing');

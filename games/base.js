@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const flow = require('./flow');
 const { makeRng, newSeed } = require('./rng');
+const { roundsFor, timerScaleFor } = require('./play-options');
 
 const CONTENT_DIR = process.env.RUMPUS_CONTENT_DIR || path.join(__dirname, '..', 'content');
 
@@ -78,7 +79,18 @@ class BaseGame {
 
   /** @param {number} def */
   rounds(def) {
-    return this.settings.rounds || def;
+    return roundsFor(this.gameId(), this.settings, def);
+  }
+
+  /** This game's id (its meta). */
+  gameId() {
+    const m = /** @type {any} */ (this.constructor).meta;
+    return m ? String(m.id) : '';
+  }
+
+  /** The answer-timer speed for this game: its own choice, else the room's (1 for real-time games). */
+  timerScale() {
+    return timerScaleFor(this.gameId(), this.settings);
   }
 
   destroy() {
@@ -99,7 +111,7 @@ class BaseGame {
   setTimer(ms, fn, scale = true) {
     this.clearTimer();
     const id = /** @type {any} */ (this.constructor).meta ? /** @type {any} */ (this.constructor).meta.id : '';
-    const real = Math.round(scale ? ms * (this.settings.timerScale || 1) * house.timerFor(id) : ms);
+    const real = Math.round(scale ? ms * this.timerScale() * house.timerFor(id) : ms);
     this.endsAt = Date.now() + real;
     this.timerFn = fn;
     /** whether the pending timer was scaled (flow.hurry keeps it that way) */

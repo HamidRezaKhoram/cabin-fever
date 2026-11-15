@@ -10,7 +10,7 @@
 'use strict';
 
 const fsShim = require('./shims/fs');
-const { Sock, pairWires, pickTransport, fastChannel, PREFIX } = require('./net');
+const { Sock, pairWires, pickTransport, fastChannel, showLanAddress, PREFIX } = require('./net');
 const { qrDataUrl } = require('./qr');
 const { offline } = require('./offline');
 
@@ -208,6 +208,33 @@ addEventListener('storage', (e) => {
 });
 
 /** @type {any} */ (window).io = io;
+
+// ---- Android phones that can't reach the TV (web/net.js showLanAddress)
+let lanShown = false;
+if (IS_TV) void showLanAddress(false).then((ok) => { lanShown = ok; });
+/** @type {HTMLElement | null} */
+let lanBox = null;
+document.addEventListener('cf:phone-stuck', () => {
+  if (lanShown || lanBox || secondTab) return;
+  lanBox = document.createElement('div');
+  lanBox.className = 'lan-help retro-box';
+  lanBox.setAttribute('role', 'alert');
+  lanBox.innerHTML = `<p><b>A phone can't reach the TV.</b> Android phones often can't see this computer on the Wi-Fi.</p>
+    <p>Press the button, then <b>Allow</b>: the browser then shows phones where the TV is. (The microphone is never used — it is switched off straight away.)</p>
+    <p><button type="button" data-lan="allow">📶 Help phones find the TV</button> <button type="button" data-lan="close">Not now</button></p>`;
+  document.body.appendChild(lanBox);
+  lanBox.addEventListener('click', (e) => {
+    const b = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('[data-lan]') : null);
+    if (!b || !lanBox) return;
+    if (b.dataset.lan === 'allow') {
+      void showLanAddress(true).then((ok) => {
+        lanShown = ok;
+        if (lanBox) lanBox.innerHTML = ok ? '<p>✓ Done — ask the phone to tap <b>Join</b> again.</p>' : '<p>The browser said no. Phones on the same Wi-Fi as the TV may still fail: try the Docker version, or another Wi-Fi.</p>';
+        setTimeout(() => { if (lanBox) lanBox.remove(); lanBox = null; }, 6000);
+      });
+    } else { lanBox.remove(); lanBox = null; }
+  });
+});
 // Leaving the page: save the room as it is now, and free its name at the broker for the reload.
 addEventListener('pagehide', () => {
   if (ready && !secondTab) { try { core().flushRooms(); } catch (e) { /* not booted */ } }

@@ -80,6 +80,9 @@ step "5/6 browser tests (TV + 3 phones)"
 rm -rf "$ROOT/test/ui/.shots" 2>/dev/null || podman unshare rm -rf "$ROOT/test/ui/.shots" 2>/dev/null || true
 mkdir -p "$ROOT/test/ui/.shots"
 in_playwright cabin-fever test/ui 'node /pw/ui/run.js' --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots -v "$ROOT/test/ui/.shots":/shots:Z
+# Touch bots: 2 Android + 2 iPhone phone pages play every game start to finish by touch (taps that do
+# nothing, covered buttons, the keyboard eating Send, lost taps/drawings). TOUCH_GAMES=a,b picks games.
+in_playwright cabin-fever test/ui 'node /pw/ui/touch.js' --network host -e BASE_URL="http://localhost:$PORT" -e SHOTS=/shots -e TOUCH_GAMES="${TOUCH_GAMES:-}" -v "$ROOT/test/ui/.shots":/shots:Z
 
 step "6/6 GitHub Pages build (the TV's browser hosts the room; tested with no server)"
 mkdir -p "$ROOT/dist"

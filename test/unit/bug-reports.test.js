@@ -82,7 +82,7 @@ test('Closest: a skipped question gives the Double Down back; it only pays in th
 }));
 
 // ---------------------------------------------------------------- Cottage Crush
-test('Crush: your own mutual date wins over someone\'s one-sided pick; replies must be offered cards; the last writer leaving moves on', () => withGame('crush', 4, {}, ({ game, leave }) => {
+test('Crush: your own mutual date wins over someone\'s one-sided pick; an empty reply is refused; the last writer leaving moves on', () => withGame('crush', 4, {}, ({ game, leave }) => {
   game.start();
   // Everyone writes their notes except p3, who then leaves: the room shouldn't wait out the clock.
   for (const id of ['p0', 'p1', 'p2']) while (game.sent(id) < game.budget(id)) game.handleSubmit(id, { to: id === 'p0' ? 'p1' : 'p0', text: 'hi' });
@@ -90,8 +90,8 @@ test('Crush: your own mutual date wins over someone\'s one-sided pick; replies m
   leave('p3');
   assert.strictEqual(game.phase, 'cr-reply', 'moved on when the last writer left');
   const note = game.notes.find((/** @type {any} */ n) => n.to === 'p1');
-  game.handleSubmit('p1', { reply: note.id, text: 'free text the phone never offers' });
-  assert.strictEqual(note.reply, null, 'a reply that isn\'t a card is refused');
+  assert.strictEqual(game.handleSubmit('p1', { reply: note.id, text: '   ' }), false, 'an empty reply is refused');
+  assert.strictEqual(note.reply, null);
   game.toPick();
   game.handleSubmit('p2', { pick: 'p0' }); // one-sided, comes first in the room
   game.handleSubmit('p0', { pick: 'p1' }); game.handleSubmit('p1', { pick: 'p0' }); // mutual

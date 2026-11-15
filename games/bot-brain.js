@@ -101,10 +101,7 @@ function decide(view, rnd = Math.random) {
     // Cottage Crush: notes, replies, then a date
     case 'cr-mingle': {
       const t = g.targets || [];
-      // Matchmaker / Gossip side actions (free, any time before the reveal).
-      if (you.canSetup && t.length >= 2) { const [x, y] = shuffleCopy(t, rnd); return tap({ setup: [x.id, y.id] }); }
-      if (you.canPredict && t.length >= 2) { const [x, y] = shuffleCopy(t, rnd); return tap({ predict: [x.id, y.id] }); }
-      if (!(you.notesLeft > 0 && t.length)) return !you.winked && t.length ? tap({ wink: pick(t, rnd).id }) : null;
+      if (!(you.notesLeft > 0 && t.length)) return null;
       // Mostly tap a ready-made opener card (a tap, not writing); sometimes write your own.
       const own = !(you.cards && you.cards.length) || rnd() < 0.25;
       const payload = { to: pick(t, rnd).id, text: own ? pick(LINES, rnd) : pick(you.cards, rnd) };
@@ -112,8 +109,10 @@ function decide(view, rnd = Math.random) {
     }
     case 'cr-reply': {
       const open = (you.inbox || []).filter((/** @type {{ reply: string | null }} */ n) => !n.reply);
-      if (open.length) return tap({ reply: open[0].id, text: pick(you.replyCards || ['😍'], rnd) });
-      return !you.winked && (g.targets || []).length ? tap({ wink: pick(g.targets, rnd).id }) : null;
+      if (!open.length) return null;
+      // An emoji or a line (taps), now and then their own words.
+      if (rnd() < 0.2) return write({ reply: open[0].id, text: pick(LINES, rnd) });
+      return tap({ reply: open[0].id, text: pick([...(you.replyEmoji || ['😍']), ...(you.replyCards || [])], rnd) });
     }
     case 'cr-pick': {
       if (you.picked) return null;

@@ -9,7 +9,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const { chromium } = require('playwright');
+const { chromium, webkit, devices } = require('playwright');
 const { suite } = require('../kit/browser');
 
 const DIST = process.env.DIST || '/dist';
@@ -325,6 +325,81 @@ const { check, errors } = t;
     await far.close();
     for (const p of ps) await p.close();
     await tvR.close();
+  });
+
+  /** Open a website TV and join it from a phone page in `ctx` over real WebRTC (?net=rtc-local).
+   * @param {any} c @param {string} name @param {boolean} [watchTv] (false: a TV in a phone's engine — the
+   * WebKit one can't load the narrator's voice; no real TV runs iPhone Safari, so only the phone is checked)
+   * @returns {Promise<{ tvP: any, ph: any, rc: string }>} */
+  const rtcRoom = async (c, name, watchTv = true) => {
+    const tvP = await c.newPage();
+    if (watchTv) watch(tvP, `tv-${name}`);
+    await tvP.goto(BASE + 'host.html?net=rtc-local');
+    await tvP.click('#start-overlay').catch(() => {});
+    await tvP.waitForFunction(() => /^[A-Z]{4}$/.test((document.getElementById('room-code') || {}).textContent || ''), null, { timeout: 15000 });
+    const rc = await tvP.textContent('#room-code');
+    const ph = await c.newPage();
+    watch(ph, name);
+    await ph.goto(`${BASE}play.html?code=${rc}&net=rtc-local&debug=1`);
+    await ph.fill('#nick-input', name);
+    await ph.click('#join-form button[type="submit"]');
+    return { tvP, ph, rc };
+  };
+
+  await check('an Android phone (Chrome) and an iPhone (Safari\'s WebKit) both join a website TV over WebRTC', async () => {
+    const android = await browser.newContext({ ...devices['Pixel 7'] });
+    const a = await rtcRoom(android, 'Andi');
+    await a.ph.waitForSelector('#game-view:not([hidden])', { timeout: 20000 });
+    assert.match(await a.ph.evaluate(() => navigator.userAgent), /Android/);
+    await a.tvP.waitForFunction(() => new Function('return state')().players.some((/** @type {any} */ p) => p.nickname === 'Andi' && p.connected), null, { timeout: 10000 });
+    await android.close();
+    const safari = await webkit.launch();
+    try {
+      const iphone = await safari.newContext({ ...devices['iPhone 13'] });
+      const i = await rtcRoom(iphone, 'Ines', false);
+      await i.ph.waitForSelector('#game-view:not([hidden])', { timeout: 20000 }).catch(async (e) => {
+        throw new Error(`the iPhone did not get in: "${await i.ph.textContent('#join-error').catch(() => '?')}" (${e.message.split('\n')[0]})`);
+      });
+      assert.match(await i.ph.evaluate(() => navigator.userAgent), /iPhone/);
+      await i.tvP.waitForFunction(() => new Function('return state')().players.some((/** @type {any} */ p) => p.nickname === 'Ines' && p.connected), null, { timeout: 10000 });
+    } finally { await safari.close(); }
+  });
+
+  await check('an Android phone that can\'t see the TV\'s hidden (.local) address: told what to do, the TV offers 📶, then it gets in', async () => {
+    // Chrome's default: its own address hidden behind a ".local" name, which a phone has to look up on
+    // the network — like many Android phones, this container can't. (Fake mic: the TV's "Allow" works.)
+    const hidden = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
+    try {
+      const c = await hidden.newContext({ ...devices['Pixel 7'] });
+      // One Chrome answers its own ".local" names, so model the phone that can't: both ends drop the
+      // ".local" addresses the other offers (an Android phone neither looks them up nor answers the
+      // lookups — Android filters the multicast they use). Only a real address can get through.
+      await c.addInitScript(() => {
+        const P = RTCPeerConnection.prototype;
+        const set = P.setRemoteDescription;
+        P.setRemoteDescription = function (/** @type {any} */ d) {
+          if (d && d.sdp) d = { type: d.type, sdp: d.sdp.split('\r\n').filter((/** @type {string} */ l) => !(l.startsWith('a=candidate') && l.includes('.local'))).join('\r\n') };
+          return set.call(this, d);
+        };
+      });
+      const { tvP, ph } = await rtcRoom(c, 'Hana');
+      // The phone finds the TV but no link opens: it says to press the TV's button.
+      await ph.waitForFunction(() => /Help phones find the TV/.test((document.getElementById('join-error') || {}).textContent || ''), null, { timeout: 40000 }).catch(async (e) => {
+        const st = await ph.evaluate(() => ({ err: (document.getElementById('join-error') || {}).textContent, inGame: !(/** @type {any} */ (document.getElementById('game-view'))).hidden, log: window.Rumpus.debug ? window.Rumpus.debug.tail(12) : '' }));
+        throw new Error(`the phone never said what to do: ${JSON.stringify(st)} (${e.message.split('\n')[0]})`);
+      });
+      await tvP.waitForSelector('.lan-help [data-lan="allow"]', { timeout: 15000 });
+      // The browser asks; the person taps Allow (Chrome then stores the permission for the site, and that
+      // is what makes it show the real address — checked: a switch that auto-accepts doesn't).
+      await c.grantPermissions(['microphone'], { origin: new URL(BASE).origin });
+      await tvP.click('.lan-help [data-lan="allow"]');
+      await tvP.waitForFunction(() => /Done/.test((document.querySelector('.lan-help') || {}).textContent || ''), null, { timeout: 10000 });
+      // The phone keeps trying by itself; its join goes through on the next link (or a second tap).
+      await ph.waitForSelector('#game-view:not([hidden])', { timeout: 30000 }).catch(async () => {
+        await ph.click('#join-form button[type="submit"]').catch(() => {});
+        await ph.waitForSelector('#game-view:not([hidden])', { timeout: 20000 });
+      });
+    } finally { await hidden.close(); }
   });
 
   await check('no page errors anywhere', async () => { assert.deepStrictEqual(errors, []); });

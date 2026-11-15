@@ -61,7 +61,7 @@ function hurry(game) {
   // pending timer was an unscaled one (reveal pauses): undo the same factor so it's really 10 s.
   if (game.timerScaled === false) { game.setTimer(HURRY_MS, fn, false); return true; }
   const id = game.constructor && game.constructor.meta ? game.constructor.meta.id : '';
-  const scale = ((game.room.settings && game.room.settings.timerScale) || 1) * house.timerFor(id);
+  const scale = (typeof game.timerScale === 'function' ? game.timerScale() : 1) * house.timerFor(id);
   game.setTimer(HURRY_MS / scale, fn);
   return true;
 }

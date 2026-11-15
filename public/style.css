@@ -345,7 +345,11 @@ body.play { min-height: 100vh; padding-bottom: 78px; }
 .react-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 8px 10px; }
 .react-bar[hidden] { display: none; }
 .react-bar button { font-size: 24px; padding: 4px 0 6px; }
-body.play { padding-bottom: 120px; }
+/* Room under the fixed emoji bar for the last control, measured (play.js sets --react-h): a fixed
+   120px left the Send / Reply buttons under the bar on an iPhone, where the bar is about that tall. */
+body.play { padding-bottom: calc(var(--react-h, 130px) + 28px + env(safe-area-inset-bottom, 0px)); }
+.react-bar { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+body.play.typing .react-bar { display: none; } /* typing: it would ride up over the Send button (play.js) */
 
 /* ---------- v3: game-feel extras ---------- */
 .now-playing { position: fixed; left: 16px; bottom: 16px; z-index: 48; pointer-events: none; background: rgba(36,31,61,0.95); color: var(--accent2); padding: 8px 14px; font-size: 22px;
@@ -358,10 +362,21 @@ body.play { padding-bottom: 120px; }
 .scribble img { width: 100%; image-rendering: pixelated; background: var(--ink); box-shadow: 0 0 0 4px var(--edge); }
 .scribble figcaption { font-size: 2.6vh; color: var(--dim); }
 @keyframes scribble-drift { from { transform: translateX(-20vh); opacity: 1; } 85% { opacity: 1; } to { transform: translateX(110vw); opacity: 0; } }
-#scribble-pad { height: 30vh; }
+/* Phone: the doodle pad is its own boxed section, smaller than the real drawing pad, and never
+   overlaps its button (it used to be squeezed into a 30vh box the square canvas spilled out of). */
+.scribble-box { margin-top: 12px; padding: 10px; background: var(--panel); box-shadow: 0 0 0 3px var(--edge); }
+.scribble-box h3 { margin: 0 0 4px; }
+#scribble-pad .draw-canvas { width: min(100%, 42vh); margin: 0 auto; }
+.tel-sent { margin: 8px auto; text-align: center; }
+.tel-sent img { width: min(40vw, 22vh); box-shadow: 0 0 0 3px var(--edge); background: #fff; }
+.tel-sent figcaption { color: var(--accent); }
 /* Phone: keep-awake failed (public/play.js wakeHint). */
 .wake-hint { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 61; padding: 10px 14px; font-family: var(--body); font-size: 22px; background: var(--panel2); color: var(--accent);
   box-shadow: 0 0 0 3px var(--edge); pointer-events: none; }
+/* Browser build: a phone can't reach the TV (web/host-entry.js, Android + hidden .local addresses). */
+.lan-help { position: fixed; left: 50%; bottom: 4vh; transform: translateX(-50%); z-index: 62; max-width: 70vw; padding: 1.2vh 2vw; background: var(--panel2);
+  color: var(--accent2); box-shadow: 0 0 0 4px var(--edge); font-size: max(28px, 2.8vh); }
+.lan-help p { margin: 0.5vh 0; }
 /* Browser build: a second TV tab (web/host-entry.js secondTabNote). */
 .second-tab-note { position: fixed; top: 0; left: 0; right: 0; z-index: 61; padding: 6px 16px; text-align: center; font-family: var(--body); font-size: max(28px, 2.6vh);
   background: var(--panel2); color: var(--accent); box-shadow: 0 3px 0 var(--edge); pointer-events: none; }
@@ -410,7 +425,7 @@ body.calm .intro-cart .cart-shell { animation: none; }
 .cat-banner { font-family: var(--pixel); font-size: 13px; color: #fff; background: var(--purple); display: inline-block; padding: 6px 10px; margin-bottom: 6px; }
 
 /* ---------- v5: pace votes, drawn avatars ---------- */
-.pace-bar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.pace-bar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; position: relative; z-index: 2; } /* above the game screen while it pops in (it slides down over this bar for 0.35 s) */
 .pace-bar[hidden] { display: none; }
 .pace-btn { flex: 1; background: var(--panel2); color: var(--ink); font-size: 10px; padding: 10px 8px 13px; }
 .pace-btn.on { background: var(--accent2); color: #14121f; }
@@ -661,12 +676,7 @@ body.calm #rocco { transition: none; }
 .crush-list { list-style: none; padding: 0; }
 .crush-note { background: var(--panel); padding: 8px 10px; margin: 6px 0; box-shadow: 0 0 0 3px var(--edge); }
 .crush-pairs li { animation: pop-in 0.4s steps(12) both; }
-.crush-exposed { color: var(--accent); }
 .crush-to { width: 100%; }
-.crush-bonus { animation: pop-in 0.4s steps(12) both; color: var(--accent); }
-.crush-side { background: var(--panel); padding: 8px 10px; margin: 8px 0; box-shadow: 0 0 0 3px var(--edge); }
-.crush-heard { list-style: none; padding: 0; margin: 4px 0; }
-.crush-pair { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 
 /* ---------- Loon Call (rhythm) ---------- */
 .lc-stage { display: flex; align-items: center; justify-content: center; gap: 4vh; margin: 2vh 0; }
@@ -836,10 +846,21 @@ body.host.in-game #stage { overflow: hidden; }
 .crush-people.small { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
 .crush-person { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; font-size: calc(20px * var(--phone-scale, 1)); min-height: 120px; }
 .crush-person span { overflow-wrap: anywhere; }
-.crush-agenda, .crush-fold { background: var(--panel); margin: 10px 0; box-shadow: 0 0 0 3px var(--edge); }
-.crush-agenda summary, .crush-fold summary { padding: 12px; cursor: pointer; font-size: calc(19px * var(--phone-scale, 1)); }
-.crush-agenda > :not(summary), .crush-fold > :not(summary) { margin: 0 12px 12px; }
+.crush-fold { background: var(--panel); margin: 10px 0; box-shadow: 0 0 0 3px var(--edge); }
+.crush-fold summary { padding: 12px; cursor: pointer; font-size: calc(19px * var(--phone-scale, 1)); }
+.crush-fold > :not(summary) { margin: 0 12px 12px; }
 .crush-to-line { font-size: calc(22px * var(--phone-scale, 1)); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Cottage Crush phone: one box that says what you can do now, and how many are left. */
+.crush-todo { background: var(--panel2); color: var(--accent2); padding: 12px; margin: 0 0 10px; box-shadow: 0 0 0 3px var(--accent); font-size: calc(21px * var(--phone-scale, 1)); line-height: 1.3; }
+.crush-todo small { color: var(--dim, #bbb); }
+.crush-pips { letter-spacing: 2px; white-space: nowrap; }
+.crush-sent { color: var(--accent); margin: 0 0 8px; }
+.crush-person small { font-size: calc(15px * var(--phone-scale, 1)); color: var(--accent); }
+.crush-open { margin: 10px 0; }
+.crush-emoji { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0; }
+.crush-emo { font-size: 28px; padding: 8px 0; min-height: 52px; }
+.crush-reply-form, .crush-form { display: flex; gap: 8px; margin-top: 10px; }
+.crush-reply-form input, .crush-form input { flex: 1; min-width: 0; }
 .crush-card { font-size: calc(21px * var(--phone-scale, 1)); line-height: 1.25; padding: 14px; }
 
 /* Cottage Olympics: the new minis */
@@ -1207,6 +1228,10 @@ body.host .cart-num { font-size: max(28px, 2.6vh); min-width: max(36px, 4.4vh); 
 body.play #text-size, body.play #cb-btn { min-height: 48px; min-width: 48px; }
 body.host .game-detail .detail-actions { display: flex; justify-content: center; align-items: center; gap: 1.4vw; flex-wrap: wrap; }
 body.host .game-detail .lineup-add { margin: 0; }
+/* A game's own length / timer (override ⚙ Settings for that game). Real selects: the remote reaches them. */
+body.host .game-detail .detail-opt { display: inline-flex; align-items: center; gap: 0.5vw; font-family: var(--body); }
+body.host .game-detail .detail-opt select { width: auto; font-size: max(28px, 2.4vh); padding: 0.3vh 0.8vw; }
+body.host .game-detail .detail-realtime { color: var(--dim); }
 /* The slide-in starts below the box: keep it inside, or the stage measures it as overflow and zooms. */
 body.host .next-up { overflow: hidden; padding-top: 1vh; }
 @media (max-height: 800px) {

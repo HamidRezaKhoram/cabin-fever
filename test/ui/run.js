@@ -139,6 +139,26 @@ const allPages = t.pages;
     assert.ok(blurb && (await tv.textContent('#game-detail') || '').includes(blurb.slice(0, 20)), 'the full description, not a cut-off one');
   });
 
+  await check('each game has its own rounds and timer beside its description (⚙ Settings is the default)', async () => {
+    const ctl = () => tv.evaluate(() => ({ rounds: [...document.querySelectorAll('#game-rounds option')].map((o) => o.textContent.trim()), timer: !!document.getElementById('game-timer'), realtime: !!document.querySelector('#game-detail .detail-realtime') }));
+    await tv.focus('.game-pick[data-game-id="trivia"]');
+    await tv.waitForSelector('#game-detail #game-rounds');
+    const trivia = await ctl();
+    assert.ok(trivia.rounds[0].startsWith('10 questions') && trivia.rounds.includes('20 questions') && trivia.timer, `trivia: questions + a timer (${JSON.stringify(trivia)})`);
+    await tv.selectOption('#game-rounds', '5');
+    await tv.waitForFunction(() => { const s = new Function('return state')().settings; return s.perGame && s.perGame.trivia && s.perGame.trivia.rounds === 5; });
+    assert.strictEqual(await tv.evaluate(() => new Function('return state')().settings.rounds), null, 'only trivia changed, not the room-wide rounds');
+    assert.strictEqual(await tv.inputValue('#game-rounds'), '5', 'the choice shows after the redraw');
+    await tv.focus('.game-pick[data-game-id="looncall"]');
+    await tv.waitForFunction(() => /Loon/.test((document.getElementById('game-detail') || { textContent: '' }).textContent || ''));
+    const loon = await ctl();
+    assert.ok(loon.realtime && !loon.timer && loon.rounds.every((r) => /song/.test(r)) && loon.rounds.length <= 3, `rhythm game: songs, no answer timer (${JSON.stringify(loon)})`);
+    await tv.focus('.game-pick[data-game-id="telephone"]');
+    await tv.waitForFunction(() => /Bottle/.test((document.getElementById('game-detail') || { textContent: '' }).textContent || ''));
+    assert.ok(!(await ctl()).rounds.length, 'Message in a Bottle sizes itself (one step per player)');
+    await tv.evaluate(() => new Function('return socket')().emit('host:settings', { game: 'trivia', rounds: null }));
+  });
+
   await check('the shelf turns like a wheel: the picked cartridge comes to the middle, and it clicks as it turns', async () => {
     await tv.evaluate(() => {
       const w = /** @type {any} */ (window), m = w.Rumpus.music;

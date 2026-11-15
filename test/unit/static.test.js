@@ -16,12 +16,16 @@ const server = read('core/rooms.js') + read('server.js');
 const GAME_IDS = [...read('core/rooms.js').matchAll(/require\('\.\.\/games\/([a-z]+)'\), ?/g)].map((m) => m[1]);
 
 test('server game list matches the game modules on disk', () => {
-  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js', 'rng.js'].includes(f)).map((f) => f.slice(0, -3));
+  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js', 'rng.js', 'play-options.js'].includes(f)).map((f) => f.slice(0, -3));
   assert.deepStrictEqual([...GAME_IDS].sort(), files.sort());
   for (const id of GAME_IDS) {
     const meta = require(path.join(ROOT, 'games', id)).meta;
     assert.strictEqual(meta.id, id);
     assert.ok(meta.name && meta.blurb && meta.minPlayers >= 2);
+    // Every game says how long it can be and whether the answer timer applies (the TV menu's choices).
+    const play = require(path.join(ROOT, 'games', 'play-options')).PLAY[id];
+    assert.ok(play, `${id} has an entry in games/play-options.js`);
+    if (play.rounds) assert.ok(play.rounds.opts.includes(play.rounds.def) && play.rounds.unit, `${id}: its default length is one of its choices`);
   }
 });
 

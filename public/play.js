@@ -38,6 +38,10 @@ const nickInput = /** @type {HTMLInputElement} */ (document.getElementById('nick
 const banner = /** @type {HTMLElement} */ (document.getElementById('banner'));
 const leaveBtn = /** @type {HTMLElement} */ (document.getElementById('leave-btn'));
 const reactBar = /** @type {HTMLElement} */ (document.getElementById('react-bar'));
+// The page keeps room under the fixed emoji bar for its real height (two rows on a narrow phone).
+const fitReactRoom = () => { document.body.style.setProperty('--react-h', `${reactBar.hidden ? 0 : reactBar.offsetHeight}px`); };
+if (typeof ResizeObserver === 'function') new ResizeObserver(fitReactRoom).observe(reactBar);
+new MutationObserver(fitReactRoom).observe(reactBar, { attributes: true, attributeFilter: ['hidden'] });
 
 // No zooming or copying on the phone: pinch / double-tap zoom and the long-press menu only get in
 // the way of fast taps (iOS ignores user-scalable=no, so stop its gestures here). The Aa button
@@ -186,6 +190,32 @@ document.addEventListener('pointerdown', (e) => {
   b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); // restart the animation
   if (!b.matches('[data-send], [data-react]')) window.Rumpus.haptic(8); // (answers and reactions buzz on their own)
 }, { passive: true });
+// ---- Sending with the on-screen keyboard open. The first touch on "Send" used to blur the field:
+// the keyboard closed, the page re-laid out, and the button moved out from under the finger before
+// it lifted — no click, so the answer only went on a second tap ("it only sends once the keyboard is
+// dismissed"). Now a touch on a form's submit button while one of its fields is being typed in sends
+// at once, and the touch doesn't take the focus (no keyboard jump before the send).
+document.addEventListener('pointerdown', (e) => {
+  const btn = /** @type {HTMLButtonElement | null} */ (e.target instanceof Element ? e.target.closest('button') : null);
+  const form = btn && btn.form;
+  if (!btn || !form || btn.disabled || (btn.type !== 'submit')) return;
+  const typing = document.activeElement;
+  if (!typing || !form.contains(typing) || !typing.matches('input, textarea')) return;
+  e.preventDefault(); // keep the focus (and the keyboard) where it is until the answer is sent
+  sentByTouch = { btn, at: Date.now() };
+  if (typeof form.requestSubmit === 'function') form.requestSubmit(btn); else btn.click();
+});
+/** The submit a touch already made: its own click (which follows) mustn't send it a second time. @type {{ btn: Element, at: number } | null} */
+let sentByTouch = null;
+document.addEventListener('click', (e) => {
+  if (!sentByTouch || Date.now() - sentByTouch.at > 1500 || !(e.target instanceof Element) || !sentByTouch.btn.contains(e.target)) return;
+  sentByTouch = null;
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
+// While typing, the emoji bar hides: on Android it rides up on top of the keyboard, right over Send.
+document.addEventListener('focusin', (e) => { if (e.target instanceof Element && e.target.matches('input, textarea')) document.body.classList.add('typing'); });
+document.addEventListener('focusout', () => { setTimeout(() => { const a = document.activeElement; if (!(a && a.matches('input, textarea'))) document.body.classList.remove('typing'); }, 0); });
 document.addEventListener('animationend', (e) => { if (e.target instanceof Element && e.animationName === 'tap-pop') e.target.classList.remove('tap'); });
 /** A form's answer didn't make sense (empty, not a number): shake it and buzz twice. @param {HTMLElement} el */
 function nope(el) {
@@ -663,29 +693,68 @@ function render() {
   // Campfire Quips asks two prompts in one phase, and a skipped question keeps the phase.
   const screenKey = [state.phase, g.round, g.step, g.chainIndex, g.subject, g.promptNumber, g.matchIndex, g.revealIndex, g.skipSeq,
     typeof g.prompt === 'string' ? g.prompt : '', typeof g.question === 'string' ? g.question : ''].join('|');
-  if (html !== lastHtml && screenKey === lastScreenKey && lastHtml !== null && !gameView.querySelector('#pad, #scribble-pad')) {
+  // A patch in place (morph) keeps what's typed and running, but a game's bind() wires listeners to
+  // the controls it found: if the update adds, removes or repurposes a control, morph would leave new
+  // buttons with no listener (a tap that does nothing). Then the screen is rebuilt and bound again —
+  // keeping what was typed — instead of patched.
+  const sameScreen = screenKey === lastScreenKey && lastHtml !== null;
+  const sig = html === lastHtml ? lastControls : controlsOf(html);
+  if (html !== lastHtml && sameScreen && sig === lastControls) {
     morph(gameView, html);
     lastHtml = html;
   } else if (html !== lastHtml) {
+    const kept = sameScreen ? keepInputs() : null;
     document.body.classList.remove('sending');
     lastScreenKey = screenKey;
     cleanups.forEach((fn) => fn());
     cleanups = [];
     gameView.innerHTML = html;
-    gameView.classList.remove('enter'); void gameView.offsetWidth; gameView.classList.add('enter');
+    if (!sameScreen) { gameView.classList.remove('enter'); void gameView.offsetWidth; gameView.classList.add('enter'); }
     const needsInput = gameView.querySelector('form, [data-send], #pad');
     // Buzz when it's your turn — only after the player has touched the page (browsers block it otherwise).
     const active = !navigator.userActivation || navigator.userActivation.hasBeenActive;
-    if (needsInput && lastHtml !== null && navigator.vibrate && active) navigator.vibrate(60);
+    if (!sameScreen && needsInput && lastHtml !== null && navigator.vibrate && active) navigator.vibrate(60);
     lastHtml = html;
+    lastControls = sig;
     bind(g);
+    if (kept) kept();
     const first = gameView.querySelector('form input');
-    if (first && !('ontouchstart' in window)) /** @type {HTMLInputElement} */ (first).focus();
+    if (!kept && first && !('ontouchstart' in window)) /** @type {HTMLInputElement} */ (first).focus();
   }
   countdown(g.endsAt, '#phone-timer', (/** @type {number} */ left) => { if (left <= 0) renderStatus(); });
   if (state.phase !== 'lobby') lobbyMaker.hidden = true;
   renderPace();
   renderStatus();
+}
+
+/** The controls a screen's HTML has (tag + the attributes a bind() keys on), in order: when this
+ * changes, a patch in place could leave a control without its listener. @type {string} */
+let lastControls = '';
+const CONTROLS = 'button, input, select, textarea, form, canvas, details, [data-live], [id]';
+const LOOKS = /^(class|style|disabled|open|value|checked|selected|placeholder|title|alt|src|aria-.*)$/;
+/** @param {string} html */
+function controlsOf(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html;
+  return [...tpl.content.querySelectorAll(CONTROLS)].map((el) => el.tagName + ' ' +
+    [...el.attributes].filter((a) => !LOOKS.test(a.name)).map((a) => `${a.name}=${a.value}`).join(' ')).join('\n');
+}
+/** Remember what the player typed / opened on this screen; returns a function that puts it back
+ * after a rebuild (matched by position among the same kind of field). */
+function keepInputs() {
+  const fields = /** @type {(HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[]} */ ([...gameView.querySelectorAll('input, textarea, select')]);
+  const vals = fields.map((f) => ({ name: f.getAttribute('name') || f.tagName, value: f.value, focus: f === document.activeElement }));
+  const opened = [...gameView.querySelectorAll('details')].map((d) => /** @type {HTMLDetailsElement} */ (d).open);
+  return () => {
+    const now = /** @type {(HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[]} */ ([...gameView.querySelectorAll('input, textarea, select')]);
+    now.forEach((f, i) => {
+      const v = vals[i];
+      if (!v || v.name !== (f.getAttribute('name') || f.tagName)) return;
+      if (v.value && f.type !== 'checkbox' && f.type !== 'radio') f.value = v.value;
+      if (v.focus) f.focus();
+    });
+    [...gameView.querySelectorAll('details')].forEach((d, i) => { if (opened[i] !== undefined) /** @type {HTMLDetailsElement} */ (d).open = opened[i]; });
+  };
 }
 
 // One line under the header that always says what's going on (and that nothing is stuck).
