@@ -36,7 +36,6 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 | # | Feature | Notes | Size |
 |---|---|---|---|
 | 3.1 | **Message in a Bottle: scribble pad** for players waiting on others. | Doodles could float across the TV. | M |
-| 3.6 | **Cottage Crush: remaining agendas** (see `dating-game.md`). | | M |
 | 3.8 | **Send only what changed** in state updates (~2 KB → a few hundred bytes). | Not needed on a LAN; revisit only if 1.3/1.4 show lag. | M |
 
 ## 4. Tests and tooling
@@ -62,6 +61,16 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 - **French** (2.4 French voice, 3.7 French content packs): on hold for now. New screens still get their few French UI lines.
 
 ## Done
+
+- **Playtest bug batch** (Nov 15 2026, reported after a cottage night): Android phones couldn't reach a
+  website TV (📶 help on the TV; `pages.js` tests it end to end); Message in a Bottle looked like it wiped
+  the drawing (the waiting screen now shows what you passed on; pads survive redraws); the doodle pad's
+  "Float it" sat under the canvas; tap races capped the best tappers (15→25/s, canoe 10→20/s) and dropped
+  the last batch (stop at the synced end + 400 ms grace); dead buttons after in-place updates
+  (`controlsOf` rebuild); the first tap on Send eaten with the keyboard open (iPhone haptic stole focus;
+  submit on pointerdown; emoji bar hidden while typing; room under the bar measured); the ▶ Next button
+  under the screen's pop-in; Cottage Crush simplified (no roles). New: per-game rounds/timer on the TV
+  menu, touch bots (`test/ui/touch.js`) playing every game on Android + iPhone pages.
 
 - **Website save: memory, slow Wi-Fi, small fixes** (Nov 13 2026, review): downloads stream into the cache
   (the 169 MB voice model used to sit in memory twice, ~340 MB: a TV/phone could crash); saved copies drop

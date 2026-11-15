@@ -94,7 +94,7 @@ const RULES = {
   telephone: ['Write a phrase, draw, describe, repeat', 'Watch the chains go off the rails', 'Vote for the best doodle'],
   cah: ['A Card Czar reads the prompt', 'Everyone plays their worst card', 'The Czar picks a winner — everyone else ❤ a favourite'],
   storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win — unless the Raccoons unmask the Lookout'],
-  crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'Secret agendas change the scoring'],
+  crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'It’s a date only if they pick you too'],
   lantern: ['Tilt your phone to glide (or drag on the circle)', 'Four scenes: fireflies, moonbeam, tag, lily pad, ducklings…', 'One of them: everyone steers the same raft'],
   looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
   minigames: ['Quick real-time challenges on your phone', 'Eleven minis — the rules show before each one', 'Turn on Teams for Red vs Blue!'],
@@ -343,6 +343,8 @@ document.addEventListener('click', (e) => {
 document.addEventListener('change', (e) => {
   const t = /** @type {HTMLInputElement} */ (e.target);
   if (t.id === 'set-rounds') socket.emit('host:settings', { rounds: t.value === '' ? null : +t.value });
+  else if (t.id === 'game-rounds') socket.emit('host:settings', { game: t.dataset.game, rounds: t.value === '' ? null : +t.value });
+  else if (t.id === 'game-timer') socket.emit('host:settings', { game: t.dataset.game, timerScale: t.value === '' ? null : +t.value });
   else if (t.id === 'set-timer') socket.emit('host:settings', { timerScale: +t.value });
   else if (t.id === 'set-spicy') socket.emit('host:settings', { spicy: t.checked });
   else if (t.id === 'set-teams') socket.emit('host:settings', { teams: t.checked });
@@ -357,6 +359,7 @@ document.addEventListener('change', (e) => {
   /** @type {Record<string, () => string>} */
   const NOTES = {
     'set-rounds': () => `🔁 Rounds: ${optText()}`, 'set-timer': () => `⏱ Timers: ${optText()}`,
+    'game-rounds': () => `🔁 ${gameName(t.dataset.game)}: ${optText()}`, 'game-timer': () => `⏱ ${gameName(t.dataset.game)}: ${optText()}`,
     'set-spicy': () => `🌶 18+ prompts ${on(t.checked)}`, 'set-teams': () => (t.checked ? '👥 Teams on — phones pick red or blue' : '👥 Teams off'),
     'set-lang': () => `🌐 ${optText()}`, 'set-narrator': () => `🗣 Narrator ${on(t.checked)}`,
     'set-cb': () => `👁 Colour-blind colours ${on(t.checked)}`, 'set-calm': () => `🕊 Calm ${on(t.checked)}`,
@@ -487,15 +490,47 @@ let detailColour = '';
 let detailId = '';
 /** Where the description's pointer sits (inline style, kept across re-renders). */
 let detailLeft = '';
+/** @param {string | undefined} id */
+const gameName = (id) => { const gm = (state.availableGames || []).find((/** @type {any} */ g) => g.id === id); return gm ? gm.name : 'This game'; };
+const TIMER_NAMES = /** @type {Record<string, string>} */ ({ 0.6: 'Fast', 1: 'Normal', 1.5: 'Relaxed', 2: 'Extra slow' });
+/** This game's own length and timer (they override ⚙ Settings for this game only). Choices come from
+ * the game (games/play-options.js): real-time games have no timer choice, self-sizing ones no length.
+ * @param {any} gm a game from state.availableGames */
+function gameOptsHtml(gm) {
+  const play = gm && gm.play;
+  if (!play) return '';
+  const st = state.settings || {};
+  const mine = (st.perGame && st.perGame[gm.id]) || {};
+  const o = (/** @type {any} */ v, /** @type {any} */ cur, /** @type {string} */ text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(text)}</option>`;
+  let html = '';
+  const r = play.rounds;
+  if (r) {
+    // "Default" is what it plays without a choice here: ⚙ Settings' rounds (within this game's range) or its own.
+    const all = st.rounds ? Math.max(1, Math.min(r.opts[r.opts.length - 1], st.rounds)) : r.def;
+    html += `<label class="detail-opt">🔁 <select id="game-rounds" data-game="${esc(gm.id)}" aria-label="${esc(r.unit)} for this game">
+      ${o('', mine.rounds || '', `${all} ${r.unit}${st.rounds ? ' (⚙)' : ''}`)}${r.opts.filter((/** @type {number} */ n) => n !== all || mine.rounds === n).map((/** @type {number} */ n) => o(n, mine.rounds || '', `${n} ${r.unit}`)).join('')}</select></label>`;
+  }
+  if (play.timed) {
+    const all = TIMER_NAMES[String(st.timerScale || 1)] || 'Normal';
+    html += `<label class="detail-opt">⏱ <select id="game-timer" data-game="${esc(gm.id)}" aria-label="Timer for this game">
+      ${o('', mine.timerScale || '', `${all} timer${st.timerScale && st.timerScale !== 1 ? ' (⚙)' : ''}`)}${[0.6, 1, 1.5, 2].filter((v) => String(v) !== String(st.timerScale || 1) || mine.timerScale === v).map((v) => o(v, mine.timerScale || '', `${TIMER_NAMES[String(v)]} timer`)).join('')}</select></label>`;
+  } else html += '<span class="detail-opt detail-realtime">⏱ Real-time: no answer timer</span>';
+  return html;
+}
+/** The description box's contents for a game. @param {string} id */
+function detailContent(id) {
+  const gm = (state.availableGames || []).find((/** @type {any} */ g) => g.id === id);
+  if (!gm) return detailHtml;
+  const tag = GAME_TAGS[id] || '';
+  return `<b class="detail-name">${esc(gm.name)}</b><span class="detail-blurb">${esc(gm.blurb || '')}</span>
+    ${tag ? `<span class="detail-meta">${esc(tag)}</span>` : ''}
+    <span class="detail-actions">${gameOptsHtml(gm)}<button class="lineup-add" data-act="lineup" data-id="${esc(id)}">${lineup.includes(id) ? `✕ Remove from lineup (#${lineup.indexOf(id) + 1})` : '＋ Add to lineup'}</button></span>`;
+}
 /** Put the description under `card` and fill it in. @param {HTMLElement} card */
 function showDetail(card) {
   const id = card.dataset.gameId || '';
-  const name = (card.querySelector('.game-name') || card).textContent || '';
-  const tag = GAME_TAGS[id] || '';
   detailColour = /** @type {Record<string, string>} */ (ART_BG)[id] || '';
-  detailHtml = `<b class="detail-name">${esc(name)}</b><span class="detail-blurb">${esc(card.dataset.blurb || '')}</span>
-    ${tag ? `<span class="detail-meta">${esc(tag)}</span>` : ''}
-    <span class="detail-actions"><button class="lineup-add" data-act="lineup" data-id="${esc(id)}">${lineup.includes(id) ? `✕ Remove from lineup (#${lineup.indexOf(id) + 1})` : '＋ Add to lineup'}</button></span>`;
+  detailHtml = detailContent(id);
   detailId = id;
   placeDetail(card);
   const el = /** @type {HTMLElement | null} */ (document.getElementById('game-detail'));
@@ -654,6 +689,7 @@ document.addEventListener('scroll', (e) => {
 }, true);
 
 function gamePicker(/** @type {any} */ label) {
+  if (detailId) detailHtml = detailContent(detailId); // its choices follow the room's settings
   const count = state.players.length;
   const st = state.settings || {};
   const opt = (/** @type {any} */ v, /** @type {any} */ cur, /** @type {any} */ text) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${text}</option>`;

@@ -270,6 +270,30 @@ function iceServers() {
   return [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }, ...(Array.isArray(extra) ? extra : [])];
 }
 
+/** A phone knocking this long without a link is stuck (the phone itself gives up at 10 s). */
+const STUCK_MS = 8000;
+
+/**
+ * Chrome hides this computer's Wi-Fi address in WebRTC behind a random "<id>.local" name, which other
+ * devices must look up on the network. iPhones and computers can; many Android phones can't, so they
+ * find the TV at the broker but never reach it ("Found the TV, but can't reach it"), unless the router
+ * loops traffic back (many don't). Chrome shows the real address once the page has microphone
+ * permission (it is never used: the stream is stopped at once). Returns true if it is unlocked.
+ * @param {boolean} [ask] show the permission prompt (only from a click); otherwise only if already allowed */
+async function showLanAddress(ask = false) {
+  try {
+    const md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia) return false;
+    if (!ask) {
+      const st = await navigator.permissions.query(/** @type {any} */ ({ name: 'microphone' }));
+      if (st.state !== 'granted') return false;
+    }
+    const s = await md.getUserMedia({ audio: true });
+    s.getTracks().forEach((t) => t.stop());
+    return true;
+  } catch (e) { return false; }
+}
+
 /** PeerJS (WebRTC). @returns {Transport} */
 function peerTransport() {
   const PeerCtor = /** @type {any} */ (window).Peer;
@@ -295,7 +319,13 @@ function peerTransport() {
   return {
     listen(code, onConn, onError) {
       const peer = new PeerCtor(PREFIX + code, { config: { iceServers: iceServers() } });
-      peer.on('connection', (/** @type {any} */ conn) => conn.on('open', () => onConn(heartbeat(wrap(conn), { revive: true }), () => linkType(conn.peerConnection))));
+      peer.on('connection', (/** @type {any} */ conn) => {
+        // A phone the broker introduced but that never got a direct link: almost always an Android
+        // phone that can't look up the TV's hidden (".local") address — the TV says so (host-entry.js).
+        const stuck = setTimeout(() => document.dispatchEvent(new CustomEvent('cf:phone-stuck')), STUCK_MS);
+        conn.on('open', () => { clearTimeout(stuck); onConn(heartbeat(wrap(conn), { revive: true }), () => linkType(conn.peerConnection)); });
+        conn.on('close', () => clearTimeout(stuck));
+      });
       peer.on('error', (/** @type {any} */ e) => onError(String(e && e.type || e)));
       peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) { /* destroyed */ } }); // broker blip: stay reachable
       return () => peer.destroy();
@@ -439,10 +469,12 @@ function rtcLocalTransport() {
         if (kind === 'offer') {
           const pc = new RTCPeerConnection();
           pcs.set(from, pc);
+          // Same as PeerJS above: a phone that knocked but never got a link is stuck.
+          const stuck = setTimeout(() => document.dispatchEvent(new CustomEvent('cf:phone-stuck')), STUCK_MS);
           pc.ondatachannel = (ev) => {
             if (ev.channel.label !== 'main') return;
             const ch = ev.channel;
-            ch.onopen = () => onConn(heartbeat(wrap(ch, pc), { revive: true }), () => linkType(pc));
+            ch.onopen = () => { clearTimeout(stuck); onConn(heartbeat(wrap(ch, pc), { revive: true }), () => linkType(pc)); };
           };
           await pc.setRemoteDescription(data);
           await pc.setLocalDescription(await pc.createAnswer());
@@ -484,4 +516,4 @@ function pickTransport() {
   return local || !(/** @type {any} */ (window).Peer) ? localTransport() : peerTransport();
 }
 
-module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, iceServers, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };
+module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, iceServers, showLanAddress, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };

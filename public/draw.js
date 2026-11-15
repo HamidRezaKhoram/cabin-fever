@@ -7,8 +7,10 @@
   const W = 480, H = 480;
 
   /** @typedef {{ color: string, size: number, pts: number[][] }} Stroke */
-  /** @param {HTMLElement} host */
-  function drawPad(host) {
+  /** Strokes of the last keyed pad: a screen rebuilt mid-drawing gets its drawing back. @type {{ key: string, strokes: Stroke[] } | null} */
+  let kept = null;
+  /** @param {HTMLElement} host @param {string} [key] the same key on a rebuilt screen restores the strokes */
+  function drawPad(host, key) {
     host.innerHTML = `
       <canvas class="draw-canvas" width="${W}" height="${H}"></canvas>
       <div class="draw-tools">
@@ -25,7 +27,8 @@
     let color = COLORS[0];
     let size = SIZES[1];
     /** @type {Stroke[]} */
-    const strokes = [];
+    const strokes = key && kept && kept.key === key ? kept.strokes : [];
+    if (key) kept = { key, strokes };
     /** @type {Stroke | null} */
     let cur = null;
 

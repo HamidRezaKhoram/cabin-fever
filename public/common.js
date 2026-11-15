@@ -95,6 +95,8 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
   let lastState = null;
   /** @param {any} s */
   function setState(s) { lastState = s; }
+  /** The latest room state this page got (a bind() that runs a timer reads the current clock here). */
+  function getState() { return /** @type {any} */ (lastState); }
   // A player's picture: their own drawing if they made one, else their pixel animal.
   /** @param {{ look?: any, avatar?: number } | null | undefined} p */
   function playerUrl(p) {
@@ -332,11 +334,20 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
         iosSwitch.innerHTML = '<input type="checkbox" switch tabindex="-1">';
         document.body.appendChild(iosSwitch);
       }
-      iosSwitch.click();
+      // Flipping the switch moves the focus to it: with a text field open, that closed the keyboard on
+      // the first touch of "Send" and the answer didn't go (it went on the second tap). While typing,
+      // no tick (the keyboard clicks on its own); otherwise the focus is put back where it was.
+      const tick = () => {
+        const was = document.activeElement;
+        if (!iosSwitch || (was && was.matches('input:not([type=checkbox]), textarea, select'))) return;
+        iosSwitch.click();
+        if (was instanceof HTMLElement && was !== document.activeElement && was !== document.body) was.focus({ preventScroll: true });
+      };
+      tick();
       // A "double" buzz for a miss.
-      if (Array.isArray(pattern) && pattern.length > 2) setTimeout(() => { if (iosSwitch) iosSwitch.click(); }, (pattern[0] || 0) + (pattern[1] || 0));
+      if (Array.isArray(pattern) && pattern.length > 2) setTimeout(tick, (pattern[0] || 0) + (pattern[1] || 0));
     } catch (e) { /* no haptics here */ }
   }
 
-  return { haptic, qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, signed, games, register, av, setState, morph, playerImg, playerUrl, fit, fitAll, hit };
+  return { haptic, qrSrc, avUrl, time, esc, store, sfx, setMuted, isMuted, countdown, scoredList, signed, games, register, av, setState, getState, morph, playerImg, playerUrl, fit, fitAll, hit };
 })())));

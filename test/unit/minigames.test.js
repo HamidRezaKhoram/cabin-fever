@@ -75,14 +75,37 @@ test('team tug of war: the team that pulls the flag over the line wins (+200 eac
   const st = await playing(h, 'tug');
   const team = (p) => st.players.find((x) => x.id === p.id).team;
   const reds = ps.filter((p) => team(p) === 'red');
-  for (let i = 0; i < 12; i++) { for (const p of reds) p.submit({ tap: 8 }); await sleep(110); }
-  const r = await until(() => h.state.phase === 'mg-result' && h.state, 'result');
+  // Pull until the flag crosses (and not a tap after: the next mini would read them as early taps).
+  /** @type {any} */
+  let r = null;
+  const watch = until(() => (h.state.phase === 'mg-result' && h.state.gameState.mini === 'tug' ? (r = h.state) : null), 'result');
+  for (let i = 0; i < 12 && !r; i++) { for (const p of reds) p.submit({ tap: 8 }); await sleep(110); }
+  r = await watch;
   assert.strictEqual(r.gameState.result.winnerTeam, 'red');
   for (const p of ps) {
     const row = r.gameState.result.rows.find((x) => x.nickname === p.nickname);
     assert.strictEqual(row.gained, team(p) === 'red' ? 200 : 0);
   }
   assert.ok(r.teamScores.red === 400 && r.teamScores.blue === 0);
+});
+
+test('tap race: a fast tapper (20/s) keeps every tap, and a batch landing just after the clock still counts', async () => {
+  const { h, ps } = await room(3);
+  h.emit('host:startGame', { gameId: 'minigames' });
+  const st = await playing(h, 'tug');
+  const endsAt = st.gameState.endsAt;
+  let sent = 0;
+  // 2 taps every 100 ms ≈ 20/s (fast, but human): the old 15/s cap shaved this player's score.
+  while (Date.now() < endsAt - 300) { ps[0].submit({ tap: 2 }); sent += 2; await sleep(100); }
+  ps[1].submit({ tap: 3 });
+  // A batch that was on its way when the clock ran out.
+  while (Date.now() < endsAt + 60) await sleep(10);
+  ps[0].submit({ tap: 2 }); sent += 2;
+  const r = await until(() => (h.state.phase === 'mg-result' && h.state.gameState.mini === 'tug' ? h.state : null), 'tug result');
+  const row = (n) => r.gameState.result.rows.find((x) => x.nickname === n);
+  assert.strictEqual(row('P0').value, sent, `every tap counted (${row('P0').value} of ${sent})`);
+  assert.strictEqual(row('P0').gained, 300, 'the top tapper wins the round');
+  assert.strictEqual(row('P1').gained, 200);
 });
 
 test('the seven new minis: skip stones, loon spotting, swat, balance, canoe sprint, campfire sequence, woodpile', async () => {

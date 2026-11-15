@@ -94,6 +94,13 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - TV: `/host?debug=1` or `/host?bots=1` → lobby shows 🤖 +1 / +3 / +3 fast / Remove bots.
 - CLI: `./scripts/bots.sh CODE [count] [speed] [url]` joins bot phones to a real room over the LAN.
 - Pacing report: `GAMES=trivia PLAYERS=6 node test/playtest.js` (in the node container).
+- **Touch bots** (`test/ui/touch.js`, step 5 of test-all; `TOUCH_GAMES=a,b` picks games, repeats allowed):
+  2 Android (Chromium, Pixel 7) + 2 iPhone (WebKit, iPhone 13) phone pages play EVERY game start to
+  finish by touch — read the screen, tap at the spot (a covered control fails), type with an on-screen
+  keyboard (the viewport shrinks; the first tap on Send must send; iPhones also "slip": pointerdown only),
+  draw, doodle, mash, hold, press ▶ Next; each person thinks at their own speed. A tap must change the
+  screen or reach the TV; a refused answer fails. The server bots (bot-brain) never see the phone page —
+  these are what catch dead buttons, covered buttons and lost taps. Teach `plan()` new controls.
 
 ## Connection, randomness, feel (Nov 2026 playtest fixes)
 
@@ -150,6 +157,24 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   (`web/shims/fs.js`) keeps `.tmp` writes in memory, so write-then-rename is one localStorage write.
 - **Every random choice in a game comes from `this.rng`** (`games/rng.js`, seeded per game,
   `RUMPUS_SEED` replays one) and stays inside set bounds (`rng.int(lo, hi)`, `rng.range`).
+- **Phone screen updates** (`play.js` render): same screen + same controls → `morph`; if the update adds,
+  removes or repurposes a control (`controlsOf`), the screen is rebuilt and bound again, keeping what was
+  typed — a morph left new buttons without their bind() listeners (taps that did nothing). Prefer listeners
+  delegated on `root` (removed in `onCleanup`). Drawing pads are `data-live` (morph leaves them alone) and
+  `drawPad(host, key)` keeps strokes across a rebuild.
+- **Keyboard + Send**: a touch on a form's submit button while its field has focus submits on pointerdown
+  (and swallows the click that follows); the emoji bar hides while typing (`body.typing`); the page keeps
+  room under the bar for its measured height (`--react-h`). iPhone haptics (`haptic` → hidden switch)
+  never take the focus from a text field (that closed the keyboard and ate the first tap on Send).
+- **Per-game rounds / timer** (`games/play-options.js`): each game's length choices (`rounds.opts`, `unit`;
+  null = sizes itself) and whether the answer timer applies (`timed: false` for real-time games). The TV
+  menu's description box has `#game-rounds` / `#game-timer` (`host:settings {game, rounds | timerScale}`,
+  null = back to default) → `room.settings.perGame`; ⚙ Settings is the room-wide default, kept within each
+  game's range (`roundsFor`, `timerScaleFor`; games call `this.rounds(def)` / `this.timerScale()`).
+- **Android + website build**: Chrome hides the TV's address behind a `.local` name many Android phones
+  can't look up. A phone that knocks without a link → `cf:phone-stuck` → the TV offers "📶 Help phones find
+  the TV" (`showLanAddress`: microphone permission makes Chrome show the real address; the mic is stopped
+  at once). Tested end to end in `test/ui/pages.js` (Chrome with hiding on; `.local` candidates dropped).
 - **Feel**: `Rumpus.haptic(ms | pattern)` on every tap (Android vibrate, iPhone switch-tick). Phones
   can't pinch/double-tap zoom or select text; the status line under the header always says what's
   happening; timers use server time (`Rumpus.time.now()`), never `Date.now()`.
@@ -172,7 +197,7 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   (a layout root), and `fitAll` reads every size before writing any. Keep it that way: a search on the
   real element lays out the whole TV screen at every step.
 - **Responsible play**: 🙈 `player:prefs {shy}` — a shy player is never a Most Likely answer and gets no
-  Crush notes, winks or date picks (`BaseGame.targetIds()` / `targetable(id)`; new games that single
+  Crush notes or date picks (`BaseGame.targetIds()` / `targetable(id)`; new games that single
   people out must use them). 😴/🙂/🤩 `player:rate` at game over → `stats.rate` → /highlights Ratings tab.
   🕊 Calm (TV, `body.calm`, stored per TV) turns off shakes, wipes, confetti and the lightning flash.
   The title screen says when 18+ prompts are on. No filtering of what players type (user's call).

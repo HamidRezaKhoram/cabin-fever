@@ -23,7 +23,14 @@ const FLY_GUESS_MS = env('RUMPUS_MG_FLY_GUESS_MS', 10000);
 const ROAST_MS = env('RUMPUS_MG_ROAST_MS', 12000);
 const PLAY_MS = env('RUMPUS_MG_PLAY_MS', 12000);      // most of the new minis
 const SHOW_MS = env('RUMPUS_MG_SHOW_MS', 600);        // one step of the campfire sequence
-const MAX_TAPS_PER_SEC = 15;
+// Tap caps (anti-cheat, not a speed limit): the fastest people manage ~12–16 taps/s on one button and
+// more with two thumbs on two. The old 15/s (and 10/s strokes) cut the best player's score down to
+// the cap — "the top tapper didn't get their score".
+const MAX_TAPS_PER_SEC = 25;
+const MAX_STROKES_PER_SEC = 20;
+const TAP_BURST = 10;
+/** After the clock runs out, taps already on their way (phones send every 100 ms) still count. */
+const TAP_GRACE_MS = env('RUMPUS_MG_TAP_GRACE_MS', 400);
 
 /** @typedef {'tug'|'quickdraw'|'fireflies'|'roast'|'skip'|'spot'|'swat'|'balance'|'paddle'|'simon'|'stack'} MiniId */
 /** @type {Record<MiniId, { name: string, rule: string, better: 'low' | 'high' }>} */
@@ -147,7 +154,7 @@ class MinigamesGame extends BaseGame {
     const done = () => this.finish();
     const p = this.params;
     switch (this.mini) {
-      case 'tug': this.sub = 'go'; this.setTimer(p.ms, done, false); break;
+      case 'tug': this.sub = 'go'; this.setTimer(p.ms, () => this.lastTaps(), false); break;
       case 'quickdraw': {
         this.sub = 'wait';
         const wait = this.rng.int(DRAW_WAIT_MIN, Math.max(DRAW_WAIT_MIN, DRAW_WAIT_MAX));
@@ -169,11 +176,19 @@ class MinigamesGame extends BaseGame {
         break;
       }
       case 'roast': this.sub = 'go'; this.setTimer(ROAST_MS, done, false); break;
-      case 'paddle': this.sub = 'go'; this.setTimer(p.ms, done, false); break;
+      case 'paddle': this.sub = 'go'; this.setTimer(p.ms, () => this.lastTaps(), false); break;
       case 'stack': this.sub = 'go'; this.setTimer(PLAY_MS + 8000, done, false); break;
       default: this.sub = 'go'; this.setTimer(PLAY_MS, done, false);
     }
     this.push();
+  }
+
+  /** Tug / Canoe: time's up on the phones (they stop counting at the same synced moment); the last
+   * batches still in the air count for a moment more, then the round ends. */
+  lastTaps() {
+    if (this.phase !== 'mg-play') return;
+    this.sub = 'closing';
+    this.setTimer(TAP_GRACE_MS, () => this.finish(), false);
   }
 
   // Throttled push (10/s) for rapid tap updates.
@@ -198,7 +213,7 @@ class MinigamesGame extends BaseGame {
         // Rate cap: no more than MAX_TAPS_PER_SEC since the start (+ a little burst).
         const n = this.mini === 'tug' ? payload.tap : payload.strokes;
         if (!Number.isInteger(n) || n <= 0) return;
-        const allowed = Math.floor(((now - this.playStart) / 1000) * (this.mini === 'paddle' ? 10 : MAX_TAPS_PER_SEC)) + 5;
+        const allowed = Math.floor(((now - this.playStart) / 1000) * (this.mini === 'paddle' ? MAX_STROKES_PER_SEC : MAX_TAPS_PER_SEC)) + TAP_BURST;
         this.taps.set(id, Math.min(allowed, (this.taps.get(id) || 0) + Math.min(n, 20)));
         if (this.mini === 'tug' && this.teamsOn()) {
           const { red, blue } = this.tugTotals();

@@ -12,7 +12,7 @@ test('host gets a 4-letter room code without I or O, plus a resume token', async
   assert.match(h.code, /^[A-HJ-NP-Z]{4}$/);
   assert.match(h.hostToken, /^[0-9a-f]{32}$/);
   await until(() => h.state && h.state.phase === 'lobby', 'lobby state');
-  assert.deepStrictEqual(h.state.settings, { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en' });
+  assert.deepStrictEqual(h.state.settings, { rounds: null, timerScale: 1, spicy: true, teams: false, lang: 'en', perGame: {} });
   assert.strictEqual(h.state.availableGames.length, 15);
 });
 
@@ -136,14 +136,68 @@ test('settings are validated', async () => {
   const h = await makeHost(srv);
   h.emit('host:settings', { rounds: 5, timerScale: 1.5, spicy: false, teams: false });
   await until(() => h.state.settings.rounds === 5, 'rounds 5');
-  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 1.5, spicy: false, teams: false, lang: 'en' });
+  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 1.5, spicy: false, teams: false, lang: 'en', perGame: {} });
   h.emit('host:settings', { rounds: 0, timerScale: 3, spicy: 'yes' });
   h.emit('host:settings', { rounds: 21 });
   h.emit('host:settings', { timerScale: 2 }); // valid marker, processed after the invalid ones
   await until(() => h.state.settings.timerScale === 2, 'marker applied');
-  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 2, spicy: false, teams: false, lang: 'en' });
+  assert.deepStrictEqual(h.state.settings, { rounds: 5, timerScale: 2, spicy: false, teams: false, lang: 'en', perGame: {} });
   h.emit('host:settings', { rounds: null, timerScale: 0.6, spicy: true });
   await until(() => h.state.settings.rounds === null && h.state.settings.timerScale === 0.6 && h.state.settings.spicy, 'reset');
+});
+
+test('per-game rounds and timer: offered per game, override ⚙ Settings for that game only, nonsense refused', async () => {
+  const h = await makeHost(srv);
+  await until(() => h.state && h.state.availableGames, 'the TV has the game list');
+  const play = (id) => h.state.availableGames.find((g) => g.id === id).play;
+  assert.deepStrictEqual(play('trivia').rounds.opts, [5, 10, 15, 20]);
+  assert.strictEqual(play('looncall').timed, false, 'a rhythm game has no answer timer');
+  assert.strictEqual(play('telephone').rounds, null, 'one step per player: no length to pick');
+  h.emit('host:settings', { rounds: 5, timerScale: 1.5 });
+  h.emit('host:settings', { game: 'trivia', rounds: 15 });
+  h.emit('host:settings', { game: 'trivia', timerScale: 2 });
+  h.emit('host:settings', { game: 'trivia', rounds: 7 }); // not one of trivia's choices
+  h.emit('host:settings', { game: 'looncall', timerScale: 2 }); // real-time: no timer choice
+  h.emit('host:settings', { game: 'telephone', rounds: 3 }); // sizes itself
+  h.emit('host:settings', { game: 'nosuchgame', rounds: 5 });
+  h.emit('host:settings', { game: 'closest', rounds: 8 });
+  await until(() => h.state.settings.perGame.closest, 'marker applied');
+  assert.deepStrictEqual(h.state.settings.perGame, { trivia: { rounds: 15, timerScale: 2 }, closest: { rounds: 8 } });
+  assert.strictEqual(h.state.settings.rounds, 5, 'the room-wide default is untouched');
+  h.emit('host:settings', { game: 'closest', rounds: null }); // back to the default
+  await until(() => !h.state.settings.perGame.closest, 'closest back to default');
+  // What the games actually play.
+  const { roundsFor, timerScaleFor } = require('../../games/play-options');
+  const st = h.state.settings;
+  assert.strictEqual(roundsFor('trivia', st, 10), 15, 'its own choice');
+  assert.strictEqual(roundsFor('closest', st, 10), 5, '⚙ Settings');
+  assert.strictEqual(roundsFor('looncall', { ...st, rounds: 10 }, 3), 3, '⚙ Settings kept within what the game offers');
+  assert.strictEqual(roundsFor('crush', { rounds: null }, 4), 4, 'the game\'s own default');
+  assert.strictEqual(timerScaleFor('trivia', st), 2);
+  assert.strictEqual(timerScaleFor('closest', st), 1.5);
+  assert.strictEqual(timerScaleFor('minigames', st), 1, 'real-time games ignore the answer timer');
+});
+
+test('a game plays with its own rounds and timer', async () => {
+  const h = await makeHost(srv);
+  await makePlayer(srv, h.code, 'Ann');
+  await makePlayer(srv, h.code, 'Ben');
+  h.emit('host:settings', { rounds: 3 });
+  h.emit('host:settings', { game: 'closest', rounds: 8 });
+  h.emit('host:settings', { game: 'closest', timerScale: 2 });
+  await until(() => h.state.settings.perGame.closest && h.state.settings.perGame.closest.timerScale === 2, 'set');
+  h.emit('host:startGame', { gameId: 'closest' });
+  const st = await until(() => h.state.phase === 'cg-guess' && h.state, 'guessing');
+  assert.strictEqual(st.gameState.totalRounds, 8, 'its own 8 questions, not ⚙ Settings\' 3');
+  const left = st.gameState.endsAt - Date.now();
+  h.emit('host:endGame');
+  await until(() => h.state.phase === 'lobby' || h.state.phase === 'gameover', 'ended');
+  h.emit('host:settings', { game: 'closest', timerScale: null });
+  await until(() => !h.state.settings.perGame.closest.timerScale, 'timer back to default');
+  h.emit('host:startGame', { gameId: 'closest' });
+  const st2 = await until(() => h.state.phase === 'cg-guess' && h.state, 'guessing again');
+  const left2 = st2.gameState.endsAt - Date.now();
+  assert.ok(left > left2 * 1.7, `Extra slow gives about twice the time (${left} vs ${left2} ms)`);
 });
 
 test('players cannot use host commands', async () => {

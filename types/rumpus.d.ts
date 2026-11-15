@@ -13,6 +13,8 @@ interface RoomSettings {
   teams: boolean;
   /** UI + content language (French pack for prompt games). */
   lang?: 'en' | 'fr';
+  /** A game's own rounds / timer, overriding the room-wide ones for that game (games/play-options.js). */
+  perGame?: Record<string, { rounds?: number; timerScale?: number }>;
 }
 
 interface Player {
@@ -158,6 +160,8 @@ interface RumpusNS {
   /** Message in a Bottle: keep the drawings a state brings (`gameState.images`, sent once per screen). */
   learnPics(gameState: any): void;
   esc(s: unknown): string;
+  /** The latest room state the page got (null before the first). */
+  getState(): any;
   store(key: string, val?: any): any;
   morph(target: Element, html: string): void;
   fit(el: HTMLElement, opts?: { max?: number; min?: number; maxLines?: number }): void;

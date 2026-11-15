@@ -39,7 +39,7 @@ test('every game rolls its dice from its seed: the same seed deals the same game
       ['trivia', (g) => [g.chooserId, g.categoryOptions]],
       ['quiplash', (g) => g.matchups.map((/** @type {any} */ m) => m.authors)],
       ['imposter', (g) => [g.imposter, g.order]],
-      ['crush', (g) => [...g.agendas]],
+      ['crush', (g) => g.order],
     ])) {
       const Game = require(`../../games/${file}`);
       const deal = () => { const g = new Game(mkRoom(), () => {}); try { g.start(); return JSON.stringify(read(g)); } finally { g.destroy(); } };

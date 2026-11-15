@@ -113,6 +113,13 @@
       draw(g, w, h);
     });
   }
+  /** This round's tap / stroke count on this phone (kept across redraws of the screen). */
+  let mgCount = { key: '', n: 0 };
+  /** @param {string} key */
+  const mgTally = (key) => { if (mgCount.key !== key) mgCount = { key, n: 0 }; return mgCount; };
+  /** Tug / Canoe: has this round's clock (server time, as the phone first saw it) run out?
+   * @param {any} g @param {() => number} now */
+  const mgTimeUp = (g, now) => { const end = Number(g.endsAt) || 0; return () => !!end && now() >= end; };
   register('minigames', {
     host(s) {
       const g = s.gameState;
@@ -181,7 +188,7 @@
       if (s.phase === 'mg-result') return `<h1>${you.gained ? `+${you.gained}! 🎉` : 'Next one! 💪'}</h1>`;
       if (you.early) return g.mini === 'quickdraw' ? '<h1>SPLASH! 💦</h1><p>Too early!</p>' : g.mini === 'spot' ? '<h1>Wrong bird! 🦆</h1><p>That was a duck.</p>' : '<h1>Oops! ✗</h1><p>Not quite the right order.</p>';
       switch (g.mini) {
-        case 'tug': return `${badge}<button class="mg-big tap" data-mg="tap">TAP!</button><p class="mg-count">0</p>`;
+        case 'tug': return `${badge}<button class="mg-big tap" data-mg="tap">TAP!</button><p class="mg-count" data-live>0</p>`;
         case 'quickdraw':
           if (you.done) return waiting('Tapped');
           return `<button class="mg-big ${g.sub === 'go' ? 'go' : 'wait'}" data-mg="draw">${g.sub === 'go' ? 'GO!' : 'WAIT…'}</button>`;
@@ -199,18 +206,18 @@
         case 'spot':
           if (you.done) return waiting('Spotted!');
           return `<h2>Which spot is the loon in? (look at the TV)</h2><div class="spot-pad">${Array.from({ length: g.cells || 12 }, (_, i) => sendBtn({ cell: i }, String(i + 1), 'vote-btn spot-btn')).join('')}</div>`;
-        case 'swat': return `<p class="mg-count" data-mg-swats>0 swatted</p><canvas class="mg-canvas mg-field" data-mg-swat></canvas>`;
+        case 'swat': return `<p class="mg-count" data-mg-swats data-live>0 swatted</p><canvas class="mg-canvas mg-field" data-mg-swat></canvas>`;
         case 'balance':
           if (you.done) return waiting('Balanced');
-          return `<p class="mg-count" data-mg-bal>Put your finger in the ring</p><canvas class="mg-canvas mg-field" data-mg-balance></canvas>`;
-        case 'paddle': return `${badge}<p class="mg-count" data-mg-strokes>0 strokes</p><div class="paddle-pad"><button class="mg-big paddle" data-mg-side="L">⬅ LEFT</button><button class="mg-big paddle" data-mg-side="R">RIGHT ➡</button></div>`;
+          return `<p class="mg-count" data-mg-bal data-live>Put your finger in the ring</p><canvas class="mg-canvas mg-field" data-mg-balance></canvas>`;
+        case 'paddle': return `${badge}<p class="mg-count" data-mg-strokes data-live>0 strokes</p><div class="paddle-pad"><button class="mg-big paddle" data-mg-side="L">⬅ LEFT</button><button class="mg-big paddle" data-mg-side="R">RIGHT ➡</button></div>`;
         case 'simon':
           if (you.done) return waiting('Sequence in');
           if (g.sub !== 'go') return watchTv('<p>Remember the colours of the sparks…</p>');
           return `<p class="mg-count" data-mg-seq>${'○ '.repeat(g.length || 0)}</p><div class="simon-pad">${MG_COLOURS.map((c, i) => `<button class="mg-big simon" style="--c:${c}" data-mg-colour="${i}">${MG_COLOUR_NAMES[i]}</button>`).join('')}</div>`;
         case 'stack':
           if (you.done) return waiting('Pile done');
-          return `<p class="mg-count" data-mg-height>0 logs</p><canvas class="mg-canvas mg-field" data-mg-stack></canvas><p class="hint">Tap anywhere on the pile to drop the log</p>`;
+          return `<p class="mg-count" data-mg-height data-live>0 logs</p><canvas class="mg-canvas mg-field" data-mg-stack></canvas><p class="hint">Tap anywhere on the pile to drop the log</p>`;
         default: return watchTv();
       }
     },
@@ -220,11 +227,26 @@
       const btn = /** @type {HTMLElement | null} */ (root.querySelector('[data-mg]'));
       const kind = btn ? btn.dataset.mg : '';
       if (btn && kind === 'tap') {
-        let pending = 0, total = 0;
+        let pending = 0;
+        // The count belongs to the round, not to this drawing of the screen: a redraw mid-race used to
+        // start it again at 0 while the TV kept the real total.
+        const tally = mgTally(`tug|${g.round}|${g.playStart}`);
+        let lastTap = 0;
         const label = /** @type {HTMLElement} */ (root.querySelector('.mg-count'));
-        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); pending++; total++; label.textContent = String(total); window.Rumpus.haptic(8); });
-        const t = setInterval(() => { if (pending) { api.send({ tap: pending }); pending = 0; } }, 150);
-        api.onCleanup(() => clearInterval(t));
+        label.textContent = String(tally.n);
+        const over = mgTimeUp(g, now);
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          if (over()) return; // the clock is out: a tap now would count on the phone but not on the TV
+          // Faster than the TV's cap (25 a second, games/minigames.js) isn't a person: don't show a tap the TV won't count.
+          const t = performance.now();
+          if (t - lastTap < 40) return;
+          lastTap = t;
+          pending++; tally.n++; label.textContent = String(tally.n); window.Rumpus.haptic(8);
+        });
+        const flush = () => { if (pending) { api.send({ tap: pending }); pending = 0; } };
+        const t = setInterval(() => { flush(); if (over()) { btn.classList.add('done'); btn.textContent = 'TIME!'; } }, 100);
+        api.onCleanup(() => { clearInterval(t); flush(); });
       } else if (btn && kind === 'draw') {
         btn.addEventListener('pointerdown', (e) => { e.preventDefault(); window.Rumpus.haptic(20); api.send({ tap: 1 }); });
       } else if (btn && kind === 'roast') {
@@ -318,18 +340,27 @@
       // Canoe Sprint: only LEFT/RIGHT alternation counts.
       const sides = root.querySelectorAll('[data-mg-side]');
       if (sides.length) {
-        let last = '', pending = 0, total = 0;
+        let last = '', pending = 0;
+        const tally = mgTally(`paddle|${g.round}|${g.playStart}`);
+        let lastStroke = 0;
         const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-strokes]'));
+        label.textContent = `${tally.n} strokes`;
+        const over = mgTimeUp(g, now);
         sides.forEach((b) => b.addEventListener('pointerdown', (e) => {
           e.preventDefault();
+          if (over()) return;
           const side = /** @type {HTMLElement} */ (b).dataset.mgSide || '';
           if (side === last) { window.Rumpus.haptic([5, 30, 5]); return; } // same side twice: no stroke
-          last = side; pending++; total++;
-          label.textContent = `${total} strokes`;
+          const t = performance.now();
+          if (t - lastStroke < 50) return; // over the TV's 20 strokes a second
+          lastStroke = t;
+          last = side; pending++; tally.n++;
+          label.textContent = `${tally.n} strokes`;
           window.Rumpus.haptic(10);
         }));
-        const t = setInterval(() => { if (pending) { api.send({ strokes: pending }); pending = 0; } }, 150);
-        api.onCleanup(() => clearInterval(t));
+        const flush = () => { if (pending) { api.send({ strokes: pending }); pending = 0; } };
+        const t = setInterval(flush, 100);
+        api.onCleanup(() => { clearInterval(t); flush(); });
       }
       // Campfire Sequence: tap the colours in order.
       // The pad only appears when the round moves from "watch" to "go" — the same screen, patched in
@@ -664,19 +695,26 @@
   });
 
   // ---------------------------------------------------------------- Cottage Crush
-  /** @param {{ nickname: string, agenda: string }[]} list */
-  const exposedHtml = (list) => (list && list.length
-    ? `<p class="crush-exposed">🕵️ Exposed: ${list.map((x) => `${av(x.nickname)} ${esc(x.nickname)} is the <b>${esc(x.agenda)}</b>`).join(' · ')}</p>` : '');
   /** Cottage Crush phone: who the next note goes to (picked on a tile first, then the line). @type {string | null} */
   let crTo = null;
+  /** The last note this phone sent (shown as "✓ Sent to …" until the next action). @type {string | null} */
+  let crLast = null;
   let crKey = '';
-  /** The night's three steps, with the current one lit. @param {number} at 0 notes, 1 replies, 2 dates, 3 reveal */
-  const crSteps = (at) => `<ol class="crush-steps">${['💌 Notes', '✍️ Replies', '🌙 Dates'].map((t, i) => `<li class="${i === at ? 'on' : i < at ? 'done' : ''}">${t}</li>`).join('')}</ol>`;
+  /** The night's three steps, with the current one lit. @param {number} at 0 notes, 1 replies, 2 dates */
+  const crSteps = (at) => `<ol class="crush-steps">${['💌 Notes', '✍️ Replies', '🌙 Date'].map((t, i) => `<li class="${i === at ? 'on' : i < at ? 'done' : ''}">${t}</li>`).join('')}</ol>`;
+  /** "2 of 3" as pips. @param {number} left @param {number} max */
+  const crPips = (left, max) => `<span class="crush-pips" aria-hidden="true">${'💌'.repeat(Math.max(0, left))}${'▫️'.repeat(Math.max(0, max - left))}</span>`;
+  /** The one box that says what this phone can do now. @param {string} html */
+  const crTodo = (html) => `<div class="crush-todo" data-cr-todo>${html}</div>`;
+  /** @param {any[]} list @param {'in' | 'out'} dir */
+  const crNotes = (list, dir) => `<ul class="crush-list">${list.map((n) => `<li class="crush-note"><b>${dir === 'out' ? `To ${esc(n.to)}` : `From ${esc(n.from)}`}:</b> “${esc(n.text)}”
+      <br><span class="byline">${n.reply ? `${dir === 'out' ? `↩ ${esc(n.to)} replied` : '↩ You replied'}: <b>${esc(n.reply)}</b>` : dir === 'out' ? '↩ no reply yet' : '↩ not answered yet'}</span></li>`).join('')}</ul>`;
   register('crush', {
     /** @param {any} s */
     narrate(s) {
       const g = s.gameState;
       if (s.phase === 'cr-mingle') return g.evening === 1 ? 'Welcome to the singles weekend. Slip a note to someone special.' : `Evening ${g.evening}. The dock lights are on.`;
+      if (s.phase === 'cr-reply') return 'Time to answer your admirers.';
       if (s.phase === 'cr-pick') return 'Who will you ask out tonight?';
       if (s.phase === 'cr-reveal') { const p = (g.pairs || []).find((/** @type {{ mutual: boolean }} */ x) => x.mutual); return p ? `It's a date: ${p.a} and ${p.b}!` : 'Nobody matched tonight. Ouch.'; }
       return null;
@@ -685,98 +723,93 @@
       const g = s.gameState;
       const tag = `<p class="round-tag">Evening ${g.evening} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
       if (s.phase === 'cr-mingle') {
-        return `${tag}<h1>💌 Mingle!</h1><p class="big-sub">Slip notes to your crushes on your phones. ${T}</p>
+        return `${tag}<h1>💌 Mingle!</h1><p class="big-sub">Everyone has 3 notes to slip to their crushes, on the phones. ${T}</p>
           <ul class="crush-admirers">${g.admirers.map((/** @type {{ nickname: string, count: number }} */ x) => `<li>${av(x.nickname)} ${esc(x.nickname)} has ${x.count} admirer${x.count === 1 ? '' : 's'} 👀</li>`).join('')}</ul>
-          <p class="count">${g.notesSent} notes sent${g.winks ? ` · 😉 ${g.winks} wink${g.winks === 1 ? '' : 's'}` : ''}</p>${exposedHtml(g.exposed)}`;
+          ${count(g.notesSent, g.notesMax, 'notes sent')}${waitingRow(g.waitingOn, 'writing')}`;
       }
-      if (s.phase === 'cr-reply') return `${tag}<h1>✍️ Replies</h1><p class="big-sub">Answer your admirers… ${T}</p><p class="count">${g.repliesSent} / ${g.notesSent} replied</p>${exposedHtml(g.exposed)}`;
-      if (s.phase === 'cr-pick') return `${tag}<h1>🌙 Who will you ask out?</h1><p class="big-sub">Pick a date on your phone — or stay in. ${T}</p>${count(g.pickedCount, g.totalPlayers, 'picked')}`;
+      if (s.phase === 'cr-reply') return `${tag}<h1>✍️ Replies</h1><p class="big-sub">Answer your admirers — they'll see it before they pick a date. ${T}</p>${count(g.repliesSent, g.notesSent, 'replied')}${waitingRow(g.waitingOn, 'replying')}`;
+      if (s.phase === 'cr-pick') return `${tag}<h1>🌙 Who will you ask out?</h1><p class="big-sub">Pick a date on your phone — or stay in. It's a date only if they pick you too. ${T}</p>${count(g.pickedCount, g.totalPlayers, 'picked')}${waitingRow(g.waitingOn, 'deciding')}`;
       return `${tag}<h1>The dock reveal</h1><ol class="answers crush-pairs">${g.pairs.map((/** @type {any} */ p, /** @type {number} */ i) => `<li style="animation-delay:${(i * g.stepMs) / 1000}s" class="${p.mutual ? 'winner' : ''}">
-          ${p.b === null ? `${av(p.a)} ${esc(p.a)} stayed in 🛋` : p.mutual ? `${av(p.a)} ${esc(p.a)} ❤️ ${av(p.b)} ${esc(p.b)} — it's a date!` : `${av(p.a)} ${esc(p.a)} asked ${av(p.b)} ${esc(p.b)}… 💔`}</li>`).join('')}</ol>
-          ${(g.bonuses || []).map((/** @type {any} */ x, /** @type {number} */ i) => `<p class="crush-bonus" style="animation-delay:${((g.pairs.length + i) * g.stepMs) / 1000}s">${x.kind === 'matchmaker'
-            ? `💘 ${av(x.by)} ${esc(x.by)} was the <b>Matchmaker</b> — set up ${esc(x.a)} &amp; ${esc(x.b)}! +${x.gained}`
-            : `👂 ${av(x.by)} ${esc(x.by)} the <b>Gossip</b> called ${esc(x.a)} &amp; ${esc(x.b)}! +${x.gained}`}</p>`).join('')}${exposedHtml(g.exposed)}`;
+          ${p.b === null ? `${av(p.a)} ${esc(p.a)} stayed in 🛋` : p.mutual ? `${av(p.a)} ${esc(p.a)} ❤️ ${av(p.b)} ${esc(p.b)} — it's a date!` : `${av(p.a)} ${esc(p.a)} asked ${av(p.b)} ${esc(p.b)}… 💔`}</li>`).join('')}</ol>`;
     },
     player(s) {
       const g = s.gameState, you = s.you;
       /** @typedef {{ id: string, nickname: string }} Target */
-      /** Two-name picker for the Matchmaker's setup / the Gossip's bet. @param {string} kind @param {string} label @param {Target[]} list */
-      const pairForm = (kind, label, list) => `<form class="crush-pair" data-kind="${kind}">
-          <select name="a">${list.map((/** @type {Target} */ t) => `<option value="${esc(t.id)}">${esc(t.nickname)}</option>`).join('')}</select> &amp;
-          <select name="b">${list.map((/** @type {Target} */ t, /** @type {number} */ i) => `<option value="${esc(t.id)}" ${i === 1 ? 'selected' : ''}>${esc(t.nickname)}</option>`).join('')}</select>
-          <button type="submit">${label}</button></form>`;
-      // Gossip includes their own name in the bet list (they might date someone themselves).
-      const gossipTargets = [{ id: you.playerId, nickname: you.nickname }, ...g.targets];
-      let side = '';
-      if (you.agenda && you.agenda.id === 'matchmaker') {
-        side = you.canSetup && g.targets.length >= 2 ? `<div class="crush-side"><b>💘 Set two people up (once per game)</b>${pairForm('setup', 'Set them up', g.targets)}</div>`
-          : you.setup ? `<p class="crush-side">💘 Your setup: ${esc(you.setup.pair[0])} &amp; ${esc(you.setup.pair[1])}${you.setup.paid ? ' — it worked! ✓' : ''}</p>` : '';
-      } else if (you.agenda && you.agenda.id === 'gossip') {
-        const heard = (you.heard || []).map((/** @type {{ from: string, to: string }} */ h) => `<li>${esc(h.from)} → ${esc(h.to)}</li>`).join('');
-        side = `<div class="crush-side"><b>👂 You heard tonight</b>${heard ? `<ul class="crush-heard">${heard}</ul>` : '<p class="hint">No whispers yet…</p>'}
-          ${you.canPredict ? `<b>Bet on a couple (+200 if they date)</b>${pairForm('predict', 'Bet', gossipTargets)}` : you.prediction ? `<p>Your bet: ${esc(you.prediction[0])} &amp; ${esc(you.prediction[1])}</p>` : ''}</div>`;
-      }
-      // One free anonymous wink a night (+50 if it turns into a date) — for whoever is waiting.
-      // Extras fold away (roomy screens): a wink for whoever is waiting, the inbox, the agenda.
-      const wink = you.winked ? '<p class="hint">😉 Wink sent</p>'
-        : `<details class="crush-fold"><summary>😉 Wink at someone <small>(free, anonymous)</small></summary><div class="crush-people small">${g.targets.map((/** @type {Target} */ t) => sendBtn({ wink: t.id }, `${av(t.nickname, 'avatar')}<span>${esc(t.nickname)}</span>`, 'crush-person')).join('')}</div></details>`;
-      const winksIn = you.winksIn ? `<p class="crush-exposed">😉 Someone winked at you${you.winksIn > 1 ? ` (${you.winksIn}×)` : ''}!</p>` : '';
-      const role = (you.agenda ? `<details class="crush-agenda"><summary>🎭 Secret agenda: <b>${esc(you.agenda.name)}</b></summary><p>${esc(you.agenda.desc)}</p>${s.phase === 'cr-reveal' ? '' : side}</details>` : '');
-      /** @param {any[]} list @param {boolean} mine */
-      const notes = (list, mine) => list.map((n) => `<li class="crush-note"><b>${mine ? '→ ' + esc(n.to) : esc(n.from)}:</b> ${esc(n.text)}${n.reply ? `<br><span class="byline">↩ ${esc(n.reply)}</span>` : ''}</li>`).join('');
       const key = `${g.evening}|${s.phase}`;
-      if (key !== crKey) { crKey = key; crTo = null; }
+      if (key !== crKey) { crKey = key; crTo = null; crLast = null; }
+      const sentLine = crLast ? `<p class="crush-sent" role="status">✓ Note sent to <b>${esc(crLast)}</b></p>` : '';
       if (s.phase === 'cr-mingle') {
-        const inbox = you.inbox.length ? `<details class="crush-fold" open><summary>💌 ${you.inbox.length} note${you.inbox.length === 1 ? '' : 's'} for you</summary><ul class="crush-list">${notes(you.inbox, false)}</ul></details>` : '';
-        if (you.notesLeft <= 0) return crSteps(0) + role + waiting('Notes sent', 'Watch the TV for gossip…') + winksIn + inbox + wink;
+        const inbox = you.inbox.length ? `<h3>💌 Notes you got (${you.inbox.length})</h3><p class="hint">You'll answer them in the next step.</p>${crNotes(you.inbox, 'in')}` : '';
+        const outbox = you.outbox.length ? `<h3>📤 Notes you sent</h3>${crNotes(you.outbox, 'out')}` : '';
+        if (you.notesLeft <= 0) {
+          return crSteps(0) + crTodo(`✓ All ${you.notesMax} notes sent ${crPips(0, you.notesMax)}<br><small>Next: reply to the notes you got</small>`) + sentLine + inbox + outbox;
+        }
+        const todo = crTodo(`💌 Notes left to send: <b>${you.notesLeft} of ${you.notesMax}</b> ${crPips(you.notesLeft, you.notesMax)}`);
         const to = crTo && g.targets.find((/** @type {Target} */ t) => t.id === crTo);
         if (!to) {
-          return `${crSteps(0)}${role}<h2>💌 Who gets a note?</h2><p class="hint">${you.notesLeft} note${you.notesLeft === 1 ? '' : 's'} left · ${you.agenda && you.agenda.id === 'wallflower' ? "you're the Wallflower: they won't see your name" : 'they’ll see it’s from you'}</p>
-            <div class="crush-people">${g.targets.map((/** @type {Target} */ t) => `<button type="button" class="crush-person" data-cr-to="${esc(t.id)}">${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span></button>`).join('')}</div>${winksIn}${inbox}`;
+          const sentTo = (/** @type {string} */ n) => you.outbox.filter((/** @type {any} */ o) => o.to === n).length;
+          return `${crSteps(0)}${todo}${sentLine}<h2>Tap who gets a note</h2>
+            <div class="crush-people">${g.targets.map((/** @type {Target} */ t) => `<button type="button" class="crush-person" data-cr-to="${esc(t.id)}">${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span>${sentTo(t.nickname) ? `<small>✉ ${sentTo(t.nickname)} sent</small>` : ''}</button>`).join('')}</div>${inbox}`;
         }
-        return `${crSteps(0)}<p class="crush-to-line">To ${av(to.nickname, 'avatar')} <b>${esc(to.nickname)}</b> <button type="button" class="ghost-btn" data-cr-to="">change</button></p>
-          <h2>Pick a line</h2>
+        return `${crSteps(0)}${todo}<p class="crush-to-line">To ${av(to.nickname, 'avatar')} <b>${esc(to.nickname)}</b> <button type="button" class="ghost-btn" data-cr-to="">← change</button></p>
+          <h2>Tap a line to send it</h2>
           <div class="vote-list">${you.cards.map((/** @type {string} */ c) => `<button type="button" class="vote-btn crush-card" data-text="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-          <form class="crush-form"><input name="text" maxlength="80" autocomplete="off" placeholder="…or write your own"><button type="submit">Send</button></form>`;
+          <form class="crush-form"><input name="text" maxlength="80" autocomplete="off" placeholder="…or write your own" required><button type="submit">Send</button></form>`;
       }
       if (s.phase === 'cr-reply') {
         const open = you.inbox.filter((/** @type {any} */ n) => !n.reply);
-        if (!open.length) return crSteps(1) + role + waiting(you.inbox.length ? 'All replied' : 'No notes tonight 😢', 'Waiting for the others…') + winksIn + (you.outbox.length ? `<details class="crush-fold"><summary>📤 Your sent notes</summary><ul class="crush-list">${notes(you.outbox, true)}</ul></details>` : '') + wink;
+        const outbox = you.outbox.length ? `<h3>📤 Replies to your notes</h3>${crNotes(you.outbox, 'out')}` : '';
+        if (!open.length) {
+          return crSteps(1) + crTodo(you.inbox.length ? `✓ All ${you.inbox.length} answered<br><small>Next: pick your date</small>` : 'Nobody wrote to you tonight 😢<br><small>Watch for replies to your notes below</small>') + outbox;
+        }
         const n = open[0];
-        return `${crSteps(1)}<p class="hint">${open.length > 1 ? `${open.length} notes to answer` : 'Last one!'}</p><h2>${av(n.from, 'avatar')} ${esc(n.from)} wrote:</h2><p class="prompt">“${esc(n.text)}”</p><p>Reply:</p>
-          <div class="vote-list crush-replies">${you.replyCards.map((/** @type {string} */ r) => sendBtn({ reply: n.id, text: r }, esc(r))).join('')}</div>`;
+        return `${crSteps(1)}${crTodo(`✍️ Notes to answer: <b>${open.length}</b> <small>(${you.inbox.length - open.length} of ${you.inbox.length} done)</small>`)}
+          <div class="crush-note crush-open"><b>${av(n.from, 'avatar')} ${esc(n.from)} wrote:</b><p class="prompt">“${esc(n.text)}”</p></div>
+          <p class="hint">Your reply goes only to ${esc(n.from)}. Tap one, or write your own:</p>
+          <div class="crush-emoji">${you.replyEmoji.map((/** @type {string} */ r) => sendBtn({ reply: n.id, text: r }, esc(r), 'vote-btn crush-emo')).join('')}</div>
+          <div class="vote-list crush-replies">${you.replyCards.map((/** @type {string} */ r) => sendBtn({ reply: n.id, text: r }, esc(r))).join('')}</div>
+          <form class="crush-reply-form" data-reply="${n.id}"><input name="text" maxlength="${you.replyMax}" autocomplete="off" placeholder="Your own reply…" required><button type="submit">Reply</button></form>`;
       }
       if (s.phase === 'cr-pick') {
-        if (you.picked) return crSteps(2) + role + waiting('Date picked 🌙', 'If they picked you too, it\'s a date!');
-        return `${crSteps(2)}${role}${winksIn}<h2>Who will you ask out tonight?</h2><p class="hint">It's a date only if they pick you too.</p><div class="crush-people">` +
-          g.targets.map((/** @type {{ id: string, nickname: string }} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span>`, 'crush-person')).join('') +
-          '</div><div class="vote-list">' + sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>';
+        const recap = (you.inbox.length || you.outbox.length) ? `<details class="crush-fold"><summary>📜 Tonight's notes (${you.inbox.length} in · ${you.outbox.length} out)</summary>${you.inbox.length ? crNotes(you.inbox, 'in') : ''}${you.outbox.length ? crNotes(you.outbox, 'out') : ''}</details>` : '';
+        if (you.picked) return crSteps(2) + crTodo(you.pick ? `✓ You asked <b>${esc(you.pick)}</b> out<br><small>If they picked you too, it's a date!</small>` : '✓ Staying in tonight 🛋') + recap;
+        return `${crSteps(2)}${crTodo('🌙 Last step: pick <b>one</b> date (or stay in)')}<p class="hint">It's a date only if they pick you too. Staying in costs points.</p><div class="crush-people">` +
+          g.targets.map((/** @type {Target} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span>`, 'crush-person')).join('') +
+          '</div><div class="vote-list">' + sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>' + recap;
       }
       const d = you.date;
       return `<h1>${!d ? 'Watch the dock 📺' : d.mutual ? `❤️ A date with ${esc(d.with)}!` : d.with === null ? '🛋 A quiet night in' : d.askedBy ? `💘 ${esc(d.with)} asked you out!` : `💔 ${esc(d.with)} had other plans`}</h1>
         ${d ? `<p>${d.gained >= 0 ? '+' : ''}${d.gained} points</p>` : ''}`;
     },
     bind(root, api) {
-      root.querySelectorAll('.crush-pair').forEach((f) => f.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const form = /** @type {HTMLFormElement} */ (f);
-        const pair = [/** @type {HTMLSelectElement} */ (form.elements.namedItem('a')).value, /** @type {HTMLSelectElement} */ (form.elements.namedItem('b')).value];
-        if (pair[0] !== pair[1]) api.send({ [form.dataset.kind || 'setup']: pair });
-      }));
-      // Pick who the note is for (a tile), then the line.
-      root.querySelectorAll('[data-cr-to]').forEach((b) => b.addEventListener('click', () => {
-        crTo = /** @type {HTMLElement} */ (b).dataset.crTo || null;
-        window.Rumpus.haptic(10);
+      // Delegated on the screen (removed on cleanup): buttons that a later update adds still work.
+      const sendNote = (/** @type {string} */ text) => {
+        if (!crTo || !text.trim()) return;
+        const t = (api.state.gameState.targets || []).find((/** @type {any} */ x) => x.id === crTo);
+        api.send({ to: crTo, text });
+        crLast = t ? t.nickname : null;
+        crTo = null;
         api.rerender();
-      }));
-      const sendNote = (/** @type {string} */ text) => { if (crTo) { api.send({ to: crTo, text }); crTo = null; } };
-      root.querySelectorAll('.crush-card').forEach((b) => b.addEventListener('click', () => sendNote(/** @type {HTMLElement} */ (b).dataset.text || '')));
-      const f = /** @type {HTMLFormElement | null} */ (root.querySelector('.crush-form'));
-      if (f) f.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const input = /** @type {HTMLInputElement} */ (f.querySelector('input'));
-        if (input.value.trim()) sendNote(input.value);
-      });
+      };
+      const onClick = (/** @type {Event} */ e) => {
+        const to = window.Rumpus.hit(e.target, '[data-cr-to]');
+        if (to) { crTo = to.dataset.crTo || null; crLast = null; window.Rumpus.haptic(10); api.rerender(); return; }
+        const card = window.Rumpus.hit(e.target, '.crush-card');
+        if (card) { window.Rumpus.haptic(12); sendNote(card.dataset.text || ''); }
+      };
+      const onSubmit = (/** @type {Event} */ e) => {
+        const f = /** @type {HTMLFormElement} */ (e.target);
+        const input = /** @type {HTMLInputElement | null} */ (f.querySelector('input'));
+        if (!input) return;
+        if (f.matches('.crush-form')) { e.preventDefault(); sendNote(input.value); }
+        else if (f.matches('.crush-reply-form')) {
+          e.preventDefault();
+          if (input.value.trim()) { window.Rumpus.haptic(12); api.send({ reply: Number(f.dataset.reply), text: input.value }); }
+        }
+      };
+      root.addEventListener('click', onClick);
+      root.addEventListener('submit', onSubmit);
+      api.onCleanup(() => { root.removeEventListener('click', onClick); root.removeEventListener('submit', onSubmit); });
     },
   });
 
@@ -1483,6 +1516,8 @@
     if (ref.startsWith('cfimg:')) return esc(pics.get(ref.slice(6)) || '');
     return /^data:image\//.test(ref) ? esc(ref) : '';
   };
+  /** What this phone last passed on in Message in a Bottle (shown on the waiting screen). @type {{ step: number, image?: string, text?: string } | null} */
+  let telSent = null;
   /** @param {{ type: string, content: string | null, by: string, favs?: number }} e @param {number} i @param {number} ms */
   const entryHtml = (e, i, ms) => `
     <div class="chain-entry" style="animation-delay:${(i * ms) / 1000}s">
@@ -1538,10 +1573,16 @@
           g.drawings.map((/** @type {any} */ d) => sendBtn({ key: d.key }, `<img src="${pic(d.image)}" alt="">`, 'doodle-btn')).join('') + '</div>';
       }
       if (you.submitted) {
+        // What you just passed on, so it's clear it went (a fresh pad alone looked like "my drawing was erased").
+        const mine = telSent && telSent.step === g.step ? telSent : null;
+        const sent = mine ? (mine.image ? `<figure class="tel-sent"><img src="${esc(mine.image)}" alt="your drawing"><figcaption>✓ Your drawing was passed on</figcaption></figure>`
+          : `<p class="prompt tel-sent">“${esc(mine.text || '')}”</p>`) : '';
+        const head = `<h1>Passed it on ✓</h1>${sent}`;
         // Scribble pad while the others finish: up to 3 doodles a step float across the TV.
-        if (!you.scribblesLeft || g.stepType === 'spectate') return waiting('Passed it on');
-        return `${waiting('Passed it on')}<p class="hint">While you wait: doodle something and float it across the TV 🍾 (${you.scribblesLeft} left)</p>
-          <div id="scribble-pad"></div><button id="scribble-send" class="wide">Float it 🍾</button>`;
+        if (!you.scribblesLeft || g.stepType === 'spectate') return `${head}<p>Waiting for the others…</p>`;
+        return `${head}<section class="scribble-box"><h3>🍾 Doodle while you wait</h3>
+          <p class="hint">Just for fun: it floats across the TV. ${you.scribblesLeft} of 3 left this step.</p>
+          <div id="scribble-pad" data-live></div><button id="scribble-send" class="wide">Float it on the TV 🍾</button></section>`;
       }
       if (g.stepType === 'write') {
         return `${roundTag(g, 'Step')}<h2>Write something to draw</h2>
@@ -1550,7 +1591,7 @@
       }
       if (g.stepType === 'draw') {
         return `${roundTag(g, 'Step')}<p class="draw-prompt">Draw: <strong>${esc(g.prev && g.prev.content)}</strong> <span class="timer"></span></p>
-          <div id="pad"></div><button id="draw-done" class="wide">Done</button>`;
+          <div id="pad" data-live></div><button id="draw-done" class="wide">Done — pass it on</button>`;
       }
       return `${roundTag(g, 'Step')}<h2>What is this?</h2>
         ${g.prev && g.prev.content ? `<img class="describe-img" src="${pic(g.prev.content)}" alt="">` : '<div class="blank-drawing">(they drew nothing!)</div>'}
@@ -1559,18 +1600,26 @@
     bind(root, api) {
       const fill = /** @type {HTMLElement | null} */ (root.querySelector('[data-fill]'));
       if (fill) fill.addEventListener('click', () => api.send({ text: fill.dataset.fill }));
-      const scribbleEl = root.querySelector('#scribble-pad');
+      const scribbleEl = /** @type {HTMLElement | null} */ (root.querySelector('#scribble-pad'));
       if (scribbleEl) {
         const sp = window.Rumpus.drawPad(scribbleEl);
-        const sendBtn = /** @type {HTMLButtonElement} */ (root.querySelector('#scribble-send'));
-        sendBtn.addEventListener('click', () => { if (sp.isEmpty() || sendBtn.disabled) return; sendBtn.disabled = true; api.send({ scribble: sp.toDataURL() }); });
+        const floatBtn = /** @type {HTMLButtonElement} */ (root.querySelector('#scribble-send'));
+        floatBtn.addEventListener('click', () => {
+          if (sp.isEmpty()) { window.Rumpus.haptic([20, 60, 20]); floatBtn.textContent = 'Draw something first ✏️'; return; }
+          window.Rumpus.haptic(12);
+          api.send({ scribble: sp.toDataURL(240) });
+          sp.clear(); // a fresh page for the next doodle
+          floatBtn.textContent = 'Floated ✓ — draw another?';
+        });
       }
-      const padEl = root.querySelector('#pad');
-      const endsAt = api.state.gameState.endsAt;
+      const padEl = /** @type {HTMLElement | null} */ (root.querySelector('#pad'));
+      const g0 = api.state.gameState;
+      /** @type {(() => void) | null} */
       let autoFn = null;
       if (padEl) {
-        const pad = window.Rumpus.drawPad(padEl);
-        const submit = () => api.send({ image: pad.toDataURL() });
+        // Keyed by step: if the screen is rebuilt mid-drawing, the strokes come back.
+        const pad = window.Rumpus.drawPad(padEl, `tel:${g0.step}`);
+        const submit = () => { const image = pad.toDataURL(); telSent = { step: g0.step, image }; api.send({ image }); };
         /** @type {HTMLElement} */ (root.querySelector('#draw-done')).addEventListener('click', () => {
           if (pad.isEmpty() && !confirm('Submit a blank drawing?')) return;
           submit();
@@ -1578,12 +1627,22 @@
         autoFn = () => { if (!pad.isEmpty()) submit(); };
       } else {
         const input = /** @type {HTMLInputElement | null} */ (root.querySelector('.text-form input'));
-        if (input) autoFn = () => { if (input.value.trim()) api.send({ text: input.value }); };
+        const form = input && input.form;
+        if (form) form.addEventListener('submit', () => { if (input.value.trim()) telSent = { step: g0.step, text: input.value.trim() }; });
+        if (input) autoFn = () => { if (input.value.trim()) { telSent = { step: g0.step, text: input.value.trim() }; api.send({ text: input.value }); } };
       }
-      // Time's up: send whatever they have so it isn't lost.
-      if (autoFn && endsAt) {
-        const t = setTimeout(autoFn, Math.max(0, endsAt - window.Rumpus.time.now() - 300));
-        api.onCleanup(() => clearTimeout(t));
+      // Time's up: send whatever they have so it isn't lost. Checked against the latest clock (a
+      // "hurry up" vote cuts it to 10 s after this screen was drawn).
+      if (autoFn) {
+        const fire = autoFn;
+        let fired = false;
+        const t = setInterval(() => {
+          const st = window.Rumpus.getState && window.Rumpus.getState();
+          const endsAt = st && st.gameState && st.gameState.endsAt;
+          if (fired || !endsAt || (st.you || {}).submitted) return;
+          if (endsAt - window.Rumpus.time.now() < 700) { fired = true; fire(); }
+        }, 200);
+        api.onCleanup(() => clearInterval(t));
       }
     },
   });
