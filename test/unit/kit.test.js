@@ -28,6 +28,17 @@ test('flash meter: black/white every 100 ms is 5 flashes a second; a steady scre
   assert.ok(m.worst().perSecond <= 3);
 });
 
+test('flash meter: a wipe sweeping across the screen (each part dark for a moment, a frame apart) is one flash, not one per frame', () => {
+  const m = flashMeter();
+  // 16 columns wide; a 2-column dark band moves 2 columns a frame over a bright screen (a screen-change wipe).
+  for (let i = 0; i < 12; i++) m.frame({ w: 16, h: 12, px: (x) => (i >= 1 && i <= 8 && Math.floor(x / 2) === i - 1 ? [0, 0, 0] : [255, 255, 255]) }, i * 100);
+  assert.strictEqual(m.worst().perSecond, 1);
+  m.reset();
+  // The same band going back and forth 3 times a second over the same place: 5+ flashes there, counted.
+  for (let i = 0; i < 20; i++) m.frame({ w: 16, h: 12, px: (x) => (i % 2 && x < 8 ? [0, 0, 0] : [255, 255, 255]) }, i * 100);
+  assert.ok(m.worst().perSecond >= 4, `half the screen strobing (${m.worst().perSecond}/s)`);
+});
+
 test('flash meter: a small flashing corner (under 10% of the screen) does not count', () => {
   const m = flashMeter();
   for (let i = 0; i < 20; i++) m.frame({ w: 16, h: 12, px: (x, y) => (x < 2 && y < 2 && i % 2 ? [255, 255, 255] : [0, 0, 0]) }, i * 100);

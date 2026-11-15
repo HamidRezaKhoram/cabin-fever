@@ -976,6 +976,16 @@ body.host .phase-view .big-sub, body.host .storm-hidden { font-size: calc(max(28
 body.host .phase-view .pname, body.host .phase-view .votes, body.host .storm-hunch,
 body.host .storm-event b, body.host .storm-event span { font-size: calc(max(28px, 2.6vh) / var(--unzoom75, 1)); }
 body.host .tt-calls { font-size: calc(max(28px, 3vh) / var(--unzoom75, 1)); }
+/* Nov 15 nightly: Storm's final names and Two Truths' "… confessed:" line didn't grow at all (26–27 px at
+   74–87% zoom); Storm's event card is one card, not one per player, so it grows down to a 65% zoom (its talk
+   screen zooms to ~72%: at the 75% limit its title showed at 27 px). */
+/* Storm's labels all keep 28 px: its screens zoom 72–90% depending on names and events, so a floor at 75%
+   only moved the shortfall from one label to the next. Names and roles (one per player) grow down to 70%. */
+body.host .phase-view.in-game { --unzoom70: max(var(--shrink, 1), 0.7); }
+body.host .storm-role b, body.host .storm-role span:not(.votes), body.host .storm-crew figcaption { font-size: calc(max(28px, 2.8vh) / var(--unzoom70, 1)); }
+body.host .phase-view.in-game p.prompt { font-size: calc(max(28px, 3vh) / var(--unzoom)); }
+body.host .tt-by { font-size: calc(max(28px, 3.4vh) / var(--unzoom75, 1)); }
+body.host .phase-view.in-game .storm-event b, body.host .phase-view.in-game .storm-event span { font-size: calc(max(28px, 2.6vh) / max(var(--shrink, 1), 0.65)); }
 body.host .storm-mark { font-size: calc(max(28px, 3.4vh) / var(--unzoom75, 1)); }
 body.host .phase-view .big-sub, body.host .storm-hidden, body.host .tt-calls, body.host .storm-mark { font-size: calc(max(28px, 3.2vh) / var(--unzoom)); }
 body.host .podium .pts { font-size: max(28px, 2.6vh); }
@@ -1229,7 +1239,7 @@ body.play #text-size, body.play #cb-btn { min-height: 48px; min-width: 48px; }
 body.host .game-detail .detail-actions { display: flex; justify-content: center; align-items: center; gap: 1.4vw; flex-wrap: wrap; }
 body.host .game-detail .lineup-add { margin: 0; }
 /* A game's own length / timer (override ⚙ Settings for that game). Real selects: the remote reaches them. */
-body.host .game-detail .detail-opt { display: inline-flex; align-items: center; gap: 0.5vw; font-family: var(--body); }
+body.host .game-detail .detail-opt { display: inline-flex; align-items: center; gap: 0.5vw; margin: 0; font-family: var(--body); font-size: inherit; color: var(--ink); } /* not the forms' 22 px label */
 body.host .game-detail .detail-opt select { width: auto; font-size: max(28px, 2.4vh); padding: 0.3vh 0.8vw; }
 body.host .game-detail .detail-realtime { color: var(--dim); }
 /* The slide-in starts below the box: keep it inside, or the stage measures it as overflow and zooms. */
