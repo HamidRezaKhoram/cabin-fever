@@ -5,9 +5,11 @@
  *   const stop = sampleFlashes(page, meter, 100);   // tiny screenshots every 100 ms (CDP)
  *   …; await stop(); meter.worst() → { perSecond, at }
  * A "flash" here: a pair of opposing changes in relative luminance of ≥ 10% where the darker state is
- * below 0.8, in at least `minArea` of the screen at once (grid cells). Sampling at ~10 Hz sees flashing
- * up to ~5 Hz — enough for the 3-per-second line. Screenshots cost the page time: don't mix this pass
- * with speed measurements.
+ * below 0.8. They are counted per area (grid cells), as WCAG counts them: a second has N flashes when at
+ * least `minArea` of the screen flashed N times in it. (Counting the frames in which some 10% of the screen
+ * finished a flash made one wipe sweeping across the screen — each part flashing once, a frame apart —
+ * read as 4–6 flashes.) Sampling at ~10 Hz sees flashing up to ~5 Hz — enough for the 3-per-second line.
+ * Screenshots cost the page time: don't mix this pass with speed measurements.
  */
 'use strict';
 const zlib = require('zlib');
@@ -48,8 +50,10 @@ function luminance([r, g, b]) {
 /** Counts flashes from frames. @param {{ cols?: number, rows?: number, minArea?: number }} [o] */
 function flashMeter({ cols = 8, rows = 6, minArea = 0.1 } = {}) {
   /** @type {number[] | null} */ let last = null;
-  const dir = new Array(cols * rows).fill(0); // last change per cell: +1 brighter, -1 darker
-  /** @type {number[]} */ const flashes = []; // times (ms) a flash completed over enough area
+  const cells = cols * rows;
+  const dir = new Array(cells).fill(0); // last change per cell: +1 brighter, -1 darker
+  /** @type {number[][]} */ const flashes = Array.from({ length: cells }, () => []); // per cell: when its flashes completed (last second)
+  const need = Math.max(1, Math.ceil(minArea * cells)); // cells that must flash together to count
   let worst = { perSecond: 0, at: 0 };
   return {
     /** @param {{ w: number, h: number, px: (x: number, y: number) => number[] }} img @param {number} t ms */
@@ -61,24 +65,23 @@ function flashMeter({ cols = 8, rows = 6, minArea = 0.1 } = {}) {
         lum.push(n ? sum / n : 0);
       }
       if (last) {
-        let completed = 0;
         lum.forEach((l, i) => {
           const prev = /** @type {number[]} */ (last)[i], d = l - prev;
+          const f = flashes[i];
+          while (f.length && f[0] <= t - 1000) f.shift();
           if (Math.abs(d) < 0.1 || Math.min(l, prev) >= 0.8) return;
           const s = Math.sign(d);
-          if (dir[i] && s !== dir[i]) completed++; // an opposing pair = one flash in this cell
+          if (dir[i] && s !== dir[i]) f.push(t); // an opposing pair = one flash in this cell
           dir[i] = s;
         });
-        if (completed / (cols * rows) >= minArea) {
-          flashes.push(t);
-          while (flashes.length && flashes[0] < t - 1000) flashes.shift();
-          if (flashes.length > worst.perSecond) worst = { perSecond: flashes.length, at: t };
-        }
+        // The most flashes in this second that at least `need` cells reached.
+        const n = flashes.map((f) => f.length).sort((a, b) => b - a)[need - 1];
+        if (n > worst.perSecond) worst = { perSecond: n, at: t };
       }
       last = lum;
     },
     worst: () => worst,
-    reset() { last = null; dir.fill(0); flashes.length = 0; worst = { perSecond: 0, at: 0 }; },
+    reset() { last = null; dir.fill(0); flashes.forEach((f) => { f.length = 0; }); worst = { perSecond: 0, at: 0 }; },
   };
 }
 

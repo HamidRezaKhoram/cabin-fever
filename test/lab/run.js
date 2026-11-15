@@ -17,7 +17,7 @@ const OUT = process.env.LAB_OUT || '/out';
 const FLASH = process.env.LAB_FLASH === '1';
 const NO_NET = process.env.LAB_NO_NET === '1'; // experiment: no network emulation (it records every frame)
 const ONLY = (process.env.LAB_GAMES || '').split(',').filter(Boolean);
-const GAME_MS = Number(process.env.LAB_GAME_MS || 360000);
+const GAME_MS = Number(process.env.LAB_GAME_MS || 480000); // Storm Watch alone takes 335–360 s on the lab's slowed TV
 
 // Assumed devices (feel-plan.md §1). cpu = how many times slower than this machine: a guess until
 // /bench is run on the real devices. Phones render at DPR 1 here: headless Chrome rasterises in
@@ -141,7 +141,9 @@ async function views(/** @type {string} */ code) { try { return await (await fet
           const px = parseFloat(getComputedStyle(h).fontSize) * (r.height / (h.offsetHeight || r.height));
           if (r.width && r.height && px < min) { min = px; who = `${h.tagName.toLowerCase()}.${[...h.classList].join('.')} "${(h.textContent || '').trim().slice(0, 30)}"`; }
         }
-        return { px: min === Infinity ? 0 : Math.round(min), who };
+        // The stage zoom it was measured at (host.js shrinkToStage): a crowded screen zooms below 1.
+        const z = pv ? parseFloat(getComputedStyle(pv).getPropertyValue('--shrink')) || 1 : 1;
+        return { px: min === Infinity ? 0 : Math.round(min), who: z < 1 ? `${who} at ${Math.round(z * 100)}% zoom` : who };
       }, phase);
 
   const newScreen = () => ({ visits: 0, tvLong: [], tvEvents: [], phoneEvents: [], phoneLong: [], taps: [], deadAir: 0, maxFrame: 0, phoneMaxFrame: 0, minFont: Infinity, minTarget: Infinity, smallest: '', smallTarget: '', tapToTv: [], peakDb: -120, rmsDb: [], clipped: 0 });

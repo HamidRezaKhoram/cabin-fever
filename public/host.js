@@ -550,10 +550,16 @@ document.addEventListener('focusin', (e) => {
   const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
   if (card) { showDetail(card); centreCart(card, true); } // the one place the wheel is turned to a pick
 });
+/** Where the mouse last was: a cartridge sliding under a still mouse (the wheel turning) fires mouseover too. */
+let mouseAt = '';
 document.addEventListener('mouseover', (e) => {
+  const at = `${e.screenX},${e.screenY}`;
+  if (at === mouseAt) return; // the wheel moved, not the mouse: the description stays on the pick
+  mouseAt = at;
   const card = e.target instanceof Element ? /** @type {HTMLElement | null} */ (e.target.closest('.game-pick')) : null;
   if (card && card.dataset.gameId !== detailId) showDetail(card);
 });
+document.addEventListener('mousemove', (e) => { mouseAt = `${e.screenX},${e.screenY}`; }, { passive: true }); // (mouseover comes first)
 // The shelf is a wheel: the picked cartridge sits in the middle, and each cartridge that passes the
 // middle clicks (sfx.wheel), like a prize wheel's pegs. Focusing a cartridge turns it (focusin → centreCart:
 // the remote's ◀ ▶, the mouse wheel and a click all just move the focus). A mouse wheel notch moves the

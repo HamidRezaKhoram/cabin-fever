@@ -470,6 +470,10 @@ const allPages = t.pages;
       .catch(async () => assert.fail(`a notch back from the last: ${JSON.stringify(await tv.evaluate(() => { const a = /** @type {HTMLElement} */ (document.activeElement); const sh = /** @type {HTMLElement} */ (document.querySelector('.shelf'));
         return { at: [...document.querySelectorAll('.shelf .game-pick')].indexOf(a), active: a.tagName + '.' + a.className, scroll: sh.scrollLeft, max: sh.scrollWidth - sh.clientWidth, spinning: document.body.classList.contains('spinning') }; }))}`));
     await tv.waitForFunction(() => !document.body.classList.contains('spinning'), null, { timeout: 4000 });
+    // The wheel turned under the still mouse: the description stays on the pick, not the cartridge now under the mouse.
+    await tv.waitForTimeout(300);
+    const shown = await tv.evaluate(() => [/** @type {HTMLElement} */ (document.querySelector('#game-detail .lineup-add')).dataset.id, /** @type {HTMLElement} */ (document.activeElement).dataset.gameId]);
+    assert.strictEqual(shown[0], shown[1], 'the description shows the focused cartridge');
     // A long turn (to the first cartridge) for the snapping check below (focused as the page does: preventScroll).
     await tv.evaluate(() => /** @type {HTMLElement} */ (document.querySelector('.shelf .game-pick')).focus({ preventScroll: true }));
     // Mid-turn the snapping is off through a body class (a lobby redraw rewrites the shelf's own attributes).
