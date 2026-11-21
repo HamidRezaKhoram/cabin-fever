@@ -165,7 +165,8 @@ class StormGame extends BaseGame {
   nextChore() {
     if (this.winner) return this.toAccuse();
     this.round = this.chore() + 1;
-    this.event = this.events[(this.round - 1 + this.leaderIdx) % this.events.length];
+    // By chore only: a voted-down crew used to re-roll the event (a free pass on a bad one, Second Wind).
+    this.event = this.events[(this.round - 1) % this.events.length];
     this.crew = [];
     this.votes = new Map();
     this.cards = new Map();
@@ -373,8 +374,30 @@ class StormGame extends BaseGame {
     }
   }
 
+  /** The side with nobody left, if one is empty (the other side wins). */
+  sideGone() {
+    const sides = new Set(this.playerIds().map((id) => this.side(id)));
+    if (!sides.size) return null;
+    return !sides.has('raccoon') ? 'cottage' : !sides.has('cottage') ? 'raccoon' : null;
+  }
+
+  /** One side is gone: the game can't go on (every chore would just pass, or nobody could stop the
+   * raccoons), so it ends now instead of minutes of empty votes and an accusation of nobody. */
+  endEarly(/** @type {'cottage' | 'raccoon'} */ winner) {
+    if (this.flipTimer) { clearTimeout(this.flipTimer); this.flipTimer = null; this.applyFate(); }
+    this.clearTimer();
+    this.winner = winner;
+    this.winReason = winner === 'cottage' ? 'The raccoons ran off into the storm — the cottage wins!' : 'Every cottager fled — the raccoons have the place to themselves!';
+    this.phase = 'st-accuse';
+    this.final();
+  }
+
   /** @param {string} id */
   onPlayerLeft(id) {
+    if (this.phase !== 'st-final' && this.phase !== 'st-accuse' && this.room.players.size) {
+      const gone = this.sideGone();
+      if (gone) return this.endEarly(gone);
+    }
     // What a leaver said stops counting: a raccoon who named the Lookout and left still made 1 of 2
     // raccoons a "majority" (1 right vs 1 raccoon still here) and stole the cottage's win; a gone
     // cottager's accusation still cost a raccoon the unseen bonus; a gone voter still voted.

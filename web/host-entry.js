@@ -158,8 +158,10 @@ function api(rel, q, init) {
     const code = String(q.get('room') || '').toUpperCase();
     /** @type {any} */
     let tonight = null;
-    try { tonight = code ? JSON.parse(localStorage.getItem('cf.tonight.' + code) || 'null') : null; } catch (e) { tonight = null; }
-    return json(200, tonight || stats().summary(null));
+    try { tonight = code ? JSON.parse(localStorage.getItem(TONIGHT_KEY) || 'null') : null; } catch (e) { tonight = null; }
+    // The hall of fame and players come from this browser's own stats; only tonight's list is copied.
+    const base = stats().summary(null);
+    return json(200, tonight && tonight.code === code ? { ...base, tonight: tonight.tonight } : base);
   }
   if (rel === 'api/content-stats') return json(200, /** @type {any} */ (require('../games/library')).stats());
   if (rel === 'api/admin/rules') {
@@ -192,17 +194,22 @@ window.fetch = async (input, init) => {
 // The summary carries every highlight's drawing, so it is only built and written when it could have
 // changed: every stats change is saved to stats.json (games/stats.js) and a room's own highlights are
 // added at the front of room.highlights — a cheap fingerprint of both, instead of a big write every 5 s.
-/** @type {Map<string, string>} room code → fingerprint of the summary last written */
-const tonightSaved = new Map();
+// One key, the open room's own list only (drawings capped like rooms.json's): a key per room code, each
+// a full summary with the all-time drawings, was never removed and filled the ~5 MB localStorage within
+// a few nights — after which every save (rooms.json included: a TV reload lost the room) failed silently.
+const TONIGHT_KEY = 'cf.tonight';
+try {
+  for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith('cf.tonight.')) localStorage.removeItem(k); }
+} catch (e) { /* storage blocked */ }
+let tonightSaved = '';
 setInterval(() => {
   if (!booted) return;
-  const statsSaves = fsShim.saveCount('/stats.json');
-  for (const room of /** @type {Map<string, any>} */ (core().rooms).values()) {
-    const hl = room.highlights || [];
-    const mark = `${statsSaves}|${hl.length}|${hl.length ? hl[0].at : ''}`;
-    if (tonightSaved.get(room.code) === mark) continue;
-    try { localStorage.setItem('cf.tonight.' + room.code, JSON.stringify(stats().summary(room))); tonightSaved.set(room.code, mark); } catch (e) { /* full: try again next time */ }
-  }
+  const room = [.../** @type {Map<string, any>} */ (core().rooms).values()].find((r) => !r.closed);
+  if (!room) return;
+  const hl = room.highlights || [];
+  const mark = `${room.code}|${hl.length}|${hl.length ? hl[0].at : ''}`;
+  if (tonightSaved === mark) return;
+  try { localStorage.setItem(TONIGHT_KEY, JSON.stringify({ code: room.code, tonight: core().fewerImages(hl) })); tonightSaved = mark; } catch (e) { /* full: try again next time */ }
 }, 5000);
 addEventListener('storage', (e) => {
   if (e.key && e.key.endsWith('/house-rules.json') && booted) house().reload();

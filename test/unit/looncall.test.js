@@ -20,7 +20,7 @@ test('judging: perfect ±70 ms, good ±140, misses, extra taps cost points, clea
   assert.strictEqual(sloppy.points, 15 + 30);
   const stray = LoonCall.judge(notes, [1000, 1250, 1500, 2000]); // 1250 is 250 ms from everything
   assert.strictEqual(stray.extras, 1);
-  assert.strictEqual(stray.points, 90 - 5, 'an extra tap costs 5 and the clean bonus');
+  assert.strictEqual(stray.points, 90 - 15, 'an extra tap costs 15 and the clean bonus');
 });
 
 test('judging: mashing never wins and a bar never scores below zero', () => {

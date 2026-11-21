@@ -327,7 +327,7 @@ const resetJoinBtn = () => {
   joinTimer = null;
   joinForm.setAttribute('aria-busy', 'false');
   joinBtn.disabled = false;
-  joinBtn.textContent = 'Join';
+  joinBtn.textContent = 'Join ▶';
 };
 
 leaveBtn.addEventListener('click', () => {
@@ -345,8 +345,14 @@ let lostTimer = null;
 const conn = /** @type {HTMLElement} */ (document.getElementById('conn-dot'));
 /** @param {'ok' | 'wait' | 'lost'} st */
 const setConn = (st) => { conn.dataset.state = st; conn.title = st === 'ok' ? 'Connected to the TV' : 'Reconnecting…'; };
+/** The room code in the link (?code=), which a seat saved from another room doesn't override. */
+const linkCode = () => String(codeInput.value || '').toUpperCase().slice(0, 4);
 const seat0 = store('rumpus.seat');
-if (seat0 && seat0.code && seat0.token) showMessage('<div class="loading-card"><div class="spinner" aria-hidden="true"></div><h1>Getting your seat back…</h1><p>Connecting to the TV</p></div>');
+/** Showing "Getting your seat back…": until the TV answers (joined / rejoinFailed), or we give up. */
+let restoring = !!(seat0 && seat0.code && seat0.token && !(linkCode() && seat0.code !== linkCode()));
+// Never left on the spinner: a TV that doesn't answer the rejoin (gone, or its room closed) gives the form back.
+if (restoring) setTimeout(() => { if (restoring && !me && !ended) { restoring = false; showJoin(); } }, 12000);
+if (restoring) showMessage('<div class="loading-card"><div class="spinner" aria-hidden="true"></div><h1>Getting your seat back…</h1><p>Connecting to the TV</p></div>');
 socket.on('connect', () => {
   if (lostTimer) { clearTimeout(lostTimer); lostTimer = null; }
   banner.hidden = true;
@@ -355,10 +361,12 @@ socket.on('connect', () => {
   // A saved seat from another room (last night's) doesn't override the room just scanned or typed
   // into the link: it switched the phone to the old room ("No room with that code").
   let seat = mySeat || store('rumpus.seat');
-  const linkCode = String(codeInput.value || '').toUpperCase().slice(0, 4); // (prefilled from ?code=)
-  if (!mySeat && seat && linkCode && seat.code !== linkCode) { store('rumpus.seat', null); seat = null; }
+  const code = linkCode(); // (prefilled from ?code=)
+  if (!mySeat && seat && code && seat.code !== code) { store('rumpus.seat', null); seat = null; }
   if (ended) return;
   if (seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
+  // No seat to ask for (it was another room's): the join form, not the "getting your seat back" spinner forever.
+  else if (restoring && !me) { restoring = false; showJoin(); }
   requeue();
 });
 // Browser build: the TV saw this phone's direct link come back after a nap — re-take the seat.
@@ -368,6 +376,7 @@ socket.on('net:resync', () => {
   requeue();
 });
 socket.on('player:rejoinFailed', () => {
+  restoring = false;
   mySeat = null;
   store('rumpus.seat', null);
   resetJoinBtn();
@@ -475,8 +484,13 @@ function wakeHint() {
 document.addEventListener('pointerdown', () => { if (me && !ended) void keepAwake(true); }, { passive: true });
 
 socket.on('player:joined', (/** @type {any} */ msg) => {
+  restoring = false;
+  seated = true;
   queuedJoin = null;
   resetJoinBtn();
+  // Back in the same seat after a blip (a reconnect, a revived link): keep the screen and whatever is
+  // half-typed on it — redrawing from scratch wiped a quip or a clue in progress.
+  const sameSeat = !!me && me.playerId === msg.playerId;
   me = { playerId: msg.playerId };
   mySeat = { code: msg.roomState.code, token: msg.token };
   store('rumpus.seat', mySeat);
@@ -484,12 +498,15 @@ socket.on('player:joined', (/** @type {any} */ msg) => {
   gameView.hidden = false;
   leaveBtn.hidden = false;
   reactBar.hidden = false;
-  lastHtml = null;
+  if (!sameSeat) lastHtml = null;
 });
 socket.on('player:kicked', () => {
   ended = true;
   sleepOk(); // the seat is over: let the screen sleep again
   store('rumpus.seat', null);
+  // Hang up: in the browser build a closed link redials by itself, so a kicked phone kept a live
+  // link (pings every 2 s) to the TV for good.
+  setTimeout(() => socket.disconnect(), 200);
   showMessage('<h1>You were removed from the room</h1><p><a href="/play">Join again</a></p>');
 });
 socket.on('room:stateUpdate', (/** @type {any} */ msg) => {
@@ -499,6 +516,7 @@ socket.on('room:stateUpdate', (/** @type {any} */ msg) => {
   state = msg; render();
 });
 socket.on('disconnect', () => {
+  seated = false;
   if (ended) return;
   setConn('wait');
   if (joinTimer !== null) {
@@ -565,7 +583,7 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
     case 'trivia-question':
       if (you.answered) return waiting('Locked in');
       return `<p class="round-tag">Round ${g.round} of ${g.totalRounds}</p><h2 class="prompt">${esc(g.question)}</h2>
-        ${you.canDouble ? `<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if right · −300 if wrong (once per game)</button>` : ''}
+        ${you.canDouble ? `<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if right · −${you.doubleRisk || 300} if wrong (once per game)</button>` : ''}
         <div class="vote-list">` +
         g.choices.map((/** @type {any} */ c, /** @type {any} */ i) => `<button class="vote-btn" data-send='{"choice":${i}}'>${esc(c)}</button>`).join('') + '</div>';
     case 'trivia-reveal':
@@ -620,6 +638,12 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
 }
 
 let sendSeq = 0;
+/** This page load (submit ids are unique per load). */
+const PAGE = Math.random().toString(36).slice(2, 8);
+/** The last send whose confirmation never came: a re-tap of it reuses its id. @type {{ key: string, sid: string } | null} */
+let retry = null;
+/** In our seat on the current link (false from a disconnect until the TV says we're back). */
+let seated = false;
 /** State updates heard so far (a tap that changed nothing on the TV's side brings none). */
 let statesSeen = 0;
 /** The buttons and forms of this screen usable again (a tap disables them all until the TV answers). */
@@ -633,9 +657,24 @@ function send(/** @type {any} */ payload) {
   const seq = ++sendSeq;
   const screen = lastScreenKey;
   const seen = statesSeen;
+  // Not seated on a live link (offline, or reconnected but not yet back in the seat): don't send. The
+  // transport would hold it and deliver it ahead of the rejoin, where it was turned down anyway.
+  if (!seated || !socket.connected) {
+    unlockSends();
+    banner.textContent = 'Not connected to the TV — tap again when it\'s back';
+    banner.hidden = false;
+    return;
+  }
+  // The same tap again on the same screen after its confirmation got lost: the same id, so the TV
+  // takes it once (it may have arrived; a second Cottage Crush note used up the note budget).
+  const key = screen + '|' + JSON.stringify(payload);
+  const sid = retry && retry.key === key ? retry.sid : `${DEVICE}:${PAGE}:${seq}`;
+  retry = null;
+  const at = window.Rumpus && window.Rumpus.time ? window.Rumpus.time.now() : Date.now();
   const slow = window.setTimeout(() => { if (seq === sendSeq && screen === lastScreenKey) document.body.classList.add('sending'); }, 250);
-  socket.timeout(6000).emit('player:submit', { payload }, (/** @type {any} */ err, /** @type {any} */ res) => {
+  socket.timeout(6000).emit('player:submit', { payload, sid, at }, (/** @type {any} */ err, /** @type {any} */ res) => {
     clearTimeout(slow);
+    if (err) retry = { key, sid };
     if (seq !== sendSeq) return;
     document.body.classList.remove('sending');
     if (screen !== lastScreenKey || ended) return;
@@ -662,6 +701,16 @@ function sendFast(/** @type {any} */ payload) {
 
 function render() {
   window.Rumpus.i18n.setLang(state && state.settings && state.settings.lang);
+  // Closed: said to queued phones too (no seat yet: `me` is null), which used to wait "to get back in
+  // line" for good. And the link is hung up (the browser build would redial a closed room).
+  if (state && state.phase === 'closed') {
+    ended = true;
+    queuedJoin = null;
+    sleepOk(); // the seat is over: let the screen sleep again
+    store('rumpus.seat', null);
+    setTimeout(() => socket.disconnect(), 200);
+    return showMessage('<h1>Room closed</h1><p>The host ended the room. <a href="/play">Join another</a></p>');
+  }
   if (!state || !me) return;
   const g = state.gameState || {};
   const you = state.you || {};
@@ -669,10 +718,7 @@ function render() {
   meTag.innerHTML = `${meAvatar('avatar tiny')} ${esc(you.nickname || '')} · ${myScore()} pts`;
 
   if (state.phase === 'closed') {
-    ended = true;
-    sleepOk(); // the seat is over: let the screen sleep again
-    store('rumpus.seat', null);
-    return showMessage('<h1>Room closed</h1><p>The host ended the room. <a href="/play">Join another</a></p>');
+    return;
   }
 
   banner.hidden = state.hostConnected !== false;
@@ -711,7 +757,8 @@ function render() {
       `<p>You finished #${place}${place && list.filter((s) => (s.place || 0) === place).length > 1 ? ' (tied)' : ''} with <strong>${myScore()}</strong> points.</p>
       ${you.rated ? '<p class="hint">Thanks — noted! 🙏</p>' : `<p class="hint">How was that game?</p><div class="rate-row"><button class="vote-btn" data-rate="1" aria-label="boring">😴</button><button class="vote-btn" data-rate="2" aria-label="good">🙂</button><button class="vote-btn" data-rate="3" aria-label="great">🤩</button></div>`}
       <p>Watch the TV for the next game.</p>
-      <p><a class="hl-link" href="/highlights?room=${esc(state.code)}" target="_blank">📸 Tonight's highlights &amp; hall of fame</a></p>`;
+      ${/** @type {any} */ (window).CABIN ? '' : `<p><a class="hl-link" href="/highlights?room=${esc(state.code)}" target="_blank">📸 Tonight's highlights &amp; hall of fame</a></p>`}`;
+      // (Not in the browser build: the highlights live in the TV's own browser, so a phone saw an empty page.)
   } else if (games[g.gameId]) {
     html = games[g.gameId].player(state);
   } else {

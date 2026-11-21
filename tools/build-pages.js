@@ -86,6 +86,9 @@ async function main() {
         ? s.replace('<script src="socket.io/socket.io.js"></script>', tags)
         : s.replace(/<script /, tags + '<script ');
     }
+    // The installed app's scope is the site's folder, not the whole <user>.github.io (other repos' pages
+    // opened inside the game's window).
+    if (rel === 'manifest.webmanifest') s = s.replace(/"scope":\s*"\/"/, '"scope": "./"');
     write(path.join(OUT, rel), s);
   }
   // Extensionless page URLs (/play?code=ABCD) work on GitHub Pages; keep folder fallbacks too.

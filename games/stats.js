@@ -119,6 +119,12 @@ function nightWin(room, id) {
   rec(name).nightWins++;
   save();
 }
+/** A lineup won, by name (the winner may have left the room since). @param {string} name @param {boolean} [bot] */
+function nightWinName(name, bot = false) {
+  if (!name || bot) return; // bots don't collect stats
+  rec(name).nightWins++;
+  save();
+}
 
 /** Achievements earned from lifetime stats. @param {PlayerStats} r @returns {{ icon: string, title: string, desc: string }[]} */
 function achievements(r) {
@@ -148,4 +154,4 @@ function summary(room) {
 /** For tests: forget everything (in memory). */
 function _reset() { data = { players: Object.create(null), highlights: [], ratings: Object.create(null) }; }
 
-module.exports = { feat, highlight, recordGame, nightWin, achievements, summary, rate, flush, _reset };
+module.exports = { feat, highlight, recordGame, nightWin, nightWinName, achievements, summary, rate, flush, _reset };

@@ -40,7 +40,9 @@ function isReveal(phase) {
 // Which pace votes make sense right now for this game.
 /** @param {any} game a running game (BaseGame or a legacy game) */
 function allowedVotes(game) {
-  if (!game || game.phase === 'gameover') return [];
+  if (!game) return [];
+  // Game over in a lineup (the scores before the next game) and the NEXT GAME card: "ready" moves on.
+  if (game.phase === 'gameover' || game.phase === 'night-next') return game.timerFn ? ['ready'] : [];
   const phase = game.phase;
   if (isReveal(phase)) return game.timerFn ? ['ready'] : [];
   // Real-time games (tapping, tilting, rhythm): nobody is "still answering", so the vote ends the round.

@@ -32,7 +32,7 @@ function shuffleCopy(list, rnd) {
 }
 
 /**
- * @param {{ phase: string, gameState?: any, you?: any }} view
+ * @param {{ phase: string, gameState?: any, you?: any, tv?: any, memo?: any }} view what the bot sees: its phone, the TV, and its memory of the TV
  * @param {() => number} [rnd]
  * @returns {{ payload: Record<string, any>, kind: 'tap' | 'write' | 'draw' | 'mash' | 'react' | 'beat' | 'steer' } | null}
  */
@@ -143,9 +143,10 @@ function decide(view, rnd = Math.random) {
     }
     // Loon Call: once a bar is over, send the taps a person would have made (±40 ms, the odd miss).
     case 'lc-tune': case 'lc-compose': case 'lc-song': {
-      const s = g.sched, now = g.serverNow || 0;
+      const s = g.sched, now = Number.isFinite(g.serverNow) ? g.serverNow : Date.now(); // (bots run on the server: its clock is the game's)
       if (!s) return null;
-      const human = (/** @type {number[]} */ ts) => ts.filter(() => rnd() > 0.08).map((t) => Math.round(t + (rnd() + rnd() + rnd() - 1.5) * 50));
+      // ±60 ms-ish (σ ≈ 60) and 12% missed: at σ ≈ 25 nearly every bot tap was perfect.
+      const human = (/** @type {number[]} */ ts) => ts.filter(() => rnd() > 0.12).map((t) => Math.round(t + (rnd() + rnd() + rnd() - 1.5) * 120));
       if (view.phase === 'lc-tune') return now >= s.endAt && !you.taps ? { payload: { taps: human(s.clicks) }, kind: 'beat' } : null;
       if (view.phase === 'lc-compose') {
         if (!you.isCaller || you.taps || now < s.endAt) return null;
@@ -160,21 +161,34 @@ function decide(view, rnd = Math.random) {
     }
     // Cottage Olympics
     case 'mg-play':
-      if (g.mini === 'tug') return { payload: { tap: 3 + Math.floor(rnd() * 4) }, kind: 'mash' };
+      // 1–2 taps every 250 ms ≈ 6/s, a person's pace (3–6 was ~18/s: bots won every tap race).
+      if (g.mini === 'tug') return { payload: { tap: 1 + Math.floor(rnd() * 2) }, kind: 'mash' };
       if (g.mini === 'quickdraw') return !you.done && !you.early && g.sub === 'go' ? { payload: { tap: true }, kind: 'react' } : null;
       if (g.mini === 'fireflies') return !you.done ? tap({ number: 5 + Math.floor(rnd() * 30) }) : null;
       if (g.mini === 'roast') return !you.done ? tap({ hold: Math.round((g.target || 3000) * (0.7 + rnd() * 0.6)) }) : null;
       if (you.done || you.early) return null;
       if (g.mini === 'skip') return { payload: { throw: Date.now() }, kind: 'react' };
-      if (g.mini === 'spot') return { payload: { cell: Math.floor(rnd() * (g.cells || 12)) }, kind: 'react' };
+      // Spots the loon on the TV about half the time (a blind guess was right 1 time in 12).
+      if (g.mini === 'spot') {
+        const tv = view.tv || {}, cells = g.cells || 12;
+        return { payload: { cell: Number.isInteger(tv.loon) && rnd() < 0.55 ? tv.loon : Math.floor(rnd() * cells) }, kind: 'react' };
+      }
       if (g.mini === 'swat') {
         const t = Date.now() - g.playStart;
         const i = (g.bugs || []).findIndex((/** @type {{ at: number, life: number }} */ b, /** @type {number} */ k) => t >= b.at && t <= b.at + b.life && !(you.swats || []).includes(k));
         return i >= 0 && rnd() < 0.7 ? { payload: { swat: i }, kind: 'react' } : null;
       }
-      if (g.mini === 'balance') return tap({ balance: Math.round(rnd() * 100) });
+      if (g.mini === 'balance') return tap({ balance: Math.round(30 + rnd() * 55) });
       if (g.mini === 'paddle') return { payload: { sides: 'LRLR'.slice(rnd() < 0.5 ? 0 : 1).slice(0, 2 + Math.floor(rnd() * 3)) }, kind: 'mash' };
-      if (g.mini === 'simon') return g.sub === 'go' ? tap({ seq: Array.from({ length: g.length || 5 }, () => Math.floor(rnd() * 4)) }) : null;
+      if (g.mini === 'simon') {
+        // Remembers the sparks it watched on the TV; gets them right about half the time.
+        const memo = view.memo || {}, tv = view.tv || {};
+        if (Array.isArray(tv.seq)) memo.simon = tv.seq.slice();
+        if (g.sub !== 'go') return null;
+        const seq = Array.isArray(memo.simon) && memo.simon.length === (g.length || 4) ? memo.simon.slice() : Array.from({ length: g.length || 4 }, () => Math.floor(rnd() * 4));
+        if (rnd() < 0.45) { const k = Math.floor(rnd() * seq.length); seq[k] = (seq[k] + 1 + Math.floor(rnd() * 3)) % (g.colours || 4); }
+        return tap({ seq });
+      }
       if (g.mini === 'stack') return tap({ stack: 3 + Math.floor(rnd() * 12) });
       return null;
     default: return null;

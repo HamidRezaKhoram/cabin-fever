@@ -64,7 +64,7 @@ interface Room {
   /** Phones that rated the game just finished (😴 / 🙂 / 🤩), cleared when a game starts. */
   rated?: Set<string>;
   /** The lineup (core/rooms.js): the games the host picked, in order, played back to back; or null. */
-  night?: { total: number, list: string[], played: string[], points: Map<string, number>, timer?: NodeJS.Timeout | null, nextAt?: number,
+  night?: { total: number, list: string[], played: string[], /** by lower-case nickname */ points: Map<string, number>, /** lower-case → as typed */ names?: Map<string, string>, timer?: NodeJS.Timeout | null, nextAt?: number,
     /** positions in `list` passed over (too few players), shown as skipped, not played */ skipped?: number[],
     /** the champion was already counted in the all-time stats (a restored final table must not count it again) */ won?: boolean } | null;
   game: GameLike | null;
@@ -117,7 +117,7 @@ interface GameLike {
   setTimer(ms: number, fn: () => void, scale?: boolean): void;
   mult?(): number;
   /** `false` = the answer was turned down (the phone gets its form back). */
-  handleSubmit(playerId: string, payload: Record<string, any>): void | boolean;
+  handleSubmit(playerId: string, payload: Record<string, any>, meta?: { at: number | null }): void | boolean;
   onPlayerLeft(playerId: string): void;
   /** End the game now with its standings. */
   gameOver(): void;

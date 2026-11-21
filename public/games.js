@@ -78,8 +78,10 @@
       if (s.phase === 'voting') {
         if (you.isAuthor) {
           if (you.bet) return `<h1>That's yours! 😬</h1><p>Side bet placed: <strong>${you.bet === 'landslide' ? 'Landslide' : "I'll win"}</strong>. Sweat it out…</p>`;
+          const can = you.canBet || { win: true, landslide: true }, x = g.multiplier || 1;
+          if (!can.win && !can.landslide) return `<h1>That's yours! 😬</h1><p>Sweat it out while everyone votes… (side bets open once you have points to stake)</p>`;
           return `<h1>That's yours! 😬</h1><p>Place a side bet while everyone votes:</p><div class="vote-list">
-            ${sendBtn({ bet: 'win' }, `🤞 I'll win · +${100 * (g.multiplier || 1)} / −${50 * (g.multiplier || 1)}`)}${sendBtn({ bet: 'landslide' }, `🔥 Landslide (75%+) · +${250 * (g.multiplier || 1)} / −${100 * (g.multiplier || 1)}`)}</div>`;
+            ${can.win ? sendBtn({ bet: 'win' }, `🤞 I'll win · +${100 * x} / −${100 * x}`) : ''}${can.landslide ? sendBtn({ bet: 'landslide' }, `🔥 Landslide (75%+) · +${250 * x} / −${150 * x}`) : ''}</div>`;
         }
         if (you.voted) return waiting('Vote cast');
         return `<h2 class="prompt">${esc(g.prompt)}</h2><p>Which is funnier?</p><div class="vote-list">` +
@@ -543,7 +545,7 @@
       if (s.phase === 'cg-guess') {
         if (you.submitted) return waiting('Guess locked');
         return `${roundTag(g)}<h2 class="prompt">${esc(g.question)}</h2>
-          ${you.canDouble ? '<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if you finish in the top half · −200 if not (once per game)</button>' : ''}
+          ${you.canDouble ? `<button type="button" class="ghost-btn dd-toggle" data-dd aria-pressed="false">🎲 Double Down? ×2 if you finish in the top half · −${you.doubleRisk || 200} if not (once per game)</button>` : ''}
           <form class="number-form">
             <input name="number" type="text" inputmode="decimal" pattern="-?[0-9.,]+" autocomplete="off"
               placeholder="Your guess${g.unit ? ' (' + esc(g.unit) + ')' : ''}" required>
@@ -743,9 +745,10 @@
         const inbox = you.inbox.length ? `<h3>💌 Notes you got (${you.inbox.length})</h3><p class="hint">You'll answer them in the next step.</p>${crNotes(you.inbox, 'in')}` : '';
         const outbox = you.outbox.length ? `<h3>📤 Notes you sent</h3>${crNotes(you.outbox, 'out')}` : '';
         if (you.notesLeft <= 0) {
-          return crSteps(0) + crTodo(`✓ All ${you.notesMax} notes sent ${crPips(0, you.notesMax)}<br><small>Next: reply to the notes you got</small>`) + sentLine + inbox + outbox;
+          return crSteps(0) + crTodo(`✓ Done mingling ${crPips(0, you.notesMax)}<br><small>Next: reply to the notes you got</small>`) + sentLine + inbox + outbox;
         }
-        const todo = crTodo(`💌 Notes left to send: <b>${you.notesLeft} of ${you.notesMax}</b> ${crPips(you.notesLeft, you.notesMax)}`);
+        const todo = crTodo(`💌 Notes left to send: <b>${you.notesLeft} of ${you.notesMax}</b> ${crPips(you.notesLeft, you.notesMax)}`) +
+          `<div class="vote-list">${sendBtn({ done: true }, '✓ I\'m done mingling')}</div>`;
         const to = crTo && g.targets.find((/** @type {Target} */ t) => t.id === crTo);
         if (!to) {
           const sentTo = (/** @type {string} */ n) => you.outbox.filter((/** @type {any} */ o) => o.to === n).length;
@@ -774,7 +777,7 @@
       if (s.phase === 'cr-pick') {
         const recap = (you.inbox.length || you.outbox.length) ? `<details class="crush-fold"><summary>📜 Tonight's notes (${you.inbox.length} in · ${you.outbox.length} out)</summary>${you.inbox.length ? crNotes(you.inbox, 'in') : ''}${you.outbox.length ? crNotes(you.outbox, 'out') : ''}</details>` : '';
         if (you.picked) return crSteps(2) + crTodo(you.pick ? `✓ You asked <b>${esc(you.pick)}</b> out<br><small>If they picked you too, it's a date!</small>` : '✓ Staying in tonight 🛋') + recap;
-        return `${crSteps(2)}${crTodo('🌙 Last step: pick <b>one</b> date (or stay in)')}<p class="hint">It's a date only if they pick you too. Staying in costs points.</p><div class="crush-people">` +
+        return `${crSteps(2)}${crTodo('🌙 Last step: pick <b>one</b> date (or stay in)')}<p class="hint">It's a date only if they pick you too.</p><div class="crush-people">` +
           g.targets.map((/** @type {Target} */ t) => sendBtn({ pick: t.id }, `${av(t.nickname, 'avatar big')}<span>${esc(t.nickname)}</span>`, 'crush-person')).join('') +
           '</div><div class="vote-list">' + sendBtn({ pick: null }, '🛋 Stay in tonight') + '</div>' + recap;
       }
@@ -1299,7 +1302,9 @@
       const g = cv.getContext('2d');
       if (!g) return;
       const W = cv.width, H = cv.height;
-      if (tick % 240 === 0 && Math.random() < 0.6) stFlashAt = tick; // a lightning strike every ~8 s or so
+      // A lightning strike every ~8 s or so — not in 🕊 Calm or with reduced motion (it promises no flashes).
+      const calm = document.body.classList.contains('calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (tick % 240 === 0 && !calm && Math.random() < 0.6) stFlashAt = tick;
       const flash = tick - stFlashAt < 4 ? (tick - stFlashAt) % 2 === 0 : false;
       g.fillStyle = flash ? 'rgba(220,230,255,0.55)' : 'rgba(10,14,28,0.35)';
       g.fillRect(0, 0, W, H);
@@ -1392,11 +1397,13 @@
       if (s.phase === 'st-crew') {
         if (!you.onCrew) return `<h2>The crew is at work…</h2><p>${g.crew.map(esc).join(', ')}</p>${peek}${card}`;
         if (you.played) return waiting('Card played');
-        const fix = you.canFix ? '<label class="toggle"><input type="checkbox" id="st-fix"> 🔧 Fix It (cancel one sabotage, once per game)</label>' : '';
-        const dbl = you.canDouble ? '<label class="toggle"><input type="checkbox" id="st-double"> 🦝🦝 Double Trouble (once per game: your sabotage counts twice and can\'t be fixed)</label>' : '';
+        // The same screen for everyone on the crew: showing Sabotage (and Double Trouble) only to raccoons
+        // gave them away to anyone glancing at their phone. A cottager's Sabotage plays as Help (server).
+        const fix = '<label class="toggle"><input type="checkbox" id="st-fix"> 🔧 Fix It (Handyman: cancel one sabotage, once per game)</label>';
+        const dbl = '<label class="toggle"><input type="checkbox" id="st-double"> 🦝🦝 Double Trouble (raccoons, once per game: your sabotage counts twice and can\'t be fixed)</label>';
         return `<h2>You're on the crew</h2>${fix}${dbl}<div class="vote-list storm-yesno">
             <button type="button" class="vote-btn" data-st-card="help">🔨 Help</button>
-            ${you.canSabotage ? '<button type="button" class="vote-btn bad" data-st-card="sabotage">🦝 Sabotage</button>' : ''}</div>${card}`;
+            <button type="button" class="vote-btn bad" data-st-card="sabotage">🦝 Sabotage</button></div>${card}`;
       }
       // The result only arrives once the TV's cards have all flipped (no spoilers on the phone).
       if (s.phase === 'st-reveal') return watchTv(`<p>${g.reveal ? (g.reveal.ok ? '✔ The chore is done!' : '✘ The chore was ruined!') : 'Watch the cards flip…'}</p>`) + peek + snoop;
@@ -1456,7 +1463,7 @@
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */
   const nightTable = (night, between = false) => `<div class="night-table">
       <p class="round-tag">🎞 Lineup · ${night.played} of ${night.total} played${between && night.played < night.total ? ' · next game coming up…' : ''}</p>
-      <ol class="answers standings">${night.standings.map((/** @type {{ nickname: string, points: number }} */ s) => `<li>${av(s.nickname)} ${esc(s.nickname)} <span class="votes">${s.points} pts</span></li>`).join('')}</ol>
+      <ol class="answers standings">${night.standings.map((/** @type {{ nickname: string, points: number, gone?: boolean }} */ s) => `<li${s.gone ? ' style="opacity:0.55"' : ''}>${av(s.nickname)} ${esc(s.nickname)}${s.gone ? ' <small>(left)</small>' : ''} <span class="votes">${s.points} pts</span></li>`).join('')}</ol>
     </div>`;
   window.Rumpus.nightTable = nightTable;
   /** The lineup as a row of small cartridges: played ✓, skipped (too few players) faded with a —,
@@ -1471,6 +1478,8 @@
       if (s.phase === 'night-final') {
         // Tied at the top: they are all champions (place 1), not just whoever sorted first.
         const champs = night.standings.filter((/** @type {{ points: number, place?: number }} */ x, /** @type {number} */ i) => (x.place || i + 1) === 1);
+        // Nobody scored: no champions (everyone on 0 used to be crowned).
+        if (!champs.length || !champs[0].points) return `<h1>🏆 The lineup is over</h1><p class="big-sub">Nobody scored — no champion tonight.</p>${nightTable(night)}<p class="big-sub">Press End to go back to the menu.</p>`;
         return `<h1>🏆 Champion${champs.length > 1 ? 's' : ''} of the lineup</h1>
           ${champs.map((/** @type {{ nickname: string, points: number }} */ top) => `<p class="big-answer">${av(top.nickname, 'avatar big bob')} ${esc(top.nickname)} — ${top.points} pts</p>`).join('')}
           ${nightTable(night)}<p class="big-sub">Press End to go back to the menu.</p>`;
@@ -1491,7 +1500,7 @@
         const rank = night.standings.findIndex((/** @type {{ nickname: string }} */ x) => x.nickname === you.nickname);
         const me = night.standings[rank] || {};
         const place = me.place || rank + 1;
-        return `<h1>${place === 1 ? '🏆 You are the champion!' : `You finished #${place}`}</h1><p>${me.points || 0} lineup points</p>`;
+        return `<h1>${place === 1 && me.points ? '🏆 You are the champion!' : !me.points ? 'The lineup is over' : `You finished #${place}`}</h1><p>${me.points || 0} lineup points</p>`;
       }
       return watchTv(`<p>Next game: <strong>${esc(g.next ? g.next.name : '')}</strong></p>`);
     },

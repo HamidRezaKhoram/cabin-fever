@@ -234,7 +234,7 @@ class BaseGame {
   get skippablePhases() { return []; }
   start() {}
   nextRound() {}
-  /** @param {string} id @param {Record<string, any>} payload @returns {void | boolean} `false` = turned down */ handleSubmit(id, payload) {}  
+  /** @param {string} id @param {Record<string, any>} payload @param {{ at: number | null }} [meta] when the phone sent it (synced clock) @returns {void | boolean} `false` = turned down */ handleSubmit(id, payload, meta) {}  
   /** @param {string} id */ onPlayerLeft(id) {}  
   /** @returns {Record<string, any>} */ hostView() { return {}; }
   /** @param {string} id @returns {{ gameState?: Record<string, any>, you?: Record<string, any> }} */ playerOnly(id) { return {}; }  

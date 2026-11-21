@@ -198,6 +198,12 @@ class TriviaGame extends BaseGame {
     this.push();
   }
 
+  /** Double Down is open once per game, to a player who can cover its risk. @param {string} id */
+  canDouble(id) {
+    const p = this.room.players.get(id);
+    return !this.doubled.has(id) && !!p && p.score >= DOUBLE_RISK * this.mult();
+  }
+
   /** @param {string} playerId @param {Record<string, any>} payload */
   handleSubmit(playerId, payload) {
     if (this.destroyed || !this.room.players.has(playerId)) return;
@@ -213,7 +219,8 @@ class TriviaGame extends BaseGame {
     if (!q || !Number.isInteger(choice) || choice < 0 || choice >= q.choices.length) return;
     if (this.answers.has(playerId)) return; // one answer each
     // Double Down (once per game): ×2 if right, −DOUBLE_RISK if wrong.
-    const double = payload.double === true && !this.doubled.has(playerId);
+    // Only with points to cover the risk (a Double Down on 0 points cost nothing, so it was free).
+    const double = payload.double === true && this.canDouble(playerId);
     if (double) this.doubled.add(playerId);
     this.answers.set(playerId, { choice, answeredAt: Date.now(), double });
     if (this.answers.size >= this.room.players.size) this.reveal();
@@ -241,7 +248,8 @@ class TriviaGame extends BaseGame {
         scored.push({ nickname: p.nickname, correct: true, gained, streak, double: a.double });
       } else {
         this.streaks.set(playerId, 0);
-        const lost = a.double ? Math.min(p.score, DOUBLE_RISK) : 0; // never below zero
+        // The risk scales with the round's ×2/×3 like the win does (a flat −300 against up to +6000 on the final).
+        const lost = a.double ? Math.min(p.score, DOUBLE_RISK * this.mult()) : 0; // never below zero
         p.score -= lost;
         scored.push({ nickname: p.nickname, correct: false, gained: -lost, streak: 0, double: a.double });
       }
@@ -333,7 +341,7 @@ class TriviaGame extends BaseGame {
       case 'trivia-question':
         return {
           gameState: { ...base, question: q.q, choices: q.choices },
-          you: { answered: this.answers.has(playerId), canDouble: !this.doubled.has(playerId) },
+          you: { answered: this.answers.has(playerId), canDouble: this.canDouble(playerId), doubleRisk: DOUBLE_RISK * this.mult() },
         };
       case 'trivia-reveal': {
         const mine = this.answers.get(playerId);

@@ -16,11 +16,11 @@ function phone() {
     window: { setTimeout: (fn) => { slow = fn; return 1; } },
     clearTimeout: () => {}, setTimeout: () => {},
     document: { body: { classList: { add: (c) => classes.add(c), remove: (c) => classes.delete(c) } } },
-    socket: { timeout: () => ({ emit: (ev, data, cb) => { reply = cb; } }) },
+    socket: { connected: true, timeout: () => ({ emit: (ev, data, cb) => { reply = cb; } }) }, DEVICE: 'd',
     gameView: { querySelectorAll: () => [button] }, banner: { hidden: true },
   });
   vm.runInContext(source.slice(source.indexOf('let sendSeq = 0;'), source.indexOf('/** Newest-wins input')), context);
-  vm.runInContext('send({ answer: 1 })', context);
+  vm.runInContext('seated = true; send({ answer: 1 })', context);
   return { context, classes, button, reply: (...args) => reply(...args), slow: () => slow() };
 }
 
@@ -90,6 +90,6 @@ test('joining prevents duplicates and recovers when the TV never replies', () =>
   assert.equal(p.button.disabled, true);
   p.timeout();
   assert.equal(p.button.disabled, false);
-  assert.equal(p.button.textContent, 'Join');
+  assert.equal(p.button.textContent, 'Join ▶', 'the page\'s own label');
   assert.match(p.context.joinError.textContent, /did not respond/);
 });

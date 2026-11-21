@@ -62,7 +62,7 @@ test('replies: an emoji, an offered line or your own words; the writer sees it; 
   assert.strictEqual(by.Cat.state.you.outbox[0].reply, 'Thanks, it was my grandpa\'s');
 });
 
-test('dates: mutual +200 each, the one asked +100, staying in −100 (never below 0); stakes rise', async () => {
+test('dates: mutual +200 each, the one asked +100, staying in 0; stakes rise', async () => {
   const { h, ps, by } = await room(['Ann', 'Ben', 'Cat', 'Dan'], 1);
   h.emit('host:startGame', { gameId: 'crush' });
   await until(() => ps.every((p) => p.state && p.state.phase === 'cr-mingle'), 'mingle');
@@ -76,7 +76,7 @@ test('dates: mutual +200 each, the one asked +100, staying in −100 (never belo
   assert.strictEqual(score('Ann'), 200);
   assert.strictEqual(score('Ben'), 200);
   assert.strictEqual(score('Cat'), 0, 'one-sided pick: the asker gets nothing');
-  assert.strictEqual(score('Dan'), 0, '+100 for being asked, −100 for staying in');
+  assert.strictEqual(score('Dan'), 100, '+100 for being asked; staying in costs nothing');
   assert.strictEqual(rev.gameState.pairs.length, 3);
   await until(() => by.Dan.state.you.date && by.Dan.state.you.date.with === null, 'Dan sees his quiet night');
   await until(() => by.Ann.state.you.date && by.Ann.state.you.date.mutual, 'Ann sees her date');

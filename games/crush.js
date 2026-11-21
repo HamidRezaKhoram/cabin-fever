@@ -18,7 +18,7 @@ const REVEAL_STEP_MS = parseInt(process.env.RUMPUS_CR_REVEAL_STEP_MS || '1800', 
 
 /** Notes each player can send per evening. */
 const NOTES = 3;
-const MUTUAL = 200, EGO = 100, STAY_IN = 100;
+const MUTUAL = 200, EGO = 100; // (staying in, or no pick, scores 0: it used to cost 100 — a napping phone lost points)
 const REPLY_EMOJI = ['😍', '😂', '🙈', '🔥', '🤔', '💔'];
 const REPLY_MAX = 60;
 
@@ -33,6 +33,8 @@ class CrushGame extends BaseGame {
     this.order = this.rng.shuffleIn(this.playerIds());
     /** @type {Note[]} */
     this.notes = [];
+    /** Players done mingling before using all their notes ("up to 3"). @type {Set<string>} */
+    this.mingled = new Set();
     this.noteSeq = 0;
     /** @type {Map<string, string | null>} */
     this.picks = new Map();
@@ -50,6 +52,8 @@ class CrushGame extends BaseGame {
   budget(id) { return this.room.players.has(id) ? NOTES : 0; }
   /** @param {string} id */
   sent(id) { return this.notes.filter((n) => n.from === id).length; }
+  /** Sent all their notes, or said they're done. @param {string} id */
+  mingleDone(id) { return this.mingled.has(id) || this.sent(id) >= this.budget(id); }
   /** Notes still waiting for this player's reply (from players still here). @param {string} id */
   toAnswer(id) { return this.notes.filter((n) => n.to === id && !n.reply); }
 
@@ -57,6 +61,7 @@ class CrushGame extends BaseGame {
     if (this.round >= this.totalRounds) return this.gameOver();
     this.round += 1;
     this.notes = [];
+    this.mingled = new Set();
     this.picks = new Map();
     this.pairs = [];
     const spicy = this.spicy();
@@ -70,11 +75,17 @@ class CrushGame extends BaseGame {
   /** @param {string} id @param {Record<string, any>} payload @returns {boolean | void} */
   handleSubmit(id, payload) {
     if (this.phase === 'cr-mingle') {
+      // "Up to 3": done after 1 or 2 instead of holding the room for the full clock.
+      if (payload.done === true) {
+        this.mingled.add(id);
+        if (this.playerIds().every((p) => this.mingleDone(p))) this.toReply(); else this.push();
+        return;
+      }
       const to = String(payload.to || '');
       const text = cleanText(payload.text, 80);
       if (!text || to === id || !this.targetable(to) || this.sent(id) >= this.budget(id)) return false;
       this.notes.push({ id: ++this.noteSeq, from: id, to, text, reply: null });
-      if (this.playerIds().every((p) => this.sent(p) >= this.budget(p))) this.toReply();
+      if (this.playerIds().every((p) => this.mingleDone(p))) this.toReply();
       else this.push();
     } else if (this.phase === 'cr-reply') {
       const note = this.notes.find((n) => n.id === payload.reply && n.to === id);
@@ -123,7 +134,7 @@ class CrushGame extends BaseGame {
       if (done.has(a)) continue;
       const b = this.picks.get(a) || null;
       if (!b || !here.has(b)) {
-        add(a, -STAY_IN);
+        add(a, 0);
         this.pairs.push({ a, b: null, mutual: false, gained: {} });
         done.add(a);
         continue;
@@ -156,7 +167,7 @@ class CrushGame extends BaseGame {
   onPlayerLeft() {
     if (!this.room.players.size) return;
     // Whoever was still to act may be the one who left: move on instead of waiting out the clock.
-    if (this.phase === 'cr-mingle' && this.playerIds().every((p) => this.sent(p) >= this.budget(p))) this.toReply();
+    if (this.phase === 'cr-mingle' && this.playerIds().every((p) => this.mingleDone(p))) this.toReply();
     else if (this.phase === 'cr-reply' && this.repliesDone()) this.toPick();
     else if (this.phase === 'cr-pick' && this.allIn(this.picks)) this.reveal();
   }
@@ -177,7 +188,7 @@ class CrushGame extends BaseGame {
       pickedCount: this.picks.size,
       totalPlayers: this.room.players.size,
       // Who the room is waiting for, by phase (names only).
-      waitingOn: (this.phase === 'cr-mingle' ? ids.filter((id) => this.sent(id) < NOTES)
+      waitingOn: (this.phase === 'cr-mingle' ? ids.filter((id) => !this.mingleDone(id))
         : this.phase === 'cr-reply' ? ids.filter((id) => this.toAnswer(id).length)
           : this.phase === 'cr-pick' ? ids.filter((id) => !this.picks.has(id)) : []).map((id) => this.nick(id)),
       pairs: this.phase === 'cr-reveal' ? this.pairs.map((p) => ({
@@ -203,7 +214,7 @@ class CrushGame extends BaseGame {
         targets: this.targetIds().filter((p) => p !== id).map((p) => ({ id: p, nickname: this.nick(p) })),
       },
       you: {
-        notesLeft: this.budget(id) - this.sent(id),
+        notesLeft: this.mingled.has(id) ? 0 : this.budget(id) - this.sent(id),
         notesMax: NOTES,
         cards: this.cards.get(id) || [],
         replyEmoji: REPLY_EMOJI,
@@ -224,6 +235,7 @@ CrushGame.meta = {
   name: 'Cottage Crush',
   blurb: 'A singles weekend at the lake: slip notes, reply, pick a date. It’s a date only if they pick you too.',
   minPlayers: 4,
+  endBelow: 3, // with 2 left it plays itself (the only card wins, each can deduce the other, a guaranteed date)
 };
 CrushGame.NOTES = NOTES;
 

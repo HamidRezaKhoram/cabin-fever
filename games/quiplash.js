@@ -26,8 +26,10 @@ const POINTS_PER_VOTE = 100;
 const SHUTOUT_BONUS = 250;
 /** Side bets an author can place on their own matchup while the room votes. */
 const SIDE_BETS = {
-  win: { label: "I'll win", win: 100, lose: 50 },
-  landslide: { label: 'Landslide (75%+)', win: 250, lose: 100 },
+  // A real stake: you can only bet what you could lose (a round-1 bet used to risk nothing, so
+  // betting was always free points), and "I'll win" is even money.
+  win: { label: "I'll win", win: 100, lose: 100 },
+  landslide: { label: 'Landslide (75%+)', win: 250, lose: 150 },
 };
 
 /** @typedef {{ prompt: string, authors: string[], answers: (string | null)[] }} Matchup */
@@ -101,6 +103,15 @@ class QuiplashGame extends BaseGame {
     return (this.todo.get(id) || []).filter(({ mi, side }) => this.matchups[mi].answers[side] == null);
   }
 
+  /** Which side bets `id` may place now: only stakes they can cover, and no Landslide with fewer than
+   * 2 voters. @param {string} id */
+  canBet(id) {
+    const p = this.room.players.get(id);
+    const score = p ? p.score : 0;
+    const voters = this.room.players.size - 2;
+    return { win: score >= SIDE_BETS.win.lose * this.mult(), landslide: voters >= 2 && score >= SIDE_BETS.landslide.lose * this.mult() };
+  }
+
   /** @param {string} id @param {Record<string, any>} payload */
   handleSubmit(id, payload) {
     if (this.phase === 'answering') {
@@ -125,6 +136,7 @@ class QuiplashGame extends BaseGame {
       const m = this.matchIndex == null ? undefined : this.matchups[this.matchIndex];
       const bets = this.bets;
       if (!m || !bets || !m.authors.includes(id) || bets.has(id) || typeof payload.bet !== 'string' || !Object.prototype.hasOwnProperty.call(SIDE_BETS, payload.bet)) return;
+      if (!this.canBet(id)[/** @type {keyof typeof SIDE_BETS} */ (payload.bet)]) return false;
       bets.set(id, payload.bet);
       this.push();
     } else if (this.phase === 'voting') {
@@ -148,13 +160,16 @@ class QuiplashGame extends BaseGame {
     this.nextMatchup();
   }
 
+  /** @returns {void} */
   nextMatchup() {
     this.matchIndex += 1;
     if (this.matchIndex >= this.matchups.length) return this.nextRound();
     const m = this.matchups[this.matchIndex];
     this.votes = new Map();
     this.bets = new Map();
-    // Forfeits: if one or both players didn't answer, skip straight to results.
+    // Neither answered: nothing to show (7 s of "no answer — forfeit!" twice over, per matchup).
+    if (m.answers[0] == null && m.answers[1] == null) return this.nextMatchup();
+    // Forfeits: if one player didn't answer, skip straight to results.
     if (m.answers[0] == null || m.answers[1] == null || this.voters().length === 0) return this.finishMatchup();
     this.phase = 'voting';
     this.setTimer(VOTE_MS, () => this.finishMatchup());
@@ -193,7 +208,8 @@ class QuiplashGame extends BaseGame {
       const kind = bets.get(author);
       if (!kind) return;
       const bet = SIDE_BETS[/** @type {keyof typeof SIDE_BETS} */ (kind)];
-      const won = kind === 'landslide' ? totalVotes > 0 && tally[i] / totalVotes >= 0.75 : tally[i] > tally[1 - i];
+      // (One voter made any win a "landslide": 100% of 1 vote.)
+      const won = kind === 'landslide' ? totalVotes >= 2 && tally[i] / totalVotes >= 0.75 : tally[i] > tally[1 - i];
       const p = this.room.players.get(author);
       let pts;
       if (won) pts = this.award(author, bet.win);
@@ -255,7 +271,7 @@ class QuiplashGame extends BaseGame {
     if (this.phase === 'voting') {
       return {
         gameState: { prompt: m.prompt, answers: m.answers.map((text) => ({ text })) },
-        you: { isAuthor: m.authors.includes(id), voted: this.votes.has(id), bet: this.bets ? this.bets.get(id) || null : null },
+        you: { isAuthor: m.authors.includes(id), voted: this.votes.has(id), bet: this.bets ? this.bets.get(id) || null : null, canBet: m.authors.includes(id) ? this.canBet(id) : null },
       };
     }
     const mine = m.authors.indexOf(id);

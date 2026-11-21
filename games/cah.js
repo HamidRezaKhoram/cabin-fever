@@ -32,6 +32,10 @@ class CAHGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
     super(room, push);
+    /** The last round was lost and is being played again (once). */
+    this.retried = false;
+    /** Why this round is a replay (shown on the TV). @type {string | null} */
+    this.notice = null;
     this.phase = 'cah-submit';
     this.totalRounds = this.rounds(TOTAL_ROUNDS);
     this.whiteDeck = this.rng.shuffleIn(WHITE.slice());
@@ -145,7 +149,14 @@ class CAHGame extends BaseGame {
   /** Time's up (or the TV pressed Skip): judge the cards that are in; with none, a new round. */
   submitTimeUp() {
     if (this.phase !== 'cah-submit') return;
-    if (this.submissions.size) this.finishSubmitting(); else this.nextRound();
+    if (this.submissions.size) this.finishSubmitting(); else this.redeal('No cards were played — dealing that round again.');
+  }
+
+  /** A round that never happened (no cards came in, or the Czar left): the TV says so and it's played
+   * again, once — it used to vanish silently and still count as one of the rounds. @param {string} why */
+  redeal(why) {
+    if (!this.retried) { this.retried = true; this.round = Math.max(0, this.round - 1); this.notice = why; } else { this.retried = false; this.notice = null; }
+    this.nextRound();
   }
 
   neededSubmissions() {
@@ -195,6 +206,7 @@ class CAHGame extends BaseGame {
   }
 
   finishSubmitting() {
+    this.retried = false; this.notice = null;
     if (this.phase !== 'cah-submit') return;
     this.revealList = this.rng.shuffleIn(
       [...this.submissions.entries()].map(([playerId, text]) => ({ playerId, text }))
@@ -237,7 +249,8 @@ class CAHGame extends BaseGame {
     for (const [voter, i] of this.favVotes) if (counts[i] != null && this.room.players.has(voter)) counts[i] += 1;
     const top = Math.max(0, ...counts);
     this.favourites = [];
-    if (!top) return;
+    // With 2 cards each submitter can only like the other: always a 1–1 tie that paid both.
+    if (!top || this.revealList.length < 3) return;
     counts.forEach((n, i) => {
       if (n !== top || this.revealList[i].gone) return;
       const entry = this.revealList[i];
@@ -259,10 +272,10 @@ class CAHGame extends BaseGame {
     for (const e of this.revealList) if (e.playerId === playerId) e.gone = true;
     const judging = this.phase === 'cah-submit' || this.phase === 'cah-czar';
     if (playerId === this.czarId && judging) {
-      // Czar vanished mid-round — no one left to judge: everyone gets their card back, next round.
+      // Czar vanished mid-round — no one left to judge: everyone gets their card back, the round again.
       // (During the reveal the round is already decided: it plays out.)
       this.returnCards();
-      this.nextRound();
+      this.redeal('The Card Czar left — dealing that round again.');
       return;
     }
     if (this.phase === 'cah-submit' && (this.room.players.size < 2 || this.submissions.size >= this.neededSubmissions())) {
@@ -285,6 +298,7 @@ class CAHGame extends BaseGame {
       czarNickname: this.czarNickname(),
       blackCard: this.blackCard,
       pickedBy: this.pickedBy || null,
+      notice: this.phase === 'cah-submit' ? this.notice || null : null,
     };
     switch (this.phase) {
       case 'cah-submit':
@@ -354,6 +368,7 @@ CAHGame.meta = {
   name: 'Rainy Day Cards',
   blurb: 'Fill in the blank. Whoever the Card Czar picks wins the round.',
   minPlayers: 3,
+  endBelow: 3, // with 2 left it plays itself (the only card wins, each can deduce the other, a guaranteed date)
 };
 
 module.exports = CAHGame;

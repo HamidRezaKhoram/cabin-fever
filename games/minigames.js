@@ -32,6 +32,8 @@ const TAP_BURST = 10;
 /** After the clock runs out, taps already on their way (phones send every 100 ms) still count. */
 const TAP_GRACE_MS = env('RUMPUS_MG_TAP_GRACE_MS', 400);
 // Anti-cheat on results the phone reports (a time, a %, a count): what a real round could have produced.
+/** The most of a tap's trip from the phone a reaction time is credited (see handleSubmit). */
+const MAX_LAG_MS = 150;
 const CLOCK_SLACK_MS = 300; // network + clock-sync wiggle
 const THROW_GAP_MS = 250;   // Skip Stones: one throw at a time
 const MAX_LOGS_PER_SEC = 4; // Woodpile Stack: a log has to slide over before it can drop
@@ -216,10 +218,17 @@ class MinigamesGame extends BaseGame {
   }
 
   /** @param {string} id @param {Record<string, any>} payload */
-  handleSubmit(id, payload) {
+  /** @param {string} id @param {Record<string, any>} payload @param {{ at: number | null }} [meta] */
+  handleSubmit(id, payload, meta) {
     if (this.phase !== 'mg-play') return;
     const now = Date.now();
     const p = this.params;
+    // A reaction time, less the trip from the phone (its send time on the synced clock), up to
+    // MAX_LAG_MS: timed on arrival alone, a phone on the internet relay or weak Wi-Fi lost its
+    // 100–300 ms round trip — the whole margin in Quick Draw. (Capped: a phone can't claim more.)
+    const sentAt = meta && Number.isFinite(meta.at) ? Number(meta.at) : now;
+    const lag = Math.max(0, Math.min(MAX_LAG_MS, now - sentAt));
+    const reaction = () => Math.max(0, now - lag - this.goAt);
     switch (this.mini) {
       case 'tug': case 'paddle': {
         // Canoe Sprint: the phone says which side each stroke was on; only a change of side is a
@@ -251,7 +260,7 @@ class MinigamesGame extends BaseGame {
       }
       case 'quickdraw':
         if (!payload.tap || this.early.has(id) || this.reactions.has(id)) return;
-        if (this.sub === 'wait') this.early.add(id); else this.reactions.set(id, now - this.goAt);
+        if (this.sub === 'wait') this.early.add(id); else this.reactions.set(id, reaction());
         if (!this.maybeDone()) this.push();
         return;
       case 'fireflies': { // lock in while they're still on screen, or after
@@ -289,7 +298,7 @@ class MinigamesGame extends BaseGame {
       case 'spot': {
         const cell = Number(payload.cell);
         if (!Number.isInteger(cell) || this.early.has(id) || this.reactions.has(id)) return;
-        if (cell === p.loon) this.reactions.set(id, now - this.goAt); else this.early.add(id);
+        if (cell === p.loon) this.reactions.set(id, reaction()); else this.early.add(id);
         if (!this.maybeDone()) this.push();
         return;
       }
@@ -321,7 +330,7 @@ class MinigamesGame extends BaseGame {
       case 'simon': {
         if (this.sub !== 'go' || !Array.isArray(payload.seq) || this.reactions.has(id) || this.early.has(id)) return;
         const ok = payload.seq.length === p.seq.length && payload.seq.every((/** @type {unknown} */ c, /** @type {number} */ k) => c === p.seq[k]);
-        if (ok) this.reactions.set(id, now - this.goAt); else this.early.add(id);
+        if (ok) this.reactions.set(id, reaction()); else this.early.add(id);
         if (!this.maybeDone()) this.push();
         return;
       }
@@ -388,15 +397,30 @@ class MinigamesGame extends BaseGame {
         const { red, blue } = this.tugTotals();
         // Nobody pulled: nobody scores (not a 100-each tie).
         winnerTeam = red === 0 && blue === 0 ? null : red === blue ? 'tie' : red > blue ? 'red' : 'blue';
+      } else if (!rank.length) {
+        winnerTeam = null; // nobody has a valid result: nobody scores (as in solo play), not a 100-each "tie"
       } else {
-        const best = rank[0];
-        const tied = best && rank.filter((r) => r[1] === best[1]).map((r) => this.teamOf(r[0]));
-        // Nobody has a valid result: nobody scores (as in solo play) — not a 100-each "tie".
-        winnerTeam = !best ? null : new Set(tied).size > 1 ? 'tie' : /** @type {'red'|'blue'} */ (this.teamOf(best[0]));
+        // The team that placed better on average wins (no result = last place). Going by the single
+        // best result handed the bigger team the win most of the time: more chances to hold the top spot.
+        /** @type {Map<string, number>} */
+        const place = new Map();
+        rank.forEach((row, i) => { place.set(row[0], i > 0 && row[1] === rank[i - 1][1] ? /** @type {number} */ (place.get(rank[i - 1][0])) : i); });
+        const avg = (/** @type {string} */ team) => {
+          const ids = this.playerIds().filter((id) => this.teamOf(id) === team);
+          return ids.length ? ids.reduce((a, id) => a + (place.has(id) ? /** @type {number} */ (place.get(id)) : rank.length), 0) / ids.length : Infinity;
+        };
+        const r = avg('red'), b = avg('blue');
+        winnerTeam = r === b ? 'tie' : r < b ? 'red' : 'blue';
       }
+      // Each team wins the same pot, split among its members: 200 a head on the bigger team paid it
+      // more for the same win (team scores are the members' sum).
+      const size = { red: 0, blue: 0 };
+      for (const id of this.playerIds()) { const t = this.teamOf(id); if (t === 'red' || t === 'blue') size[t]++; }
+      const perHead = (/** @type {'red'|'blue'} */ t, /** @type {number} */ pts) => Math.round((pts * (size.red + size.blue)) / 2 / Math.max(1, size[t]));
       for (const id of this.playerIds()) {
         const t = this.teamOf(id);
-        const pts = !winnerTeam ? 0 : winnerTeam === 'tie' ? 100 : t === winnerTeam ? 200 : 0;
+        if (t !== 'red' && t !== 'blue') continue;
+        const pts = !winnerTeam ? 0 : winnerTeam === 'tie' ? perHead(t, 100) : t === winnerTeam ? perHead(t, 200) : 0;
         if (pts) gained.set(id, this.award(id, pts));
       }
     } else {
@@ -431,6 +455,8 @@ class MinigamesGame extends BaseGame {
   /** @param {string} id */
   onPlayerLeft(id) {
     this.taps.delete(id); this.entries.delete(id); this.reactions.delete(id); this.partial.delete(id);
+    // (These count towards the TV's "done" tally too: a leaver's wrong bird read "2/2 spotters".)
+    this.early.delete(id); this.swatted.delete(id); this.throws.delete(id);
     if (this.phase !== 'mg-play' || !this.room.players.size) return;
     if (this.mini === 'skip') { if (this.playerIds().every((x) => (this.throws.get(x) || 0) >= 3)) this.finish(); }
     else if (!['tug', 'paddle', 'swat'].includes(String(this.mini))) this.maybeDone();
