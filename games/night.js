@@ -45,7 +45,7 @@ class NightGame extends BaseGame {
   playerOnly(id) { void id; return { gameState: { next: this.next }, you: {} }; }
 }
 
-NightGame.meta = { id: 'night', name: 'Lineup', blurb: 'Games back to back in your order, with a running leaderboard.', minPlayers: 1, lateJoin: true };
+NightGame.meta = { id: 'night', name: 'Lineup', blurb: 'Games back to back in your order, with a running leaderboard.', minPlayers: 1, lateJoin: true, endBelow: 1 };
 
 /**
  * Night points for one finished game. @param {{ id: string, score: number }[]} players

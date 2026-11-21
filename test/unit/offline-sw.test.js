@@ -36,13 +36,17 @@ function worker({ files = {}, media = {}, sizes = {}, stall = [], slow = [], fre
   /** @type {Set<string>} files whose body is being read */ const open = new Set();
   /** @type {[string, string[]][]} each fetch, with the files still downloading at that moment */ const overlap = [];
   const cache = {
-    match: async (/** @type {string} */ k) => { const v = saved.get(k); return v && new Response(v.buf, { headers: v.headers }); },
+    match: async (/** @type {string} */ k, /** @type {any} */ o = {}) => {
+      const hit = o.ignoreSearch ? [...saved.keys()].find((x) => x.split('?')[0] === k.split('?')[0]) : k;
+      const v = hit !== undefined && saved.get(hit);
+      return v ? new Response(v.buf, { headers: v.headers }) : undefined;
+    },
     put: async (/** @type {string} */ k, /** @type {Response} */ v) => {
       puts.push({ key: k, at: received });
       const buf = new Uint8Array(await v.arrayBuffer());
       saved.set(k, { buf, headers: new Headers(v.headers) });
     },
-    keys: async () => [], delete: async (/** @type {string} */ k) => saved.delete(k),
+    keys: async () => [...saved.keys()].map((url) => ({ url })), delete: async (/** @type {string} */ k) => saved.delete(typeof k === 'string' ? k : /** @type {any} */ (k).url),
   };
   const scope = 'https://example.test/cf/';
   const self = {
@@ -57,9 +61,11 @@ function worker({ files = {}, media = {}, sizes = {}, stall = [], slow = [], fre
     open.add(rel);
     return s.pipeThrough(new TransformStream({ transform(c, ctl) { received += c.byteLength; ctl.enqueue(c); }, flush() { open.delete(rel); } }));
   };
+  /** @type {any[]} the options of each fetch */ const fetchOpts = [];
   const fetch = async (/** @type {string} */ url, /** @type {any} */ opts = {}) => {
     const rel = url.slice(scope.length);
     fetched.push(rel);
+    fetchOpts.push(opts);
     overlap.push([rel, [...open]]);
     const range = opts.headers && opts.headers.Range ? String(opts.headers.Range) : null;
     ranges.push(range);
@@ -99,7 +105,15 @@ function worker({ files = {}, media = {}, sizes = {}, stall = [], slow = [], fre
   };
   const keys = () => [...saved.keys()].map((k) => k.replace(scope, '')).sort();
   const last = (/** @type {string} */ stage) => posted.filter((m) => m.stage === stage).pop();
-  return { cacheTv, posted, saved, on, fetched, ranges, puts, keys, last, scope, overlap };
+  /** The new worker takes over (after a deploy). */
+  const activate = async () => { /** @type {Promise<any>[]} */ const jobs = []; on.activate({ waitUntil: (/** @type {Promise<any>} */ p) => jobs.push(p) }); await Promise.all(jobs); };
+  /** What the worker answers for a page's request. @param {string} rel */
+  const get = async (rel) => {
+    /** @type {Promise<Response> | null} */ let answer = null;
+    on.fetch({ request: { method: 'GET', url: scope + rel, headers: new Headers() }, respondWith: (/** @type {Promise<Response>} */ p) => { answer = p; } });
+    return answer;
+  };
+  return { cacheTv, activate, get, posted, saved, on, fetched, fetchOpts, ranges, puts, keys, last, scope, overlap };
 }
 /** n bytes that differ from place to place (a piece out of order would show). @param {number} n */
 const bytes = (n) => Uint8Array.from({ length: n }, (_, i) => (i * 7 + (i >> 8)) & 255);
@@ -292,4 +306,30 @@ test('website fs: a save (write .tmp, rename) is one localStorage write, and sav
   sh.renameSync('/data/history.json.tmp', '/data/history.json');
   assert.strictEqual(sh.readFileSync('/data/history.json'), 'old');
   assert.strictEqual(ls.has('cf.fs:/data/history.json.tmp'), false);
+});
+
+// A deploy picked up on flaky Wi-Fi: the new worker took over, deleted the old copies, and the next
+// offline load had nothing to run. And a miss answered from the browser's HTTP cache saved the old file
+// under the new hash (mixed versions on the TV).
+test('after a deploy, old copies stay until the new ones are saved, and an offline miss is served the old copy', async () => {
+  const saved = new Map();
+  const w0 = worker({ files: { 'play.html': 'old' }, saved });
+  saved.set(w0.scope + 'play.html?v=old', { buf: new TextEncoder().encode('OLD PAGE'), headers: new Headers() });
+  // The new version is out; this phone can't download it right now.
+  const w = worker({ files: { 'play.html': 'new' }, saved, respond: { 'play.html': () => { throw new TypeError('offline'); } } });
+  await w.activate();
+  assert.ok(saved.has(w.scope + 'play.html?v=old'), 'the old copy is kept: its new version is not saved');
+  const res = await w.get('play.html');
+  assert.ok(res, 'the worker answers');
+  assert.strictEqual(await /** @type {Response} */ (res).text(), 'OLD PAGE', 'offline: the old copy runs the game');
+  assert.strictEqual(w.fetchOpts[0].cache, 'no-cache', 'a miss asks the server, not the HTTP cache');
+});
+
+test('once the new copy is saved, the old one is dropped (and removed files go)', async () => {
+  const saved = new Map();
+  const w = worker({ files: { 'play.html': 'new' }, saved });
+  const put = (/** @type {string} */ k) => saved.set(w.scope + k, { buf: new Uint8Array(1), headers: new Headers() });
+  put('play.html?v=old'); put('play.html?v=new'); put('gone.js?v=x');
+  await w.activate();
+  assert.deepStrictEqual(w.keys(), ['play.html?v=new']);
 });

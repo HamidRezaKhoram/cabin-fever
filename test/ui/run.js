@@ -37,6 +37,8 @@ const allPages = t.pages;
   const tv = await browser.newPage({ viewport: { width: 1400, height: 850 } });
   await watch(tv, 'tv');
   const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
+  /** End the game from the TV: End, then "End game" in the TV's own yes/no box. */
+  const endGame = async () => { await tv.click('[data-act="end"]'); await tv.click('.tv-ask .tv-ask-yes'); };
   let code;
   const phones = [];
 
@@ -545,8 +547,7 @@ const allPages = t.pages;
     await tv.waitForFunction(() => /** @type {any} */ (window).__updates > /** @type {any} */ (window).__seen);
     assert.strictEqual(await tv.evaluate(() => document.querySelector('#controls [data-act="skip"]') === /** @type {any} */ (window).__skipBtn), true, 'the in-game buttons are the same elements after an update');
     assert.strictEqual(await parked(), false, 'still no focus on Skip ⏭ after an update');
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
     assert.strictEqual(await tv.isHidden('.settings-more'), true, '⚙ Settings did not come back open');
     await tv.evaluate(() => { const w = /** @type {any} */ (window); w.Rumpus.setState = w.__setState; });
@@ -560,8 +561,7 @@ const allPages = t.pages;
     await tv.keyboard.press('Enter');
     await phones[0].waitForSelector('.number-form', { timeout: 5000 }) // Closest's first question on the phones
       .catch(async () => assert.fail(`OK didn't start Closest: ${JSON.stringify(await tv.evaluate(() => ({ phase: new Function('return state')().phase, active: document.activeElement && document.activeElement.tagName })))}`));
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
   });
 
@@ -595,8 +595,7 @@ const allPages = t.pages;
     await phones[0].fill('.number-form input', '12');
     await phones[0].click('.number-form button');
     await phones[0].waitForSelector('[data-pace="hurry"]');
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
   });
 
@@ -616,15 +615,35 @@ const allPages = t.pages;
     await shot(tv, '05-versus');
     // Wait until the voter's phone actually shows the vote buttons, then vote.
     const voter = await Promise.any(phones.map((p) => p.waitForSelector('[data-send]', { timeout: 15000 }).then(() => p)));
+    // A tap the TV takes but that changes nothing (the same Storm hunch twice…) brings no new state,
+    // so nothing redraws the screen: its buttons must come back on their own, not stay dead.
+    await voter.evaluate(() => {
+      const b = document.createElement('button');
+      b.id = 'noop-tap'; b.dataset.send = '{"noop":true}'; b.textContent = 'no-op';
+      /** @type {HTMLElement} */ (document.getElementById('game-view')).appendChild(b);
+    });
+    await voter.click('#noop-tap');
+    await voter.waitForFunction(() => [...document.querySelectorAll('#game-view [data-send]')].every((b) => !(/** @type {HTMLButtonElement} */ (b)).disabled), null, { timeout: 3000 });
+    await voter.evaluate(() => { const b = document.getElementById('noop-tap'); if (b) b.remove(); });
     await voter.click('[data-send]');
     await tv.waitForSelector('.vs-bar', { timeout: 15000 });
     await shot(tv, '06-results');
   });
 
   await check('typing is kept when another player submits (no re-render)', async () => {
-    await tv.click('[data-act="end"]').catch(() => {});
-    tv.once('dialog', (d) => d.accept());
+    // End asks in the page, not with the browser's confirm() (that popup takes the TV out of full
+    // screen): no dialog event, and Cancel keeps the game going.
+    let popup = false;
+    const onDialog = (/** @type {any} */ d) => { popup = true; d.dismiss().catch(() => {}); };
+    tv.on('dialog', onDialog);
     await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.tv-ask .tv-ask-no');
+    await tv.click('.tv-ask-no');
+    await tv.waitForSelector('.tv-ask', { state: 'detached' });
+    assert.ok(await tv.$('[data-act="end"]'), 'Cancel keeps the game going');
+    await endGame();
+    tv.off('dialog', onDialog);
+    assert.strictEqual(popup, false, 'no browser popup (it would leave full screen)');
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-game-id="majority"]');
     await phones[0].waitForSelector('.text-form input');
@@ -685,8 +704,7 @@ const allPages = t.pages;
   });
 
   await check('Message in a Bottle: drawing on a phone canvas reaches the TV', async () => {
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-game-id="telephone"]');
     for (const p of phones) { await p.waitForSelector('.text-form input'); await p.fill('.text-form input', 'a moose'); await p.click('.text-form button'); }
@@ -777,8 +795,7 @@ const allPages = t.pages;
   });
 
   await check('Cottage Olympics on real phones: tapping registers on the TV', async () => {
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'lobby');
     await tv.click('[data-game-id="minigames"]');
@@ -816,8 +833,7 @@ const allPages = t.pages;
   });
 
   await check('the player strip flashes for 5 s when someone leaves or reconnects mid-game', async () => {
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-game-id="closest"]');
     await tv.waitForFunction(() => document.body.classList.contains('in-game'));
@@ -836,8 +852,7 @@ const allPages = t.pages;
   });
 
   await check('Cottage Crush on real phones: a note sent from one phone lands only on the chosen phone', async () => {
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-act="bots"][data-n="1"]'); // 3 phones + 1 bot = 4 players
     await tv.waitForFunction(() => !document.querySelector('[data-game-id="crush"]').disabled);
@@ -851,8 +866,27 @@ const allPages = t.pages;
     await phones[0].click('.crush-card');
     await phones[1].waitForFunction((t) => [...document.querySelectorAll('.crush-note')].some((n) => n.textContent.includes(t.trim())), text);
     assert.ok(!(await phones[2].evaluate((t) => document.body.textContent.includes(t.trim()), text)), 'not visible to a third phone');
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    // Replies are private: what you typed back to one admirer must not be kept into the next note's
+    // reply box when the screen redraws (it was: one tap of Reply sent it to the wrong person).
+    const kept = await phones[1].evaluate(() => {
+      const view = /** @type {HTMLElement} */ (document.getElementById('game-view'));
+      const saved = view.innerHTML;
+      const form = (/** @type {number} */ id) => `<form class="crush-reply-form" data-reply="${id}"><input name="text"><button type="submit">Reply</button></form>`;
+      const keepInputs = new Function('return keepInputs')();
+      view.innerHTML = form(1);
+      /** @type {HTMLInputElement} */ (view.querySelector('input')).value = 'only for Ann';
+      let restore = keepInputs(); view.innerHTML = form(2); restore();
+      const otherNote = /** @type {HTMLInputElement} */ (view.querySelector('input')).value;
+      view.innerHTML = form(2);
+      /** @type {HTMLInputElement} */ (view.querySelector('input')).value = 'half-typed';
+      restore = keepInputs(); view.innerHTML = form(2); restore();
+      const sameNote = /** @type {HTMLInputElement} */ (view.querySelector('input')).value;
+      view.innerHTML = saved;
+      return { otherNote, sameNote };
+    });
+    assert.strictEqual(kept.otherNote, '', 'a reply typed to one note is not carried into another note\'s box');
+    assert.strictEqual(kept.sameNote, 'half-typed', 'typing is still kept across a redraw of the same note');
+    await endGame();
     await tv.waitForSelector('.game-pick');
     await tv.click('[data-act="nobots"]');
   });
@@ -879,9 +913,14 @@ const allPages = t.pages;
     }
     assert.strictEqual(await phaseNow(), 'lc-result', 'Skip got us to the result screen');
     assert.strictEqual(await tv.evaluate(() => Rumpus.music.rhythm.busy()), false, 'the song stopped when it was skipped');
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
+    // Ended mid-song from the TV: the booked song must not play on over the menu.
+    await tv.click('[data-game-id="looncall"]');
+    await tv.waitForFunction(() => Rumpus.music.rhythm.busy(), null, { timeout: 15000 });
+    await endGame();
+    await tv.waitForSelector('.game-pick');
+    await tv.waitForFunction(() => !Rumpus.music.rhythm.busy(), null, { timeout: 2000 });
   });
 
   await check('Lantern Lake on real phones: dragging on the circle steers that phone\'s boat on the TV canvas', async () => {
@@ -902,8 +941,7 @@ const allPages = t.pages;
     const lit = await tv.evaluate(() => { const c = document.querySelector('canvas.ll-lake'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4 * 97) if (d[i] + d[i + 1] + d[i + 2] > 60) n++; return n; });
     assert.ok(lit > 50, 'the lake is drawn');
     await shot(tv, '31-lantern');
-    tv.once('dialog', (d) => d.accept());
-    await tv.click('[data-act="end"]');
+    await endGame();
     await tv.waitForSelector('.game-pick');
   });
 

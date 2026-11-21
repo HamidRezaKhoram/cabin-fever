@@ -17,7 +17,9 @@ const OUT = process.env.LAB_OUT || '/out';
 const FLASH = process.env.LAB_FLASH === '1';
 const NO_NET = process.env.LAB_NO_NET === '1'; // experiment: no network emulation (it records every frame)
 const ONLY = (process.env.LAB_GAMES || '').split(',').filter(Boolean);
-const GAME_MS = Number(process.env.LAB_GAME_MS || 480000); // Storm Watch alone takes 335–360 s on the lab's slowed TV
+// Storm Watch alone takes 335–430 s on the lab's slowed TV; the flash pass's screenshots slow it more
+// (it ran past 480 s there) — "did not reach the end" must mean stuck, not slow.
+const GAME_MS = Number(process.env.LAB_GAME_MS || (FLASH ? 840000 : 480000));
 
 // Assumed devices (feel-plan.md §1). cpu = how many times slower than this machine: a guess until
 // /bench is run on the real devices. Phones render at DPR 1 here: headless Chrome rasterises in

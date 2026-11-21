@@ -10,7 +10,7 @@
 'use strict';
 
 const fsShim = require('./shims/fs');
-const { Sock, pairWires, pickTransport, fastChannel, showLanAddress, PREFIX } = require('./net');
+const { Sock, pairWires, pickTransport, fastChannel, showLanAddress, guardPeer, PREFIX } = require('./net');
 const { qrDataUrl } = require('./qr');
 const { offline } = require('./offline');
 
@@ -97,6 +97,7 @@ function listen(code, attempt = 0) {
   if (stopListening) stopListening();
   stopListening = transport.listen(code, (wire, path) => {
     const s = new Sock('phone-' + (++peerSeq));
+    guardPeer(s); // a phone's messages: no TV commands, no fake link events (web/net.js)
     core().connection(/** @type {any} */ (s));
     s.attach(wire);
     s.fire('connect');

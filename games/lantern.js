@@ -223,9 +223,14 @@ class LanternGame extends BaseGame {
    * @param {string} id @returns {number[]} */
   steer(id) {
     const t = this.tilt.get(id);
-    const p = this.room.players.get(id);
-    if (!t || !p || p.connected === false || Date.now() - (this.tiltAt.get(id) || 0) > TILT_STALE_MS) return [0, 0];
+    if (!t || !this.live(id)) return [0, 0];
     return t;
+  }
+
+  /** Is this phone here and steering (not locked, asleep or dropped)? @param {string} id */
+  live(id) {
+    const p = this.room.players.get(id);
+    return !!p && p.connected !== false && this.tilt.has(id) && Date.now() - (this.tiltAt.get(id) || 0) <= TILT_STALE_MS;
   }
 
   /** @param {string} id @param {number} pts */
@@ -342,7 +347,13 @@ class LanternGame extends BaseGame {
   }
 
   tickTag() {
-    if (this.it && !this.room.players.has(this.it)) this.it = this.rng.pick(this.playerIds());
+    // "It" left — or its phone dropped or locked (a frozen "it" nobody can tag back made the tag
+    // part of the scene dead): someone still steering is it instead.
+    if (this.it && !this.live(this.it) && this.tickNo * TICK_MS > TILT_STALE_MS) { // (phones get a moment to start steering)
+      const steering = this.playerIds().filter((id) => this.live(id));
+      if (steering.length) this.it = this.rng.pick(steering);
+      else if (!this.room.players.has(this.it)) this.it = this.rng.pick(this.playerIds());
+    }
     this.trickle((id) => id !== this.it, FREE_PTS_PER_S);
     if (this.tickNo % 15 === 0) this.livePush();
   }
@@ -386,8 +397,9 @@ class LanternGame extends BaseGame {
   }
 
   tickRaft() {
-    // Everyone's tilt, averaged, steers the one raft.
-    const ids = this.playerIds();
+    // Everyone's tilt, averaged, steers the one raft — everyone still steering: a locked or dropped
+    // phone counted as a zero (slowing the raft) and still earned every lantern.
+    const ids = this.playerIds().filter((id) => this.live(id));
     const tilts = ids.map((id) => this.steer(id));
     const avg = [tilts.reduce((s, t) => s + t[0], 0) / Math.max(1, ids.length), tilts.reduce((s, t) => s + t[1], 0) / Math.max(1, ids.length)];
     const r = this.raft;

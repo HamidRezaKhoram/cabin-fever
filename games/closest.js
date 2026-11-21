@@ -51,6 +51,28 @@ const REVEAL_MS = parseInt(process.env.RUMPUS_REVEAL_MS || '8000', 10);
 const DOUBLE_RISK = 200; // lost on a Double Down that doesn't finish in the top half
 const RANK_POINTS = [300, 200, 100];
 
+/** A guess as typed on a phone → a number (NaN if it isn't one). Phones in French have a decimal
+ * comma ("42,195" km, "3,785" L) — reading every comma as a thousands separator made those guesses
+ * ~1000× too big. Both marks: the last one is the decimal point. One comma: thousands only with
+ * several commas ("1,234,567") or, in an English room, exactly 3 digits after it ("3,785").
+ * Spaces and apostrophes are thousands separators ("3 785", "3'785").
+ * @param {unknown} raw @param {string} [lang] */
+function parseGuess(raw, lang) {
+  if (typeof raw === 'number') return raw;
+  if (typeof raw !== 'string') return NaN;
+  let s = raw.trim().replace(/[\s\u00a0\u202f']/g, '');
+  if (!/^[-+]?[\d.,]+$/.test(s)) return NaN;
+  const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+  if (lastDot >= 0 && lastComma >= 0) {
+    s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else if (lastComma >= 0) {
+    const commas = (s.match(/,/g) || []).length;
+    const thousands = commas > 1 || (s.length - lastComma - 1 === 3 && lang !== 'fr');
+    s = thousands ? s.replace(/,/g, '') : s.replace(',', '.');
+  } else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, ''); // "1.234.567"
+  return /^[-+]?(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) : NaN;
+}
+
 class ClosestGame extends BaseGame {
   /** @param {Room} room @param {() => void} push */
   constructor(room, push) {
@@ -116,11 +138,12 @@ class ClosestGame extends BaseGame {
     this.push();
   }
 
-  /** @param {string} id @param {Record<string, any>} payload */
+  /** @param {string} id @param {Record<string, any>} payload @returns {boolean | void} `false` = turned down */
   handleSubmit(id, payload) {
     if (this.phase !== 'cg-guess' || this.guesses.has(id)) return;
-    const n = typeof payload.number === 'number' ? payload.number : parseFloat(String(payload.number || '').replace(/,/g, ''));
-    if (!Number.isFinite(n) || Math.abs(n) > 1e12) return;
+    const n = parseGuess(payload.number, this.room.settings && this.room.settings.lang);
+    // Refused (false), not dropped: the phone gets its form back instead of a "✓ Sent" that never counted.
+    if (!Number.isFinite(n) || Math.abs(n) > 1e12) return false;
     this.guesses.set(id, n);
     // Double Down (once per game): ×2 if you finish in the top half, −DOUBLE_RISK if you don't.
     if (payload.double === true && !this.doubled.has(id)) { this.doubled.add(id); this.doubling.add(id); }
@@ -188,4 +211,5 @@ ClosestGame.meta = {
   minPlayers: 2,
 };
 
+ClosestGame.parseGuess = parseGuess;
 module.exports = ClosestGame;

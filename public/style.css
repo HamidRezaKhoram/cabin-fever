@@ -1329,3 +1329,9 @@ body.host.picking.kbd :focus { outline-color: #f4f1e8 !important; box-shadow: 0 
 body.host.picking.kbd .lineup-play:focus, body.host.picking.kbd .more-close:focus { box-shadow: 0 0 0 4px #0b0a10, 0 0 0 16px rgba(244, 241, 232, 0.2); }
 body.host.picking .settings-more input:focus, body.host.picking .settings-more select:focus { box-shadow: 0 0 0 3px #f4f1e8, inset 0 4px 0 rgba(0, 0, 0, 0.5); }
 body.host.picking .toggle input { accent-color: #f4f1e8; /* old TVs: default colour, cosmetic */ }
+/* TV yes/no box (in the page: the browser's confirm() popup leaves full screen). */
+.tv-ask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1000; display: grid; place-items: center; background: rgba(10, 8, 20, 0.65); }
+.tv-ask-box { max-width: min(90vw, 70vh); padding: 3vh 4vh; text-align: center; }
+.tv-ask-text { font-size: 3.2vh; margin: 0 0 3vh; }
+.tv-ask-btns { display: flex; gap: 3vh; justify-content: center; }
+.tv-ask-btns button { font-size: 3vh; padding: 1.4vh 3vh; }

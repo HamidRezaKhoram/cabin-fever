@@ -185,16 +185,24 @@ self.addEventListener('install', (/** @type {any} */ e) => {
   e.waitUntil(save(list, 'phone').then(() => /** @type {any} */ (self).skipWaiting()));
 });
 
+/** Drop copies whose hash is no longer current (old versions of changed files, removed files) —
+ * but keep an old copy until its new version is saved: a deploy picked up on flaky Wi-Fi (the new
+ * files didn't all download) used to delete the working old ones, and the next offline load failed.
+ * @param {Cache} cache */
+async function prune(cache) {
+  for (const req of await cache.keys()) {
+    const u = new URL(req.url);
+    const rel = u.href.slice(scope.length).split('?')[0];
+    const want = FILES[rel] || MEDIA[rel];
+    if (want && u.searchParams.get('v') === want) continue;
+    if (want && !(await cache.match(key(rel, want)))) continue; // the new one isn't here yet
+    await cache.delete(req);
+  }
+}
+
 self.addEventListener('activate', (/** @type {any} */ e) => {
   e.waitUntil((async () => {
-    // Drop copies whose hash is no longer current (old versions of changed files).
-    const cache = await caches.open(CACHE);
-    for (const req of await cache.keys()) {
-      const u = new URL(req.url);
-      const rel = u.href.slice(scope.length).split('?')[0];
-      const want = FILES[rel] || MEDIA[rel];
-      if (!want || u.searchParams.get('v') !== want) await cache.delete(req);
-    }
+    await prune(await caches.open(CACHE));
     await /** @type {any} */ (self).clients.claim();
   })());
 });
@@ -242,7 +250,16 @@ self.addEventListener('fetch', (/** @type {any} */ e) => {
     // The background save is downloading this very file: wait for it rather than download it twice.
     const pending = inflight.get(rel);
     if (pending) { await pending.catch(() => {}); hit = await cache.match(key(rel, h)); if (hit) return isolate(rel, hit); }
-    const res = await fetch(scope + rel);
+    // `no-cache`: ask the server, not the browser's HTTP cache — that could hand back the previous
+    // deploy's file (Pages caches for 10 min), which would then be saved under the new hash.
+    /** @type {Response} */
+    let res;
+    try { res = await fetch(scope + rel, { cache: 'no-cache' }); } catch (err) {
+      // Offline and the new version isn't saved: an older copy still runs the game.
+      const old = await cache.match(scope + rel, { ignoreSearch: true });
+      if (old) return isolate(rel, old);
+      throw err;
+    }
     if (res.ok) {
       const p = cache.put(key(rel, h), res.clone()).catch(() => {}); // (no room: it just isn't kept)
       inflight.set(rel, p);
@@ -262,7 +279,8 @@ self.addEventListener('message', (/** @type {any} */ e) => {
   if (e.data === 'cache-tv') {
     // The narrator's voice first (it's needed as soon as a game starts), then the music.
     const media = Object.entries(MEDIA).sort(([a], [b]) => Number(b.startsWith('tts/')) - Number(a.startsWith('tts/')));
-    if (!tvSaving) tvSaving = save(Object.entries(FILES), 'core').then(() => save(media, 'media')).finally(() => { tvSaving = null; });
+    // Once the new files are saved, the old copies kept for them can go.
+    if (!tvSaving) tvSaving = save(Object.entries(FILES), 'core').then(() => save(media, 'media')).then(async () => prune(await caches.open(CACHE))).finally(() => { tvSaving = null; });
     else for (const [stage, x] of Object.entries(at)) void progress(stage, x.done, x.total, x.noRoom); // already saving: say how far
     e.waitUntil(tvSaving);
   }

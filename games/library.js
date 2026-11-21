@@ -222,8 +222,13 @@ function draw(name, n = 1, opts = {}) {
   const ok = (/** @type {PoolItem} */ x) => filt(x) && !retired(name, x.id) && !house.isDisabled(name, x.id) && !house.isBanned(x);
   let fam = pool.family.filter(ok);
   let adult = opts.spicy ? pool.adult.filter(ok) : [];
-  // Never let retirement empty a pool: fall back to everything if too few remain.
-  if (fam.length + adult.length < n) { fam = pool.family.filter(filt); adult = opts.spicy ? pool.adult.filter(filt) : []; }
+  // Never let retirement empty a pool: bring retired items back if too few remain — but not what the
+  // host switched off or banned in /admin (the old fallback brought those back too), unless even that
+  // leaves too few (then switched-off, and only last of all banned, ones).
+  for (const keep of [(/** @type {PoolItem} */ x) => !house.isDisabled(name, x.id) && !house.isBanned(x), (/** @type {PoolItem} */ x) => !house.isBanned(x), () => true]) {
+    if (fam.length + adult.length >= n) break;
+    fam = pool.family.filter((x) => filt(x) && keep(x)); adult = opts.spicy ? pool.adult.filter((x) => filt(x) && keep(x)) : [];
+  }
   /** @type {PoolItem[]} */
   const out = [];
   /** @type {Set<string>} */

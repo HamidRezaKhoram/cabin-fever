@@ -173,7 +173,7 @@ function decide(view, rnd = Math.random) {
         return i >= 0 && rnd() < 0.7 ? { payload: { swat: i }, kind: 'react' } : null;
       }
       if (g.mini === 'balance') return tap({ balance: Math.round(rnd() * 100) });
-      if (g.mini === 'paddle') return { payload: { strokes: 2 + Math.floor(rnd() * 3) }, kind: 'mash' };
+      if (g.mini === 'paddle') return { payload: { sides: 'LRLR'.slice(rnd() < 0.5 ? 0 : 1).slice(0, 2 + Math.floor(rnd() * 3)) }, kind: 'mash' };
       if (g.mini === 'simon') return g.sub === 'go' ? tap({ seq: Array.from({ length: g.length || 5 }, () => Math.floor(rnd() * 4)) }) : null;
       if (g.mini === 'stack') return tap({ stack: 3 + Math.floor(rnd() * 12) });
       return null;

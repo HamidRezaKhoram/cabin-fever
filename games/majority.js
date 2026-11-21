@@ -182,7 +182,10 @@ class MajorityGame extends BaseGame {
   /** Score the round: answers voted into the herd by a majority merge into one group. */
   score() {
     if (this.phase !== 'mr-answer' && this.phase !== 'mr-herd') return;
-    const auto = this.groups && this.groups.length ? this.groups : this.autoGroups();
+    // Matching someone who has left pays nothing (the group still held their id, so a lone answer
+    // "matched" a gone player for 200, and bets counted them too).
+    const here = (/** @type {string[]} */ ids) => ids.filter((x) => this.room.players.has(x));
+    const auto = (this.groups && this.groups.length ? this.groups : this.autoGroups()).map((g) => ({ ...g, ids: here(g.ids) }));
     const votes = this.herdVotes || new Map();
     const tally = auto.map((_, i) => [...votes.values()].filter((v) => v.includes(i)).length);
     const need = Math.floor(votes.size / 2) + 1;

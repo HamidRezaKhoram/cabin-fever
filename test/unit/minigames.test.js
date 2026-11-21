@@ -8,7 +8,7 @@ before(async () => {
   srv = await startServer({
     RUMPUS_MG_ORDER: 'tug,quickdraw,fireflies,roast', RUMPUS_MG_INTRO_MS: '100', RUMPUS_MG_RESULT_MS: '200',
     RUMPUS_MG_TUG_MS: '3000', RUMPUS_MG_DRAW_MIN: '300', RUMPUS_MG_DRAW_MAX: '400', RUMPUS_MG_DRAW_WINDOW: '1500',
-    RUMPUS_MG_FLY_SHOW_MS: '200', RUMPUS_MG_FLY_GUESS_MS: '1500', RUMPUS_MG_ROAST_MS: '1500',
+    RUMPUS_MG_FLY_SHOW_MS: '200', RUMPUS_MG_FLY_GUESS_MS: '1500', RUMPUS_MG_ROAST_MS: '9000',
   });
 });
 after(() => srv.stop());
@@ -32,8 +32,13 @@ test('free-for-all series: tap race, quick draw, fireflies, roast — scoring an
   assert.strictEqual(rows1.P0.gained, 300);
   // 2. Quick draw: P0 jumps the gun (splash), P2 is fastest.
   await playing(h, 'quickdraw', 'wait');
+  // The wait's clock runs to the random moment of GO: showing it would tell everyone when to tap.
+  assert.strictEqual(h.state.gameState.endsAt, null, 'TV: no countdown to GO');
+  await until(() => ps.every((p) => p.state.phase === 'mg-play' && p.state.gameState.sub === 'wait'), 'phones waiting');
+  for (const p of ps) assert.strictEqual(p.state.gameState.endsAt, null, 'phone: no countdown to GO');
   ps[0].submit({ tap: 1 });
   await playing(h, 'quickdraw', 'go');
+  assert.ok(h.state.gameState.endsAt > 0, 'after GO the draw window has its clock again');
   ps[2].submit({ tap: 1 });
   await sleep(60);
   ps[1].submit({ tap: 1 });
@@ -59,12 +64,15 @@ test('free-for-all series: tap race, quick draw, fireflies, roast — scoring an
   const target = roast.gameState.target;
   assert.ok(target >= 2000 && target <= 6000 && target % 100 === 0, `target ${target}`);
   assert.strictEqual(roast.gameState.endsAt, null, 'no countdown while roasting');
+  ps[2].submit({ hold: target }); // a "perfect" hold reported at once, before it could have happened → ignored
+  await until(() => Date.now() - roast.gameState.playStart >= target * 1.3 + 50, 'long enough to have held', 9000);
   ps[0].submit({ hold: Math.round(target * 1.3) }); ps[1].submit({ hold: target - 500 }); ps[2].submit({ hold: target + 100 });
   const r4 = await until(() => h.state.phase === 'mg-result' && h.state.gameState.mini === 'roast' && h.state, 'roast result');
   const rows4 = Object.fromEntries(r4.gameState.result.rows.map((r) => [r.nickname, r]));
   assert.strictEqual(rows4.P0.burnt, true);
   assert.strictEqual(rows4.P0.gained, 0);
   assert.strictEqual(rows4.P2.gained, 900);
+  assert.strictEqual(rows4.P2.value, target + 100, 'the instant perfect hold did not count');
   await h.phase('gameover');
   assert.ok(score('P2') > 0);
 });
@@ -164,10 +172,12 @@ test('the seven new minis: skip stones, loon spotting, swat, balance, canoe spri
     assert.strictEqual(row(r4, 'Q0').value, 80, 'out-of-range report ignored');
     // Canoe Sprint: rate-capped strokes.
     await play('paddle');
-    ps[1].submit({ strokes: 500 });
-    for (let k = 0; k < 4; k++) { ps[2].submit({ strokes: 4 }); await sleep(200); }
+    ps[1].submit({ sides: 'LR'.repeat(250) });
+    for (let k = 0; k < 4; k++) { ps[2].submit({ sides: 'LRLR' }); await sleep(200); }
+    ps[0].submit({ sides: 'LLLLLLLL' }); // one side only: one stroke, not eight
     const r5 = await result('paddle');
     assert.ok(row(r5, 'Q1').value <= 25, 'stroke cap');
+    assert.strictEqual(row(r5, 'Q0').value, 1, 'the same side over and over is one stroke');
     // Campfire Sequence: the TV shows it, then the right order wins.
     const show = await until(() => h.state.phase === 'mg-play' && h.state.gameState.mini === 'simon' && h.state.gameState.seq && h.state, 'sequence shown');
     const seq = show.gameState.seq;
@@ -178,7 +188,9 @@ test('the seven new minis: skip stones, loon spotting, swat, balance, canoe spri
     const r6 = await result('simon');
     assert.strictEqual(row(r6, 'Q2').gained > 0, true);
     assert.strictEqual(row(r6, 'Q0').value, 'WRONG');
-    await play('stack');
+    const stk = await play('stack');
+    ps[1].submit({ stack: 30 }); // at once: more logs than could have slid over → ignored
+    await until(() => Date.now() - stk.gameState.playStart >= 3200, 'time for 12 logs', 5000);
     ps[0].submit({ stack: 99 }); ps[0].submit({ stack: 12 }); ps[1].submit({ stack: 7 }); ps[2].submit({ stack: 3 });
     const r7 = await result('stack');
     assert.strictEqual(row(r7, 'Q0').value, 12);

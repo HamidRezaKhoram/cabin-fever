@@ -31,6 +31,10 @@ const MAX_STROKES_PER_SEC = 20;
 const TAP_BURST = 10;
 /** After the clock runs out, taps already on their way (phones send every 100 ms) still count. */
 const TAP_GRACE_MS = env('RUMPUS_MG_TAP_GRACE_MS', 400);
+// Anti-cheat on results the phone reports (a time, a %, a count): what a real round could have produced.
+const CLOCK_SLACK_MS = 300; // network + clock-sync wiggle
+const THROW_GAP_MS = 250;   // Skip Stones: one throw at a time
+const MAX_LOGS_PER_SEC = 4; // Woodpile Stack: a log has to slide over before it can drop
 
 /** @typedef {'tug'|'quickdraw'|'fireflies'|'roast'|'skip'|'spot'|'swat'|'balance'|'paddle'|'simon'|'stack'} MiniId */
 /** @type {Record<MiniId, { name: string, rule: string, better: 'low' | 'high' }>} */
@@ -86,6 +90,12 @@ class MinigamesGame extends BaseGame {
     this.partial = new Map();
     /** @type {Map<string, number>} throws used (skip) */
     this.throws = new Map();
+    /** @type {Map<string, number>} when each player's last throw was (skip) */
+    this.throwAt = new Map();
+    /** @type {Map<string, { tokens: number, at: number }>} taps/strokes each player may still send (tug, paddle) */
+    this.bucket = new Map();
+    /** @type {Map<string, string>} the side of each player's last stroke (paddle) */
+    this.lastSide = new Map();
     /** @type {Map<string, Set<number>>} mosquitoes swatted */
     this.swatted = new Map();
     /** @type {Map<string, number>} skips of each player's latest throw (shown on their phone) */
@@ -119,7 +129,8 @@ class MinigamesGame extends BaseGame {
     this.round += 1;
     this.mini = this.nextMini();
     this.taps = new Map(); this.reactions = new Map(); this.early = new Set(); this.entries = new Map(); this.partial = new Map();
-    this.throws = new Map(); this.swatted = new Map(); this.lastThrow = new Map();
+    this.throws = new Map(); this.swatted = new Map(); this.lastThrow = new Map(); this.throwAt = new Map();
+    this.bucket = new Map(); this.lastSide = new Map();
     this.result = null; this.sub = ''; this.params = this.makeParams(this.mini);
     this.phase = 'mg-intro';
     this.setTimer(INTRO_MS, () => this.play(), false);
@@ -211,11 +222,27 @@ class MinigamesGame extends BaseGame {
     const p = this.params;
     switch (this.mini) {
       case 'tug': case 'paddle': {
-        // Rate cap: no more than MAX_TAPS_PER_SEC since the start (+ a little burst).
-        const n = this.mini === 'tug' ? payload.tap : payload.strokes;
+        // Canoe Sprint: the phone says which side each stroke was on; only a change of side is a
+        // stroke (the phone's own count was trusted: a modified phone paddled one side at 20/s).
+        let n = 0;
+        if (this.mini === 'tug') n = payload.tap;
+        else if (typeof payload.sides === 'string') {
+          let last = this.lastSide.get(id) || '';
+          for (const c of payload.sides.slice(0, 20)) if ((c === 'L' || c === 'R') && c !== last) { n++; last = c; }
+          this.lastSide.set(id, last);
+        }
         if (!Number.isInteger(n) || n <= 0) return;
-        const allowed = Math.floor(((now - this.playStart) / 1000) * (this.mini === 'paddle' ? MAX_STROKES_PER_SEC : MAX_TAPS_PER_SEC)) + TAP_BURST;
-        this.taps.set(id, Math.min(allowed, (this.taps.get(id) || 0) + Math.min(n, 20)));
+        // Rate cap: an allowance that refills at the top human rate and holds at most a second of
+        // it. (A running total since the start let a phone that sat idle send a burst to catch up.)
+        const rate = this.mini === 'paddle' ? MAX_STROKES_PER_SEC : MAX_TAPS_PER_SEC;
+        const b = this.bucket.get(id) || { tokens: TAP_BURST, at: this.playStart };
+        b.tokens = Math.min(rate, b.tokens + ((now - b.at) / 1000) * rate);
+        b.at = now;
+        const take = Math.min(n, 20, Math.floor(b.tokens));
+        b.tokens -= take;
+        this.bucket.set(id, b);
+        if (take <= 0) return;
+        this.taps.set(id, (this.taps.get(id) || 0) + take);
         if (this.mini === 'tug' && this.teamsOn()) {
           const { red, blue } = this.tugTotals();
           if (Math.abs(red - blue) >= this.tugGoal()) return this.finish();
@@ -237,6 +264,7 @@ class MinigamesGame extends BaseGame {
       case 'roast': {
         const ms = Number(payload.hold);
         if (!Number.isFinite(ms) || ms < 0 || ms > 20000 || this.entries.has(id)) return;
+        if (ms > now - this.playStart + CLOCK_SLACK_MS) return; // held longer than the round has run
         this.entries.set(id, Math.round(ms));
         if (!this.maybeDone()) this.push();
         return;
@@ -245,7 +273,12 @@ class MinigamesGame extends BaseGame {
         // A throw at server time `at` (phones send their synced clock): the server reads the arrow.
         const at = Number(payload.throw);
         const used = this.throws.get(id) || 0;
-        if (!Number.isFinite(at) || used >= 3 || at < this.playStart - 200 || at > now + 300) return;
+        // The throw time is the phone's, but it must be about now (not a perfect moment worked out
+        // after the fact) and one at a time.
+        if (!Number.isFinite(at) || used >= 3 || at < this.playStart - 200 || at > now + CLOCK_SLACK_MS || at < now - 600) return;
+        const prev = this.throwAt.get(id);
+        if (prev !== undefined && at - prev < THROW_GAP_MS) return;
+        this.throwAt.set(id, at);
         const skips = skipsFor(swing(at - this.playStart, p.period), p.sweet);
         this.throws.set(id, used + 1);
         this.lastThrow.set(id, skips);
@@ -276,7 +309,11 @@ class MinigamesGame extends BaseGame {
         const v = Number(payload[this.mini]);
         const max = this.mini === 'balance' ? 100 : 40;
         if (!Number.isFinite(v) || v < 0 || v > max || this.entries.has(id)) return;
-        if (payload.partial === true) { this.partial.set(id, Math.round(v)); return; } // progress, not done
+        const ran = now - this.playStart;
+        if (this.mini === 'stack' && v > (ran / 1000) * MAX_LOGS_PER_SEC + 1) return; // stacked faster than logs can slide
+        // Balance runs to the end of the clock: a "final" % long before then is only progress.
+        const early = this.mini === 'balance' && this.endsAt && now < this.endsAt - 2000;
+        if (payload.partial === true || early) { this.partial.set(id, Math.round(v)); return; } // progress, not done
         this.entries.set(id, Math.round(v));
         if (!this.maybeDone()) this.push();
         return;
@@ -294,7 +331,16 @@ class MinigamesGame extends BaseGame {
 
   tugTotals() {
     const t = { red: 0, blue: 0 };
+    const size = { red: 0, blue: 0 };
+    for (const id of this.playerIds()) { const team = this.teamOf(id); if (team === 'red' || team === 'blue') size[team]++; }
     for (const [id, n] of this.taps) { const team = this.teamOf(id); if (team === 'red' || team === 'blue') t[team] += n; }
+    // Uneven teams (2 v 1): each side pulls with its average, scaled to the average team size, so
+    // the bigger team doesn't win just by having more thumbs.
+    if (size.red && size.blue && size.red !== size.blue) {
+      const k = (size.red + size.blue) / 2;
+      t.red = Math.round((t.red / size.red) * k);
+      t.blue = Math.round((t.blue / size.blue) * k);
+    }
     return t;
   }
 
@@ -322,7 +368,8 @@ class MinigamesGame extends BaseGame {
       const v = this.raw(id);
       if (v === null) continue;
       if (this.mini === 'fireflies') rows.push([id, Math.abs(v - this.flies.length)]);
-      else if (this.mini === 'roast') { if (v <= this.params.burn) rows.push([id, Math.abs(v - this.params.target)]); }
+      // Letting go at once isn't a roast: it has to reach half the target and not burn.
+      else if (this.mini === 'roast') { if (v <= this.params.burn && v >= this.params.target / 2) rows.push([id, Math.abs(v - this.params.target)]); }
       else if (MINIS[/** @type {MiniId} */ (this.mini)].better === 'high') { if (v > 0) rows.push([id, -v]); }
       else rows.push([id, v]);
     }
@@ -339,7 +386,8 @@ class MinigamesGame extends BaseGame {
     if (this.teamsOn()) {
       if (this.mini === 'tug') {
         const { red, blue } = this.tugTotals();
-        winnerTeam = red === blue ? 'tie' : red > blue ? 'red' : 'blue';
+        // Nobody pulled: nobody scores (not a 100-each tie).
+        winnerTeam = red === 0 && blue === 0 ? null : red === blue ? 'tie' : red > blue ? 'red' : 'blue';
       } else {
         const best = rank[0];
         const tied = best && rank.filter((r) => r[1] === best[1]).map((r) => this.teamOf(r[0]));
@@ -412,7 +460,8 @@ class MinigamesGame extends BaseGame {
       : this.mini === 'swat' ? { bugs: p.bugs } : this.mini === 'balance' ? { ax: p.ax, ay: p.ay, px: p.px, py: p.py, radius: p.radius }
         : this.mini === 'stack' ? { speed: p.speed, speedUp: p.speedUp } : this.mini === 'spot' ? { cells: SPOT_CELLS } : this.mini === 'simon' ? { colours: COLOURS, length: (p.seq || []).length } : {};
     // Marshmallow Roast hides the clock: no countdown on the TV or the phones while roasting.
-    const noClock = this.mini === 'roast' && this.phase === 'mg-play' ? { endsAt: null } : {};
+    // Quick Draw hides it while waiting: the clock then runs to the (random) moment of GO.
+    const noClock = this.phase === 'mg-play' && (this.mini === 'roast' || (this.mini === 'quickdraw' && this.sub === 'wait')) ? { endsAt: null } : {};
     return { mini: this.mini, miniName: m.name, rule: m.rule, sub: this.sub, teams: this.teamsOn(), playStart: this.phase === 'mg-play' ? this.playStart : null, ...pub, ...noClock };
   }
 

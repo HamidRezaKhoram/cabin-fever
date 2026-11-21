@@ -268,6 +268,7 @@ QuiplashGame.meta = {
   name: 'Campfire Quips',
   blurb: 'Head-to-head comedy: two players, one prompt, everyone else votes.',
   minPlayers: 3,
+  endBelow: 3, // with 2 left nobody can vote, so nobody can score
 };
 
 module.exports = QuiplashGame;

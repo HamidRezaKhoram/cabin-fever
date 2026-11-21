@@ -80,11 +80,13 @@ class MostLikelyGame extends BaseGame {
     this.push();
   }
 
-  /** @param {string} id @param {Record<string, any>} payload */
+  /** @param {string} id @param {Record<string, any>} payload @returns {boolean | void} `false` = turned down */
   handleSubmit(id, payload) {
     if (this.phase !== 'ml-vote' || this.votes.has(id)) return;
-    const target = String(payload.target);
-    if (!this.targetable(target)) return;
+    // A player id is a string: String() of a crafted object ({toString: 1}) threw, and the TV showed
+    // "Something went wrong" for as long as a phone kept sending it.
+    const target = payload.target;
+    if (typeof target !== 'string' || !this.targetable(target)) return false;
     this.votes.set(id, target);
     if (this.allIn(this.votes)) this.reveal();
     else this.push();
