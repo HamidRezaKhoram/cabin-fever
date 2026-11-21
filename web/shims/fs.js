@@ -27,10 +27,14 @@ function preload(map) { for (const [p, v] of Object.entries(map)) files.set(norm
 const staged = new Map();
 /** How many times each path has been saved (cheap "did it change?" for web/host-entry.js). @type {Map<string, number>} */
 const saves = new Map();
+let warned = false;
 /** @param {string} k @param {string} v */
 function commit(k, v) {
   saves.set(k, (saves.get(k) || 0) + 1);
-  try { localStorage.setItem(LS + k, v); } catch (e) { /* storage full or blocked: best effort */ }
+  try { localStorage.setItem(LS + k, v); } catch (e) {
+    // Storage full or blocked: best effort, but say so once (it used to fail silently, for good).
+    if (!warned) { warned = true; console.warn('Cabin Fever: could not save ' + k + ' (browser storage full?)', e); }
+  }
 }
 
 /** @param {string} p @returns {string} */

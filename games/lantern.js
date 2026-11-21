@@ -338,7 +338,9 @@ class LanternGame extends BaseGame {
   /** Points trickle in (whole points, fractions carried) for everyone `who` says. @param {(id: string) => boolean} who @param {number} perS */
   trickle(who, perS) {
     for (const id of this.boats.keys()) {
-      if (!who(id)) continue;
+      // Only boats someone is steering: a locked or idle phone was never "it" for long (it's passed
+      // on after TILT_STALE_MS) and so collected the most tag points of anyone.
+      if (!who(id) || !this.live(id)) continue;
       const a = (this.acc.get(id) || 0) + perS / 30;
       const whole = Math.floor(a);
       this.acc.set(id, a - whole);

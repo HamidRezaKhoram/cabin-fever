@@ -167,6 +167,7 @@ MostLikelyGame.meta = {
   name: 'Cabin Superlatives',
   blurb: 'Vote which friend fits the prompt. Score by agreeing with the crowd.',
   minPlayers: 3,
+  endBelow: 3, // with 2 left it plays itself (the only card wins, each can deduce the other, a guaranteed date)
 };
 
 module.exports = MostLikelyGame;

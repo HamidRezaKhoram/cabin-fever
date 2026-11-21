@@ -40,6 +40,7 @@ let prevScores = new Map();
 /** @type {number | null} */
 let lastRoundSeen = null;
 /** @type {{ endsAt: number | null, total: number }} */
+/** @type {{ endsAt: number | null, total: number, key?: string | null, start?: number }} */
 let timerTotal = { endsAt: null, total: 1 };
 let wiping = false;
 /** @type {string | null} */
@@ -901,7 +902,7 @@ function legacyHost(/** @type {any} */ phase, /** @type {any} */ g) {
         g.scored.map((/** @type {any} */ s) => `<li class="${s.correct ? 'correct' : 'wrong'}">${av(s.nickname)} ${esc(s.nickname)} ${s.correct ? `+${s.gained}` : `✗${s.gained < 0 ? ` ${s.gained}` : ''}`}${s.double ? ' <span class="streak">🎲 DOUBLE DOWN</span>' : ''}${s.streak > 1 ? ` <span class="streak">🔥×${s.streak}</span>` : ''}</li>`).join('') + '</ul>';
     case 'cah-submit':
       return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}${g.pickedBy ? ` · prompt chosen by ${av(g.pickedBy)} ${esc(g.pickedBy)}` : ''}</p>
-        <h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">Everyone else, play your worst card!</p>
+        ${g.notice ? `<p class="big-sub">⟲ ${esc(g.notice)}</p>` : ''}<h1 class="prompt">${esc(g.blackCard)}</h1><p class="big-sub">Everyone else, play your worst card!</p>
         <p class="count">${g.submittedCount} / ${g.neededCount} cards in</p>`;
     case 'cah-czar':
       return `${roundTag}<p class="round-tag">Card Czar: ${av(g.czarNickname)} ${esc(g.czarNickname)}</p>
@@ -972,7 +973,15 @@ function showScorePops(pops) {
 
 function updateTimerBar(/** @type {any} */ endsAt) {
   if (!endsAt) { timerbar.hidden = true; return; }
-  if (timerTotal.endsAt !== endsAt) timerTotal = { endsAt, total: Math.max(1000, endsAt - window.Rumpus.time.now()) };
+  if (timerTotal.endsAt !== endsAt) {
+    const now = window.Rumpus.time.now();
+    // HURRY UP moves the end earlier on the same screen: the bar keeps draining from where it is
+    // (it used to refill to 100% for the last 10 s, just as the banner said time was running out).
+    const prevEnd = timerTotal.endsAt;
+    const same = prevEnd && timerTotal.key === lastPhaseKey && endsAt < prevEnd && timerTotal.start;
+    timerTotal = same && prevEnd ? { endsAt, total: timerTotal.total * ((endsAt - now) / Math.max(1, prevEnd - now)), key: lastPhaseKey, start: timerTotal.start }
+      : { endsAt, total: Math.max(1000, endsAt - now), key: lastPhaseKey, start: now };
+  }
   timerbar.hidden = false;
 }
 // Timer bar drains smoothly on the shared 30 fps clock (transform, not width:
@@ -1054,7 +1063,7 @@ function render() {
     html = '<h1>🏆 Final scores</h1>' + teamWin + podium(g.standings || []) +
       (awards.length ? '<div class="awards">' + awards.map((a, i) => `<div class="award" style="animation-delay:${1 + i * 0.5}s">
         ${av(a.name, 'avatar big')}<div><b>${esc(a.title)}</b><span>${esc(a.name)} — ${esc(a.desc)}</span></div></div>`).join('') + '</div>' : '') +
-      `<p class="hint">📸 Best moments &amp; hall of fame: <span class="hl-link">${esc(joinUrl(false).replace(/^https?:\/\//, '').replace(/\/play$/, '/highlights'))}</span></p>` +
+      `<p class="hint">📸 Best moments &amp; hall of fame: <span class="hl-link">${esc(joinUrl(false).replace(/^https?:\/\//, '').replace(/play$/, 'highlights'))}</span></p>` /* (no "/highlights" literal: the browser build's path rewrite turned it into "highlights" and dropped the slash) */ +
       (state.night ? window.Rumpus.nightTable(state.night, true) : '<p class="next-row"><button data-act="picknext" class="next-game-btn">🎮 Choose the next game</button></p>');
     // The picker takes the whole screen (it never scrolls): one press swaps the scores for it.
     if (pickNext && !state.night) html = gamePicker('Play again?');

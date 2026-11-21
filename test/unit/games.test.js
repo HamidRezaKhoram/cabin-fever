@@ -82,8 +82,8 @@ test('Campfire Quips: authors cannot vote on their own matchup; votes 100 each; 
   assert.strictEqual(r.gameState.result.sides[0].gained, 0);
 });
 
-test('Campfire Quips: authors place side bets while the room votes (landslide +250, a lost bet never goes below 0)', async () => {
-  const { h, ps, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
+test('Campfire Quips: side bets need points to stake — with none, nobody can bet (they used to be free points)', async () => {
+  const { h, ps } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'quiplash' });
   await h.phase('answering');
   await answerAll(ps);
@@ -91,21 +91,12 @@ test('Campfire Quips: authors place side bets while the room votes (landslide +2
   await until(() => ps.every((p) => p.state.phase === 'voting'), 'phones voting');
   const authors = ps.filter((p) => p.state.you.isAuthor);
   const voters = ps.filter((p) => !p.state.you.isAuthor);
+  for (const a of authors) assert.deepStrictEqual(a.state.you.canBet, { win: false, landslide: false }, 'nothing to stake in round 1');
   authors[0].submit({ bet: 'landslide' }); authors[1].submit({ bet: 'win' });
-  authors[1].submit({ bet: 'landslide' }); // only one bet
   voters[0].submit({ bet: 'win' }); // voters can't bet
-  await until(() => authors.every((a) => a.state.you.bet), 'bets placed');
-  assert.strictEqual(authors[1].state.you.bet, 'win');
-  const placed = Object.fromEntries(authors.map((a) => [a.nickname, a.state.you.bet]));
   for (const p of voters) p.submit({ choice: 1 });
   const r = await h.phase('results');
-  const [s0, s1] = r.gameState.result.sides;
-  // Side 1 took every vote. Whoever bet on side 1 wins their bet; the other loses (from 0 → stays 0).
-  const win1 = placed[s1.nickname] === 'landslide' ? 250 : 100;
-  assert.strictEqual(s1.bet.won, true);
-  assert.strictEqual(score(s1.nickname), 2 * 100 + 250 + win1);
-  assert.strictEqual(s0.bet.won, false);
-  assert.strictEqual(score(s0.nickname), 0, 'a lost bet never takes you below zero');
+  for (const sd of r.gameState.result.sides) assert.strictEqual(sd.bet, null);
 });
 
 test('Campfire Quips: a missing answer forfeits the matchup', async () => {
@@ -181,29 +172,30 @@ test('Trivia: correct answers score with speed bonus, streaks add 100, wrong res
   assert.strictEqual(last.gameState.correct, 1);
 });
 
-test('Trivia: Double Down once per game — ×2 when right, −300 (never below 0) when wrong', async () => {
+test('Trivia: Double Down once per game, with points to cover it — ×2 when right, −300 when wrong', async () => {
   const { h, by, score } = await room(['Ann', 'Ben', 'Cat'], { rounds: 3 });
   h.emit('host:startGame', { gameId: 'trivia' });
   await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 1, 'q1');
-  await until(() => by.Ann.state.phase === 'trivia-question' && by.Ann.state.you.canDouble === true, 'Ann can double');
-  by.Ann.submit({ choice: 1, double: true }); by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 0, double: true }); // Cat wrong at 0 points
+  await until(() => by.Cat.state.phase === 'trivia-question', 'phones on q1');
+  assert.strictEqual(by.Cat.state.you.canDouble, false, 'nothing to stake at 0 points (it used to be free)');
+  by.Ann.submit({ choice: 1 }); by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 0, double: true });
   let st = await until(() => h.state.phase === 'trivia-reveal' && h.state, 'reveal 1');
-  const s1 = Object.fromEntries(st.gameState.scored.map((x) => [x.nickname, x]));
-  assert.ok(s1.Ann.double && s1.Ann.gained >= 1000 && s1.Ann.gained <= 2000, `doubled: ${s1.Ann.gained}`);
-  assert.strictEqual(score('Cat'), 0, 'a wrong double down never takes you below zero');
+  assert.ok(!st.gameState.scored.find((x) => x.nickname === 'Cat').double, 'a double at 0 points is ignored');
   await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 2, 'q2');
-  await until(() => by.Ann.state.phase === 'trivia-question' && by.Ann.state.gameState.round === 2, 'Ann on q2');
-  assert.strictEqual(by.Ann.state.you.canDouble, false, 'only once per game');
-  by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 1 }); by.Ann.submit({ choice: 1, double: true }); // Ann's second double is ignored
+  await until(() => by.Ann.state.phase === 'trivia-question' && by.Ann.state.gameState.round === 2 && by.Ann.state.you.canDouble === true, 'Ann can double');
+  by.Ann.submit({ choice: 1, double: true }); by.Ben.submit({ choice: 1 }); by.Cat.submit({ choice: 1 });
   st = await until(() => h.state.phase === 'trivia-reveal' && h.state.gameState.round === 2 && h.state, 'reveal 2');
   const s2 = Object.fromEntries(st.gameState.scored.map((x) => [x.nickname, x]));
-  assert.ok(!s2.Ann.double, 'second double down ignored');
+  assert.ok(s2.Ann.double && s2.Ann.gained >= 1200, `doubled: ${s2.Ann.gained}`);
   await until(() => h.state.phase === 'trivia-question' && h.state.gameState.round === 3, 'q3');
+  await until(() => by.Ann.state.phase === 'trivia-question' && by.Ann.state.gameState.round === 3, 'Ann on q3');
+  assert.strictEqual(by.Ann.state.you.canDouble, false, 'only once per game');
   const before = score('Ben');
-  assert.ok(before > 300);
-  by.Ann.submit({ choice: 1 }); by.Cat.submit({ choice: 1 }); by.Ben.submit({ choice: 0, double: true });
-  await until(() => h.state.phase === 'trivia-reveal' && h.state.gameState.round === 3, 'reveal 3');
-  assert.strictEqual(score('Ben'), before - 300, 'wrong double down costs 300');
+  by.Ann.submit({ choice: 1, double: true }); by.Cat.submit({ choice: 1 }); by.Ben.submit({ choice: 0, double: true });
+  st = await until(() => h.state.phase === 'trivia-reveal' && h.state.gameState.round === 3 && h.state, 'reveal 3');
+  assert.ok(!st.gameState.scored.find((x) => x.nickname === 'Ann').double, 'second double down ignored');
+  const risk = 300 * (st.gameState.multiplier || 1);
+  assert.strictEqual(score('Ben'), before - risk, 'a wrong double down costs the risk');
 });
 
 test('Trivia: category rounds every 3–5 questions; last place picks; questions match the category', async () => {
@@ -357,17 +349,15 @@ test('Closest Cast: bullseye 300+200, ties share a rank, far guesses get nothing
   assert.strictEqual(rev.gameState.result.list.find((e) => e.nickname === 'Dan').guess, 1000);
 });
 
-test('Closest Cast: Double Down doubles a placing guess; a miss costs 200 (never below 0)', async () => {
-  const { h, by, score } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
+test('Closest Cast: Double Down is closed at 0 points (it used to be a free ×2)', async () => {
+  const { h, by } = await room(['Ann', 'Ben', 'Cat', 'Dan']);
   h.emit('host:startGame', { gameId: 'closest' });
   await h.phase('cg-guess');
-  await until(() => by.Ann.state.phase === 'cg-guess' && by.Ann.state.you.canDouble === true, 'can double');
-  // Ann places 2nd and doubles; Dan misses and doubles with 0 points.
+  await until(() => by.Ann.state.phase === 'cg-guess', 'phones guessing');
+  assert.strictEqual(by.Ann.state.you.canDouble, false);
   by.Ben.submit({ number: 42 }); by.Ann.submit({ number: 40, double: true }); by.Cat.submit({ number: 30 }); by.Dan.submit({ number: 5000, double: true });
   const rev = await h.phase('cg-reveal');
-  assert.strictEqual(score('Ann'), 400, '2nd place 200 × 2');
-  assert.strictEqual(score('Dan'), 0, 'never below zero');
-  assert.ok(rev.gameState.result.list.find((e) => e.nickname === 'Ann').double);
+  assert.ok(rev.gameState.result.list.every((e) => !e.double), 'doubles at 0 points are ignored');
 });
 
 test('Closest Cast: junk numbers are rejected and the timer still ends the round', async () => {
@@ -517,17 +507,12 @@ test('Porch Confessions: a prompt, secret TRUTH/LIE roles, everyone calls everyo
   const liars = ps.filter((p) => p.state.you.lie);
   assert.ok(liars.length >= 1 && liars.length <= 3, `${liars.length} liars of 4`);
   assert.ok(!JSON.stringify(h.state).includes('"lie":true'), 'the TV never knows who lies while writing');
-  // A truth-teller with nothing true to say may switch to lying — unless they're the last one telling
-  // the truth (a round of only lies isn't the game).
+  // A truth-teller with nothing true to say may switch to lying — every one of them is offered it
+  // (offering it only while another truth-teller remained told the last one everyone else lied).
   const honest = ps.find((p) => !p.state.you.lie);
-  const truthers = ps.filter((p) => !p.state.you.lie).length;
+  assert.ok(ps.filter((p) => !p.state.you.lie).every((p) => p.state.you.canSwitch), 'every truth-teller sees the switch');
   honest.submit({ switchToLie: true });
-  if (truthers >= 2) await until(() => honest.state.you.lie === true, 'switched');
-  else {
-    await sleep(200);
-    assert.strictEqual(honest.state.you.lie, false, 'the last truth-teller can\'t switch');
-    assert.strictEqual(honest.state.you.canSwitch, false);
-  }
+  await until(() => honest.state.you.lie === true, 'switched');
   const switched = honest.state.you.lie === true;
   for (const p of ps) p.submit({ text: `${p.nickname}'s story` });
   const j = await h.phase('tt-judge');

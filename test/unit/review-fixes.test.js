@@ -210,7 +210,7 @@ test('phone: a queued join is sent again after the link drops, and the button co
   assert.match(ctx.joinError.textContent, /next/);
   vm.runInContext('socket.connected = false', ctx);
   // The disconnect handler lives further down the file: run it from its own slice.
-  vm.runInContext(source.slice(source.indexOf("socket.on('disconnect', () => {\n  if (ended) return;"), source.indexOf('function showJoin()')), Object.assign(ctx, { setConn: noop, lostTimer: null }));
+  vm.runInContext(source.slice(source.indexOf("socket.on('disconnect', () => {\n  seated = false;\n  if (ended) return;"), source.indexOf('function showJoin()')), Object.assign(ctx, { setConn: noop, lostTimer: null }));
   handlers.disconnect();
   assert.strictEqual(button.disabled, false, 'the Join button works again');
   assert.match(ctx.joinError.textContent, /back in line/);

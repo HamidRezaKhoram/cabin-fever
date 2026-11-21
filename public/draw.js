@@ -51,19 +51,31 @@
       const r = canvas.getBoundingClientRect();
       return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H];
     }
+    // One finger draws: a palm or a second finger touching down used to throw the stroke away and
+    // start one that zig-zagged between the two.
+    /** @type {number | null} */
+    let curId = null;
+    /** Strokes wiped by Clear, newest last (Undo brings them back). @type {any[][]} */
+    const cleared = [];
     canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      if (cur) return;
       canvas.setPointerCapture(e.pointerId);
+      curId = e.pointerId;
       cur = { color, size, pts: [pos(e)] };
       redraw();
     });
     canvas.addEventListener('pointermove', (e) => {
-      if (!cur) return;
+      if (!cur || e.pointerId !== curId) return;
       e.preventDefault();
       cur.pts.push(pos(e));
       redraw();
     });
-    const end = () => { if (cur) { strokes.push(cur); cur = null; redraw(); } };
+    /** @param {PointerEvent} [e] */
+    const end = (e) => {
+      if (e && e.pointerId !== curId) return;
+      if (cur) { strokes.push(cur); cur = null; curId = null; redraw(); }
+    };
     canvas.addEventListener('pointerup', end);
     canvas.addEventListener('pointercancel', end);
     canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
@@ -78,9 +90,12 @@
         size = Number(b.dataset.size);
         host.querySelectorAll('.size').forEach((x) => x.classList.toggle('on', x === b));
       } else if (b.dataset.act === 'undo') {
-        strokes.pop(); redraw();
+        if (strokes.length) strokes.pop(); else if (cleared.length) strokes.push(.../** @type {any[]} */ (cleared.pop()));
+        redraw();
       } else if (b.dataset.act === 'clear') {
-        strokes.length = 0; redraw();
+        // Clear sits next to Undo: a mis-tap is undoable.
+        if (strokes.length) cleared.push(strokes.splice(0));
+        redraw();
       }
     });
     redraw();

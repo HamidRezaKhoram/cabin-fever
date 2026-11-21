@@ -185,7 +185,8 @@ test('Tug of Lake: 2 v 1 at the same tapping speed is an even pull, not a win fo
   const { red, blue } = game.tugTotals();
   assert.strictEqual(red, blue, `same speed, same pull (red ${red}, blue ${blue})`);
   game.finish();
-  assert.deepStrictEqual(['p0', 'p1', 'p2'].map(score), [100, 100, 100], 'a tie');
+  // A tie: each team gets the same pot (100 a head on equal teams), split among its members.
+  assert.deepStrictEqual(['p0', 'p1', 'p2'].map(score), [150, 75, 75], 'a tie');
 }));
 
 test('Tug of Lake: nobody pulling scores nobody (not a 100-each tie)', () => withGame('minigames', 4, { teams: true }, ({ game, room, score }) => {
@@ -273,7 +274,7 @@ test('a phone can\'t re-take a second seat with someone else\'s token (it kept i
 test('lineup standings: tied players share the placing (two champions, not one)', () => {
   const { nightSummary } = require('../../core/rooms');
   const players = new Map([['a', { id: 'a', nickname: 'Ann' }], ['b', { id: 'b', nickname: 'Bob' }], ['c', { id: 'c', nickname: 'Cy' }]]);
-  const room = /** @type {any} */ ({ players, night: { total: 2, played: ['trivia', 'closest'], list: ['trivia', 'closest'], points: new Map([['a', 900], ['b', 900], ['c', 100]]) } });
+  const room = /** @type {any} */ ({ players, night: { total: 2, played: ['trivia', 'closest'], list: ['trivia', 'closest'], points: new Map([['ann', 900], ['bob', 900], ['cy', 100]]) } });
   const s = /** @type {any} */ (nightSummary(room)).standings;
   assert.deepStrictEqual(s.map((/** @type {any} */ x) => x.place), [1, 1, 3]);
 });

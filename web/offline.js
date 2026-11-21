@@ -63,7 +63,7 @@ function offline(role) {
   // no progress, give up quietly — anything missing is fetched the first time it's used.
   let lastMove = Date.now(), lastDone = -1, asks = 0;
   const unfinished = () => { const c = /** @type {any} */ (window).cfSaved || {}; return !(c.core === 100 && c.media === 100); };
-  const watchdog = role === 'tv' ? window.setInterval(() => {
+  const watchdog = role === 'tv' && page ? window.setInterval(() => {
     if (!unfinished() || Date.now() - lastMove < 20000) return;
     if (asks >= 5) { window.clearInterval(watchdog); gaveUp = true; bar.hidden = true; if (!updateNote) corner.hidden = true; return; }
     asks++; lastMove = Date.now(); askTv();
@@ -120,6 +120,9 @@ function offline(role) {
   void navigator.serviceWorker.ready.then(() => {
     // Phone: an active worker means its files are saved. TV: now save the whole game.
     if (role === 'tv') {
+      // Only the TV page saves the whole game (~100 MB of music, the voice). The highlights and admin
+      // pages load the TV's code too: a phone opening "Tonight's highlights" downloaded all of it.
+      if (!page) return;
       // The worker is in charge but this page wasn't served by it (it took over before we could
       // hear about it, or this was a hard reload): load again, once per tab, to be isolated.
       let tried = true;

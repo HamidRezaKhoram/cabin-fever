@@ -138,6 +138,12 @@ class ClosestGame extends BaseGame {
     this.push();
   }
 
+  /** Double Down is open once per game, to a player who can cover its risk. @param {string} id */
+  canDouble(id) {
+    const p = this.room.players.get(id);
+    return !this.doubled.has(id) && !!p && p.score >= DOUBLE_RISK * this.mult();
+  }
+
   /** @param {string} id @param {Record<string, any>} payload @returns {boolean | void} `false` = turned down */
   handleSubmit(id, payload) {
     if (this.phase !== 'cg-guess' || this.guesses.has(id)) return;
@@ -146,7 +152,8 @@ class ClosestGame extends BaseGame {
     if (!Number.isFinite(n) || Math.abs(n) > 1e12) return false;
     this.guesses.set(id, n);
     // Double Down (once per game): ×2 if you finish in the top half, −DOUBLE_RISK if you don't.
-    if (payload.double === true && !this.doubled.has(id)) { this.doubled.add(id); this.doubling.add(id); }
+    // Only with points to cover the risk (on 0 points it cost nothing, so it was free).
+    if (payload.double === true && this.canDouble(id)) { this.doubled.add(id); this.doubling.add(id); }
     if (this.allIn(this.guesses)) this.reveal();
     else this.push();
   }
@@ -172,7 +179,7 @@ class ClosestGame extends BaseGame {
         e.double = true;
         // Top half is safe even past the paying ranks (8+ players: 4th place pays 0, ×2 = 0, no penalty).
         if (rank < topHalf) e.gained = this.award(e.id, pts * 2);
-        else { const p = this.room.players.get(e.id); const lost = p ? Math.min(p.score, DOUBLE_RISK) : 0; if (p) p.score -= lost; e.gained = -lost; }
+        else { const p = this.room.players.get(e.id); const lost = p ? Math.min(p.score, DOUBLE_RISK * this.mult()) : 0; /* scales like the win */ if (p) p.score -= lost; e.gained = -lost; }
       } else e.gained = this.award(e.id, pts);
     });
     this.result = { answer: ans, unit: this.q.unit || '', list: list.map(({ id, ...rest }) => rest) };
@@ -195,7 +202,7 @@ class ClosestGame extends BaseGame {
   /** @param {string} id */
   playerOnly(id) {
     if (this.phase === 'cg-guess') {
-      return { gameState: { question: this.q.q, unit: this.q.unit || '' }, you: { submitted: this.guesses.has(id), canDouble: !this.doubled.has(id) } };
+      return { gameState: { question: this.q.q, unit: this.q.unit || '' }, you: { submitted: this.guesses.has(id), canDouble: this.canDouble(id), doubleRisk: DOUBLE_RISK * this.mult() } };
     }
     const me = this.result ? this.result.list.find((e) => e.nickname === this.nick(id)) : null;
     return { gameState: { question: this.q.q, result: this.result }, you: { mine: me || null } };

@@ -20,7 +20,8 @@ const CALL_REPEATS = env('RUMPUS_LC_CALL_REPEATS', 3);
 
 // Judging windows (after calibration). Party-sized: tighter would punish phones, not players.
 const PERFECT = 70, GOOD = 140, MATCH = 220;
-const PTS = { perfect: 30, good: 15, extra: -5, clean: 20, sync: 10, callNote: 10 };
+// A stray tap costs half a good hit: at −5, mashing every step scored 55–75% of a perfect song unheard.
+const PTS = { perfect: 30, good: 15, extra: -15, clean: 20, sync: 10, callNote: 10 };
 const STEPS = 8; // a caller's own call: 8th-note grid, one bar of 4/4
 // The alignment costs: a missed note costs more than any real match, a stray tap a bit less.
 const MISS_COST = MATCH + 40, EXTRA_COST = 150;
@@ -425,7 +426,8 @@ class LoonCallGame extends BaseGame {
       scoredPhrases: this.scored.size,
       composer: this.phase === 'lc-compose' && this.composer ? this.nick(this.composer) : null,
       result: this.phase === 'lc-result' ? this.result : null,
-      serverNow: Date.now(),
+      // (No serverNow here or on the phones: a fresh timestamp in every view made each one "changed",
+      // so every phone got its full view every 80 ms while anyone tapped. Phones have Rumpus.time.)
     };
   }
 
@@ -434,7 +436,7 @@ class LoonCallGame extends BaseGame {
     const s = this.sched;
     const me = this.result && this.result.rows.find((r) => r.nickname === this.nick(id));
     return {
-      gameState: { sched: ['lc-tune', 'lc-song', 'lc-compose'].includes(this.phase) ? this.schedView() : null, serverNow: Date.now(),
+      gameState: { sched: ['lc-tune', 'lc-song', 'lc-compose'].includes(this.phase) ? this.schedView() : null,
         composer: this.phase === 'lc-compose' && this.composer ? this.nick(this.composer) : null, result: this.phase === 'lc-result' ? this.result : null },
       you: {
         calib: this.calib.get(id) || 0,

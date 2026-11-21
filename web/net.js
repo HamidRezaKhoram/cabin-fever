@@ -41,7 +41,7 @@ function chunker(sendOne) {
     receive(m, deliver) {
       if (!m || m.t !== 'c') return deliver(m);
       const { id, i, n, d } = m;
-      if (!Number.isInteger(id) || !Number.isInteger(i) || !Number.isInteger(n) || i < 0 || i >= n || n > 1000 || typeof d !== 'string') return;
+      if (!Number.isInteger(id) || !Number.isInteger(i) || !Number.isInteger(n) || i < 0 || i >= n || n > 1000 || typeof d !== 'string' || d.length > CHUNK) return; // (an oversized piece could fill the TV's memory)
       let got = parts.get(id);
       if (!got) {
         if (parts.size >= MAX_PARTS) parts.delete(/** @type {number} */ (parts.keys().next().value));
@@ -161,7 +161,8 @@ class Sock {
   receive(m) {
     if (m.t === 'p') return; // heartbeat (handled by the wire)
     if (m.t === 'a') { const f = this.acks.get(m.id); this.acks.delete(m.id); if (f) f(...m.args); return; }
-    const args = [...(m.args || [])];
+    if (m.t === 'e' && typeof m.ev !== 'string') return;
+    const args = Array.isArray(m.args) ? [...m.args] : []; // (a peer's junk `args` threw here)
     if (m.ack !== undefined) { const id = m.ack; args.push((/** @type {any[]} */ ...r) => { if (this.wire) this.wire.send({ t: 'a', id, args: r }); }); }
     for (const f of this.anyIn) f(m.ev, ...args);
     this.fire(m.ev, ...args);

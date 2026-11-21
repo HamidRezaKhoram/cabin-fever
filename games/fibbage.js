@@ -155,7 +155,7 @@ class FibbageGame extends BaseGame {
       if (this.options[choice].authorIds.has(playerId)) return; // can't pick your own lie
       if (this.picks.has(playerId)) return; // one pick each
       this.picks.set(playerId, choice);
-      if (this.allIn(this.picks)) {
+      if (this.choosingDone()) {
         this.finishChoosing();
       } else {
         this.push();
@@ -180,8 +180,16 @@ class FibbageGame extends BaseGame {
     this.options = opts.map((o, i) => ({ ...o, index: i }));
     this.picks = new Map();
     this.phase = 'fib-choose';
+    // Nobody lied (or nobody has a real choice): straight to the reveal, not a 30 s vote with one
+    // option. (Each player's own lie isn't theirs to pick.)
+    if (this.choosingDone()) return this.finishChoosing();
     this.setTimer(CHOOSE_MS, () => this.finishChoosing());
     this.push();
+  }
+
+  /** Everyone with a real choice (two options or more that aren't their own lie) has picked. */
+  choosingDone() {
+    return this.playerIds().every((id) => this.picks.has(id) || this.options.filter((o) => !o.authorIds.has(id)).length < 2);
   }
 
   finishChoosing() {
@@ -262,7 +270,7 @@ class FibbageGame extends BaseGame {
     } else if (this.phase === 'fib-choose') {
       // A departing author may have been the only thing blocking someone's
       // pick; recount against the remaining players.
-      if (this.allIn(this.picks)) this.finishChoosing();
+      if (this.choosingDone()) this.finishChoosing();
     }
   }
 

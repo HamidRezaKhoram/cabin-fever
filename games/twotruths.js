@@ -80,9 +80,9 @@ class TwoTruthsGame extends BaseGame {
   handleSubmit(id, payload) {
     if (this.phase === 'tt-write') {
       // Nothing true comes to mind: a truth-teller may switch to lying (never the other way).
-      // …as long as someone else is still telling the truth (a round of only lies isn't the game).
+      // Always offered to every truth-teller: offering it only while another truth-teller remained
+      // told the last one that everyone else was lying. (So a round can end up all lies: scoring copes.)
       if (payload.switchToLie && !this.answers.has(id) && this.liars.get(id) === false) {
-        if ([...this.liars.values()].filter((v) => !v).length < 2) return;
         this.liars.set(id, true);
         return this.push();
       }
@@ -205,7 +205,7 @@ class TwoTruthsGame extends BaseGame {
   playerOnly(id) {
     const base = { prompt: this.prompt };
     if (this.phase === 'tt-write') {
-      return { gameState: base, you: { lie: !!this.liars.get(id), submitted: this.answers.has(id), canSwitch: this.liars.get(id) === false && !this.answers.has(id) && [...this.liars.values()].filter((v) => !v).length >= 2 } };
+      return { gameState: base, you: { lie: !!this.liars.get(id), submitted: this.answers.has(id), canSwitch: this.liars.get(id) === false && !this.answers.has(id) } };
     }
     if (this.phase === 'tt-judge') {
       return { gameState: { ...base, answers: this.list().filter((a) => a.id !== id) }, you: { judged: this.calls.has(id), mine: this.answers.has(id) ? /** @type {{ text: string }} */ (this.answers.get(id)).text : null } };
@@ -224,6 +224,7 @@ TwoTruthsGame.meta = {
   name: 'Porch Confessions',
   blurb: 'A new confession every round — your phone secretly tells you to tell the truth or lie. Who\'s making it up?',
   minPlayers: 3,
+  endBelow: 3, // with 2 left it plays itself (the only card wins, each can deduce the other, a guaranteed date)
 };
 
 module.exports = TwoTruthsGame;

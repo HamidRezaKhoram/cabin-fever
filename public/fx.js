@@ -141,13 +141,26 @@
   }
 
   // ---- Big banner that slams in (e.g. "FINAL ROUND! DOUBLE POINTS").
+  // One at a time: they all slam into the same spot, so a second one (SHUTOUT! then NEW LEADER! 0.9 s
+  // later) used to cover the first. Queued, a repeat of one already waiting dropped, at most 3 waiting.
+  /** @type {[string, string][]} */
+  const bannerQueue = [];
+  let bannerUp = false;
+  function showNextBanner() {
+    const next = bannerQueue.shift();
+    if (!next) { bannerUp = false; return; }
+    bannerUp = true;
+    const el = document.createElement('div');
+    el.className = 'slam ' + next[1];
+    el.textContent = next[0];
+    document.body.appendChild(el);
+    setTimeout(() => { el.remove(); showNextBanner(); }, 2300);
+  }
   /** @param {string} text @param {string} [cls] */
   function banner(text, cls = '') {
-    const el = document.createElement('div');
-    el.className = 'slam ' + cls;
-    el.textContent = text;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 2300);
+    if (bannerQueue.some((x) => x[0] === text) || bannerQueue.length >= 3) return;
+    bannerQueue.push([text, cls]);
+    if (!bannerUp) showNextBanner();
   }
 
   // ---- A short screen shake for big hits (a knockout, a sabotage). Brief on purpose: game-feel

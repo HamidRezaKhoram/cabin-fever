@@ -62,6 +62,15 @@ const ROOM_KEEP_MS = parseInt(process.env.RUMPUS_ROOM_KEEP_MS || '1800000', 10);
 let roomsTimer = null;
 let roomsSaved = '';
 
+/** Drawings to keep with a saved room's highlights (the newest): each is ~60 KB, and in the browser
+ * build the whole save shares ~5 MB of localStorage with the stats. */
+const SAVED_IMAGES = 8;
+/** Highlights with only the newest SAVED_IMAGES drawings (copies; the room's own list keeps them all).
+ * @param {any[]} list */
+function fewerImages(list) {
+  let n = 0;
+  return list.map((h) => (h && h.image && ++n > SAVED_IMAGES ? (({ image, ...rest }) => rest)(h) : h)).filter((h) => h && (h.text || h.image));
+}
 /** @param {Room} room */
 function snapshot(room) {
   const g = room.game;
@@ -71,11 +80,11 @@ function snapshot(room) {
     try { saved = /** @type {any} */ (g).save(); } catch (e) { saved = null; }
   }
   return {
-    code: room.code, hostToken: room.hostToken, settings: room.settings, highlights: room.highlights || [],
+    code: room.code, hostToken: room.hostToken, settings: room.settings, highlights: fewerImages(room.highlights || []),
     players: [...room.players.values()].filter((p) => !p.bot).map((p) => ({
       id: p.id, token: p.token, nickname: p.nickname, score: p.score, avatar: p.avatar, look: p.look || null, team: p.team || null, device: p.device || null, shy: !!p.shy,
     })),
-    night: room.night ? { total: room.night.total, list: room.night.list, played: room.night.played, points: [...room.night.points], skipped: room.night.skipped || [], won: !!room.night.won } : null,
+    night: room.night ? { total: room.night.total, list: room.night.list, played: room.night.played, points: [...room.night.points], names: [...(room.night.names || [])], skipped: room.night.skipped || [], won: !!room.night.won } : null,
     // A game that can be picked up again (todo 2.1: trivia, Closest Cast so far) saves where it is.
     game: saved ? { id: /** @type {any} */ (g).constructor.meta.id, data: saved } : room.resumeGame || null,
     // A real game was on (not the lobby, a finished game or the game-night vote) and can't resume.
@@ -164,7 +173,9 @@ function restoreRooms() {
       });
       if (list.length) {
         room.night = { total: list.length, list, played, skipped, won: s.night.won === true,
-          points: new Map(Array.isArray(s.night.points) ? s.night.points : []), timer: null };
+          // (Older saves keyed the points by player id: carry them over to the player's name.)
+          points: new Map((Array.isArray(s.night.points) ? s.night.points : []).map((/** @type {[string, number]} */ [k, n]) => { const p = room.players.get(k); return [p ? nightKey(p.nickname) : k, n]; })),
+          names: new Map(Array.isArray(s.night.names) ? s.night.names : [...room.players.values()].map((p) => [nightKey(p.nickname), p.nickname])), timer: null };
       }
     }
     room.closeTimer = setTimeout(() => closeRoom(room), HOST_GRACE_MS);
@@ -450,7 +461,8 @@ function nightNext(room) {
   if (final && night.played.length && !night.won) {
     night.won = true; // once: a TV reload on the final table shows it again without a second win
     const best = Math.max(0, ...night.points.values());
-    for (const [id, n] of night.points) if (best > 0 && n === best) stats.nightWin(room, id);
+    // By name: the champion may have left (or rejoined as a new seat) — they still won the night.
+    for (const [k, n] of night.points) if (best > 0 && n === best) stats.nightWinName(nightName(room, night, k), [...room.players.values()].some((p) => p.bot && nightKey(p.nickname) === k));
   }
   if (room.game) room.game.destroy();
   for (const p of room.players.values()) p.score = 0;
@@ -483,11 +495,24 @@ function countNight(room) {
   if (!night || !game || game instanceof NightGame || game.phase !== 'gameover' || game.nightCounted) return;
   game.nightCounted = true;
   const pts = placePoints([...room.players.values()].map((p) => ({ id: p.id, score: p.score })));
-  for (const [id, n] of pts) night.points.set(id, (night.points.get(id) || 0) + n);
+  if (!night.names) night.names = new Map();
+  // Kept by name (lower case, as the stats do): keyed by seat, a player who left and came back — a new
+  // seat — started the night again at 0, and one who left fell off the table and lost the crown.
+  for (const [id, n] of pts) {
+    const p = room.players.get(id);
+    if (!p) continue;
+    const k = nightKey(p.nickname);
+    night.names.set(k, p.nickname);
+    night.points.set(k, (night.points.get(k) || 0) + n);
+  }
   night.played.push(/** @type {any} */ (game.constructor).meta.id);
   // The scores stay up for a while, then the next cartridge (or the final table).
   night.nextAt = Date.now() + NIGHT_GAP_MS;
-  night.timer = setTimeout(() => { night.timer = null; if (room.night === night) nightNext(room); }, NIGHT_GAP_MS);
+  // The game's own timer, so it can be cut short: TV Skip, or the phones' "ready" vote (a plain
+  // timeout made ~17 s of unskippable waiting between every two games of a lineup).
+  const go = () => { night.timer = null; if (room.night === night && room.game === game) nightNext(room); };
+  if (typeof (/** @type {any} */ (game)).setTimer === 'function') /** @type {any} */ (game).setTimer(NIGHT_GAP_MS, go, false);
+  else night.timer = setTimeout(go, NIGHT_GAP_MS);
 }
 /** Every finished game counts towards the all-time stats (once). @param {Room} room */
 function recordStats(room) {
@@ -509,6 +534,13 @@ function placed(rows) {
   return rows;
 }
 
+/** @param {string} nickname */
+function nightKey(nickname) { return String(nickname).trim().toLowerCase(); }
+/** The name to show for a lineup key. @param {Room} room @param {NonNullable<Room['night']>} night @param {string} k */
+function nightName(room, night, k) {
+  const here = [...room.players.values()].find((p) => nightKey(p.nickname) === k);
+  return here ? here.nickname : (night.names && night.names.get(k)) || k;
+}
 /** @param {Room} room */
 function nightSummary(room) {
   const night = room.night;
@@ -518,7 +550,9 @@ function nightSummary(room) {
     total: night.total, played: night.played.length, nextAt: night.nextAt || null,
     // The lineup in order (the TV draws it as a row of cartridges: done, skipped, now, still to come).
     list: night.list.map((id, i) => ({ ...meta(id), skipped: !!(night.skipped && night.skipped.includes(i)) })),
-    standings: placed([...room.players.values()].map((p) => ({ nickname: p.nickname, points: night.points.get(p.id) || 0, place: 0 }))
+    // Everyone here, and anyone who scored and left (marked gone): they keep their place on the table.
+    standings: placed([...new Set([...[...room.players.values()].map((p) => nightKey(p.nickname)), ...night.points.keys()])]
+      .map((k) => ({ nickname: nightName(room, night, k), points: night.points.get(k) || 0, place: 0, ...([...room.players.values()].some((p) => nightKey(p.nickname) === k) ? {} : { gone: true }) }))
       .sort((a, b) => b.points - a.points)),
   };
 }
@@ -584,7 +618,11 @@ function addBot(room, speed) {
 /** @param {Room} room @param {Player} p @param {number} speed */
 function botTick(room, p, speed) {
   if (p.botTimer || !room.game || !room.players.has(p.id)) return;
-  const view = () => (room.game ? { phase: room.game.phase, ...room.game.playerView(p.id) } : { phase: 'lobby' });
+  // A bot sees its phone and, like a person, the TV (Campfire Sequence's sparks, the hiding loon) — with a
+  // memory of what it saw there. Without the TV it could only guess, and failed those minis every time.
+  const memo = /** @type {any} */ (p).botMemo || (/** @type {any} */ (p).botMemo = {});
+  const tv = () => { try { return room.game ? /** @type {any} */ (room.game).hostView() : null; } catch (e) { return null; } };
+  const view = () => (room.game ? { phase: room.game.phase, ...room.game.playerView(p.id), tv: tv(), memo } : { phase: 'lobby' });
   const first = botBrain.decide(view());
   if (!first) return;
   p.botTimer = setTimeout(() => {
@@ -605,6 +643,10 @@ function removePlayer(room, playerId) {
   if (p.dropTimer) clearTimeout(p.dropTimer);
   if (p.botTimer) clearTimeout(p.botTimer);
   room.players.delete(playerId);
+  // The seat's link forgets the room, connected or not: a browser-build link that was stale when its
+  // seat went and then revived ignored every later "join" (it still said it was in the room).
+  const sock = /** @type {any} */ (p.socket);
+  if (sock && sock.data && sock.data.room === room && sock.data.playerId === playerId) { sock.data.room = null; sock.data.role = null; sock.data.playerId = null; }
   if (room.game && !room.players.size) {
     // Everyone left (or was kicked): games assume someone is playing, so stop it — back to the lobby.
     endNight(room);
@@ -815,7 +857,7 @@ function connection(socket) {
     // Nobody (or one player) here: it would go straight to an empty final table.
     const fits = list.some((/** @type {string} */ id) => room.players.size >= (/** @type {Record<string, any>} */ (GAMES)[id].meta.minPlayers || 2));
     if (room.players.size < 2 || !fits) return;
-    room.night = { total: list.length, list, played: [], skipped: [], points: new Map(), timer: null };
+    room.night = { total: list.length, list, played: [], skipped: [], points: new Map(), names: new Map(), timer: null };
     console.log(`[room ${room.code}] lineup: ${list.join(', ')}`);
     nightNext(room);
   });
@@ -888,14 +930,13 @@ function connection(socket) {
       // new browser/cleared storage. Let them reclaim it. (While it's online they must say so:
       // "That's me" on the phone — a private window or another browser has no saved seat.)
       if (!existing.connected || (msg.takeover === true && !existing.bot)) {
-        if (existing.connected) {
-          // Taking a seat that is open on another phone: anyone can type a name, so not mid-game
-          // (the seat's screen shows its secrets — roles, the Odd Duck's word). Once its phone is
-          // closed (or drops), the seat is offline and can be reclaimed by name as before.
-          if (room.game) return void socket.emit('player:joinError', { reason: `${existing.nickname} is in a game right now — close it on that phone first, or wait for the game to end.`, taken: true });
-          // A new token: the old one (a credential) must not go with the seat to whoever asked.
-          existing.token = token();
-        }
+        // Anyone can type a name, so never mid-game, online or not: the seat's screen shows its
+        // secrets (roles, the Odd Duck's word), and a phone that naps for 10 s reads as offline.
+        // Its own phone comes back by token or device (above); a new phone waits for the game to end.
+        const between = roomPhase(room) === 'lobby' || roomPhase(room) === 'gameover';
+        if (room.game && !between) return void socket.emit('player:joinError', { reason: `${existing.nickname} is in a game right now — reopen it on that phone, or wait for the game to end.`, taken: true });
+        // A new token: the old one (a credential) must not go with the seat to whoever asked.
+        existing.token = token();
         console.log(`[room ${room.code}] ${nickname} reclaimed seat by name`);
         if (device) existing.device = device;
         return void attachPlayer(room, existing, socket);
@@ -915,6 +956,10 @@ function connection(socket) {
         return void socket.emit('player:joinError', { reason: 'That nickname is taken.' });
       }
       if (!room.queue) room.queue = new Map();
+      // In line in another room before (typed a second code): leave that line, or its dead entry kept
+      // counting towards "Room is full" there and showed on that TV's list.
+      const before = socket.data.queuedIn;
+      if (before && before !== room && before.queue && before.queue.has(socket.id)) { before.queue.delete(socket.id); broadcast(before); }
       room.queue.set(socket.id, { socket, msg, join: () => joinRoom(socket, msg) });
       socket.data.queuedIn = room;
       socket.emit('player:queued', { nickname, game: meta ? meta.name : 'A game' });
@@ -1069,11 +1114,18 @@ function connection(socket) {
     if (!room.players.has(socket.data.playerId)) return void done(false);
     const payload = msg && typeof msg.payload === 'object' && msg.payload !== null ? msg.payload : {};
     const game = room.game;
+    const p = /** @type {any} */ (room.players.get(socket.data.playerId));
+    // A re-sent tap (its confirmation got lost, the player tapped again): same id, taken once.
+    const sid = msg && typeof msg.sid === 'string' && msg.sid.length <= 60 ? msg.sid : null;
+    if (sid && p.lastSid === sid && p.lastGame === game) return void (typeof ack === 'function' && ack(p.lastOk ? { ok: true } : { ok: false, rejected: true }));
+    // When the phone sent it, on the synced clock (reaction minis use it, within limits).
+    const at = msg && Number.isFinite(msg.at) ? Number(msg.at) : null;
     // A game says `false` when it turned the answer down (empty, a duplicate, the wrong prompt): the
     // phone gets its form back instead of a "✓ Sent" for something that was never counted.
     // (If the game throws, the answer wasn't taken either: no "✓ Sent" for it.)
     let taken = false;
-    safely(room, 'answer', () => { taken = game.handleSubmit(socket.data.playerId, payload) !== false; });
+    safely(room, 'answer', () => { taken = game.handleSubmit(socket.data.playerId, payload, { at }) !== false; });
+    if (sid) { p.lastSid = sid; p.lastOk = taken; p.lastGame = game; }
     if (typeof ack === 'function') ack(taken ? { ok: true } : { ok: false, rejected: true });
   });
 
@@ -1104,4 +1156,4 @@ function connection(socket) {
 
 restoreRooms();
 
-module.exports = { connection, rooms, hostPayload, playerPayload, flushRooms, nightSummary, GAME_LIST, GAMES, DEBUG };
+module.exports = { connection, rooms, hostPayload, playerPayload, flushRooms, nightSummary, fewerImages, GAME_LIST, GAMES, DEBUG };

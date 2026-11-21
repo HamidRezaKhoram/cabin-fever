@@ -113,7 +113,8 @@ test('Lily Pad Tag: bumping "it" passes it on (no instant tag-backs); points whi
     assert.strictEqual(g.it, 'b', 'tagged');
     g.tick(); // still touching: the cooldown stops a tag-back
     assert.strictEqual(g.it, 'b');
-    for (let i = 0; i < 60; i++) g.tick();
+    // Both phones are steering (an idle phone earns nothing: see review-nov21).
+    for (let i = 0; i < 60; i++) { for (const id of ['a', 'b']) { g.tilt.set(id, [0, 0]); g.tiltAt.set(id, Date.now()); } g.tick(); }
     assert.ok(room.players.get('a').score > 0 && room.players.get('b').score < room.players.get('a').score, 'not-it earns');
   } finally { g.destroy(); }
 });

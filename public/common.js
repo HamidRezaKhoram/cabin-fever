@@ -75,7 +75,8 @@ window.Rumpus = /** @type {RumpusNS} */ (/** @type {unknown} */ (Object.assign(w
     if (cdTimer) clearInterval(cdTimer);
     cdTimer = null;
     const els = () => document.querySelectorAll(selector);
-    if (!endsAt) { els().forEach((e) => { e.textContent = ''; }); return; }
+    // No clock on this screen: say so once (the TV's hurry music stayed on into a timerless scoreboard).
+    if (!endsAt) { els().forEach((e) => { e.textContent = ''; }); if (onTick) onTick(0); return; }
     /** @type {number | null} */
     let last = null;
     const tick = () => {

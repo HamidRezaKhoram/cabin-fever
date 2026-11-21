@@ -60,7 +60,9 @@ test('Superlatives: an even split scores nobody; the phone shows the real (×2) 
 // ---------------------------------------------------------------- Closest Cast
 test('Closest: a skipped question gives the Double Down back; it only pays in the top half; leavers take no place; float ties tie', () => withGame('closest', 2, {}, ({ game, room, leave }) => {
   game.start();
+  room.players.get('p0').score = 500; // (Double Down needs points to cover its risk)
   game.handleSubmit('p0', { number: 5, double: true });
+  assert.ok(game.doubling.has('p0'));
   game.skipQuestion();
   assert.strictEqual(game.playerView('p0').you.canDouble, true, 'skipped: the Double Down is back');
   game.q = { q: 'x', answer: 0.3 };
@@ -115,9 +117,14 @@ test('Lantern: a leaver\'s boat leaves the lake; a phone that stops sending stop
 test('Trivia: a skipped question gives the Double Down back; an asleep player never picks the category', () => withGame('trivia', 3, {}, ({ game, room }) => {
   game.start();
   if (game.phase === 'trivia-category') game.pickCategory(0);
+  room.players.get('p0').score = 1000; // (Double Down needs points to cover its risk)
   game.handleSubmit('p0', { choice: 0, double: true });
+  assert.ok(game.answers.get('p0').double);
   game.skipQuestion();
   assert.strictEqual(game.playerView('p0').you.canDouble, true);
+  room.players.get('p0').score = 1000;
+  assert.strictEqual(game.playerView('p0').you.canDouble, true, 'and with points to cover it, it is open');
+  room.players.get('p0').score = 0;
   room.players.get('p0').connected = false; // last place, but asleep
   room.players.get('p1').score = 100; room.players.get('p2').score = 200;
   if (game.startCategoryPick()) assert.notStrictEqual(game.chooserId, 'p0');
@@ -153,13 +160,12 @@ test('Quips: a forfeit takes the votes but isn\'t a SHUTOUT', () => withGame('qu
 }));
 
 // ---------------------------------------------------------------- Porch Confessions
-test('Porch Confessions: a quiet round is said and replayed once; "lie instead" can\'t make everyone a liar; a leaver\'s confession leaves', () => withGame('twotruths', 3, { rounds: 2 }, ({ game, leave }) => {
+test('Porch Confessions: a quiet round is said and replayed once; "lie instead" works for every truth-teller; a leaver\'s confession leaves', () => withGame('twotruths', 3, { rounds: 2 }, ({ game, leave }) => {
   game.start();
   const truthers = () => [...game.liars].filter(([, v]) => !v).map(([id]) => id);
-  for (let k = 0; k < 5 && truthers().length > 1; k++) game.handleSubmit(truthers()[0], { switchToLie: true });
-  assert.strictEqual(truthers().length, 1, 'the last truth-teller can\'t switch');
-  game.handleSubmit(truthers()[0], { switchToLie: true });
-  assert.strictEqual(truthers().length, 1);
+  // (It used to be refused for the last truth-teller, which told them everyone else was lying.)
+  for (let k = 0; k < 5 && truthers().length; k++) game.handleSubmit(truthers()[0], { switchToLie: true });
+  assert.strictEqual(truthers().length, 0, 'the last truth-teller may switch too');
   game.handleSubmit('p0', { text: 'only one' });
   game.judge();
   assert.ok(game.phase === 'tt-reveal' && game.empty, 'the TV says so');
