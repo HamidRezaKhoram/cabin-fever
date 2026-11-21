@@ -357,3 +357,11 @@ test('reaction minis credit the phone\'s trip (up to 150 ms): a slow link no lon
   assert.ok(Math.abs(game.reactions.get('p0') - 300) < 20, `p0 ${game.reactions.get('p0')}`);
   assert.ok(game.reactions.get('p1') >= 240, `p1 capped at 150 ms of credit (${game.reactions.get('p1')})`);
 }));
+
+test('TV: the countdown is filled in before the screen is fitted (Telephone overflowed by the timer\'s line, CI 44924575808)', () => {
+  const src = fs.readFileSync('public/host.js', 'utf8');
+  const wipe = src.slice(src.indexOf('phaseView.innerHTML = pendingHtml'), src.indexOf('keepFocus(wipeFocus)'));
+  assert.ok(wipe.indexOf("countdown(") >= 0 && wipe.indexOf("countdown(") < wipe.indexOf('layoutStage(true)'), 'new screen: countdown, then fit');
+  const morphed = src.slice(src.indexOf('morph(phaseView, html);'), src.indexOf('updateTimerBar(inGame'));
+  assert.ok(morphed.indexOf('countdown(') >= 0 && morphed.indexOf('countdown(') < morphed.indexOf('layoutStage()'), 'small update: countdown, then fit');
+});

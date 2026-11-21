@@ -1166,6 +1166,9 @@ function render() {
         try {
           phaseView.innerHTML = pendingHtml || '';
           phaseView.dataset.phase = pendingPhase; // what's on screen (the lab waits for it)
+          // The countdown's text first, then the fit: fitted with the timer still empty (a line on its
+          // own, e.g. Telephone's), the screen grew by that line right after and overflowed the stage.
+          countdown((state.gameState || {}).endsAt, '.timer', tick);
           layoutStage(true);
           keepFocus(wipeFocus); // the remote's focused control was in the old screen
           wipeFocus = null;
@@ -1173,7 +1176,6 @@ function render() {
         } finally {
           wiping = false;
         }
-        countdown((state.gameState || {}).endsAt, '.timer', tick);
       });
     }
   } else if (wiping) {
@@ -1181,6 +1183,7 @@ function render() {
   } else {
     phaseView.dataset.phase = phase;
     morph(phaseView, html); // small updates (counts, votes) without restarting animations
+    countdown(g.endsAt, '.timer', tick); // (before the fit, as above: morph may have emptied the timer)
     layoutStage();
   }
   updateTimerBar(inGame ? g.endsAt : null);
@@ -1188,7 +1191,6 @@ function render() {
   const srcEl = /** @type {HTMLElement} */ (document.getElementById('source-line'));
   srcEl.hidden = !(inGame && g.source);
   if (inGame && g.source && srcEl.textContent !== 'Source: ' + g.source) srcEl.textContent = 'Source: ' + g.source;
-  if (!wiping) countdown(g.endsAt, '.timer', tick);
   keepFocus(focusedBefore);
   centreShelf();
 }
