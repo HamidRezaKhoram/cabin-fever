@@ -15,7 +15,7 @@ const solid = (rgb) => ({ w: 16, h: 12, px: () => rgb });
 test('flash meter: black/white every 100 ms is 5 flashes a second; a steady screen or a slow fade is none', () => {
   const m = flashMeter();
   for (let i = 0; i < 20; i++) m.frame(solid(i % 2 ? [255, 255, 255] : [0, 0, 0]), i * 100);
-  assert.ok(m.worst().perSecond >= 4, `strobe seen (${m.worst().perSecond}/s)`);
+  assert.strictEqual(m.worst().perSecond, 5, 'strobe: 10 changes a second = 5 flashes');
   m.reset();
   for (let i = 0; i < 20; i++) m.frame(solid([40, 40, 60]), i * 100);
   assert.strictEqual(m.worst().perSecond, 0, 'steady');
@@ -25,7 +25,7 @@ test('flash meter: black/white every 100 ms is 5 flashes a second; a steady scre
   m.reset();
   // One lightning strike (two bright pulses, like Storm Watch) = 2 flashes: under the 3-per-second line.
   [0, 0, 255, 20, 230, 0, 0, 0].forEach((v, i) => m.frame(solid([v, v, v]), i * 100));
-  assert.ok(m.worst().perSecond <= 3);
+  assert.strictEqual(m.worst().perSecond, 2, 'one lightning strike');
 });
 
 test('flash meter: a wipe sweeping across the screen (each part dark for a moment, a frame apart) is one flash, not one per frame', () => {

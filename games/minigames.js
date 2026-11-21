@@ -22,7 +22,7 @@ const FLY_SHOW_MS = env('RUMPUS_MG_FLY_SHOW_MS', 5000);
 const FLY_GUESS_MS = env('RUMPUS_MG_FLY_GUESS_MS', 10000);
 const ROAST_MS = env('RUMPUS_MG_ROAST_MS', 12000);
 const PLAY_MS = env('RUMPUS_MG_PLAY_MS', 12000);      // most of the new minis
-const SHOW_MS = env('RUMPUS_MG_SHOW_MS', 600);        // one step of the campfire sequence
+const SHOW_MS = env('RUMPUS_MG_SHOW_MS', 800);        // one step of the campfire sequence (the spark shows 0.6 s, then a gap, so repeats stand apart)
 // Tap caps (anti-cheat, not a speed limit): the fastest people manage ~12–16 taps/s on one button and
 // more with two thumbs on two. The old 15/s (and 10/s strokes) cut the best player's score down to
 // the cap — "the top tapper didn't get their score".
@@ -44,12 +44,13 @@ const MINIS = {
   swat: { name: 'Mosquito Swat', rule: 'Mosquitoes land on your phone. Swat as many as you can!', better: 'high' },
   balance: { name: 'Dock Balance', rule: 'Keep your finger inside the drifting ring. Longest inside wins.', better: 'high' },
   paddle: { name: 'Canoe Sprint', rule: 'Paddle LEFT, RIGHT, LEFT, RIGHT… only alternating strokes count!', better: 'high' },
-  simon: { name: 'Campfire Sequence', rule: 'Watch the sparks on the TV, then repeat the colours on your phone. Right and fast wins.', better: 'low' },
+  simon: { name: 'Campfire Sequence', rule: 'Watch the 4 sparks on the TV, then repeat the colours on your phone. Right and fast wins.', better: 'low' },
   stack: { name: 'Woodpile Stack', rule: 'Tap to drop the sliding log on the pile. Miss the edge and it gets smaller. Tallest pile wins!', better: 'high' },
 };
 const ORDER = /** @type {MiniId[]} */ ((process.env.RUMPUS_MG_ORDER || '').split(',').filter((x) => x in MINIS));
 const SPOT_CELLS = 12;
 const COLOURS = 4;
+const SEQ_LEN = 4; // sparks to remember in Campfire Sequence (5–7 was too hard at the cottage)
 
 /** Skip Stones: where the arrow is (0–1) at a time, swinging back and forth. @param {number} t ms since start @param {number} period */
 function swing(t, period) {
@@ -140,7 +141,7 @@ class MinigamesGame extends BaseGame {
         return { bugs: Array.from({ length: n }, (_, i) => ({ at: Math.round((i * (PLAY_MS - 1800)) / n + r.range(0, 500)), x: r.int(8, 88), y: r.int(10, 86), life: r.int(700, 1100) })) };
       }
       case 'balance': return { ax: r.range(0.6, 1.1), ay: r.range(0.8, 1.4), px: r.range(0, 6.28), py: r.range(0, 6.28), radius: r.range(0.16, 0.2) };
-      case 'simon': return { seq: Array.from({ length: r.int(5, 7) }, () => r.int(0, COLOURS - 1)) };
+      case 'simon': return { seq: Array.from({ length: SEQ_LEN }, () => r.int(0, COLOURS - 1)) };
       case 'stack': return { speed: Math.round(r.range(0.9, 1.3) * 100) / 100, speedUp: 1.08 };
       case 'tug': return { ms: r.int(Math.round(TUG_MS * 0.75), TUG_MS) };
       case 'paddle': return { ms: r.int(Math.round(PLAY_MS * 0.7), PLAY_MS) };
