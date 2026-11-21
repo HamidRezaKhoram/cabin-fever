@@ -8,6 +8,8 @@
 # Kokoro-82M (Apache-2.0) + the browser runtime files.
 FROM node:20-slim AS fetch
 WORKDIR /v
+# CPU only: skip onnxruntime-node's CUDA download (its v1.21.0 GPU release asset is gone: 404).
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 COPY tools/fetch-kokoro.js tools/fetch-kokoro.js
 RUN npm init -y >/dev/null && npm install --no-audit --no-fund --silent kokoro-js@1.2.1 onnxruntime-web@1.22.0-dev.20250409-89f8206ba4 >/dev/null
 # Full precision: the server runs it natively, ~3× faster than real time.
@@ -20,7 +22,7 @@ RUN node tools/fetch-kokoro.js /tts --dtype uint8
 # Debian (not Alpine): the native ONNX runtime for the voice needs glibc.
 FROM node:20-slim AS base
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=production ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 # Offline narrator voice for the TV (/api/tts); openssl makes the https certificate for tilt controls.
 RUN apt-get update && apt-get install -y --no-install-recommends espeak-ng openssl && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /app/data /app/music && chown node:node /app/data /app/music

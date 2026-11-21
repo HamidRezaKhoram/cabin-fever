@@ -71,8 +71,9 @@ function flashMeter({ cols = 8, rows = 6, minArea = 0.1 } = {}) {
           while (f.length && f[0] <= t - 1000) f.shift();
           if (Math.abs(d) < 0.1 || Math.min(l, prev) >= 0.8) return;
           const s = Math.sign(d);
-          if (dir[i] && s !== dir[i]) f.push(t); // an opposing pair = one flash in this cell
-          dir[i] = s;
+          // An opposing pair = one flash in this cell. Pairs don't share a change: dark→light→dark→light
+          // is 1.5 flashes, not 3 (counting every reversal made one lightning strike read as 3).
+          if (dir[i] && s !== dir[i]) { f.push(t); dir[i] = 0; } else dir[i] = s;
         });
         // The most flashes in this second that at least `need` cells reached.
         const n = flashes.map((f) => f.length).sort((a, b) => b - a)[need - 1];

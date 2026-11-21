@@ -171,7 +171,7 @@ test('the seven new minis: skip stones, loon spotting, swat, balance, canoe spri
     // Campfire Sequence: the TV shows it, then the right order wins.
     const show = await until(() => h.state.phase === 'mg-play' && h.state.gameState.mini === 'simon' && h.state.gameState.seq && h.state, 'sequence shown');
     const seq = show.gameState.seq;
-    assert.ok(seq.length >= 5 && seq.length <= 7);
+    assert.strictEqual(seq.length, 4);
     await play('simon', 'go');
     ps[0].submit({ seq: seq.map((c) => (c + 1) % 4) });
     ps[2].submit({ seq });
