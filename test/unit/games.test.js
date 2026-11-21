@@ -107,7 +107,10 @@ test('Campfire Quips: a missing answer forfeits the matchup', async () => {
     for (const n of ['Ann', 'Ben', 'Cat']) ps.push(await makePlayer(s2, h.code, n));
     h.emit('host:startGame', { gameId: 'quiplash' });
     await h.phase('answering');
-    for (const p of ps.slice(0, 2)) { await until(() => p.state.gameState.promptNumber === 1, 'p'); p.submit({ text: 'only one' }); }
+    // Ann and Ben answer both their prompts (a matchup neither side answered is skipped, not shown).
+    for (const p of ps.slice(0, 2)) {
+      for (const k of [1, 2]) { await until(() => p.state.gameState.promptNumber === k, `${p.nickname} prompt ${k}`); p.submit({ text: `answer ${k}` }); }
+    }
     // Cat never answered → Cat's matchups are forfeits (straight to results, no vote).
     // Matchups where both players answered still get voted on, so skip through those.
     const r = await until(() => {
