@@ -92,19 +92,19 @@ class ImposterGame extends BaseGame {
     this.push();
   }
 
-  /** @param {string} id @param {Record<string, any>} payload */
+  /** @param {string} id @param {Record<string, any>} payload @returns {boolean | void} `false` = turned down */
   handleSubmit(id, payload) {
     if (this.phase === 'imp-clue') {
       if (this.clues.has(id)) return;
       const clue = cleanText(payload.text, 30);
-      if (!clue) return;
+      if (!clue) return false; // (refused: the phone gets its form back, not a "✓ Sent")
       this.clues.set(id, clue);
       if (this.allIn(this.clues)) this.beginVote();
       else this.push();
     } else if (this.phase === 'imp-vote') {
       if (this.votes.has(id)) return;
       const t = payload.target;
-      if (t === id || !this.room.players.has(t)) return;
+      if (t === id || !this.room.players.has(t)) return false;
       this.votes.set(id, t);
       if (this.allIn(this.votes)) this.tally();
       else this.push();
@@ -179,7 +179,10 @@ class ImposterGame extends BaseGame {
   /** @param {string} id */
   onPlayerLeft(id) {
     if (this.phase !== 'gameover' && this.room.players.size < (ImposterGame.meta.minPlayers || 3)) { this.clearTimer(); return this.gameOver(); }
-    if (id === this.imposter && (this.phase === 'imp-clue' || this.phase === 'imp-vote' || this.phase === 'imp-guess')) {
+    // Caught and leaving while guessing the word: the round is over — the voters who caught them
+    // keep their points (a reshuffle used to wipe them).
+    if (id === this.imposter && this.phase === 'imp-guess') { this.guess = null; this.finish(); return; }
+    if (id === this.imposter && (this.phase === 'imp-clue' || this.phase === 'imp-vote')) {
       // Round can't continue without the imposter — reshuffle. It's a new round: phones must drop
       // anything half-typed for the old word (skipSeq makes them redraw; pace votes start over).
       this.clearTimer();

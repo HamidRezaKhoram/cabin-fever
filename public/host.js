@@ -233,7 +233,13 @@ socket.on('room:reaction', (/** @type {any} */ r) => {
 });
 socket.on('disconnect', () => document.body.classList.add('offline'));
 // Browser build: the broker still holds this room's name (the last TV page crashed); web/host-entry.js keeps trying.
-document.addEventListener('cf:room-taken', () => fx.banner('PHONES CAN\'T JOIN YET\nStill opening the room — give it a minute'));
+// Still taken after a minute and nobody has joined: another TV on the public build really has this
+// code (the broker's names are shared by everyone) — retrying it forever left this TV unreachable,
+// and phones typing it found the other household's TV. A new room with a new code instead.
+document.addEventListener('cf:room-taken', () => {
+  if (state && state.phase === 'lobby' && !state.players.length) { hostSeat(null); location.reload(); return; }
+  fx.banner('PHONES CAN\'T JOIN YET\nStill opening the room — give it a minute');
+});
 socket.on('room:event', (/** @type {any} */ ev) => {
   if (ev.type === 'skipped') { fx.banner('QUESTION SKIPPED!\nFresh one coming up'); sfx.whoosh(); }
   else if (ev.type === 'hurry') { fx.banner('HURRY UP!\n10 SECONDS LEFT'); sfx.boo(); }
@@ -269,11 +275,53 @@ function hideLoading() {
 
 // --- input --------------------------------------------------------------------
 
+/** Ask yes/no on the TV itself. The browser's confirm() popup takes the page out of full screen
+ * (every "End this game?" kicked the TV out of it), so this is a box in the page instead: ◀ ▶ to
+ * choose, OK to pick, Back / Escape to cancel; the mouse works too.
+ * @param {string} text @param {string} [yes] @returns {Promise<boolean>} */
+function askTv(text, yes = 'Yes') {
+  const before = /** @type {HTMLElement | null} */ (document.activeElement);
+  const box = document.createElement('div');
+  box.className = 'tv-ask';
+  box.setAttribute('role', 'alertdialog');
+  box.setAttribute('aria-modal', 'true');
+  box.innerHTML = `<div class="retro-box tv-ask-box"><p class="tv-ask-text"></p><div class="tv-ask-btns"><button type="button" class="tv-ask-no">Cancel</button><button type="button" class="tv-ask-yes"></button></div></div>`;
+  /** @type {HTMLElement} */ (box.querySelector('.tv-ask-text')).textContent = text;
+  /** @type {HTMLElement} */ (box.querySelector('.tv-ask-yes')).textContent = yes;
+  document.body.appendChild(box);
+  const no = /** @type {HTMLButtonElement} */ (box.querySelector('.tv-ask-no'));
+  const ok = /** @type {HTMLButtonElement} */ (box.querySelector('.tv-ask-yes'));
+  no.focus({ preventScroll: true });
+  return new Promise((resolve) => {
+    const done = (/** @type {boolean} */ v) => {
+      window.removeEventListener('keydown', keys, true);
+      box.remove();
+      if (before && before.isConnected) before.focus({ preventScroll: true });
+      resolve(v);
+    };
+    /** @param {KeyboardEvent} e */
+    const keys = (e) => {
+      // The box owns the keys while it is open (the menu's own arrow/OK/Back handling must not run).
+      e.stopPropagation();
+      if (isBack(e) || e.key === 'Escape') { e.preventDefault(); done(false); return; }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        (document.activeElement === ok ? no : ok).focus({ preventScroll: true });
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); done(document.activeElement === ok); }
+    };
+    window.addEventListener('keydown', keys, true);
+    no.addEventListener('click', (e) => { e.stopPropagation(); done(false); });
+    ok.addEventListener('click', (e) => { e.stopPropagation(); done(true); });
+  });
+}
+
 document.addEventListener('click', (e) => {
   const kick = hit(e.target, '[data-kick]');
   if (kick) {
     const p = state && state.players.find((/** @type {any} */ x) => x.id === kick.dataset.kick);
-    if (p && confirm(`Kick ${p.nickname}?`)) socket.emit('host:kickPlayer', { playerId: p.id });
+    if (p) void askTv(`Kick ${p.nickname}?`, 'Kick').then((yes) => { if (yes) socket.emit('host:kickPlayer', { playerId: p.id }); });
     return;
   }
   const pickBtn = hit(e.target, '.game-pick');
@@ -334,10 +382,13 @@ document.addEventListener('click', (e) => {
   }
   if (act.dataset.act === 'bots') socket.emit('host:addBots', { count: +act.dataset.n, speed: +(act.dataset.speed || 1) });
   if (act.dataset.act === 'nobots') socket.emit('host:removeBots');
-  if (act.dataset.act === 'end' && confirm('End this game and go back to the menu?')) socket.emit('host:endGame');
-  if (act.dataset.act === 'newroom' && confirm('Close this room and make a new one? Everyone will need to rejoin.')) {
-    hostSeat(null);
-    location.reload();
+  if (act.dataset.act === 'end') void askTv('End this game and go back to the menu?', 'End game').then((yes) => { if (yes) socket.emit('host:endGame'); });
+  if (act.dataset.act === 'newroom') {
+    void askTv('Close this room and make a new one? Everyone will need to rejoin.', 'New room').then((yes) => {
+      if (!yes) return;
+      hostSeat(null);
+      location.reload();
+    });
   }
 });
 document.addEventListener('change', (e) => {
@@ -939,6 +990,9 @@ function render() {
   if (!state) return;
   const g = state.gameState || {};
   const phase = state.phase;
+  // Loon Call books its whole song on the audio clock; only its own screen stopped it, so End (or
+  // everyone leaving) mid-song left up to ~30 s of it playing over the menu.
+  if (g.gameId !== 'looncall' && window.Rumpus.music && window.Rumpus.music.rhythm && window.Rumpus.music.rhythm.busy()) window.Rumpus.music.rhythm.stop();
   // Everyone sees, before anyone joins, whether tonight's prompts are 18+ (feel-plan.md §4).
   const spicyNote = /** @type {HTMLElement} */ (document.getElementById('start-spicy'));
   spicyNote.hidden = !(state.settings && state.settings.spicy !== false);

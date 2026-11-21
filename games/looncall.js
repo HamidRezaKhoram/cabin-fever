@@ -296,6 +296,11 @@ class LoonCallGame extends BaseGame {
       const t = Number(raw);
       // Taps must be in this schedule and not from the future (a little clock slack allowed).
       if (!Number.isFinite(t) || t < s.startAt - 500 || t > now + 300 || t > s.endAt + GRACE_MS) continue;
+      // A tap sent long after its echo bar was over is turned down: the note times are on every
+      // phone, so a whole song of perfect taps sent at the end scored 100%. (A bar's taps sent
+      // right after it — the way bots play, and a phone catching up — still count.)
+      const bar = (s.phrases || []).find((/** @type {{ echoAt: number }} */ ph) => t >= ph.echoAt - GRACE_MS && t <= ph.echoAt + s.barMs + GRACE_MS);
+      if (bar && now > bar.echoAt + s.barMs * 2 + GRACE_MS) continue;
       if (mine.length >= 200) break;
       mine.push(t);
       added++;

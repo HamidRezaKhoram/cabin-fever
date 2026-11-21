@@ -41,7 +41,14 @@ function download(url, file) {
         download(new URL(res.headers.location, url).href, file).then(resolve, reject);
         return;
       }
-      if (res.statusCode !== 200) { res.resume(); reject(new Error(`${url}: HTTP ${res.statusCode}`)); return; }
+      if (res.statusCode !== 200) {
+        res.resume();
+        const err = /** @type {Error & { status?: number, retryAfter?: number }} */ (new Error(`${url}: HTTP ${res.statusCode}`));
+        err.status = res.statusCode;
+        err.retryAfter = Number(res.headers['retry-after']) || 0;
+        reject(err);
+        return;
+      }
       fs.mkdirSync(path.dirname(file), { recursive: true });
       const tmp = file + '.part';
       const out = fs.createWriteStream(tmp);
@@ -50,6 +57,23 @@ function download(url, file) {
       out.on('error', reject);
     }).on('error', reject);
   });
+}
+
+/** Hugging Face rate-limits busy addresses (HTTP 429 — a shared CI runner building several images at
+ * once) and has the odd 5xx: wait and try again, up to ~2 minutes in all. Other errors fail at once.
+ * @param {string} url @param {string} file */
+async function downloadPatiently(url, file) {
+  const TRIES = 6;
+  for (let i = 1; ; i++) {
+    try { return await download(url, file); } catch (e) {
+      const err = /** @type {Error & { status?: number, retryAfter?: number, code?: string }} */ (e);
+      const passing = err.status === 429 || (err.status !== undefined && err.status >= 500) || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT';
+      if (!passing || i >= TRIES) throw err;
+      const wait = Math.min(60, err.retryAfter || 2 ** i) * 1000;
+      console.log(`\n  ${err.message} — trying again in ${wait / 1000} s (${i}/${TRIES - 1})`);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
 }
 
 async function main() {
@@ -69,7 +93,7 @@ async function main() {
     const dest = path.join(OUT, 'model', f);
     if (fs.existsSync(dest) && fs.statSync(dest).size > 0) continue;
     process.stdout.write(`downloading ${f}… `);
-    await download(HF + f, dest);
+    await downloadPatiently(HF + f, dest);
     console.log(`${(fs.statSync(dest).size / 1e6).toFixed(1)} MB`);
   }
   fs.writeFileSync(path.join(OUT, 'model', 'voice.json'), JSON.stringify({ dtype: DTYPE }));

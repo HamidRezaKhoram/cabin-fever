@@ -244,6 +244,15 @@ function paceKey(game) {
   return [game.phase, game.round, game.matchIndex, game.revealIndex, game.skipSeq, game.subject].join('|');
 }
 
+/** Pace votes that count right now: only from phones that are here (a vote from a phone that has
+ * since slept or left stayed counted while the majority needed shrank, so a minority could skip).
+ * @param {Room} room @param {'ready' | 'hurry' | 'skipq' | 'wrap'} kind */
+function liveVotes(room, kind) {
+  let n = 0;
+  for (const id of room.pace[kind]) { const p = room.players.get(id); if (p && p.connected) n++; }
+  return n;
+}
+
 /** @param {Room} room */
 function paceState(room) {
   const key = paceKey(room.game);
@@ -252,7 +261,7 @@ function paceState(room) {
   return {
     allowed: flow.allowedVotes(room.game),
     need: Math.floor(connected / 2) + 1,
-    counts: { ready: room.pace.ready.size, hurry: room.pace.hurry.size, skipq: room.pace.skipq.size, wrap: room.pace.wrap.size },
+    counts: { ready: liveVotes(room, 'ready'), hurry: liveVotes(room, 'hurry'), skipq: liveVotes(room, 'skipq'), wrap: liveVotes(room, 'wrap') },
   };
 }
 
@@ -493,6 +502,13 @@ function endNight(room) {
   if (room.night && room.night.timer) clearTimeout(room.night.timer);
   room.night = null;
 }
+/** Ties share the better placing (900, 900, 100 → 1st, 1st, 3rd), as in a game's own standings.
+ * @template {{ points: number, place: number }} T @param {T[]} rows sorted, best first */
+function placed(rows) {
+  rows.forEach((r, i) => { r.place = i > 0 && r.points === rows[i - 1].points ? rows[i - 1].place : i + 1; });
+  return rows;
+}
+
 /** @param {Room} room */
 function nightSummary(room) {
   const night = room.night;
@@ -502,8 +518,8 @@ function nightSummary(room) {
     total: night.total, played: night.played.length, nextAt: night.nextAt || null,
     // The lineup in order (the TV draws it as a row of cartridges: done, skipped, now, still to come).
     list: night.list.map((id, i) => ({ ...meta(id), skipped: !!(night.skipped && night.skipped.includes(i)) })),
-    standings: [...room.players.values()].map((p) => ({ nickname: p.nickname, points: night.points.get(p.id) || 0 }))
-      .sort((a, b) => b.points - a.points),
+    standings: placed([...room.players.values()].map((p) => ({ nickname: p.nickname, points: night.points.get(p.id) || 0, place: 0 }))
+      .sort((a, b) => b.points - a.points)),
   };
 }
 
@@ -523,6 +539,14 @@ function closeRoom(room) {
       p.socket.emit('room:stateUpdate', { code: room.code, phase: 'closed', players: [], gameState: {} });
       p.socket.disconnect(true);
     }
+  }
+  // Phones waiting to be dealt in are told too (they showed "You're next…" forever).
+  if (room.queue) {
+    for (const { socket } of room.queue.values()) {
+      socket.data.queuedIn = null;
+      if (socket.connected) { socket.emit('room:stateUpdate', { code: room.code, phase: 'closed', players: [], gameState: {} }); socket.disconnect(true); }
+    }
+    room.queue.clear();
   }
   rooms.delete(room.code);
   saveRooms();
@@ -586,7 +610,16 @@ function removePlayer(room, playerId) {
     endNight(room);
     room.game.destroy();
     room.game = null;
-  } else if (room.game) { const g = room.game; safely(room, 'player left', () => g.onPlayerLeft(playerId)); }
+  } else if (room.game) {
+    const g = room.game;
+    safely(room, 'player left', () => g.onPlayerLeft(playerId));
+    // Too few left to play (one player alone answering both sides of their own Quips prompt, a
+    // lone Crush player with nobody to write to): the game ends with its standings instead of
+    // minutes of rounds nobody can score. `endBelow` (default 2) is set by games that need more.
+    const meta = /** @type {any} */ (g.constructor).meta || {};
+    const endBelow = meta.endBelow !== undefined ? meta.endBelow : 2;
+    if (room.game === g && g.phase !== 'gameover' && room.players.size < endBelow) safely(room, 'too few players', () => g.gameOver());
+  }
   console.log(`[room ${room.code}] player left: ${p.nickname}`);
   broadcast(room);
 }
@@ -855,6 +888,14 @@ function connection(socket) {
       // new browser/cleared storage. Let them reclaim it. (While it's online they must say so:
       // "That's me" on the phone — a private window or another browser has no saved seat.)
       if (!existing.connected || (msg.takeover === true && !existing.bot)) {
+        if (existing.connected) {
+          // Taking a seat that is open on another phone: anyone can type a name, so not mid-game
+          // (the seat's screen shows its secrets — roles, the Odd Duck's word). Once its phone is
+          // closed (or drops), the seat is offline and can be reclaimed by name as before.
+          if (room.game) return void socket.emit('player:joinError', { reason: `${existing.nickname} is in a game right now — close it on that phone first, or wait for the game to end.`, taken: true });
+          // A new token: the old one (a credential) must not go with the seat to whoever asked.
+          existing.token = token();
+        }
         console.log(`[room ${room.code}] ${nickname} reclaimed seat by name`);
         if (device) existing.device = device;
         return void attachPlayer(room, existing, socket);
@@ -867,7 +908,9 @@ function connection(socket) {
     const meta = room.game ? /** @type {any} */ (room.game.constructor).meta : null;
     if (!between && !(meta && meta.lateJoin)) {
       // A role/turn game can't take a newcomer mid-round: queue them; they're dealt in when it ends.
-      if (room.players.size + (room.queue ? room.queue.size : 0) >= MAX_PLAYERS) return void socket.emit('player:joinError', { reason: `Room is full (${MAX_PLAYERS} players max).` });
+      // (Its own place in the queue doesn't count: a queued phone asking again just refreshes it.)
+      const ahead = room.queue ? room.queue.size - (room.queue.has(socket.id) ? 1 : 0) : 0;
+      if (room.players.size + ahead >= MAX_PLAYERS) return void socket.emit('player:joinError', { reason: `Room is full (${MAX_PLAYERS} players max).` });
       if (room.queue && [...room.queue.values()].some((q) => q.socket !== socket && String(q.msg.nickname || '').trim().toLowerCase() === nickname.toLowerCase())) {
         return void socket.emit('player:joinError', { reason: 'That nickname is taken.' });
       }
@@ -903,6 +946,9 @@ function connection(socket) {
     if (socket.data.room && (socket.data.room !== room || socket.data.role !== 'player')) return;
     const p = room && !room.closed && ([...room.players.values()].find((x) => x.token === (msg && msg.token)) || seatOf(room, cleanDevice(msg && msg.device)));
     if (!p) return void socket.emit('player:rejoinFailed');
+    // One socket, one seat: re-taking a *different* seat left the first one "connected" forever (no
+    // drop timer, still counted in every majority).
+    if (socket.data.playerId && socket.data.playerId !== p.id && room.players.has(socket.data.playerId)) return void socket.emit('player:rejoinFailed');
     const device = cleanDevice(msg && msg.device);
     if (device && !p.device) p.device = device;
     console.log(`[room ${room.code}] player rejoined: ${p.nickname}`);
@@ -918,7 +964,7 @@ function connection(socket) {
     const pace = paceState(room);
     if (!p || !pace.allowed.includes(kind)) return;
     room.pace[kind].add(p.id);
-    if (room.pace[kind].size >= pace.need) {
+    if (liveVotes(room, kind) >= pace.need) {
       room.pace[kind].clear();
       const game = room.game;
       const tellHost = (/** @type {string} */ type) => room.hostSocket && room.hostSocket.connected && room.hostSocket.emit('room:event', { type });
@@ -1025,8 +1071,9 @@ function connection(socket) {
     const game = room.game;
     // A game says `false` when it turned the answer down (empty, a duplicate, the wrong prompt): the
     // phone gets its form back instead of a "✓ Sent" for something that was never counted.
-    let taken = true;
-    safely(room, 'answer', () => { if (game.handleSubmit(socket.data.playerId, payload) === false) taken = false; });
+    // (If the game throws, the answer wasn't taken either: no "✓ Sent" for it.)
+    let taken = false;
+    safely(room, 'answer', () => { taken = game.handleSubmit(socket.data.playerId, payload) !== false; });
     if (typeof ack === 'function') ack(taken ? { ok: true } : { ok: false, rejected: true });
   });
 
@@ -1057,4 +1104,4 @@ function connection(socket) {
 
 restoreRooms();
 
-module.exports = { connection, rooms, hostPayload, playerPayload, flushRooms, GAME_LIST, GAMES, DEBUG };
+module.exports = { connection, rooms, hostPayload, playerPayload, flushRooms, nightSummary, GAME_LIST, GAMES, DEBUG };

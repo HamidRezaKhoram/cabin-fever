@@ -80,7 +80,9 @@ function timerFor(gameId) { return rules.timers[gameId] || 1; }
 function bannedRe() {
   if (!rules.banned.length) return null;
   const esc = rules.banned.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return new RegExp(`\\b(${esc.join('|')})\\b`, 'gi');
+  // Word edges in any script: `\\b` only knows ASCII letters, so "écureuil" or "pédé" (accented
+  // first/last letter) were never masked in a French room.
+  return new RegExp(`(?<![\\p{L}\\p{N}_])(${esc.join('|')})(?![\\p{L}\\p{N}_])`, 'giu');
 }
 
 /** Mask banned words in player text ("duck" → "d★★k"). @param {string} text */

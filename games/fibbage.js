@@ -33,9 +33,16 @@ const LIKE_POINTS = 50;    // per 👍 on your lie (players like funny lies whil
 
 // Loose match so a lie that's really the truth (or two identical lies) collapse
 // together regardless of casing / surrounding whitespace / trailing period.
-/** @param {unknown} s */
+/** What a lie "says", for comparing it with the truth and with other lies: letters and digits only.
+ * The TV collapses spaces and shows punctuation small, so "Mexico," / "New  York" / a zero-width
+ * space looked exactly like the real answer and slipped past a trim-and-lowercase check (a cheat:
+ * the liar picks the real one, everyone else may pick the fake). Falls back to the plain text when
+ * an answer is all punctuation or emoji.
+ * @param {unknown} s */
 function normalize(s) {
-  return String(s).trim().toLowerCase().replace(/[.!?]+$/, '');
+  const plain = String(s).normalize('NFKC').toLowerCase();
+  const core = plain.replace(/[^\p{L}\p{N}]+/gu, '');
+  return core || plain.replace(/\s+/g, ' ').trim();
 }
 
 /** @typedef {{ text: string, authorIds: Set<string>, isTruth: boolean, index: number }} Option */
@@ -107,7 +114,7 @@ class FibbageGame extends BaseGame {
     this.push();
   }
 
-  /** @param {string} playerId @param {Record<string, any>} payload */
+  /** @param {string} playerId @param {Record<string, any>} payload @returns {boolean | void} `false` = turned down */
   handleSubmit(playerId, payload) {
     if (this.destroyed) return;
     if (!this.room.players.has(playerId)) return;
@@ -121,7 +128,9 @@ class FibbageGame extends BaseGame {
         this.collided.add(playerId);
         this.peeked.add(playerId);
         this.push();
-        return;
+        // Not taken: the phone gets its form back (a second hit changes nothing on screen, and the
+        // phone would otherwise sit on "✓ Sent" with no way to write a lie).
+        return false;
       }
       this.collided.delete(playerId);
       this.bluffs.set(playerId, text);

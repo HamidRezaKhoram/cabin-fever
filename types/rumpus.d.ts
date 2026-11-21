@@ -119,6 +119,8 @@ interface GameLike {
   /** `false` = the answer was turned down (the phone gets its form back). */
   handleSubmit(playerId: string, payload: Record<string, any>): void | boolean;
   onPlayerLeft(playerId: string): void;
+  /** End the game now with its standings. */
+  gameOver(): void;
   hostGameState(): Record<string, any>;
   playerView(playerId: string): { gameState: Record<string, any>; you: Record<string, any> };
 }

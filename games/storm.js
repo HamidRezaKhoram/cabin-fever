@@ -111,6 +111,8 @@ class StormGame extends BaseGame {
     this.flipAt = 0;
     /** @type {NodeJS.Timeout | null} */
     this.flipTimer = null;
+    /** @type {(() => void) | null} what the chore being revealed does once its cards have flipped */
+    this.fate = null;
     /** @type {Record<string, number>} points earned during play (Lucky Loon), shown on the end screen */
     this.playGains = {};
     /** @type {Set<string>} */
@@ -221,6 +223,7 @@ class StormGame extends BaseGame {
   }
 
   passLeader() {
+    this.applyFate();
     this.leaderIdx++;
     if (this.winner) return this.toAccuse();
     this.nextChore();
@@ -246,8 +249,13 @@ class StormGame extends BaseGame {
     const ok = sabotage < needed;
     const i = this.chore();
     this.chores[i] = ok;
-    if (ok && this.event === 'lucky') for (const id of this.crew) this.playGains[id] = (this.playGains[id] || 0) + this.award(id, LUCKY);
-    if (!ok && this.event === 'leaky') this.storm = Math.min(2, this.storm + 1);
+    // Lucky Loon points and the Leaky Canoe's storm come when the last card has flipped: given at
+    // once, the scores and the storm meter told every screen the chore's fate before the cards did.
+    const crew = [...this.crew], event = this.event;
+    this.fate = () => {
+      if (ok && event === 'lucky') for (const id of crew) if (this.room.players.has(id)) this.playGains[id] = (this.playGains[id] || 0) + this.award(id, LUCKY);
+      if (!ok && event === 'leaky') this.storm = Math.min(2, this.storm + 1);
+    };
     this.lastCrew = [...this.crew];
     this.lastPlayed = { crew: [...this.crew], cards: new Map(this.cards) };
     // Bonfire: the leader privately sees one crew card.
@@ -266,13 +274,16 @@ class StormGame extends BaseGame {
     // before the last one is over. Then everyone is told.
     this.flipAt = Date.now() + CARD_MS * cards.length;
     if (this.flipTimer) clearTimeout(this.flipTimer);
-    this.flipTimer = setTimeout(() => { this.flipTimer = null; if (!this.destroyed && this.phase === 'st-reveal') this.push(); }, CARD_MS * cards.length + 50);
+    this.flipTimer = setTimeout(() => { this.flipTimer = null; if (!this.destroyed && this.phase === 'st-reveal') { this.applyFate(); this.push(); } }, CARD_MS * cards.length + 50);
     this.setTimer(CARD_MS * (cards.length + 2), () => this.passLeader(), false);
     this.push();
   }
 
   /** Has the current reveal's last card flipped? (Always true outside a reveal.) */
   flipped() { return this.phase !== 'st-reveal' || Date.now() >= this.flipAt; }
+
+  /** The revealed chore's points / storm (once; also when the reveal is skipped). */
+  applyFate() { const f = this.fate; this.fate = null; if (f) f(); }
 
   /** A private line for one player's phone, added to what they already know. @param {string} id @param {string} text */
   addPeek(id, text) {
@@ -364,6 +375,10 @@ class StormGame extends BaseGame {
 
   /** @param {string} id */
   onPlayerLeft(id) {
+    // What a leaver said stops counting: a raccoon who named the Lookout and left still made 1 of 2
+    // raccoons a "majority" (1 right vs 1 raccoon still here) and stole the cottage's win; a gone
+    // cottager's accusation still cost a raccoon the unseen bonus; a gone voter still voted.
+    if (this.phase !== 'st-final') { this.votes.delete(id); this.unmask.delete(id); this.accusations.delete(id); this.hunches.delete(id); }
     if (this.phase === 'st-talk' && id === this.leader()) { this.leaderIdx++; this.nextChore(); return; }
     if (this.phase === 'st-roles' && this.room.players.size && this.allIn(this.ready)) this.nextChore();
     else if (this.phase === 'st-vote' && this.room.players.size && this.allIn(this.votes)) this.countVotes();

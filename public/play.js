@@ -243,8 +243,10 @@ gameView.addEventListener('submit', (e) => {
     if (v.trim()) { formSent(f); send(Number.isInteger(g.slot) ? { text: v, slot: g.slot } : { text: v }); } else nope(f);
   } else if (f.matches('form.number-form')) {
     e.preventDefault();
-    const n = parseFloat(input.value.replace(/,/g, ''));
-    if (Number.isFinite(n)) { formSent(f); send(document.querySelector('#game-view [data-dd][aria-pressed="true"]') ? { number: n, double: true } : { number: n }); } else nope(f);
+    // Sent as typed: the TV reads it in the room's language ("42,195" is 42.195 in French) and
+    // refuses what isn't a number, which gives the form back.
+    const n = input.value.trim();
+    if (/\d/.test(n)) { formSent(f); send(document.querySelector('#game-view [data-dd][aria-pressed="true"]') ? { number: n, double: true } : { number: n }); } else nope(f);
   }
 });
 gameView.addEventListener('click', (e) => {
@@ -331,6 +333,7 @@ const resetJoinBtn = () => {
 leaveBtn.addEventListener('click', () => {
   if (!confirm('Leave this room? Your score in this game is lost.')) return;
   ended = true;
+  sleepOk(); // the seat is over: let the screen sleep again
   socket.emit('player:leave');
   store('rumpus.seat', null);
   setTimeout(() => { location.href = '/play'; }, 150); // let the goodbye reach the TV
@@ -349,7 +352,11 @@ socket.on('connect', () => {
   banner.hidden = true;
   setConn('ok');
   // This tab's own seat first (two tabs of one browser share the saved one: each must come back as itself).
-  const seat = mySeat || store('rumpus.seat');
+  // A saved seat from another room (last night's) doesn't override the room just scanned or typed
+  // into the link: it switched the phone to the old room ("No room with that code").
+  let seat = mySeat || store('rumpus.seat');
+  const linkCode = String(codeInput.value || '').toUpperCase().slice(0, 4); // (prefilled from ?code=)
+  if (!mySeat && seat && linkCode && seat.code !== linkCode) { store('rumpus.seat', null); seat = null; }
   if (ended) return;
   if (seat && seat.code && seat.token) socket.emit('player:rejoin', { ...seat, device: DEVICE });
   requeue();
@@ -385,6 +392,7 @@ socket.on('player:joinError', (/** @type {any} */ msg) => {
 // This seat was opened in another tab or window: that one plays now; this one can take it back.
 socket.on('player:replaced', () => {
   ended = true;
+  sleepOk(); // the seat is over: let the screen sleep again
   socket.disconnect();
   showMessage('<div class="loading-card"><h1>You\'re playing in another tab</h1><p>Your character moved to the other tab or window on this phone.</p><button class="wide" data-takeback>Play here instead</button></div>');
 });
@@ -424,6 +432,7 @@ let wakeLock = null;
 let wakeVideo = null;
 /** @param {boolean} [fromTap] called from a tap (only then can a refusal mean low-power mode) */
 async function keepAwake(fromTap = false) {
+  if (ended) return;
   try {
     const wl = /** @type {any} */ (navigator).wakeLock;
     if (wl && window.isSecureContext) {
@@ -443,6 +452,13 @@ async function keepAwake(fromTap = false) {
   // A refusal right after a tap means the phone won't play it at all (low-power mode); other
   // rejections (an interrupted play, a call from a non-tap) are not worth a warning.
   if (wakeVideo.paused) wakeVideo.play().catch((/** @type {unknown} */ e) => { if (fromTap && e instanceof DOMException && e.name === 'NotAllowedError') wakeHint(); });
+}
+/** Out of the room (removed, room closed, playing in another tab, left): stop keeping the screen on —
+ * the looping video kept a phone (or a background tab) awake for good. */
+function sleepOk() {
+  if (wakeVideo) { wakeVideo.pause(); wakeVideo.remove(); wakeVideo = null; }
+  if (wakeLock && !wakeLock.released) wakeLock.release().catch(() => {});
+  wakeLock = null;
 }
 /** Both keep-awake methods failed (often low-power mode): tell the player once, gently. */
 let wakeHinted = false;
@@ -472,12 +488,14 @@ socket.on('player:joined', (/** @type {any} */ msg) => {
 });
 socket.on('player:kicked', () => {
   ended = true;
+  sleepOk(); // the seat is over: let the screen sleep again
   store('rumpus.seat', null);
   showMessage('<h1>You were removed from the room</h1><p><a href="/play">Join again</a></p>');
 });
 socket.on('room:stateUpdate', (/** @type {any} */ msg) => {
   // Drawings come once (core/rooms.js sendState): keep them even if this update isn't drawn.
   if (msg && msg.gameState && msg.gameState.images && window.Rumpus.learnPics) window.Rumpus.learnPics(msg.gameState);
+  statesSeen++;
   state = msg; render();
 });
 socket.on('disconnect', () => {
@@ -602,20 +620,33 @@ function legacyPlayer(/** @type {any} */ phase, /** @type {any} */ g, /** @type 
 }
 
 let sendSeq = 0;
+/** State updates heard so far (a tap that changed nothing on the TV's side brings none). */
+let statesSeen = 0;
+/** The buttons and forms of this screen usable again (a tap disables them all until the TV answers). */
+function unlockSends() {
+  for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) { x.disabled = false; x.classList.remove('sent'); }
+  for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('form button.sent'))) { x.classList.remove('sent'); x.textContent = (x.dataset && x.dataset.label) || 'Send it'; }
+}
 /** Send an answer/tap. The TV confirms it; until then the screen says "Sending…", and if the
  * confirmation never comes (the link dropped) the buttons come back so it can be tapped again. */
 function send(/** @type {any} */ payload) {
   const seq = ++sendSeq;
   const screen = lastScreenKey;
+  const seen = statesSeen;
   const slow = window.setTimeout(() => { if (seq === sendSeq && screen === lastScreenKey) document.body.classList.add('sending'); }, 250);
   socket.timeout(6000).emit('player:submit', { payload }, (/** @type {any} */ err, /** @type {any} */ res) => {
     clearTimeout(slow);
     if (seq !== sendSeq) return;
     document.body.classList.remove('sending');
     if (screen !== lastScreenKey || ended) return;
-    if (!err && res && res.ok) return;
-    for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('[data-send]'))) { x.disabled = false; x.classList.remove('sent'); }
-    for (const x of /** @type {NodeListOf<HTMLButtonElement>} */ (gameView.querySelectorAll('form button.sent'))) { x.classList.remove('sent'); x.textContent = (x.dataset && x.dataset.label) || 'Send it'; }
+    if (!err && res && res.ok) {
+      // Taken, but nothing on the TV's side changed (the same hunch twice, a tap that was a no-op):
+      // no new state comes, so nothing redraws this screen — its buttons would stay dead (the Snoop
+      // lost the once-a-game power). The update, if any, comes before the ack; allow a moment more.
+      if (statesSeen === seen) window.setTimeout(() => { if (seq === sendSeq && screen === lastScreenKey && statesSeen === seen && !ended) unlockSends(); }, 400);
+      return;
+    }
+    unlockSends();
     if (window.Rumpus && window.Rumpus.haptic) window.Rumpus.haptic([30, 80, 30]); // it didn't go: a buzz you can feel
     banner.textContent = res && res.rejected ? 'The TV didn\'t take that — try again' : 'That didn\'t reach the TV — tap again';
     banner.hidden = false;
@@ -639,6 +670,7 @@ function render() {
 
   if (state.phase === 'closed') {
     ended = true;
+    sleepOk(); // the seat is over: let the screen sleep again
     store('rumpus.seat', null);
     return showMessage('<h1>Room closed</h1><p>The host ended the room. <a href="/play">Join another</a></p>');
   }
@@ -741,15 +773,22 @@ function controlsOf(html) {
 }
 /** Remember what the player typed / opened on this screen; returns a function that puts it back
  * after a rebuild (matched by position among the same kind of field). */
+/** Which field this is across a redraw: its name, and who the form is for (a Crush reply form is
+ * for one note — text typed to one admirer must not land in the next admirer's box). @param {Element} f */
+function fieldKey(f) {
+  const form = f.closest('form');
+  const forWho = form ? form.getAttribute('data-reply') || form.getAttribute('data-key') || '' : '';
+  return `${f.getAttribute('name') || f.tagName}|${forWho}`;
+}
 function keepInputs() {
   const fields = /** @type {(HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[]} */ ([...gameView.querySelectorAll('input, textarea, select')]);
-  const vals = fields.map((f) => ({ name: f.getAttribute('name') || f.tagName, value: f.value, focus: f === document.activeElement }));
+  const vals = fields.map((f) => ({ name: fieldKey(f), value: f.value, focus: f === document.activeElement }));
   const opened = [...gameView.querySelectorAll('details')].map((d) => /** @type {HTMLDetailsElement} */ (d).open);
   return () => {
     const now = /** @type {(HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[]} */ ([...gameView.querySelectorAll('input, textarea, select')]);
     now.forEach((f, i) => {
       const v = vals[i];
-      if (!v || v.name !== (f.getAttribute('name') || f.tagName)) return;
+      if (!v || v.name !== fieldKey(f)) return;
       if (v.value && f.type !== 'checkbox' && f.type !== 'radio') f.value = v.value;
       if (v.focus) f.focus();
     });

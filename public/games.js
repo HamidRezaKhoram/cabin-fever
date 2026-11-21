@@ -340,7 +340,8 @@
       // Canoe Sprint: only LEFT/RIGHT alternation counts.
       const sides = root.querySelectorAll('[data-mg-side]');
       if (sides.length) {
-        let last = '', pending = 0;
+        // Strokes go as their sides ("LRL…"): the TV counts the changes of side itself.
+        let last = '', pending = '';
         const tally = mgTally(`paddle|${g.round}|${g.playStart}`);
         let lastStroke = 0;
         const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-strokes]'));
@@ -354,11 +355,11 @@
           const t = performance.now();
           if (t - lastStroke < 50) return; // over the TV's 20 strokes a second
           lastStroke = t;
-          last = side; pending++; tally.n++;
+          last = side; pending += side; tally.n++;
           label.textContent = `${tally.n} strokes`;
           window.Rumpus.haptic(10);
         }));
-        const flush = () => { if (pending) { api.send({ strokes: pending }); pending = 0; } };
+        const flush = () => { if (pending) { api.send({ sides: pending }); pending = ''; } };
         const t = setInterval(flush, 100);
         api.onCleanup(() => { clearInterval(t); flush(); });
       }
@@ -804,7 +805,9 @@
         if (f.matches('.crush-form')) { e.preventDefault(); sendNote(input.value); }
         else if (f.matches('.crush-reply-form')) {
           e.preventDefault();
-          if (input.value.trim()) { window.Rumpus.haptic(12); api.send({ reply: Number(f.dataset.reply), text: input.value }); }
+          // Cleared once sent: a second tap can't send it again ("didn't take that"), and it can't
+          // be carried into the next note's reply box.
+          if (input.value.trim()) { window.Rumpus.haptic(12); api.send({ reply: Number(f.dataset.reply), text: input.value }); input.value = ''; }
         }
       };
       root.addEventListener('click', onClick);
@@ -1449,7 +1452,7 @@
   });
 
   // ---------------------------------------------------------------- Game night
-  /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number }[] }} NightView */
+  /** @typedef {{ total: number, played: number, standings: { nickname: string, points: number, place?: number }[] }} NightView */
   /** Running game-night leaderboard. @param {NightView} night @param {boolean} [between] */
   const nightTable = (night, between = false) => `<div class="night-table">
       <p class="round-tag">🎞 Lineup · ${night.played} of ${night.total} played${between && night.played < night.total ? ' · next game coming up…' : ''}</p>
@@ -1466,9 +1469,10 @@
     host(s) {
       const g = s.gameState, night = s.night || { played: 0, total: 0, standings: [], list: [] };
       if (s.phase === 'night-final') {
-        const top = night.standings[0];
-        return `<h1>🏆 Champion of the lineup</h1>
-          ${top ? `<p class="big-answer">${av(top.nickname, 'avatar big bob')} ${esc(top.nickname)} — ${top.points} pts</p>` : ''}
+        // Tied at the top: they are all champions (place 1), not just whoever sorted first.
+        const champs = night.standings.filter((/** @type {{ points: number, place?: number }} */ x, /** @type {number} */ i) => (x.place || i + 1) === 1);
+        return `<h1>🏆 Champion${champs.length > 1 ? 's' : ''} of the lineup</h1>
+          ${champs.map((/** @type {{ nickname: string, points: number }} */ top) => `<p class="big-answer">${av(top.nickname, 'avatar big bob')} ${esc(top.nickname)} — ${top.points} pts</p>`).join('')}
           ${nightTable(night)}<p class="big-sub">Press End to go back to the menu.</p>`;
       }
       // Between games: the next cartridge comes to the middle of the screen.
@@ -1485,7 +1489,9 @@
       const g = s.gameState, you = s.you, night = s.night || { standings: [] };
       if (s.phase === 'night-final') {
         const rank = night.standings.findIndex((/** @type {{ nickname: string }} */ x) => x.nickname === you.nickname);
-        return `<h1>${rank === 0 ? '🏆 You are the champion!' : `You finished #${rank + 1}`}</h1><p>${(night.standings[rank] || {}).points || 0} lineup points</p>`;
+        const me = night.standings[rank] || {};
+        const place = me.place || rank + 1;
+        return `<h1>${place === 1 ? '🏆 You are the champion!' : `You finished #${place}`}</h1><p>${me.points || 0} lineup points</p>`;
       }
       return watchTv(`<p>Next game: <strong>${esc(g.next ? g.next.name : '')}</strong></p>`);
     },

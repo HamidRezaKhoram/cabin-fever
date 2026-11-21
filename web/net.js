@@ -16,6 +16,46 @@ const MAX_QUEUE = 64;
 const MAX_ACKS = 256;
 
 /** @typedef {{ t: 'e', ev: string, args: unknown[], ack?: number } | { t: 'a', id: number, args: unknown[] } | { t: 'p' }} Msg */
+/** One piece of a big message (see chunker). @typedef {{ t: 'c', id: number, i: number, n: number, d: string }} Piece */
+
+/** PeerJS's JSON channel refuses any message of 16,300 bytes or more ("message-too-big", which
+ * also closed the link): a drawing (~60 KB) never got through. Bigger messages go as pieces of
+ * CHUNK UTF-16 units (≤ 3 bytes each once encoded, so a piece stays well under the limit). */
+const CHUNK = 4000;
+/** Big messages being put back together at once (a half-sent one is dropped past this). */
+const MAX_PARTS = 8;
+
+/** Wraps a message sender/receiver pair so big messages travel in pieces.
+ * @param {(m: Msg | Piece) => void} sendOne @returns {{ send(m: Msg): void, receive(m: any, deliver: (m: Msg) => void): void }} */
+function chunker(sendOne) {
+  let nextId = 0;
+  /** @type {Map<number, string[]>} */
+  const parts = new Map();
+  return {
+    send(m) {
+      const s = JSON.stringify(m);
+      if (s.length <= CHUNK) return sendOne(m);
+      const id = ++nextId, n = Math.ceil(s.length / CHUNK);
+      for (let i = 0; i < n; i++) sendOne({ t: 'c', id, i, n, d: s.slice(i * CHUNK, (i + 1) * CHUNK) });
+    },
+    receive(m, deliver) {
+      if (!m || m.t !== 'c') return deliver(m);
+      const { id, i, n, d } = m;
+      if (!Number.isInteger(id) || !Number.isInteger(i) || !Number.isInteger(n) || i < 0 || i >= n || n > 1000 || typeof d !== 'string') return;
+      let got = parts.get(id);
+      if (!got) {
+        if (parts.size >= MAX_PARTS) parts.delete(/** @type {number} */ (parts.keys().next().value));
+        got = new Array(n); parts.set(id, got);
+      }
+      got[i] = d;
+      for (let k = 0; k < n; k++) if (got[k] === undefined) return;
+      parts.delete(id);
+      let whole;
+      try { whole = JSON.parse(got.join('')); } catch (e) { return; }
+      deliver(whole);
+    },
+  };
+}
 /** A link to one peer: send a message, hear messages and the close. `sendFast` (WebRTC only) sends
  * on the unordered, no-retransmit channel: newest-wins traffic that must never wait behind a lost packet.
  * @typedef {{ send(m: Msg): void, sendFast?: (m: Msg) => void, onMessage(fn: (m: Msg) => void): void, onClose(fn: () => void): void, close(): void }} Wire */
@@ -301,13 +341,15 @@ function peerTransport() {
   const wrap = (conn) => {
     /** @type {((m: Msg) => void)[]} */
     const hear = [];
-    const send = (/** @type {Msg} */ m) => { try { conn.send(m); } catch (e) { /* closing */ } };
+    const ch = chunker((/** @type {Msg | Piece} */ m) => { try { conn.send(m); } catch (e) { /* closing */ } });
+    const send = (/** @type {Msg} */ m) => ch.send(m);
     const fast = conn.peerConnection ? fastChannel(conn.peerConnection, (m) => hear.forEach((f) => f(m))) : null;
+    conn.on('data', (/** @type {any} */ m) => ch.receive(m, (whole) => hear.forEach((f) => f(whole))));
     return {
       send,
       // Not open (yet) or not supported: the reliable channel carries it instead.
       sendFast: (m) => { if (!fast || !fast.send(m)) send(m); },
-      onMessage: (f) => { hear.push(f); conn.on('data', f); },
+      onMessage: (f) => { hear.push(f); },
       onClose: (f) => { conn.on('close', f); conn.on('error', f); },
       close: () => { if (fast) fast.close(); try { conn.close(); } catch (e) { /* closed */ } },
     };
@@ -327,8 +369,18 @@ function peerTransport() {
         conn.on('close', () => clearTimeout(stuck));
       });
       peer.on('error', (/** @type {any} */ e) => onError(String(e && e.type || e)));
-      peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) { /* destroyed */ } }); // broker blip: stay reachable
-      return () => peer.destroy();
+      // Broker blip: stay reachable — but back off. Offline, every reconnect fails at once and
+      // fires 'disconnected' again: retrying straight away spun as fast as the failures came.
+      let tries = 0;
+      /** @type {ReturnType<typeof setTimeout> | null} */
+      let again = null;
+      peer.on('open', () => { tries = 0; });
+      peer.on('disconnected', () => {
+        if (again || peer.destroyed) return;
+        const wait = Math.min(30000, 1000 * 2 ** Math.min(tries++, 5));
+        again = setTimeout(() => { again = null; try { if (!peer.destroyed) peer.reconnect(); } catch (e) { /* destroyed */ } }, wait);
+      });
+      return () => { if (again) clearTimeout(again); peer.destroy(); };
     },
     connect(code, onOpen, onFail) {
       let settled = false;
@@ -340,9 +392,9 @@ function peerTransport() {
         mine.on('error', (/** @type {any} */ e) => {
           const type = e && e.type;
           if (type === 'peer-unavailable') { [...pending].forEach((f) => f('no-room')); return; }
-          // Broker trouble: start over with a new Peer next time.
-          try { mine.destroy(); } catch (x) { /* gone */ }
-          mine = null;
+          // Broker trouble (the phone slept, an internet blip): PeerJS keeps the direct links open on
+          // purpose, so must we — destroying the Peer here closed the live game link to the TV too.
+          // The next connect() starts over with a new Peer (it sees this one disconnected/destroyed).
           [...pending].forEach((f) => f(String(type || e)));
         });
       }
@@ -439,10 +491,12 @@ function rtcLocalTransport() {
   const wrap = (ch, pc) => {
     /** @type {((m: Msg) => void)[]} */ const hear = [];
     /** @type {(() => void)[]} */ const closed = [];
-    ch.onmessage = (e) => { let m; try { m = JSON.parse(String(e.data)); } catch (x) { return; } hear.forEach((f) => f(m)); };
+    // Same pieces as over PeerJS, so the browser tests carry big messages the way phones do.
+    const big = chunker((m) => { if (ch.readyState === 'open') ch.send(JSON.stringify(m)); });
+    ch.onmessage = (e) => { let m; try { m = JSON.parse(String(e.data)); } catch (x) { return; } big.receive(m, (whole) => hear.forEach((f) => f(whole))); };
     ch.onclose = () => closed.forEach((f) => f());
     const fast = fastChannel(pc, (m) => hear.forEach((f) => f(m)));
-    const send = (/** @type {Msg} */ m) => { if (ch.readyState === 'open') ch.send(JSON.stringify(m)); };
+    const send = (/** @type {Msg} */ m) => big.send(m);
     return {
       send,
       sendFast: (m) => { if (!fast || !fast.send(m)) send(m); },
@@ -516,4 +570,19 @@ function pickTransport() {
   return local || !(/** @type {any} */ (window).Peer) ? localTransport() : peerTransport();
 }
 
-module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, iceServers, showLanAddress, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };
+/** Event names only the TV page's own sockets fire (never a phone's message). */
+const PEER_RESERVED = new Set(['connect', 'disconnect', 'connect_error', 'disconnecting', 'net:resync']);
+/** The TV's socket for one phone: anyone on the internet can reach a room code (the public broker
+ * introduces them), so what a phone sends is filtered — no TV commands (host:*), and none of the
+ * socket's own event names (a phone sending "disconnect" reached the TV's listeners as if its link
+ * had dropped). @param {Sock} s */
+function guardPeer(s) {
+  const hear = s.receive.bind(s);
+  s.receive = (/** @type {any} */ m) => {
+    if (m && m.t === 'e' && (typeof m.ev !== 'string' || m.ev.startsWith('host:') || PEER_RESERVED.has(m.ev))) return;
+    hear(m);
+  };
+  return s;
+}
+
+module.exports = { Sock, pairWires, pickTransport, heartbeat, fastChannel, chunker, peerTransport, guardPeer, CHUNK, iceServers, showLanAddress, PREFIX, BEAT_MS, DEAD_MS, REVIVE_MS };
