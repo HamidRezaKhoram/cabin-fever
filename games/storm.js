@@ -44,7 +44,7 @@ const EVENTS = {
   lucky: { name: 'Lucky Loon', desc: 'If it gets done, the crew earns +100 each.' },
   leaky: { name: 'Leaky Canoe', desc: 'If it gets ruined, the storm meter rises too.' },
   calm: { name: 'Calm Evening', desc: 'Nothing strange tonight… or is there?' },
-  wind: { name: 'Second Wind', desc: 'If this crew is voted down, the storm meter doesn’t rise.' },
+  wind: { name: 'Second Wind', desc: 'If this crew is voted down, the storm meter doesn’t rise (once per chore).' },
   cold: { name: 'Cold Snap', desc: 'Everyone wants to get inside: less time to talk.' },
 };
 const CHORES = ['Stack the woodpile', 'Pull the canoes up the shore', 'Fix the generator', 'Tie down the dock', 'Board up the windows', 'Bring in the laundry', 'Clear the eavestroughs', 'Light the lanterns'];
@@ -123,6 +123,8 @@ class StormGame extends BaseGame {
     this.reveal = null;
     /** @type {'cottage' | 'raccoon' | null} */
     this.winner = null;
+    /** The chore whose Second Wind was used already (-1: none). */
+    this.windSpent = -1;
     this.winReason = '';
     /** Lookout's sighting: two guests, one of them a (non-Sly) raccoon — a lead, not an answer. */
     const lookoutId = ids.find((id) => this.roles.get(id) === 'lookout') || null;
@@ -216,7 +218,10 @@ class StormGame extends BaseGame {
     this.phase = 'st-votes';
     this.approved = approved;
     if (!approved) {
-      if (this.event !== 'wind') this.storm += 1;
+      // Second Wind spares one vote-down per chore. (The event stays with the chore now, so "every
+      // time" meant a Second Wind chore could be voted down forever: the storm never came.)
+      if (this.event === 'wind' && this.windSpent !== this.chore()) this.windSpent = this.chore();
+      else this.storm += 1;
       if (this.storm >= 3) { this.winner = 'raccoon'; this.winReason = 'The room argued too long — the storm hit an unprepared cottage.'; }
     }
     this.setTimer(VOTE_SHOW_MS, () => (approved ? this.toCrew() : this.passLeader()), false);

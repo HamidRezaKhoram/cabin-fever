@@ -365,3 +365,15 @@ test('TV: the countdown is filled in before the screen is fitted (Telephone over
   const morphed = src.slice(src.indexOf('morph(phaseView, html);'), src.indexOf('updateTimerBar(inGame'));
   assert.ok(morphed.indexOf('countdown(') >= 0 && morphed.indexOf('countdown(') < morphed.indexOf('layoutStage()'), 'small update: countdown, then fit');
 });
+
+test('Storm Watch: Second Wind spares one vote-down per chore, not every one (the storm could never come)', () => withGame('storm', 5, {}, ({ game }) => {
+  game.start();
+  game.nextChore();
+  game.event = 'wind';
+  const reject = () => { game.phase = 'st-vote'; for (const id of game.playerIds()) game.votes.set(id, false); game.countVotes(); };
+  reject();
+  assert.strictEqual(game.storm, 0, 'the first vote-down is spared');
+  reject(); reject(); reject();
+  assert.strictEqual(game.storm, 3, 'the rest count');
+  assert.strictEqual(game.winner, 'raccoon', 'and the storm hits');
+}));

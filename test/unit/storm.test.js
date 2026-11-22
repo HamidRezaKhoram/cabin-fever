@@ -110,9 +110,10 @@ test('three crews voted down in a row: the storm wins it for the raccoons', { ti
       await until(() => leader.state.phase === 'st-talk' && leader.state.you.candidates.length, 'leader screen');
       leader.submit({ crew: leader.state.you.candidates.slice(0, st.gameState.crewSize).map((c) => c.id) });
       await until(() => h.state.phase === 'st-vote', 'vote');
+      const before = h.state.gameState.storm;
       for (const p of ps) p.submit({ vote: false });
       await until(() => h.state.phase === 'st-votes', 'shown');
-      if (h.state.gameState.event.id === 'wind') k--; // Second Wind: no storm this time
+      if (h.state.gameState.storm === before && !h.state.gameState.winner) k--; // Second Wind spared this one (once per chore)
     }
     await until(() => h.state.phase === 'st-accuse', 'accuse', 8000);
     assert.strictEqual(h.state.gameState.winner, 'raccoon');
