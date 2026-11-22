@@ -63,7 +63,7 @@
     stats() {
       const iv = stats.intervals;
       const avg = iv.length ? iv.reduce((a, b) => a + b, 0) / iv.length : 0;
-      const sorted = [...iv].sort((a, b) => a - b);
+      const sorted = iv.toSorted((a, b) => a - b);
       const median = sorted.length ? sorted[sorted.length >> 1] : 0;
       return { fps: avg ? 1000 / avg : 0, medianFps: median ? 1000 / median : 0, avgMs: avg, maxMs: iv.length ? Math.max(...iv) : 0, samples: iv.length };
     },

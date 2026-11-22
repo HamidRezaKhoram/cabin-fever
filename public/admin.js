@@ -47,7 +47,7 @@
   const pool = () => /** @type {HTMLSelectElement} */ ($('pool')).value;
   /** @param {boolean} reset */
   async function loadItems(reset) {
-    if (reset) { page = 0; $('items').innerHTML = ''; }
+    if (reset) { page = 0; $('items').replaceChildren(); }
     const d = await api(`/api/admin/content/${encodeURIComponent(pool())}?q=${encodeURIComponent(input('search').value)}&page=${page}`);
     $('count').textContent = `${d.total} items`;
     $('items').insertAdjacentHTML('beforeend', d.items.map((/** @type {any} */ x) => `<li class="${x.disabled ? 'off' : ''}">

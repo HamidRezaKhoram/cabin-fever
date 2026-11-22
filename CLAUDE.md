@@ -184,9 +184,13 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
 - **The TV is driven by a remote**: arrow keys move a big focus ring to the nearest control in that
   direction (`host.js` "TV remote"), OK presses it (and toggles switches), OK on the title screen
   starts. Every TV control must be a real `button`/`select`/`input` so the remote can reach it.
-- **2022 Samsung TVs run Chromium 85**: `test/unit/tv-compat.test.js` fails on newer JS syntax/APIs or
-  CSS (`inset`, `aspect-ratio`, `:has()`, …) in the TV page unless the line has a fallback and says
-  `/* old TVs: … */` (or `/* phone only */`). Use top/right/bottom/left, not `inset`.
+- **Browser support**: the TV page targets current Chrome (`TV_CHROME` in
+  `test/unit/tv-compat.test.js`, Chrome 144+); the test fails on anything newer than that unless the line is
+  feature-checked or says `/* old TVs: … */` (or `/* phone only */`). Phone pages, and the scripts and CSS
+  the TV shares with them (`common.js`, `games.js`, `style.css`, …), target **Baseline Widely available**
+  (phones include iPhone Safari): a newer feature there needs a feature check and a fallback.
+  2022 Samsung TVs (Chromium 85) are no longer supported. The `/* old TVs: … */` fallbacks still in
+  `style.css` are harmless and can stay.
 - **Don't make the TV re-fit for nothing**: `layoutStage()` skips the fit when the screen size, the
   element count and the big text are unchanged; `morph` keeps `data-fit` text's inline font size.
   Pass `layoutStage(true)` when something outside the text changed size.

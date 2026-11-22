@@ -1,7 +1,8 @@
-// The TV page must run on a mid-range Samsung TV's browser: 2022 models ship Chromium 85 (Tizen 6.5,
-// developer.samsung.com web engine specifications; docs/future-features/feel-plan.md). We can't run
-// Chromium 85 here, so the TV's scripts and CSS are checked against it statically: syntax up to
-// ES2021 (all in Chromium 85), and no API or CSS feature that arrived later (unless guarded).
+// The TV page targets current Chrome (TV_CHROME below; it was Chromium 85 for 2022 Samsung TVs until
+// Nov 2026). Its scripts and CSS are checked against that statically: syntax up to TV_ES, and no API or
+// CSS feature newer than TV_CHROME unless the line is guarded. Raise TV_CHROME to allow newer features.
+// (Scripts the TV shares with the phones must also work on phone browsers, iPhone Safari included:
+// see "Browser support" in CLAUDE.md. Phones aren't checked here.)
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
@@ -14,7 +15,13 @@ const html = fs.readFileSync(path.join(PUB, 'host.html'), 'utf8');
 const SCRIPTS = [...html.matchAll(/src="\/([a-z0-9-]+\.js)"/g)].map((m) => m[1]).filter((f) => fs.existsSync(path.join(PUB, f)));
 const CSS = [...html.matchAll(/href="\/([a-z0-9-]+\.css)"/g)].map((m) => m[1]);
 
-// [what, pattern, first Chromium with it].
+/** The Chrome version the TV page may rely on without a feature check. */
+const TV_CHROME = 144;
+/** The JavaScript syntax the TV page may use. */
+const TV_ES = 2024;
+
+// [what, pattern, first Chromium with it]. Only entries newer than TV_CHROME are enforced; add new
+// ones here as features newer than the target appear.
 const JS_LATER = [
   ['structuredClone', /\bstructuredClone\(/, 98],
   ['Array/String .at()', /[\w\])]\.at\(-?\d/, 92],
@@ -50,28 +57,28 @@ const GUARD = /typeof |' in |" in |CSS\.supports|\?\.\(|@supports|old TVs:|phone
 function later(src, rules, file) {
   const out = [];
   src.split('\n').forEach((line, i) => {
-    for (const [what, re, v] of rules) if (re.test(line) && !GUARD.test(line)) out.push(`${file}:${i + 1} ${what} (Chromium ${v}+): ${line.trim().slice(0, 100)}`);
+    for (const [what, re, v] of rules) if (v > TV_CHROME && re.test(line) && !GUARD.test(line)) out.push(`${file}:${i + 1} ${what} (Chromium ${v}+): ${line.trim().slice(0, 100)}`);
   });
   return out;
 }
 
-test('TV scripts parse as ES2021 (Chromium 85: 2022 Samsung TVs)', () => {
+test(`TV scripts parse as ES${TV_ES} (Chrome ${TV_CHROME}+)`, () => {
   assert.ok(SCRIPTS.length >= 8, `found the TV page scripts (${SCRIPTS.join(', ')})`);
   for (const f of SCRIPTS) {
     const src = fs.readFileSync(path.join(PUB, f), 'utf8');
-    assert.doesNotThrow(() => acorn.parse(src, { ecmaVersion: 2021, sourceType: 'script', allowHashBang: true }), `${f} uses syntax newer than ES2021`);
+    assert.doesNotThrow(() => acorn.parse(src, { ecmaVersion: TV_ES, sourceType: 'script', allowHashBang: true }), `${f} uses syntax newer than ES${TV_ES}`);
   }
 });
 
-test('TV scripts and CSS use nothing newer than Chromium 85 without a fallback', () => {
+test(`TV scripts and CSS use nothing newer than Chrome ${TV_CHROME} without a fallback`, () => {
   const found = [];
   for (const f of SCRIPTS) found.push(...later(fs.readFileSync(path.join(PUB, f), 'utf8'), JS_LATER, f));
   for (const f of CSS) found.push(...later(fs.readFileSync(path.join(PUB, f), 'utf8'), CSS_LATER, f));
   assert.deepStrictEqual(found, []);
 });
 
-// A selector Chromium 85 doesn't know drops the WHOLE rule it's listed in (`a:focus, a:focus-visible {…}` styles
-// nothing there), so selectors newer than Chromium 85 must stand alone in their own rule.
+// A selector the TV's Chrome doesn't know drops the WHOLE rule it's listed in (`a:focus, a:focus-visible {…}`
+// styled nothing on Chromium 85), so selectors newer than TV_CHROME must stand alone in their own rule.
 const SELECTOR_LATER = [[':focus-visible', /:focus-visible/, 86]];
 /** Top-level selector lists of every rule (comments and @-rule preludes left out). @param {string} css */
 function selectorLists(css) {
@@ -84,12 +91,12 @@ function selectorLists(css) {
   }
   return out;
 }
-test('TV CSS: a selector newer than Chromium 85 (:focus-visible) never shares a rule with others', () => {
+test(`TV CSS: a selector newer than Chrome ${TV_CHROME} never shares a rule with others`, () => {
   const found = [];
   for (const f of CSS) {
     for (const { sel, line } of selectorLists(fs.readFileSync(path.join(PUB, f), 'utf8'))) {
       const top = sel.replace(/\([^()]*\)/g, '()'); // commas inside :not(a, b) don't make a list
-      for (const [what, re, v] of SELECTOR_LATER) if (re.test(sel) && top.includes(',')) found.push(`${f}:${line} ${what} (Chromium ${v}+) in a selector list: ${sel.replace(/\s+/g, ' ').slice(0, 100)}`);
+      for (const [what, re, v] of SELECTOR_LATER) if (v > TV_CHROME && re.test(sel) && top.includes(',')) found.push(`${f}:${line} ${what} (Chromium ${v}+) in a selector list: ${sel.replace(/\s+/g, ' ').slice(0, 100)}`);
     }
   }
   assert.deepStrictEqual(found, []);

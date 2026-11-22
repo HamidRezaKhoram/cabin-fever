@@ -1084,7 +1084,8 @@ body.calm #game-view .sent { animation: none; }
    cartridge: lifted 3.5vh and scaled ×1.2 (+0.1 × its height), its number badge and the remote's ring (~20 px). */
 .shelf { display: flex; gap: 2.2vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none;
   padding: calc(6.5vh + 24px) calc(50% - 10vh) 2vh; margin: 0 -1vw; flex: 0 0 auto;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3vw, #000 calc(100% - 3vw), transparent 100%); }
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3vw, #000 calc(100% - 3vw), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 3vw, #000 calc(100% - 3vw), transparent 100%); }
 .shelf::-webkit-scrollbar { display: none; }
 body.spinning .shelf { scroll-snap-type: none; } /* mid-turn (host.js centreCart): snapping would jump it each frame */
 .cart-shell { --cart-h: 30vh; position: relative; display: block; width: calc(var(--cart-h) * 0.87); height: var(--cart-h); color: #fff; font-family: var(--pixel);
@@ -1330,7 +1331,10 @@ body.host.picking.kbd .lineup-play:focus, body.host.picking.kbd .more-close:focu
 body.host.picking .settings-more input:focus, body.host.picking .settings-more select:focus { box-shadow: 0 0 0 3px #f4f1e8, inset 0 4px 0 rgba(0, 0, 0, 0.5); }
 body.host.picking .toggle input { accent-color: #f4f1e8; /* old TVs: default colour, cosmetic */ }
 /* TV yes/no box (in the page: the browser's confirm() popup leaves full screen). */
-.tv-ask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1000; display: grid; place-items: center; background: rgba(10, 8, 20, 0.65); }
+/* The TV's yes/no box: a native modal <dialog> (centred in the top layer); its ::backdrop dims the page. */
+dialog.tv-ask { padding: 0; border: 0; background: transparent; color: inherit; overflow: visible; }
+dialog.tv-ask:modal { overscroll-behavior: contain; }
+dialog.tv-ask::backdrop { background: rgba(10, 8, 20, 0.65); overflow: hidden; overscroll-behavior: contain; }
 .tv-ask-box { max-width: min(90vw, 70vh); padding: 3vh 4vh; text-align: center; }
 .tv-ask-text { font-size: 3.2vh; margin: 0 0 3vh; }
 .tv-ask-btns { display: flex; gap: 3vh; justify-content: center; }

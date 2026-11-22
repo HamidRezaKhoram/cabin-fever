@@ -638,6 +638,16 @@ const allPages = t.pages;
     tv.on('dialog', onDialog);
     await tv.click('[data-act="end"]');
     await tv.waitForSelector('.tv-ask .tv-ask-no');
+    // A native modal <dialog> (the page behind is inert, it stays in full screen), Cancel focused.
+    assert.deepStrictEqual(await tv.evaluate(() => {
+      const d = /** @type {HTMLDialogElement} */ (document.querySelector('dialog.tv-ask'));
+      return { modal: !!d && d.matches(':modal'), cancelFocused: !!document.activeElement && document.activeElement.classList.contains('tv-ask-no') };
+    }), { modal: true, cancelFocused: true });
+    await tv.keyboard.press('Escape'); // Esc is Cancel
+    await tv.waitForSelector('.tv-ask', { state: 'detached' });
+    assert.ok(await tv.$('[data-act="end"]'), 'Esc keeps the game going');
+    await tv.click('[data-act="end"]');
+    await tv.waitForSelector('.tv-ask .tv-ask-no');
     await tv.click('.tv-ask-no');
     await tv.waitForSelector('.tv-ask', { state: 'detached' });
     assert.ok(await tv.$('[data-act="end"]'), 'Cancel keeps the game going');

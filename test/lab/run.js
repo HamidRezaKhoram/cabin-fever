@@ -25,7 +25,7 @@ const GAME_MS = Number(process.env.LAB_GAME_MS || (FLASH ? 840000 : 480000));
 // /bench is run on the real devices. Phones render at DPR 1 here: headless Chrome rasterises in
 // software, so a 2.8× screen would measure this machine's CPU, not the phone's GPU.
 const PROFILES = {
-  tv: { name: '2022 Samsung Crystal UHD (Tizen 6.5, Chromium 85)', viewport: { width: 1920, height: 1080 }, cpu: 6, latencyMs: 15 },
+  tv: { name: 'mid-range smart TV (current Chrome; CPU of a 2022 Samsung Crystal UHD)', viewport: { width: 1920, height: 1080 }, cpu: 6, latencyMs: 15 },
   phone: { name: 'Galaxy A15 (Dimensity 6100+)', viewport: { width: 384, height: 832 }, cpu: 4, latencyMs: 30, isMobile: true, hasTouch: true },
 };
 // Budgets (feel-plan.md §2), checked per screen.

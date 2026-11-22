@@ -37,9 +37,7 @@ function claimRoom() {
       if (!lock) {
         // Taken — but a reload's old page may still be letting go of it: wait up to 2 s before
         // deciding this is a second tab (which would start a new, unsaved room).
-        const ac = new AbortController();
-        const t = setTimeout(() => ac.abort(), 2000);
-        locks.request('cf-tv-room', { signal: ac.signal }, () => { clearTimeout(t); resolve(); return new Promise(() => {}); })
+        locks.request('cf-tv-room', { signal: AbortSignal.timeout(2000) }, () => { resolve(); return new Promise(() => {}); })
           .catch(() => { secondTab = true; resolve(); });
         return undefined;
       }

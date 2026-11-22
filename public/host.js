@@ -281,40 +281,39 @@ function hideLoading() {
  * choose, OK to pick, Back / Escape to cancel; the mouse works too.
  * @param {string} text @param {string} [yes] @returns {Promise<boolean>} */
 function askTv(text, yes = 'Yes') {
-  const before = /** @type {HTMLElement | null} */ (document.activeElement);
-  const box = document.createElement('div');
+  // A native modal <dialog>: the page behind is inert (no clicks or focus reach the menu), it sits in
+  // the top layer — so full screen stays on, unlike confirm() — and Esc closes it. Focus goes back to
+  // what had it when it closes (the browser does that). Cancel is the safe action, so it starts focused.
+  const box = document.createElement('dialog');
   box.className = 'tv-ask';
-  box.setAttribute('role', 'alertdialog');
-  box.setAttribute('aria-modal', 'true');
-  box.innerHTML = `<div class="retro-box tv-ask-box"><p class="tv-ask-text"></p><div class="tv-ask-btns"><button type="button" class="tv-ask-no">Cancel</button><button type="button" class="tv-ask-yes"></button></div></div>`;
+  box.setAttribute('aria-labelledby', 'tv-ask-text');
+  box.innerHTML = `<form method="dialog" class="retro-box tv-ask-box"><p class="tv-ask-text" id="tv-ask-text"></p><div class="tv-ask-btns"><button value="no" class="tv-ask-no" autofocus>Cancel</button><button value="yes" class="tv-ask-yes"></button></div></form>`;
   /** @type {HTMLElement} */ (box.querySelector('.tv-ask-text')).textContent = text;
   /** @type {HTMLElement} */ (box.querySelector('.tv-ask-yes')).textContent = yes;
   document.body.appendChild(box);
   const no = /** @type {HTMLButtonElement} */ (box.querySelector('.tv-ask-no'));
   const ok = /** @type {HTMLButtonElement} */ (box.querySelector('.tv-ask-yes'));
-  no.focus({ preventScroll: true });
+  box.showModal();
   return new Promise((resolve) => {
-    const done = (/** @type {boolean} */ v) => {
-      window.removeEventListener('keydown', keys, true);
-      box.remove();
-      if (before && before.isConnected) before.focus({ preventScroll: true });
-      resolve(v);
-    };
     /** @param {KeyboardEvent} e */
     const keys = (e) => {
-      // The box owns the keys while it is open (the menu's own arrow/OK/Back handling must not run).
+      // The box owns the remote while it is open (the menu's own arrow/OK/Back handling must not run).
+      // OK/Enter presses the focused button natively; Esc closes the dialog natively.
       e.stopPropagation();
-      if (isBack(e) || e.key === 'Escape') { e.preventDefault(); done(false); return; }
+      if (isBack(e)) { e.preventDefault(); box.close('no'); return; } // the remote's Back isn't Esc
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
         (document.activeElement === ok ? no : ok).focus({ preventScroll: true });
-        return;
       }
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); done(document.activeElement === ok); }
     };
     window.addEventListener('keydown', keys, true);
-    no.addEventListener('click', (e) => { e.stopPropagation(); done(false); });
-    ok.addEventListener('click', (e) => { e.stopPropagation(); done(true); });
+    box.addEventListener('click', (e) => e.stopPropagation()); // (the page's click handlers aren't for these buttons)
+    box.addEventListener('close', () => {
+      window.removeEventListener('keydown', keys, true);
+      const v = box.returnValue === 'yes'; // Esc / Back set no value: "dismissed", i.e. no
+      box.remove();
+      resolve(v);
+    }, { once: true });
   });
 }
 
@@ -488,7 +487,7 @@ function computeAwards() {
   const rMid = rank(mid), rEnd = rank(snaps[snaps.length - 1]);
   const climb = best((/** @type {any} */ id) => rMid(id) - rEnd(id));
   if (climb) awards.push({ title: 'COMEBACK KID', desc: `climbed ${climb.v} place${climb.v > 1 ? 's' : ''}`, id: climb.id });
-  const last = players.slice().sort((/** @type {any} */ a, /** @type {any} */ b) => a.score - b.score)[0];
+  const last = players.toSorted((/** @type {any} */ a, /** @type {any} */ b) => a.score - b.score)[0];
   if (last && players.length > 2) awards.push({ title: 'PARTICIPATION TROPHY', desc: 'there\'s always next game', id: last.id });
   // Don't give one person every award.
   const seen = new Map();
@@ -1139,7 +1138,7 @@ function render() {
     }
     // Lead change alert (only mid-game, only when the leader actually changes).
     if (inGame && isRevealPhase(phase)) {
-      const top = state.players.slice().sort((/** @type {any} */ a, /** @type {any} */ b) => b.score - a.score)[0];
+      const top = state.players.toSorted((/** @type {any} */ a, /** @type {any} */ b) => b.score - a.score)[0];
       if (top && top.score > 0 && leaderId && top.id !== leaderId) {
         setTimeout(() => { fx.banner(`NEW LEADER!\n${top.nickname}`, 'gold'); sfx.leader(); }, 900);
       }

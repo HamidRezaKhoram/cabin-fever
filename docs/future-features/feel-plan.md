@@ -78,7 +78,7 @@ canvas workload and prints a score. Run it once on the real TV and the real phon
 The throttle factor is then `lab score ÷ device score`, recorded in the profile. Until then we use the
 estimates above and say so in every report.
 
-**Old-engine check:** we can't run Chromium 85 itself, so we check the code against it statically:
+**Old-engine check** (until Nov 2026; the TV now targets current Chrome, `TV_CHROME` in `test/unit/tv-compat.test.js`): we can't run Chromium 85 itself, so we check the code against it statically:
 - esbuild with `--target=chrome85` must build the TV bundle with no syntax errors
 - a scan for APIs and CSS added after M85 (`structuredClone`, `:has()`, container queries, `aspect-ratio`,
   top-level await, …)
@@ -118,7 +118,7 @@ before and after numbers.
   Samsung TV you'd drive a slow on-screen pointer around the game menu. This is the biggest feel problem
   for the "TV hosts" setup. Fix: arrow-key focus on the game grid and every TV button, a visible focus
   ring, and Enter to press (M7).
-- **The old engine:** anything newer than Chromium 85 breaks silently on a 2022 TV (section 1 check).
+- **The old engine:** (retired Nov 2026: the TV targets current Chrome) anything newer than Chromium 85 broke silently on a 2022 TV (section 1 check).
 - **CPU on 6× throttle:** full-screen pixel scenes (`bg.js`) and `Rumpus.fit` on every update are the
   likely long tasks (M4, M5). Options: cache the static background layer, fit once per phase.
 - Then fix by worst number: menu → lobby → each game's busiest screen.

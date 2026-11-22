@@ -317,7 +317,7 @@
     const MALE = /\bmale|daniel|alex|fred|george|david|mark|ryan|guy|thomas|oliver|arthur|henri|\bman\b/i;
     const score = (/** @type {SpeechSynthesisVoice} */ v) => (v.lang.replace('_', '-').startsWith(lang) ? 4 : v.lang.startsWith(lang.slice(0, 2)) ? 2 : 0)
       + ((female ? FEMALE : MALE).test(v.name) ? 1.5 : (female ? MALE : FEMALE).test(v.name) ? -1 : 0) + (v.localService ? 0.2 : 0);
-    return all.slice().sort((a, b) => score(b) - score(a))[0] || null;
+    return all.toSorted((a, b) => score(b) - score(a))[0] || null;
   }
 
   /** espeak-ng (server) or the browser's voice. @param {string} t @param {boolean} fr */
