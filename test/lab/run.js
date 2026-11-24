@@ -17,9 +17,12 @@ const OUT = process.env.LAB_OUT || '/out';
 const FLASH = process.env.LAB_FLASH === '1';
 const NO_NET = process.env.LAB_NO_NET === '1'; // experiment: no network emulation (it records every frame)
 const ONLY = (process.env.LAB_GAMES || '').split(',').filter(Boolean);
-// Storm Watch alone takes 335–430 s on the lab's slowed TV; the flash pass's screenshots slow it more
-// (it ran past 480 s there) — "did not reach the end" must mean stuck, not slow.
-const GAME_MS = Number(process.env.LAB_GAME_MS || (FLASH ? 840000 : 480000));
+// "Did not reach the end" must mean stuck, not slow. Storm Watch's length depends on the lab's random
+// crew votes (151–480+ s: each crew voted down adds a talk + vote round; Nov 23 it was on its last
+// screen at 480 s), so a game fails when its screen hasn't changed for STALL_MS (the longest timed
+// phase is ~75 s), with GAME_MS only as a backstop. The flash pass's screenshots slow everything.
+const STALL_MS = Number(process.env.LAB_STALL_MS || (FLASH ? 420000 : 240000));
+const GAME_MS = Number(process.env.LAB_GAME_MS || (FLASH ? 1500000 : 900000));
 
 // Assumed devices (feel-plan.md §1). cpu = how many times slower than this machine: a guess until
 // /bench is run on the real devices. Phones render at DPR 1 here: headless Chrome rasterises in
@@ -199,7 +202,7 @@ async function views(/** @type {string} */ code) { try { return await (await fet
       s.maxFrame = Math.max(s.maxFrame, Math.round(clock.maxMs));
       await tv.evaluate(() => window.Rumpus.clock.resetStats());
     };
-    while (!done && Date.now() - g0 < GAME_MS) {
+    while (!done && Date.now() - g0 < GAME_MS && Date.now() - since < STALL_MS) {
       const v = await views(code);
       const phase = v && v.host ? v.host.phase : '?';
       const k = `${gameId}:${phase}`;
@@ -267,11 +270,10 @@ async function views(/** @type {string} */ code) { try { return await (await fet
       const at = [...timeline].reverse().find(([t]) => t <= w.at);
       (report.flash = report.flash || {})[gameId] = { perSecond: w.perSecond, screen: w.perSecond && at ? at[1] : null };
     }
-    report.games[gameId] = { seconds: Math.round((Date.now() - g0) / 1000), finished: done };
+    report.games[gameId] = { seconds: Math.round((Date.now() - g0) / 1000), finished: done, stuck: !done && Date.now() - since >= STALL_MS ? key : null };
     if (!done) await tv.click('[data-act="end"]').catch(() => {});
     await tv.click('[data-act="picknext"]').catch(() => {});
     await sleep(2500);
-    void since;
   }
   if (stopTv) report.profile = await stopTv();
   if (stopPhone) report.phoneProfile = await stopPhone();
@@ -322,7 +324,7 @@ async function views(/** @type {string} */ code) { try { return await (await fet
     if (sc.clipped) hard.push(`${k}: sound clipped ${sc.clipped}×`);
   }
   for (const [g, f] of Object.entries(report.flash || {})) if (f.perSecond > 3) hard.push(`${g}: ${f.perSecond} flashes in a second (${f.screen})`);
-  for (const [g, x] of Object.entries(report.games)) if (!x.finished) hard.push(`${g}: did not reach the end`);
+  for (const [g, x] of Object.entries(report.games)) if (!x.finished) hard.push(`${g}: did not reach the end${x.stuck ? ` (no change on ${x.stuck} for ${STALL_MS / 1000} s)` : ''}`);
   if (hard.length) console.log(`\nHard checks over budget (fail with LAB_STRICT=1):\n- ${hard.join('\n- ')}`);
   await browser.close();
   if (hard.length && process.env.LAB_STRICT === '1') process.exit(1);
