@@ -868,6 +868,13 @@ function connection(socket) {
     if (room && game && typeof game.skip === 'function') safely(room, 'skip', () => game.skip());
   });
 
+  // The TV's answer judge (The Deep End, public/judge.js): scores for the answers the game asked about.
+  socket.on('host:judge', (msg) => {
+    const room = hostRoom(socket);
+    const game = /** @type {any} */ (room && room.game);
+    if (room && game && typeof game.onJudge === 'function' && msg && typeof msg === 'object') safely(room, 'judge', () => game.onJudge(msg));
+  });
+
   socket.on('host:endGame', () => {
     const room = hostRoom(socket);
     if (room && room.night) endNight(room);

@@ -16,7 +16,7 @@ const server = read('core/rooms.js') + read('server.js');
 const GAME_IDS = [...read('core/rooms.js').matchAll(/require\('\.\.\/games\/([a-z]+)'\), ?/g)].map((m) => m[1]);
 
 test('server game list matches the game modules on disk', () => {
-  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js', 'rng.js', 'play-options.js'].includes(f)).map((f) => f.slice(0, -3));
+  const files = fs.readdirSync(path.join(ROOT, 'games')).filter((f) => f.endsWith('.js') && !['base.js', 'library.js', 'flow.js', 'avatar-schema.js', 'bot-brain.js', 'night.js', 'stats.js', 'house.js', 'rng.js', 'play-options.js', 'rarity.js'].includes(f)).map((f) => f.slice(0, -3));
   assert.deepStrictEqual([...GAME_IDS].sort(), files.sort());
   for (const id of GAME_IDS) {
     const meta = require(path.join(ROOT, 'games', id)).meta;

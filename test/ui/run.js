@@ -775,6 +775,23 @@ const allPages = t.pages;
     await tv.waitForFunction(() => { const b = document.querySelector('.rocco-bubble'); return b && !b.hidden && /Testing blank one two/.test(b.textContent); });
   });
 
+  await check('The Deep End\'s answer judge (gte-small, in a worker) loads on the TV and tells a dog breed from junk', async () => {
+    const r = await tv.evaluate(async () => {
+      const t0 = performance.now();
+      const scores = await Rumpus.judge.ask('Name a dog breed', ['labradoodle', 'banana', 'qwerty']);
+      return { scores, ms: Math.round(performance.now() - t0), info: { ...Rumpus.judge.info }, core: await (await fetch('/judge-centroids.json')).json().then((f) => [f.accept, f.doubt]) };
+    });
+    assert.ok(Array.isArray(r.scores) && r.scores.every((x) => typeof x === 'number'), `scores: ${JSON.stringify(r)}`);
+    const [labradoodle, banana, qwerty] = r.scores;
+    const [accept, doubt] = r.core;
+    assert.ok(labradoodle > accept - 0.005 && labradoodle > banana + 0.03 && labradoodle > qwerty, `a real (off-chart) breed scores well above a fruit and junk: ${r.scores}`);
+    assert.ok(banana <= doubt, `the judge doubts a fruit: ${banana}`);
+    assert.ok(qwerty < accept, `junk never counts on its own: ${qwerty}`);
+    const again = await tv.evaluate(async () => { const t0 = performance.now(); await Rumpus.judge.ask('Name a fruit', ['cloudberry']); return performance.now() - t0; });
+    console.log(`    (judge: first answer ${r.ms} ms with loading, then ${Math.round(again)} ms)`);
+    assert.ok(again < 5000, `once loaded it answers quickly: ${again} ms`);
+  });
+
   await check('the narrator\'s natural voice (Kokoro, in a worker) loads on the TV and speaks a line', async () => {
     await tv.waitForFunction(() => Rumpus.host.natural(), null, { timeout: 120000 });
     // CI runners are slow 2-CPU machines; a real TV falls back to the classic voice after 6 s anyway.

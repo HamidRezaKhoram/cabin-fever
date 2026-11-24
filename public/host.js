@@ -97,12 +97,34 @@ const RULES = {
   storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win — unless the Raccoons unmask the Lookout'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'It’s a date only if they pick you too'],
   lantern: ['Tilt your phone to glide (or drag on the circle)', 'Four scenes: fireflies, moonbeam, tag, lily pad, ducklings…', 'One of them: everyone steers the same raft'],
-  deepend: ['Name something in the category: not the obvious thing', 'The rarer your answer, the deeper you dive', 'Off the chart? The room votes if it counts'],
+  deepend: ['Name something in the category: not the obvious thing', 'The rarer your answer, the deeper you dive', 'Off the chart? The judge 🤖 or the room decides if it counts'],
   looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
   minigames: ['Quick real-time challenges on your phone', 'Fourteen minis — the rules show before each one', 'Turn on Teams for Red vs Blue!'],
 };
 // --- narrator (Rocco reads prompts aloud and in a speech bubble) -------------
 let lastSpoken = '';
+/** The Deep End's answer judge (public/judge.js): load the model while people type, then score the
+ * off-chart answers the game asks about (`askJudge`) and send the scores back. Each question once.
+ * @type {number | null} */
+let judgedAsk = null;
+/** @param {any} g */
+function judgeAnswers(g) {
+  if (!g || !g.judgeWarm) return;
+  const judge = window.Rumpus.judge;
+  if (!judge) return;
+  judge.warm();
+  const a = g.askJudge;
+  if (!a || a.id === judgedAsk) return;
+  judgedAsk = a.id;
+  void judge.ask(a.q, a.items.map((/** @type {{ text: string }} */ x) => x.text)).then((scores) => {
+    if (!scores) return;
+    /** @type {Record<string, number>} */
+    const byKey = {};
+    a.items.forEach((/** @type {{ key: string }} */ x, /** @type {number} */ i) => { if (typeof scores[i] === 'number') byKey[x.key] = /** @type {number} */ (scores[i]); });
+    socket.emit('host:judge', { id: a.id, scores: byKey });
+  });
+}
+
 /** @param {string} gameId */
 function narrateIntro(gameId) {
   const meta = (state.availableGames || []).find((/** @type {{id: string}} */ x) => x.id === gameId);
@@ -1114,6 +1136,7 @@ function render() {
     if (pickNext && !state.night) html = gamePicker('Play again?');
   } else if (games[g.gameId]) {
     html = games[g.gameId].host(state);
+    judgeAnswers(g);
     if (g.multiplier > 1 && !/× POINTS/.test(html)) {
       html = html.replace(/(<p class="round-tag">[^<]*)/, `$1<span class="double-badge">${g.multiplier}× POINTS</span>`);
     }

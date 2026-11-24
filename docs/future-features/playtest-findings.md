@@ -77,3 +77,8 @@ Tooling: `worstIdleAt` in the report names the stretch; a static test forces eve
 |---|---|---|---|
 | The Deep End (new) | worst idle 50 s (4p) / 57 s (6p), 2.6 / 1.7 actions/min | 43 s, 3.4 actions/min, 3.8 min (4p); 43 s, 3.8 actions/min, 5.4 min (6p) | 🤯 "Never heard of it!" on the others' answers while the dives play (+25 each to the diver); answer 35 → 30 s, reveal steps 2.2 → 1.8 s. |
 | Cottage Olympics (+ Track the Ball, Angle Match, Split the Rope; harder Firefly Count) | — | 2.9 min, 16 actions/min, worst idle 42 s (4p: Marshmallow Roast → Track); 2.5 min, 41 actions/min, 20 s (6p) | Within the targets. |
+
+## Round 6 (Nov 24 2026)
+| Game | Before | After | What changed |
+|---|---|---|---|
+| The Deep End | every off-chart answer waited for the room's vote (up to 15 s) | a clear fit counts at once; when every off-chart answer is a clear fit the vote is skipped | The TV's answer judge (gte-small). Bots don't run a TV, so the bot playtest numbers (Round 5) are unchanged: they are the no-judge worst case. On a laptop the judge answers in well under a second once loaded (it loads while people type). |

@@ -21,6 +21,7 @@
     "public/fx.js",
     "public/games.js",
     "public/host-character.js",
+    "public/judge.js",
     "public/host.js"
   ]
 }

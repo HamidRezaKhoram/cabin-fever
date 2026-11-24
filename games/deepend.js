@@ -8,14 +8,19 @@
  *      hand-written (content-src/deepend.txt), plus Wikidata's members of the category placed by how
  *      many Wikipedias know them (tools/fetch-deepend.py, tools/build-content.py).
  *   2. The room: players who give the same answer "jump in the same spot" — each drops a tier.
- *   3. Off the chart: the room votes whether it counts. Accepted = a Drop-off (the chart missed it,
- *      so it's probably rare); turned down = a belly flop (0).
+ *   3. Off the chart: does it count? The TV's answer judge (a small meaning model, public/judge-worker.js)
+ *      scores each one against the category: a clear fit counts at once, the rest go to the room's vote
+ *      with the judge's hint ("not sure" / "doubts it"). Turned down = a belly flop (0). An accepted one
+ *      dives by how rare its words are (games/rarity.js, word frequencies): Weed Bed for everyday words,
+ *      Drop-off for known ones, Lake Bottom for rare ones.
  * Stakes rise ×1 → ×2 → ×3; a score never drops. AGPLv3 — see LICENSE.
  */
 'use strict';
 
 const { BaseGame, cleanText } = require('./base');
 const library = require('./library');
+const { offChartTier } = require('./rarity');
+const judgeCore = require('../public/judge-core.js');
 
 const env = (/** @type {string} */ k, /** @type {number} */ d) => parseInt(process.env[k] || String(d), 10);
 const ANSWER_MS = env('RUMPUS_DD_ANSWER_MS', 30000);
@@ -31,7 +36,8 @@ const TIERS = [
   { name: 'Drop-off', m: 20, pts: 450 },
   { name: 'Lake Bottom', m: 30, pts: 600 },
 ];
-const OFF_CHART_TIER = 3;
+/** Each question to the TV's judge gets its own number (a new game starts at round 1 again). */
+let asks = 0;
 /** 🤯 "Never heard of it!" during the reveal: each one gives the answer's diver this much. */
 const WOW_PTS = 25;
 
@@ -122,6 +128,10 @@ class DeepEndGame extends BaseGame {
     this.result = null;
     /** @type {Map<string, Set<string>>} 🤯 on the reveal: whose answer → who reacted */
     this.wows = new Map();
+    /** @type {Map<string, 'fits' | 'unsure' | 'doubt'>} the TV judge's verdict per off-chart answer */
+    this.robot = new Map();
+    /** The question this round's off-chart answers were sent to the judge under (0: none). */
+    this.askId = 0;
   }
 
   get skippablePhases() { return ['dd-answer']; }
@@ -139,6 +149,8 @@ class DeepEndGame extends BaseGame {
     this.offChart = [];
     this.result = null;
     this.wows = new Map();
+    this.robot = new Map();
+    this.askId = 0;
     this.phase = 'dd-answer';
     this.setTimer(ANSWER_MS, () => this.closeAnswers());
     this.push();
@@ -165,6 +177,7 @@ class DeepEndGame extends BaseGame {
     if (this.offChart.some(judges)) {
       this.phase = 'dd-judge';
       this.judging = new Map(this.offChart.map((o) => [o.key, new Map()]));
+      this.askId = ++asks;
       this.setTimer(JUDGE_MS, () => this.reveal());
       this.push();
     } else this.reveal();
@@ -172,11 +185,27 @@ class DeepEndGame extends BaseGame {
 
   /** Has `id` judged every off-chart answer they may judge? @param {string} id */
   judgedAll(id) {
-    return this.offChart.every((o) => o.by.includes(id) || (this.judging.get(o.key) || new Map()).has(id));
+    return this.offChart.every((o) => o.by.includes(id) || this.robot.get(o.key) === 'fits' || (this.judging.get(o.key) || new Map()).has(id));
+  }
+
+  /** Scores from the TV's answer judge (`host:judge {id, scores: {key: score}}`, public/judge.js):
+   * a clear fit counts without a vote; the others get a hint.
+   * @param {{ id?: unknown, scores?: unknown }} msg @returns {boolean} whether it was this round's question */
+  onJudge(msg) {
+    if (this.phase !== 'dd-judge' || !this.askId || msg.id !== this.askId || !msg.scores || typeof msg.scores !== 'object') return false;
+    const scores = /** @type {Record<string, unknown>} */ (msg.scores);
+    for (const o of this.offChart) {
+      const sc = scores[o.key];
+      if (typeof sc !== 'number' || !Number.isFinite(sc) || this.robot.has(o.key)) continue;
+      this.robot.set(o.key, sc >= judgeCore.ACCEPT ? 'fits' : sc <= judgeCore.DOUBT ? 'doubt' : 'unsure');
+    }
+    if (this.playerIds().every((p) => this.judgedAll(p))) this.reveal(); else this.push();
+    return true;
   }
 
   /** Did the room let this off-chart answer count? Most votes yes (a tie counts; no votes at all doesn't). @param {string} key */
   accepted(key) {
+    if (this.robot.get(key) === 'fits') return true;
     const v = [...(this.judging.get(key) || new Map()).values()];
     const yes = v.filter(Boolean).length;
     return yes > 0 && yes >= v.length - yes;
@@ -198,9 +227,10 @@ class DeepEndGame extends BaseGame {
     for (const s of spots.values()) {
       let tier = s.tier;
       if (!s.chart) {
-        const ok = this.accepted(keyOf(s.text));
-        tier = ok ? OFF_CHART_TIER : null;
-        s.note = ok ? 'Off the chart — the room let it count!' : 'Belly flop — the room said no';
+        const k = keyOf(s.text);
+        const ok = this.accepted(k);
+        tier = ok ? offChartTier(s.text) : null;
+        s.note = !ok ? 'Belly flop — the room said no' : this.robot.get(k) === 'fits' ? 'Off the chart — the judge 🤖 says it fits!' : 'Off the chart — the room let it count!';
       }
       // Two or more of you in the same spot: everyone sharing it goes one tier shallower.
       if (tier !== null && s.by.length > 1) { tier = Math.max(0, tier - 1); s.note = `${s.by.length} of you jumped in the same spot!`; }
@@ -270,9 +300,12 @@ class DeepEndGame extends BaseGame {
   hostView() {
     const c = this.common();
     const waiting = (/** @type {(id: string) => boolean} */ done) => this.playerIds().filter((id) => !done(id)).map((id) => this.nick(id));
-    if (this.phase === 'dd-answer') return { ...c, answeredCount: this.answers.size, totalPlayers: this.room.players.size, waitingOn: waiting((id) => this.answers.has(id)) };
+    if (this.phase === 'dd-answer') return { ...c, judgeWarm: true, answeredCount: this.answers.size, totalPlayers: this.room.players.size, waitingOn: waiting((id) => this.answers.has(id)) };
     if (this.phase === 'dd-judge') {
-      return { ...c, judging: this.offChart.map((o) => ({ key: o.key, text: o.text })), waitingOn: waiting((id) => this.judgedAll(id)),
+      // Off-chart answers someone other than their author can judge go to the TV's judge (once).
+      const items = this.offChart.filter((o) => this.playerIds().some((id) => !o.by.includes(id))).map((o) => ({ key: o.key, text: o.text }));
+      return { ...c, judgeWarm: true, askJudge: this.askId && items.length ? { id: this.askId, q: c.prompt, items } : null,
+        judging: this.offChart.map((o) => ({ key: o.key, text: o.text, robot: this.robot.get(o.key) || null })), waitingOn: waiting((id) => this.judgedAll(id)),
         judgedCount: this.playerIds().filter((id) => this.judgedAll(id)).length, totalPlayers: this.room.players.size };
     }
     return { ...c, result: this.publicResult(), stepMs: REVEAL_STEP_MS };
@@ -294,7 +327,8 @@ class DeepEndGame extends BaseGame {
       return { gameState: c, you: { answer: mine || null, onChart: mine ? !!this.match(mine) : null } };
     }
     if (this.phase === 'dd-judge') {
-      const votes = this.offChart.filter((o) => !o.by.includes(id)).map((o) => ({ key: o.key, text: o.text, vote: (this.judging.get(o.key) || new Map()).get(id) ?? null }));
+      const votes = this.offChart.filter((o) => !o.by.includes(id) && this.robot.get(o.key) !== 'fits')
+        .map((o) => ({ key: o.key, text: o.text, vote: (this.judging.get(o.key) || new Map()).get(id) ?? null, robot: this.robot.get(o.key) || null }));
       return { gameState: c, you: { answer: mine || null, judge: votes, judged: this.judgedAll(id) } };
     }
     const row = this.result && this.result.rows.find((/** @type {{ nickname: string }} */ r) => r.nickname === this.nick(id));
@@ -313,5 +347,6 @@ DeepEndGame.keyOf = keyOf;
 DeepEndGame.lookup = lookup;
 DeepEndGame.chartOf = chartOf;
 DeepEndGame.TIERS = TIERS;
+DeepEndGame.offChartTier = offChartTier;
 
 module.exports = DeepEndGame;

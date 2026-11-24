@@ -175,6 +175,11 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   can't look up. A phone that knocks without a link → `cf:phone-stuck` → the TV offers "📶 Help phones find
   the TV" (`showLanAddress`: microphone permission makes Chrome show the real address; the mic is stopped
   at once). Tested end to end in `test/ui/pages.js` (Chrome with hiding on; `.local` candidates dropped).
+- **The Deep End's answer judge** (`public/judge.js` → `judge-worker.js`, maths in `judge-core.js`): gte-small
+  (34 MB, fetched with the voice into `tts/judge/`, shares `tts/ort/`) scores off-chart answers on the TV against
+  each category's centre (`public/judge-centroids.json`, `tools/judge-centroids.js` — rerun after chart changes).
+  The game asks via its host view (`askJudge`), the TV answers `host:judge` → `game.onJudge`. Optional: no model =
+  the room votes on everything. Accepted off-chart answers dive by word rarity (`games/rarity.js`, wordfreq).
 - **Feel**: `Rumpus.haptic(ms | pattern)` on every tap (Android vibrate, iPhone switch-tick). Phones
   can't pinch/double-tap zoom or select text; the status line under the header always says what's
   happening; timers use server time (`Rumpus.time.now()`), never `Date.now()`.

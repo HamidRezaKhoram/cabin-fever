@@ -102,7 +102,7 @@ async function main() {
   // Only the model precision this folder was fetched for (a dev folder may hold several, 100s of MB each).
   const FILE_FOR = /** @type {Record<string, string>} */ ({ fp32: 'model.onnx', uint8: 'model_uint8.onnx', q8: 'model_quantized.onnx' });
   const keep = hasVoice ? FILE_FOR[require('../core/voice').dtypeOf(voice)] : '';
-  if (hasVoice) fs.cpSync(voice, path.join(OUT, 'tts'), { recursive: true, filter: (src) => !src.endsWith('.onnx') || path.basename(src) === keep });
+  if (hasVoice) fs.cpSync(voice, path.join(OUT, 'tts'), { recursive: true, filter: (src) => !src.endsWith('.onnx') || path.basename(src) === keep || src.includes(`${path.sep}judge${path.sep}`) });
   else console.warn('narrator voice not fetched (node tools/fetch-kokoro.js): the browser voice will be used');
   write(path.join(OUT, 'api', 'voice'), JSON.stringify({ available: hasVoice, server: false, dtype: hasVoice ? require('../core/voice').dtypeOf(voice) : null }));
 
@@ -111,6 +111,8 @@ async function main() {
   const pools = {};
   const poolDir = path.join(ROOT, 'games', 'data', 'pools');
   for (const f of fs.readdirSync(poolDir).filter((x) => x.endsWith('.json'))) pools['/games/data/pools/' + f] = fs.readFileSync(path.join(poolDir, f), 'utf8');
+  // The word-frequency list for The Deep End's off-chart answers (games/rarity.js).
+  pools['/games/data/wordfreq.json'] = fs.readFileSync(path.join(ROOT, 'games', 'data', 'wordfreq.json'), 'utf8');
   write(path.join(OUT, 'content', 'pools.json'), JSON.stringify(pools));
 
   // 4. Music + the lists the TV asks for (/api/music, /api/music-info) as static files.

@@ -12,6 +12,11 @@
  *   <out>/model/{config.json,tokenizer.json,tokenizer_config.json,onnx/model[_uint8|_quantized].onnx}
  *   <out>/model/voice.json                  {dtype} — which precision this folder holds
  *   <out>/model/voices/{af_heart,am_michael,bf_emma,bm_george}.bin
+ * and The Deep End's answer judge (public/judge-worker.js): a small sentence-embedding model,
+ * gte-small (MIT, 34 MB quantized), that tells the room whether an answer the chart doesn't know
+ * fits the category. It shares the voice's ONNX runtime files:
+ *   <out>/judge/transformers.web.js         transformers.js browser build, runtime included (from npm)
+ *   <out>/judge/model/{config.json,tokenizer.json,tokenizer_config.json,onnx/model_quantized.onnx}
  * Already-downloaded files are kept. AGPLv3 — see LICENSE.
  */
 'use strict';
@@ -30,6 +35,8 @@ const OUT = path.resolve(args[0] || path.join(__dirname, '..', 'vendor', 'kokoro
 const HF = 'https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/';
 /** The narrator voices offered on the TV (2 accents × female/male). */
 const VOICES = ['af_heart', 'am_michael', 'bf_emma', 'bm_george'];
+const JUDGE_HF = 'https://huggingface.co/Xenova/gte-small/resolve/main/';
+const JUDGE_FILES = ['config.json', 'tokenizer.json', 'tokenizer_config.json', 'onnx/model_quantized.onnx'];
 const MODEL_FILES = ['config.json', 'tokenizer.json', 'tokenizer_config.json', `onnx/${FILE_FOR[/** @type {'fp32' | 'uint8' | 'q8'} */ (DTYPE)]}`, ...VOICES.map((v) => `voices/${v}.bin`)];
 
 /** @param {string} url @param {string} file @returns {Promise<void>} */
@@ -81,7 +88,7 @@ async function main() {
   /** Folder of an installed package (hoisted or nested under @huggingface/transformers). @param {string} name */
   const pkgDir = (name) => {
     const nm = path.join(__dirname, '..', 'node_modules');
-    for (const d of [path.join(nm, name), path.join(nm, '@huggingface', 'transformers', 'node_modules', name)]) if (fs.existsSync(path.join(d, 'package.json'))) return d;
+    for (const d of [path.join(nm, name), path.join(nm, '@huggingface', 'transformers', 'node_modules', name), path.join(nm, 'kokoro-js', 'node_modules', name)]) if (fs.existsSync(path.join(d, 'package.json'))) return d;
     throw new Error(`${name} is not installed (npm install)`);
   };
   const kokoro = path.join(pkgDir('kokoro-js'), 'dist', 'kokoro.web.js');
@@ -97,6 +104,16 @@ async function main() {
     console.log(`${(fs.statSync(dest).size / 1e6).toFixed(1)} MB`);
   }
   fs.writeFileSync(path.join(OUT, 'model', 'voice.json'), JSON.stringify({ dtype: DTYPE }));
+  // The Deep End's judge: the same transformers.js release kokoro-js runs on (so the runtime files match).
+  fs.mkdirSync(path.join(OUT, 'judge'), { recursive: true });
+  fs.copyFileSync(path.join(pkgDir('@huggingface/transformers'), 'dist', 'transformers.min.js'), path.join(OUT, 'judge', 'transformers.web.js'));
+  for (const f of JUDGE_FILES) {
+    const dest = path.join(OUT, 'judge', 'model', f);
+    if (fs.existsSync(dest) && fs.statSync(dest).size > 0) continue;
+    process.stdout.write(`downloading judge ${f}… `);
+    await downloadPatiently(JUDGE_HF + f, dest);
+    console.log(`${(fs.statSync(dest).size / 1e6).toFixed(1)} MB`);
+  }
   console.log(`narrator voice (${DTYPE}) ready in ${OUT}`);
 }
 

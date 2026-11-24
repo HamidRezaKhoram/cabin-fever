@@ -170,6 +170,8 @@ interface RumpusNS {
   fitAll(root: Element): void;
   register(id: string, impl: { host(s: any): string; player(s: any): string; bind?(root: HTMLElement, api: any): void; narrate?(s: any): string | null; moment?(s: any): { shakeAt?: number, confettiAt?: number } | null }): void;
   games: Record<string, any>;
+  /** The Deep End's answer judge on the TV (public/judge.js; absent on phones). */
+  judge?: { warm(): void; ask(q: string, texts: string[]): Promise<(number | null)[] | null>; info: { state: string; ms: number; error: string } };
   /** The remaining modules (sprites, music, fx, debug, …) are attached at runtime. */
   [module: string]: any;
 }

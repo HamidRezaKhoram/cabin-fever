@@ -38,7 +38,7 @@ const io = new Server(server, { maxHttpBufferSize: 2e6, pingInterval: 5000, ping
 // cores (browsers only allow threads — SharedArrayBuffer — in isolated pages). Single-threaded it
 // is ~3× slower than speech and the narrator lags. Everything the TV loads is same-origin.
 // /admin and /highlights are opened from the TV, so they get the same headers.
-const ISOLATE = /^\/(host|admin|highlights)(\.html)?$|^\/tts-worker\.js$|^\/tts\//;
+const ISOLATE = /^\/(host|admin|highlights)(\.html)?$|^\/(tts|judge)-worker\.js$|^\/tts\//;
 app.use((/** @type {any} */ req, /** @type {any} */ res, /** @type {() => void} */ next) => {
   if (ISOLATE.test(req.path)) {
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');

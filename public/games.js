@@ -574,6 +574,8 @@
   /** How deep each tier goes (the TV's key while people think). @param {{ name: string, m: number }[]} tiers */
   const ddKey = (tiers) => `<ol class="dd-key">${(tiers || []).map((t, i) => `<li class="dd-t${i}"><b>${esc(t.name)}</b> ${t.m} m</li>`).join('')}</ol>`;
   const DD_TIER_CLS = ['dd-t0', 'dd-t1', 'dd-t2', 'dd-t3', 'dd-t4'];
+  /** What the TV's answer judge (public/judge.js) said about an off-chart answer. @param {string | null} r */
+  const ddRobot = (r) => (r === 'fits' ? '🤖 fits: it counts' : r === 'doubt' ? '🤖 doubts it' : r === 'unsure' ? '🤖 not sure' : '');
   register('deepend', {
     /** @param {any} s */
     narrate(s) {
@@ -592,7 +594,7 @@
       }
       if (s.phase === 'dd-judge') {
         return `${ddTag(g)}<h1 class="prompt">Off the chart! Does it count?</h1><p class="big-sub">${esc(g.prompt)}: vote on your phones ${T}</p>
-          <div class="dd-judge">${(g.judging || []).map((/** @type {any} */ j) => `<div class="dd-card">“${esc(j.text)}”</div>`).join('')}</div>
+          <div class="dd-judge">${(g.judging || []).map((/** @type {any} */ j) => `<div class="dd-card${j.robot === 'fits' ? ' dd-fits' : ''}">“${esc(j.text)}”${j.robot ? `<span class="dd-robot">${ddRobot(j.robot)}</span>` : ''}</div>`).join('')}</div>
           ${count(g.judgedCount, g.totalPlayers, 'judges done')}${waitingRow(g.waitingOn, 'judging')}`;
       }
       const r = g.result || { rows: [], obvious: [] };
@@ -617,8 +619,8 @@
           ${textForm('Your rarest answer…', 40, you.answer ? 'Change answer' : 'Dive in 🤿')}`;
       }
       if (s.phase === 'dd-judge') {
-        if (!(you.judge || []).length) return waiting('Your answer is on the vote', 'The room is deciding if it counts…');
-        return `<h2>Does it count for “${esc(g.prompt)}”?</h2><div class="dd-votes">${you.judge.map((/** @type {any} */ j) => `<div class="dd-vote"><p class="prompt">“${esc(j.text)}”</p>
+        if (!(you.judge || []).length) return waiting('Nothing for you to judge', 'The room is deciding what counts…');
+        return `<h2>Does it count for “${esc(g.prompt)}”?</h2><div class="dd-votes">${you.judge.map((/** @type {any} */ j) => `<div class="dd-vote"><p class="prompt">“${esc(j.text)}”</p>${j.robot ? `<p class="hint">${ddRobot(j.robot)}</p>` : ''}
           <div class="crush-pair"><button class="vote-btn" data-send="${esc(JSON.stringify({ judge: j.key, ok: true }))}" aria-pressed="${j.vote === true}">👍 Counts</button>
           <button class="vote-btn bad" data-send="${esc(JSON.stringify({ judge: j.key, ok: false }))}" aria-pressed="${j.vote === false}">👎 Nope</button></div></div>`).join('')}</div>`;
       }

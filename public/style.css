@@ -1384,6 +1384,8 @@ body.host .dd-key li { font-size: max(28px, 2.8vh); }
 .dd-key li b { color: var(--dd); }
 .dd-judge { display: flex; flex-wrap: wrap; justify-content: center; gap: 2vh; margin: 2vh 0; }
 .dd-card { padding: 1.4vh 2vw; background: var(--panel2); box-shadow: 0 0 0 4px var(--edge); font-size: max(28px, 4.4vh); }
+.dd-card .dd-robot { display: block; font-size: max(28px, 2.8vh); color: var(--dim); }
+.dd-card.dd-fits { box-shadow: 0 0 0 4px #c9f3ff; }
 .dd-dives { list-style: none; padding: 0; margin: 1vh auto; max-width: 160vh; }
 .dd-dives li { display: flex; flex-direction: column; gap: 0.5vh; margin: 1vh 0; padding: 0.8vh 1vw; background: var(--panel); box-shadow: 0 0 0 4px var(--edge); animation: pop-in 0.4s steps(12) both; }
 .dd-dives.dd-many { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2vh 1.6vw; }

@@ -31,7 +31,8 @@ module.exports = [
   js.configs.recommended,
   // Type-aware: server + games (+ the bot CLI) through tsconfig.json.
   {
-    files: ['server.js', 'core/**/*.js', 'games/**/*.js', 'tools/**/*.js'],
+    // (public/judge-core.js: The Deep End's judge maths, shared by the server's tools and the TV.)
+    files: ['server.js', 'core/**/*.js', 'games/**/*.js', 'tools/**/*.js', 'public/judge-core.js'],
     ignores: ['tools/build-pages.js'],
     languageOptions: {
       sourceType: 'commonjs', globals: globals.node,
@@ -44,7 +45,7 @@ module.exports = [
   // Type-aware: browser pages (TV and phone share files, so both projects are listed).
   {
     files: ['public/**/*.js'],
-    ignores: ['public/sw.js', 'public/tts-worker.js'],
+    ignores: ['public/sw.js', 'public/tts-worker.js', 'public/judge-worker.js', 'public/judge-core.js'],
     languageOptions: {
       sourceType: 'script', globals: { ...globals.browser, io: 'readonly' },
       parser: tseslint.parser,
@@ -75,6 +76,12 @@ module.exports = [
   {
     files: ['public/tts-worker.js'],
     languageOptions: { sourceType: 'module', globals: globals.worker },
+    rules: COMMON,
+  },
+  // The Deep End's answer judge worker: a classic worker (importScripts the maths, imports transformers.js).
+  {
+    files: ['public/judge-worker.js'],
+    languageOptions: { sourceType: 'script', globals: { ...globals.worker, CfJudgeCore: 'readonly' } },
     rules: COMMON,
   },
   // The service worker runs in its own scope (no DOM, no page tsconfig).

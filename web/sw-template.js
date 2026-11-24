@@ -210,7 +210,7 @@ self.addEventListener('activate', (/** @type {any} */ e) => {
 // GitHub Pages can't send headers, so the worker adds them: the TV page (and the narrator's voice
 // worker) become cross-origin isolated, which lets the natural voice use several CPU cores.
 // Everything they load is from this site. (See server.js for the Docker side.)
-const ISOLATE = /^(host|admin|highlights)\.html$|^tts-worker\.js$|^tts\//;
+const ISOLATE = /^(host|admin|highlights)\.html$|^(tts|judge)-worker\.js$|^tts\//;
 /** @param {string} rel @param {Response} res */
 function isolate(rel, res) {
   if (!ISOLATE.test(rel) || res.type === 'opaque') return res;

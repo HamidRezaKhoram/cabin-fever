@@ -124,7 +124,7 @@
     'Name something in the category, but not the obvious thing. Rare answers dive deep; the one everyone says barely gets you wet.': 'Nomme quelque chose de la catégorie, mais pas l’évidence. Les réponses rares plongent profond ; celle que tout le monde dit te mouille à peine.',
     'Name something in the category: not the obvious thing': 'Nomme quelque chose de la catégorie : pas l’évidence',
     'The rarer your answer, the deeper you dive': 'Plus ta réponse est rare, plus tu plonges profond',
-    'Off the chart? The room votes if it counts': 'Pas sur la carte ? La salle vote si ça compte',
+    'Off the chart? The judge 🤖 or the room decides if it counts': 'Pas sur la carte ? Le juge 🤖 ou la salle décide si ça compte',
     'Quick real-time challenges on your phone': 'Des défis éclair en temps réel sur ton téléphone',
     'Tap, react, count, roast — rules shown each time': 'Tape, réagis, compte, grille — règles affichées à chaque fois',
     'Turn on Teams for Red vs Blue!': 'Active les équipes pour Rouges contre Bleus !',
