@@ -700,9 +700,10 @@ for it in deepend:
             names = list(dict.fromkeys(names))[:4]
             sl = int(r['sl'])
             tier = 1 if sl >= t1 else 2 if sl >= t2 else 3 if sl >= t3 else 4
-            # GBIF's record counts follow where birders and moth-trappers live, not what people know: a
-            # species the hand chart doesn't list is never shallower than the drop-off.
-            if str(r.get('qid', '')).startswith('gbif:'):
+            # GBIF's record counts follow where birders and moth-trappers live, and OpenStreetMap's name
+            # translations where map bots worked (remote Arctic islands have dozens): neither is what people
+            # know. A species or place the hand chart doesn't list is never shallower than the drop-off.
+            if str(r.get('qid', '')).startswith(('gbif:', 'osm:')):
                 tier = max(3, tier)
             for n in names:
                 seen_keys[dd_key(n)] = tier

@@ -1,0 +1,6805 @@
+{
+"Name a lake": [
+{
+"aliases": [
+"Каспий теңізі - Hazar deňzi - دریای خزر - Xəzər dənizi - Каспийское море - دریای مازندران"
+],
+"label": "Caspian Sea",
+"qid": "osm:Caspian Sea",
+"sl": 107,
+"wiki": "Caspian Sea"
+},
+{
+"aliases": [],
+"label": "Great Lakes",
+"qid": "osm:Great Lakes",
+"sl": 84,
+"wiki": "Great Lakes"
+},
+{
+"aliases": [],
+"label": "Lake Everett",
+"qid": "osm:Lake Everett (Indiana)",
+"sl": 77,
+"wiki": "Lake Everett (Indiana)"
+},
+{
+"aliases": [],
+"label": "Loch Ness",
+"qid": "osm:Loch Ness",
+"sl": 68,
+"wiki": "Loch Ness"
+},
+{
+"aliases": [
+"Lac Albert / Lake Albert"
+],
+"label": "Lake Albert",
+"qid": "osm:Lake Albert (Africa)",
+"sl": 56,
+"wiki": "Lake Albert (Africa)"
+},
+{
+"aliases": [],
+"label": "Lake Winnipeg",
+"qid": "osm:Lake Winnipeg",
+"sl": 54,
+"wiki": "Lake Winnipeg"
+},
+{
+"aliases": [
+"Sahtú / Great Bear Lake"
+],
+"label": "Great Bear Lake",
+"qid": "osm:Great Bear Lake",
+"sl": 53,
+"wiki": "Great Bear Lake"
+},
+{
+"aliases": [],
+"label": "Great Slave Lake",
+"qid": "osm:Great Slave Lake",
+"sl": 52,
+"wiki": "Great Slave Lake"
+},
+{
+"aliases": [
+"البحر الميت ים המלח"
+],
+"label": "Dead Sea",
+"qid": "osm:Dead Sea",
+"sl": 52,
+"wiki": "Dead Sea"
+},
+{
+"aliases": [],
+"label": "Lake Kivu",
+"qid": "osm:Lake Kivu",
+"sl": 50,
+"wiki": "Lake Kivu"
+},
+{
+"aliases": [
+"Lake Rutanzige - Lake Mobutu",
+"Lac Édouard / Lake Edward"
+],
+"label": "Lake Edward",
+"qid": "osm:Lake Edward",
+"sl": 50,
+"wiki": "Lake Edward"
+},
+{
+"aliases": [
+"Преспанско Езеро / Λίμνες Πρέσπες / Liqeni i Prespës"
+],
+"label": "Lake Prespa",
+"qid": "osm:Lake Prespa",
+"sl": 44,
+"wiki": "Lake Prespa"
+},
+{
+"aliases": [],
+"label": "Lake Athabasca",
+"qid": "osm:Lake Athabasca",
+"sl": 40,
+"wiki": "Lake Athabasca"
+},
+{
+"aliases": [],
+"label": "Lake Ontario",
+"qid": "osm:Lake Ontario",
+"sl": 39,
+"wiki": "Lake Ontario"
+},
+{
+"aliases": [],
+"label": "Lake Manitoba",
+"qid": "osm:Lake Manitoba",
+"sl": 35,
+"wiki": "Lake Manitoba"
+},
+{
+"aliases": [],
+"label": "Lake Superior",
+"qid": "osm:Lake Superior",
+"sl": 33,
+"wiki": "Lake Superior"
+},
+{
+"aliases": [],
+"label": "Lake Kariba",
+"qid": "osm:Lake Kariba",
+"sl": 32,
+"wiki": "Lake Kariba"
+},
+{
+"aliases": [
+"البحيرة المرة الكبرى"
+],
+"label": "Great Bitter Lake",
+"qid": "osm:Great Bitter Lake",
+"sl": 32,
+"wiki": "Great Bitter Lake"
+},
+{
+"aliases": [
+"青海湖 མཚོ་སྔོན་པོ།"
+],
+"label": "Qinghai Lake",
+"qid": "osm:Qinghai Lake",
+"sl": 31,
+"wiki": "Qinghai Lake"
+},
+{
+"aliases": [
+"Doiran Lake",
+"Дојранско Езеро / Λίμνη Δοϊράνη"
+],
+"label": "Lake of Dojran",
+"qid": "osm:Doiran Lake",
+"sl": 30,
+"wiki": "Doiran Lake"
+},
+{
+"aliases": [
+"羊卓雍错 ཡར་འབྲོག་གཡུ་མཚོ།"
+],
+"label": "Yamdrok Lake",
+"qid": "osm:Yamdrok Lake",
+"sl": 29,
+"wiki": "Yamdrok Lake"
+},
+{
+"aliases": [],
+"label": "Lake Michigan",
+"qid": "osm:Lake Michigan",
+"sl": 29,
+"wiki": "Lake Michigan"
+},
+{
+"aliases": [],
+"label": "Lake Victoria",
+"qid": "osm:Lake Victoria",
+"sl": 29,
+"wiki": "Lake Victoria"
+},
+{
+"aliases": [],
+"label": "Lake Huron",
+"qid": "osm:Lake Huron",
+"sl": 28,
+"wiki": "Lake Huron"
+},
+{
+"aliases": [],
+"label": "Lake Erie",
+"qid": "osm:Lake Erie",
+"sl": 28,
+"wiki": "Lake Erie"
+},
+{
+"aliases": [
+"အင်းလေးကန်"
+],
+"label": "Inle Lake",
+"qid": "osm:Inle Lake",
+"sl": 27,
+"wiki": "Inle Lake"
+},
+{
+"aliases": [
+"Sarygamyş köli/Sarıqamıs kóli"
+],
+"label": "Sarygamysh Lake",
+"qid": "osm:Sarygamysh Lake",
+"sl": 25,
+"wiki": "Sarygamysh Lake"
+},
+{
+"aliases": [],
+"label": "Lake of the Woods",
+"qid": "osm:Lake of the Woods",
+"sl": 25,
+"wiki": "Lake of the Woods"
+},
+{
+"aliases": [],
+"label": "Reindeer Lake",
+"qid": "osm:Reindeer Lake",
+"sl": 24,
+"wiki": "Reindeer Lake"
+},
+{
+"aliases": [
+"Skadarsko jezero / Liqeni i Shkodrës",
+"Lake Shkodër"
+],
+"label": "Lake Skadar",
+"qid": "osm:Lake Skadar",
+"sl": 22,
+"wiki": "Lake Skadar"
+},
+{
+"aliases": [
+"Охридско Езеро / Liqeni i Ohrit"
+],
+"label": "Lake Ohrid",
+"qid": "osm:Lake Ohrid",
+"sl": 22,
+"wiki": "Lake Ohrid"
+},
+{
+"aliases": [],
+"label": "Loch Leven",
+"qid": "osm:Loch Leven (Kinross)",
+"sl": 21,
+"wiki": "Loch Leven (Kinross)"
+},
+{
+"aliases": [
+"Μικρή Πρέσπα",
+"Small Prespa Lake"
+],
+"label": "Lesser Prespa Lake",
+"qid": "osm:Small Prespa Lake",
+"sl": 21,
+"wiki": "Small Prespa Lake"
+},
+{
+"aliases": [
+"Lake Malawi / Lago Niassa"
+],
+"label": "Lake Malawi",
+"qid": "osm:Lake Malawi",
+"sl": 21,
+"wiki": "Lake Malawi"
+},
+{
+"aliases": [
+"ጣና ሐይቅ"
+],
+"label": "Lake Tana",
+"qid": "osm:Lake Tana",
+"sl": 20,
+"wiki": "Lake Tana"
+},
+{
+"aliases": [
+"Lac Tanganyika / Lake Tanganyika"
+],
+"label": "Lake Tanganyika",
+"qid": "osm:Lake Tanganyika",
+"sl": 18,
+"wiki": "Lake Tanganyika"
+},
+{
+"aliases": [],
+"label": "Great Salt Lake",
+"qid": "osm:Great Salt Lake",
+"sl": 17,
+"wiki": "Great Salt Lake"
+},
+{
+"aliases": [
+"Derwent Water"
+],
+"label": "Derwentwater",
+"qid": "osm:Derwentwater",
+"sl": 15,
+"wiki": "Derwentwater"
+},
+{
+"aliases": [],
+"label": "Lake Tahoe",
+"qid": "osm:Lake Tahoe",
+"sl": 15,
+"wiki": "Lake Tahoe"
+},
+{
+"aliases": [
+"دریاچه ارومیه"
+],
+"label": "Lake Urmia",
+"qid": "osm:Lake Urmia",
+"sl": 15,
+"wiki": "Lake Urmia"
+},
+{
+"aliases": [
+"បឹង​ទន្លេសាប",
+"Tonlé Sap"
+],
+"label": "Tonle Sap Lake",
+"qid": "osm:Tonlé Sap",
+"sl": 14,
+"wiki": "Tonlé Sap"
+},
+{
+"aliases": [
+"博斯腾湖 باغراش كۆلى"
+],
+"label": "Bosten Lake",
+"qid": "osm:Bosten Lake",
+"sl": 13,
+"wiki": "Bosten Lake"
+},
+{
+"aliases": [],
+"label": "Lake Turkana",
+"qid": "osm:Lake Turkana",
+"sl": 13,
+"wiki": "Lake Turkana"
+},
+{
+"aliases": [
+"озеро Ханка 兴凯湖",
+"Lake Khanka"
+],
+"label": "Khanka Lake",
+"qid": "osm:Lake Khanka",
+"sl": 12,
+"wiki": "Lake Khanka"
+},
+{
+"aliases": [],
+"label": "Lake Vanda",
+"qid": "osm:Lake Vanda",
+"sl": 11,
+"wiki": "Lake Vanda"
+},
+{
+"aliases": [],
+"label": "Taal Lake",
+"qid": "osm:Taal Lake",
+"sl": 11,
+"wiki": "Taal Lake"
+},
+{
+"aliases": [],
+"label": "Lake Winnebago",
+"qid": "osm:Lake Winnebago",
+"sl": 10,
+"wiki": "Lake Winnebago"
+},
+{
+"aliases": [
+"Pelku;Paiku",
+"Lake Pelku",
+"佩枯错 པད་ཁུད་མཚོ"
+],
+"label": "Baikü Co",
+"qid": "osm:Lake Pelku",
+"sl": 10,
+"wiki": "Lake Pelku"
+},
+{
+"aliases": [],
+"label": "Lake Ihema",
+"qid": "osm:Lake Ihema",
+"sl": 10,
+"wiki": "Lake Ihema"
+},
+{
+"aliases": [
+"Чеко",
+"Tunguska event"
+],
+"label": "Cheko Lake",
+"qid": "osm:Tunguska event",
+"sl": 9,
+"wiki": "Tunguska event"
+},
+{
+"aliases": [],
+"label": "Don Juan Pond",
+"qid": "osm:Don Juan Pond",
+"sl": 9,
+"wiki": "Don Juan Pond"
+},
+{
+"aliases": [
+"Lake Taupo"
+],
+"label": "Lake Taupō",
+"qid": "osm:Lake Taupō",
+"sl": 9,
+"wiki": "Lake Taupō"
+},
+{
+"aliases": [
+"Lake Khövsgöl",
+"Хөвсгөл нуур ᠬᠥᠪᠰᠥᠭᠥᠯ ᠨᠠᠭᠤᠷ"
+],
+"label": "Lake Khuvsgul",
+"qid": "osm:Lake Khövsgöl",
+"sl": 9,
+"wiki": "Lake Khövsgöl"
+},
+{
+"aliases": [],
+"label": "Lake Nipigon",
+"qid": "osm:Lake Nipigon",
+"sl": 9,
+"wiki": "Lake Nipigon"
+},
+{
+"aliases": [
+"شط الجريد"
+],
+"label": "Chott el Djerid",
+"qid": "osm:Chott el Djerid",
+"sl": 9,
+"wiki": "Chott el Djerid"
+},
+{
+"aliases": [],
+"label": "Lake Rweru",
+"qid": "osm:Lake Rweru",
+"sl": 9,
+"wiki": "Lake Rweru"
+},
+{
+"aliases": [
+"Crno Jezero",
+"Black Lake"
+],
+"label": "Black lake",
+"qid": "osm:Black Lake (Montenegro)",
+"sl": 8,
+"wiki": "Black Lake (Montenegro)"
+},
+{
+"aliases": [
+"Wörthersee"
+],
+"label": "Lake Wörth",
+"qid": "osm:Wörthersee",
+"sl": 8,
+"wiki": "Wörthersee"
+},
+{
+"aliases": [],
+"label": "Lake Pontchartrain",
+"qid": "osm:Lake Pontchartrain",
+"sl": 8,
+"wiki": "Lake Pontchartrain"
+},
+{
+"aliases": [
+"Zharinanmucuo;Tashi Namtso",
+"扎日南木错 བཀྲ་རི་གནམ་མཚོ།"
+],
+"label": "Zhari Namco",
+"qid": "osm:Zhari Namco",
+"sl": 8,
+"wiki": "Zhari Namco"
+},
+{
+"aliases": [
+"백두산천지 长白山天池"
+],
+"label": "Heaven Lake",
+"qid": "osm:Heaven Lake",
+"sl": 8,
+"wiki": "Heaven Lake"
+},
+{
+"aliases": [
+"Яшилкӯл",
+"Yashilkul"
+],
+"label": "Lake Yashilkul",
+"qid": "osm:Yashilkul",
+"sl": 8,
+"wiki": "Yashilkul"
+},
+{
+"aliases": [],
+"label": "Lake Nyos",
+"qid": "osm:Lake Nyos",
+"sl": 7,
+"wiki": "Lake Nyos"
+},
+{
+"aliases": [
+"Lake Balapan",
+"озеро Чаган"
+],
+"label": "Lake Chagan",
+"qid": "osm:Lake Chagan",
+"sl": 7,
+"wiki": "Lake Chagan"
+},
+{
+"aliases": [
+"Lago Uruguay"
+],
+"label": "Lake Profound",
+"qid": "osm:Lake Profound",
+"sl": 7,
+"wiki": "Lake Profound"
+},
+{
+"aliases": [
+"Aýböwür köli",
+"Lake Aibugir;Lake Kernay;Lake Kerney"
+],
+"label": "Lake Aýböwür",
+"qid": "osm:Lake Aýböwür",
+"sl": 7,
+"wiki": "Lake Aýböwür"
+},
+{
+"aliases": [
+"ကန်တော်ကြီး"
+],
+"label": "Kandawgyi Lake",
+"qid": "osm:Kandawgyi Lake",
+"sl": 7,
+"wiki": "Kandawgyi Lake"
+},
+{
+"aliases": [],
+"label": "Lake Mweru",
+"qid": "osm:Lake Mweru",
+"sl": 7,
+"wiki": "Lake Mweru"
+},
+{
+"aliases": [
+"Fuhai Lake",
+"布伦托海 ۇلىڭگىر كولى"
+],
+"label": "Ulungur Lake",
+"qid": "osm:Ulungur Lake",
+"sl": 7,
+"wiki": "Ulungur Lake"
+},
+{
+"aliases": [],
+"label": "Lake Rukwa",
+"qid": "osm:Lake Rukwa",
+"sl": 7,
+"wiki": "Lake Rukwa"
+},
+{
+"aliases": [],
+"label": "Dal Lake",
+"qid": "osm:Dal Lake",
+"sl": 7,
+"wiki": "Dal Lake"
+},
+{
+"aliases": [],
+"label": "Hussain Sagar",
+"qid": "osm:Hussain Sagar",
+"sl": 7,
+"wiki": "Hussain Sagar"
+},
+{
+"aliases": [
+"Lake St. Clair"
+],
+"label": "Lake Saint Clair",
+"qid": "osm:Lake St. Clair",
+"sl": 7,
+"wiki": "Lake St. Clair"
+},
+{
+"aliases": [],
+"label": "Lake Natron",
+"qid": "osm:Lake Natron",
+"sl": 6,
+"wiki": "Lake Natron"
+},
+{
+"aliases": [],
+"label": "Osman Sagar",
+"qid": "osm:Osman Sagar",
+"sl": 6,
+"wiki": "Osman Sagar"
+},
+{
+"aliases": [
+"Αλυκή Λάρνακας",
+"Larnaca Salt Lake"
+],
+"label": "Larnaca Salt lake",
+"qid": "osm:Larnaca Salt Lake",
+"sl": 6,
+"wiki": "Larnaca Salt Lake"
+},
+{
+"aliases": [
+"Озеро Слаломное"
+],
+"label": "Slalom Lake",
+"qid": "osm:Slalom Lake",
+"sl": 6,
+"wiki": "Slalom Lake"
+},
+{
+"aliases": [],
+"label": "Utah Lake",
+"qid": "osm:Utah Lake",
+"sl": 6,
+"wiki": "Utah Lake"
+},
+{
+"aliases": [
+"Kati Thanda-Lake Eyre (North)",
+"Lake Eyre"
+],
+"label": "Lake Eyre (North)",
+"qid": "osm:Lake Eyre",
+"sl": 6,
+"wiki": "Lake Eyre"
+},
+{
+"aliases": [],
+"label": "Lough Neagh",
+"qid": "osm:Lough Neagh",
+"sl": 6,
+"wiki": "Lough Neagh"
+},
+{
+"aliases": [],
+"label": "Lake Winnipegosis",
+"qid": "osm:Lake Winnipegosis",
+"sl": 6,
+"wiki": "Lake Winnipegosis"
+},
+{
+"aliases": [],
+"label": "Powai Lake",
+"qid": "osm:Powai Lake",
+"sl": 6,
+"wiki": "Powai Lake"
+},
+{
+"aliases": [
+"Nattilik",
+"ᓇᑦᑎᓕᒃ Nettilling Lake"
+],
+"label": "Nettilling Lake",
+"qid": "osm:Nettilling Lake",
+"sl": 6,
+"wiki": "Nettilling Lake"
+},
+{
+"aliases": [],
+"label": "Salton Sea",
+"qid": "osm:Salton Sea",
+"sl": 6,
+"wiki": "Salton Sea"
+},
+{
+"aliases": [],
+"label": "Lake Manyara",
+"qid": "osm:Lake Manyara",
+"sl": 5,
+"wiki": "Lake Manyara"
+},
+{
+"aliases": [],
+"label": "Lake Harriet",
+"qid": "osm:Lake Harriet (Minnesota)",
+"sl": 5,
+"wiki": "Lake Harriet (Minnesota)"
+},
+{
+"aliases": [],
+"label": "Lake Magadi",
+"qid": "osm:Lake Magadi (Ngorongoro)",
+"sl": 5,
+"wiki": "Lake Magadi (Ngorongoro)"
+},
+{
+"aliases": [
+"Սեւ լիճ - İşıqlı Qaragöl"
+],
+"label": "Lake Sev",
+"qid": "osm:Lake Sev",
+"sl": 5,
+"wiki": "Lake Sev"
+},
+{
+"aliases": [
+"بحيرة المغرة",
+"Moghra_Oasis"
+],
+"label": "Al Maghra",
+"qid": "osm:Moghra_Oasis",
+"sl": 5,
+"wiki": "Moghra_Oasis"
+},
+{
+"aliases": [],
+"label": "Lonar Lake",
+"qid": "osm:Lonar Lake",
+"sl": 5,
+"wiki": "Lonar Lake"
+},
+{
+"aliases": [
+"Хар-Ус нуур ᠬᠠᠷ᠎ᠠ ᠤᠰᠤ ᠨᠠᠭᠤᠷ",
+"Khar-Us Lake"
+],
+"label": "Khar-Us nuur",
+"qid": "osm:Khar-Us Lake",
+"sl": 5,
+"wiki": "Khar-Us Lake"
+},
+{
+"aliases": [],
+"label": "Lake Champlain",
+"qid": "osm:Lake Champlain",
+"sl": 5,
+"wiki": "Lake Champlain"
+},
+{
+"aliases": [],
+"label": "Yellowstone Lake",
+"qid": "osm:Yellowstone Lake",
+"sl": 5,
+"wiki": "Yellowstone Lake"
+},
+{
+"aliases": [],
+"label": "Lake Pepin",
+"qid": "osm:Lake Pepin",
+"sl": 5,
+"wiki": "Lake Pepin"
+},
+{
+"aliases": [],
+"label": "Lake Minnetonka",
+"qid": "osm:Lake Minnetonka",
+"sl": 5,
+"wiki": "Lake Minnetonka"
+},
+{
+"aliases": [
+"滇池",
+"Dian Lake"
+],
+"label": "Lake Dian",
+"qid": "osm:Dian Lake",
+"sl": 5,
+"wiki": "Dian Lake"
+},
+{
+"aliases": [],
+"label": "Flathead Lake",
+"qid": "osm:Flathead Lake",
+"sl": 5,
+"wiki": "Flathead Lake"
+},
+{
+"aliases": [
+"Lac Mai-Ndombe"
+],
+"label": "Lake Mai-Ndombe",
+"qid": "osm:Lake Mai-Ndombe",
+"sl": 5,
+"wiki": "Lake Mai-Ndombe"
+},
+{
+"aliases": [],
+"label": "Lake Maurepas",
+"qid": "osm:Lake Maurepas",
+"sl": 5,
+"wiki": "Lake Maurepas"
+},
+{
+"aliases": [],
+"label": "Lake Lanao",
+"qid": "osm:Lake Lanao",
+"sl": 5,
+"wiki": "Lake Lanao"
+},
+{
+"aliases": [
+"Lac Mistassini"
+],
+"label": "Lake Mistassini",
+"qid": "osm:Lake Mistassini",
+"sl": 5,
+"wiki": "Lake Mistassini"
+},
+{
+"aliases": [
+"Burton Lagoon"
+],
+"label": "Lake Burton",
+"qid": "osm:Lake Burton (Antarctica)",
+"sl": 5,
+"wiki": "Lake Burton (Antarctica)"
+},
+{
+"aliases": [
+"Αλυκή Λεμεσού"
+],
+"label": "Limassol Salt Lake",
+"qid": "osm:Limassol Salt Lake",
+"sl": 4,
+"wiki": "Limassol Salt Lake"
+},
+{
+"aliases": [
+"Oeschinensee"
+],
+"label": "Oeschinen Lake",
+"qid": "osm:Oeschinensee",
+"sl": 4,
+"wiki": "Oeschinensee"
+},
+{
+"aliases": [
+"Ögii Lake",
+"Өгийнуур ᠥᠭᠦᠶ ᠨᠠᠭᠤᠷ"
+],
+"label": "Ögiinuur",
+"qid": "osm:Ögii Lake",
+"sl": 4,
+"wiki": "Ögii Lake"
+},
+{
+"aliases": [
+"阿克库勒湖 اق كول",
+"Ake Kule Lake"
+],
+"label": "Aqkol",
+"qid": "osm:Ake Kule Lake",
+"sl": 4,
+"wiki": "Ake Kule Lake"
+},
+{
+"aliases": [],
+"label": "Jenny Lake",
+"qid": "osm:Jenny Lake",
+"sl": 4,
+"wiki": "Jenny Lake"
+},
+{
+"aliases": [
+"Kiçik Alagöl"
+],
+"label": "Kichik Alagol",
+"qid": "osm:Kiçik Alagöl",
+"sl": 4,
+"wiki": "Kiçik Alagöl"
+},
+{
+"aliases": [
+"Böyük Alagöl"
+],
+"label": "Boyuk Alagol",
+"qid": "osm:Boyuk Alagol",
+"sl": 4,
+"wiki": "Boyuk Alagol"
+},
+{
+"aliases": [
+"Süphan Gölü"
+],
+"label": "Lake Süphan",
+"qid": "osm:Lake Süphan",
+"sl": 4,
+"wiki": "Lake Süphan"
+},
+{
+"aliases": [
+"شط الفجاج"
+],
+"label": "Chott el Fejej",
+"qid": "osm:Chott el Fejej",
+"sl": 4,
+"wiki": "Chott el Fejej"
+},
+{
+"aliases": [
+"Lacul Bâlea"
+],
+"label": "Bâlea Lake",
+"qid": "osm:Bâlea Lake",
+"sl": 4,
+"wiki": "Bâlea Lake"
+},
+{
+"aliases": [
+"Liqeni i Radoniqit"
+],
+"label": "Radoniq Lake",
+"qid": "osm:Radoniq Lake",
+"sl": 4,
+"wiki": "Radoniq Lake"
+},
+{
+"aliases": [
+"Liqeni i Vogël i Jazhincës"
+],
+"label": "Small Jazhincë Lake",
+"qid": "osm:Small Jazhincë Lake",
+"sl": 4,
+"wiki": "Small Jazhincë Lake"
+},
+{
+"aliases": [
+"Liqeni i Konjushkës"
+],
+"label": "Konjushka's Lake",
+"qid": "osm:Konjushka's Lake",
+"sl": 4,
+"wiki": "Konjushka's Lake"
+},
+{
+"aliases": [
+"Lake Wanaka"
+],
+"label": "Lake Wānaka",
+"qid": "osm:Lake Wānaka",
+"sl": 4,
+"wiki": "Lake Wānaka"
+},
+{
+"aliases": [],
+"label": "White Bear Lake",
+"qid": "osm:White Bear Lake (Minnesota)",
+"sl": 4,
+"wiki": "White Bear Lake (Minnesota)"
+},
+{
+"aliases": [],
+"label": "Laguna de Bay",
+"qid": "osm:Laguna de Bay",
+"sl": 4,
+"wiki": "Laguna de Bay"
+},
+{
+"aliases": [],
+"label": "Crater Lake",
+"qid": "osm:Crater Lake",
+"sl": 4,
+"wiki": "Crater Lake"
+},
+{
+"aliases": [
+"Кета"
+],
+"label": "Lake Keta",
+"qid": "osm:Lake Keta",
+"sl": 4,
+"wiki": "Lake Keta"
+},
+{
+"aliases": [],
+"label": "Raquette Lake",
+"qid": "osm:Raquette Lake",
+"sl": 4,
+"wiki": "Raquette Lake"
+},
+{
+"aliases": [],
+"label": "Gods Lake",
+"qid": "osm:Gods Lake",
+"sl": 4,
+"wiki": "Gods Lake"
+},
+{
+"aliases": [],
+"label": "Southern Indian Lake",
+"qid": "osm:Southern Indian Lake",
+"sl": 4,
+"wiki": "Southern Indian Lake"
+},
+{
+"aliases": [
+"Језеро Газиводе / Jezero Gazivode"
+],
+"label": "Gazivoda Lake",
+"qid": "osm:Gazivoda Lake",
+"sl": 4,
+"wiki": "Gazivoda Lake"
+},
+{
+"aliases": [],
+"label": "Iliamna Lake",
+"qid": "osm:Iliamna Lake",
+"sl": 4,
+"wiki": "Iliamna Lake"
+},
+{
+"aliases": [],
+"label": "Lake Washington",
+"qid": "osm:Lake Washington",
+"sl": 4,
+"wiki": "Lake Washington"
+},
+{
+"aliases": [
+"دریاچۀ بختگان"
+],
+"label": "Bakhtegan Lake",
+"qid": "osm:Bakhtegan Lake",
+"sl": 4,
+"wiki": "Bakhtegan Lake"
+},
+{
+"aliases": [
+"Lake Rotorua / Te Rotorua nui ā Kahumatamomoe"
+],
+"label": "Lake Rotorua",
+"qid": "osm:Lake Rotorua",
+"sl": 4,
+"wiki": "Lake Rotorua"
+},
+{
+"aliases": [
+"阿雅克库木湖 ئاياققۇم كۆلى‎"
+],
+"label": "Lake Ayakum",
+"qid": "osm:Lake Ayakum",
+"sl": 4,
+"wiki": "Lake Ayakum"
+},
+{
+"aliases": [
+"Bláa lónið"
+],
+"label": "Blue Lagoon",
+"qid": "osm:Blue Lagoon (geothermal spa)",
+"sl": 4,
+"wiki": "Blue Lagoon (geothermal spa)"
+},
+{
+"aliases": [],
+"label": "Jurong Lake",
+"qid": "osm:Jurong Lake",
+"sl": 4,
+"wiki": "Jurong Lake"
+},
+{
+"aliases": [
+"Channel of Vivari",
+"Kanali i Butrintit"
+],
+"label": "Vivari Channel",
+"qid": "osm:Channel of Vivari",
+"sl": 4,
+"wiki": "Channel of Vivari"
+},
+{
+"aliases": [],
+"label": "Lesser Slave Lake",
+"qid": "osm:Lesser Slave Lake",
+"sl": 4,
+"wiki": "Lesser Slave Lake"
+},
+{
+"aliases": [],
+"label": "Wunnummin Lake",
+"qid": "osm:Wunnummin Lake",
+"sl": 4,
+"wiki": "Wunnummin Lake"
+},
+{
+"aliases": [
+"Bohinjsko jezero"
+],
+"label": "Lake Bohinj",
+"qid": "osm:Lake Bohinj",
+"sl": 4,
+"wiki": "Lake Bohinj"
+},
+{
+"aliases": [],
+"label": "Bde Maka Ska",
+"qid": "osm:Bde Maka Ska",
+"sl": 4,
+"wiki": "Bde Maka Ska"
+},
+{
+"aliases": [
+"ቀላይ ሓሸንጌ"
+],
+"label": "Lake Ashenge",
+"qid": "osm:Lake Ashenge",
+"sl": 4,
+"wiki": "Lake Ashenge"
+},
+{
+"aliases": [
+"Svanevatn - Čoalbmejávri - Salmijärvi"
+],
+"label": "Svanevatn",
+"qid": "osm:Svanevatn",
+"sl": 4,
+"wiki": "Svanevatn"
+},
+{
+"aliases": [
+"Vembanad Lake"
+],
+"label": "Vembanad",
+"qid": "osm:Vembanad",
+"sl": 4,
+"wiki": "Vembanad"
+},
+{
+"aliases": [],
+"label": "Lake Eyasi",
+"qid": "osm:Lake Eyasi",
+"sl": 3,
+"wiki": "Lake Eyasi"
+},
+{
+"aliases": [],
+"label": "Lake Pupuke",
+"qid": "osm:Lake Pupuke",
+"sl": 3,
+"wiki": "Lake Pupuke"
+},
+{
+"aliases": [
+"Liqeni i Batllavës"
+],
+"label": "Batllava Lake",
+"qid": "osm:Batllava Lake",
+"sl": 3,
+"wiki": "Batllava Lake"
+},
+{
+"aliases": [],
+"label": "Loch Gelly",
+"qid": "osm:Loch Gelly",
+"sl": 3,
+"wiki": "Loch Gelly"
+},
+{
+"aliases": [
+"አብያታ ሐይቅ / Lake Abiata",
+"Lake Abijatta"
+],
+"label": "Lake Abiata",
+"qid": "osm:Lake Abijatta",
+"sl": 3,
+"wiki": "Lake Abijatta"
+},
+{
+"aliases": [],
+"label": "Lake Oku",
+"qid": "osm:Lake Oku",
+"sl": 3,
+"wiki": "Lake Oku"
+},
+{
+"aliases": [],
+"label": "Lake Karum",
+"qid": "osm:Lake Karum",
+"sl": 3,
+"wiki": "Lake Karum"
+},
+{
+"aliases": [
+"Ала-Көл"
+],
+"label": "Ala-Köl",
+"qid": "osm:Ala-Köl",
+"sl": 3,
+"wiki": "Ala-Köl"
+},
+{
+"aliases": [
+"Kerið"
+],
+"label": "Kerid",
+"qid": "osm:Kerið",
+"sl": 3,
+"wiki": "Kerið"
+},
+{
+"aliases": [
+"ბაზალეთის ტბა"
+],
+"label": "Bazaleti Lake",
+"qid": "osm:Bazaleti Lake",
+"sl": 3,
+"wiki": "Bazaleti Lake"
+},
+{
+"aliases": [],
+"label": "Durgam Cheruvu",
+"qid": "osm:Durgam Cheruvu",
+"sl": 3,
+"wiki": "Durgam Cheruvu"
+},
+{
+"aliases": [
+"Devil's Lake"
+],
+"label": "Spirit Lake",
+"qid": "osm:Devil's Lake (Wisconsin)",
+"sl": 3,
+"wiki": "Devil's Lake (Wisconsin)"
+},
+{
+"aliases": [],
+"label": "Mazaska Lake",
+"qid": "osm:Mazaska Lake",
+"sl": 3,
+"wiki": "Mazaska Lake"
+},
+{
+"aliases": [
+"Lacul Roșu"
+],
+"label": "Red Lake",
+"qid": "osm:Red Lake (Romania)",
+"sl": 3,
+"wiki": "Red Lake (Romania)"
+},
+{
+"aliases": [
+"Punished Woman Lake"
+],
+"label": "Punished Womans Lake",
+"qid": "osm:Punished Woman Lake",
+"sl": 3,
+"wiki": "Punished Woman Lake"
+},
+{
+"aliases": [],
+"label": "Lake Shaokatan",
+"qid": "osm:Lake Shaokatan",
+"sl": 3,
+"wiki": "Lake Shaokatan"
+},
+{
+"aliases": [],
+"label": "Lake Minnewaska",
+"qid": "osm:Lake Minnewaska (Minnesota)",
+"sl": 3,
+"wiki": "Lake Minnewaska (Minnesota)"
+},
+{
+"aliases": [],
+"label": "Augusta Lake",
+"qid": "osm:Augusta Lake (Cottonwood County, Minnesota)",
+"sl": 3,
+"wiki": "Augusta Lake (Cottonwood County, Minnesota)"
+},
+{
+"aliases": [],
+"label": "Meiktila Lake",
+"qid": "osm:Meiktila Lake",
+"sl": 3,
+"wiki": "Meiktila Lake"
+},
+{
+"aliases": [],
+"label": "Lake Poinsett",
+"qid": "osm:Lake Poinsett (South Dakota)",
+"sl": 3,
+"wiki": "Lake Poinsett (South Dakota)"
+},
+{
+"aliases": [],
+"label": "Wigdale Lake",
+"qid": "osm:Wigdale Lake",
+"sl": 3,
+"wiki": "Wigdale Lake"
+},
+{
+"aliases": [],
+"label": "Spirit Lake",
+"qid": "osm:Spirit Lake (South Dakota)",
+"sl": 3,
+"wiki": "Spirit Lake (South Dakota)"
+},
+{
+"aliases": [],
+"label": "North Red Iron Lake",
+"qid": "osm:North Red Iron Lake",
+"sl": 3,
+"wiki": "North Red Iron Lake"
+},
+{
+"aliases": [],
+"label": "Lake Hakanoa",
+"qid": "osm:Lake Hakanoa",
+"sl": 3,
+"wiki": "Lake Hakanoa"
+},
+{
+"aliases": [
+"Ongeim'l Tketau"
+],
+"label": "Jellyfish Lake",
+"qid": "osm:Jellyfish Lake",
+"sl": 3,
+"wiki": "Jellyfish Lake"
+},
+{
+"aliases": [],
+"label": "Pigeon Lake",
+"qid": "osm:Pigeon Lake (Alberta)",
+"sl": 3,
+"wiki": "Pigeon Lake (Alberta)"
+},
+{
+"aliases": [
+"西灣湖 Lago Sai Van"
+],
+"label": "Sai Van Lake",
+"qid": "osm:Sai Van Lake",
+"sl": 3,
+"wiki": "Sai Van Lake"
+},
+{
+"aliases": [],
+"label": "East Okoboji Lake",
+"qid": "osm:East Okoboji Lake",
+"sl": 3,
+"wiki": "East Okoboji Lake"
+},
+{
+"aliases": [
+"နောင်ယန်းအင်း",
+"Lake of No Return"
+],
+"label": "Nawng Yang Lake",
+"qid": "osm:Lake of No Return",
+"sl": 3,
+"wiki": "Lake of No Return"
+},
+{
+"aliases": [
+"Kazhuveli Eri",
+"Kaliveli Lake"
+],
+"label": "Kazhuveli Lake",
+"qid": "osm:Kaliveli Lake",
+"sl": 3,
+"wiki": "Kaliveli Lake"
+},
+{
+"aliases": [
+"Lake Vereteno"
+],
+"label": "Vereteno Lake",
+"qid": "osm:Lake Vereteno",
+"sl": 3,
+"wiki": "Lake Vereteno"
+},
+{
+"aliases": [
+"天池",
+"Heaven Lake of Tian Shan"
+],
+"label": "Heavenly Lake",
+"qid": "osm:Heaven Lake of Tian Shan",
+"sl": 3,
+"wiki": "Heaven Lake of Tian Shan"
+},
+{
+"aliases": [
+"Göygöl"
+],
+"label": "Goygol",
+"qid": "osm:Göygöl (lake)",
+"sl": 3,
+"wiki": "Göygöl (lake)"
+},
+{
+"aliases": [
+"Lake Khiluk"
+],
+"label": "Spotted Lake",
+"qid": "osm:Spotted Lake",
+"sl": 3,
+"wiki": "Spotted Lake"
+},
+{
+"aliases": [
+"Baker's Lake"
+],
+"label": "Bakers Lake",
+"qid": "osm:Baker's Lake (McLeod County, Minnesota)",
+"sl": 3,
+"wiki": "Baker's Lake (McLeod County, Minnesota)"
+},
+{
+"aliases": [],
+"label": "Loch Lomond",
+"qid": "osm:Loch Lomond",
+"sl": 3,
+"wiki": "Loch Lomond"
+},
+{
+"aliases": [],
+"label": "Mono Lake",
+"qid": "osm:Mono Lake",
+"sl": 3,
+"wiki": "Mono Lake"
+},
+{
+"aliases": [],
+"label": "Lake George",
+"qid": "osm:Lake George (New York)",
+"sl": 3,
+"wiki": "Lake George (New York)"
+},
+{
+"aliases": [
+"Ngoreng Lake;Eling Lake",
+"鄂陵湖"
+],
+"label": "Ngoring Lake",
+"qid": "osm:Ngoring Lake",
+"sl": 3,
+"wiki": "Ngoring Lake"
+},
+{
+"aliases": [
+"Lac Des Allemands"
+],
+"label": "Lac des Allemands",
+"qid": "osm:Lac des Allemands",
+"sl": 3,
+"wiki": "Lac des Allemands"
+},
+{
+"aliases": [],
+"label": "Lake of the Isles",
+"qid": "osm:Lake of the Isles",
+"sl": 3,
+"wiki": "Lake of the Isles"
+},
+{
+"aliases": [],
+"label": "Lake Hāwea",
+"qid": "osm:Lake Hāwea",
+"sl": 3,
+"wiki": "Lake Hāwea"
+},
+{
+"aliases": [],
+"label": "Swan Lake",
+"qid": "osm:Swan Lake (Nicollet County, Minnesota)",
+"sl": 3,
+"wiki": "Swan Lake (Nicollet County, Minnesota)"
+},
+{
+"aliases": [],
+"label": "Lake Chamo",
+"qid": "osm:Lake Chamo",
+"sl": 3,
+"wiki": "Lake Chamo"
+},
+{
+"aliases": [],
+"label": "Lake Abaya",
+"qid": "osm:Lake Abaya",
+"sl": 3,
+"wiki": "Lake Abaya"
+},
+{
+"aliases": [
+"Farihy Alaotra"
+],
+"label": "Lake Alaotra",
+"qid": "osm:Lake Alaotra",
+"sl": 3,
+"wiki": "Lake Alaotra"
+},
+{
+"aliases": [],
+"label": "Lake Wahtopanah",
+"qid": "osm:Lake Wahtopanah",
+"sl": 3,
+"wiki": "Lake Wahtopanah"
+},
+{
+"aliases": [],
+"label": "Bitter Lake",
+"qid": "osm:Bitter Lake (Day County, South Dakota)",
+"sl": 3,
+"wiki": "Bitter Lake (Day County, South Dakota)"
+},
+{
+"aliases": [],
+"label": "Minnewasta Lake",
+"qid": "osm:Minnewasta Lake",
+"sl": 3,
+"wiki": "Minnewasta Lake"
+},
+{
+"aliases": [],
+"label": "Lake Thompson",
+"qid": "osm:Lake Thompson (South Dakota)",
+"sl": 3,
+"wiki": "Lake Thompson (South Dakota)"
+},
+{
+"aliases": [],
+"label": "Lake Traverse",
+"qid": "osm:Lake Traverse",
+"sl": 3,
+"wiki": "Lake Traverse"
+},
+{
+"aliases": [],
+"label": "Devils Lake",
+"qid": "osm:Devils Lake (North Dakota)",
+"sl": 3,
+"wiki": "Devils Lake (North Dakota)"
+},
+{
+"aliases": [],
+"label": "Lake Wakatipu",
+"qid": "osm:Lake Wakatipu",
+"sl": 3,
+"wiki": "Lake Wakatipu"
+},
+{
+"aliases": [
+"Lake Bulera"
+],
+"label": "Lake Burera",
+"qid": "osm:Lake Burera",
+"sl": 3,
+"wiki": "Lake Burera"
+},
+{
+"aliases": [],
+"label": "Mille Lacs Lake",
+"qid": "osm:Mille Lacs Lake",
+"sl": 3,
+"wiki": "Mille Lacs Lake"
+},
+{
+"aliases": [],
+"label": "Rush Lake",
+"qid": "osm:Rush Lake (South Dakota)",
+"sl": 3,
+"wiki": "Rush Lake (South Dakota)"
+},
+{
+"aliases": [
+"Pigs Eye Lake"
+],
+"label": "Pig's Eye Lake",
+"qid": "osm:Pigs Eye Lake",
+"sl": 3,
+"wiki": "Pigs Eye Lake"
+},
+{
+"aliases": [
+"ላንጋኖ ሐይቅ / Lake Langano"
+],
+"label": "Lake Langano",
+"qid": "osm:Lake Langano",
+"sl": 3,
+"wiki": "Lake Langano"
+},
+{
+"aliases": [
+"Lake Shala",
+"ሻላ ሐይቅ / Lake Shalla"
+],
+"label": "Lake Shalla",
+"qid": "osm:Lake Shala",
+"sl": 3,
+"wiki": "Lake Shala"
+},
+{
+"aliases": [
+"အင်လျားကန်"
+],
+"label": "Inya Lake",
+"qid": "osm:Inya Lake",
+"sl": 3,
+"wiki": "Inya Lake"
+},
+{
+"aliases": [
+"Lake Ohau"
+],
+"label": "Lake Ōhau",
+"qid": "osm:Lake Ōhau",
+"sl": 3,
+"wiki": "Lake Ōhau"
+},
+{
+"aliases": [],
+"label": "Okanagan Lake",
+"qid": "osm:Okanagan Lake",
+"sl": 3,
+"wiki": "Okanagan Lake"
+},
+{
+"aliases": [],
+"label": "Lake Nipissing",
+"qid": "osm:Lake Nipissing",
+"sl": 3,
+"wiki": "Lake Nipissing"
+},
+{
+"aliases": [],
+"label": "Lake Brownworth",
+"qid": "osm:Lake Brownworth",
+"sl": 3,
+"wiki": "Lake Brownworth"
+},
+{
+"aliases": [
+"达则错 སྟག་རྩེ་མཚོ།"
+],
+"label": "Dagze Lake",
+"qid": "osm:Dagze Lake",
+"sl": 3,
+"wiki": "Dagze Lake"
+},
+{
+"aliases": [],
+"label": "Flambeau Lake",
+"qid": "osm:Flambeau Lake",
+"sl": 3,
+"wiki": "Flambeau Lake"
+},
+{
+"aliases": [],
+"label": "Loch Tay",
+"qid": "osm:Loch Tay",
+"sl": 3,
+"wiki": "Loch Tay"
+},
+{
+"aliases": [],
+"label": "Green Lake",
+"qid": "osm:Green Lake (Wisconsin)",
+"sl": 3,
+"wiki": "Green Lake (Wisconsin)"
+},
+{
+"aliases": [],
+"label": "Cree Lake",
+"qid": "osm:Cree Lake",
+"sl": 3,
+"wiki": "Cree Lake"
+},
+{
+"aliases": [
+"Lake Pukaki"
+],
+"label": "Lake Pūkaki",
+"qid": "osm:Lake Pukaki",
+"sl": 3,
+"wiki": "Lake Pukaki"
+},
+{
+"aliases": [],
+"label": "Lake Waikaremoana",
+"qid": "osm:Lake Waikaremoana",
+"sl": 3,
+"wiki": "Lake Waikaremoana"
+},
+{
+"aliases": [
+"Etosha Pan"
+],
+"label": "Etosha pan",
+"qid": "osm:Etosha pan",
+"sl": 3,
+"wiki": "Etosha pan"
+},
+{
+"aliases": [],
+"label": "Lake Ainslie",
+"qid": "osm:Lake Ainslie",
+"sl": 3,
+"wiki": "Lake Ainslie"
+},
+{
+"aliases": [
+"دریاچه شهدای خلیج فارس",
+"Chitgar Lake"
+],
+"label": "Lake of the Martyrs of the Persian Gulf",
+"qid": "osm:Chitgar Lake",
+"sl": 3,
+"wiki": "Chitgar Lake"
+},
+{
+"aliases": [
+"Tasik Putrajaya"
+],
+"label": "Putrajaya Lake",
+"qid": "osm:Putrajaya Lake",
+"sl": 3,
+"wiki": "Putrajaya Lake"
+},
+{
+"aliases": [],
+"label": "Lake Bangweulu",
+"qid": "osm:Lake Bangweulu",
+"sl": 3,
+"wiki": "Lake Bangweulu"
+},
+{
+"aliases": [],
+"label": "Loch Oich",
+"qid": "osm:Loch Oich",
+"sl": 3,
+"wiki": "Loch Oich"
+},
+{
+"aliases": [],
+"label": "West Okoboji Lake",
+"qid": "osm:West Okoboji Lake",
+"sl": 3,
+"wiki": "West Okoboji Lake"
+},
+{
+"aliases": [
+"Danau Batur"
+],
+"label": "Lake Batur",
+"qid": "osm:Lake Batur",
+"sl": 3,
+"wiki": "Lake Batur"
+},
+{
+"aliases": [
+"Virvatnet - Vijriesjaevrie"
+],
+"label": "Virvatnet",
+"qid": "osm:Virvatnet",
+"sl": 3,
+"wiki": "Virvatnet"
+},
+{
+"aliases": [],
+"label": "Katepwa Lake",
+"qid": "osm:Katepwa Lake",
+"sl": 3,
+"wiki": "Katepwa Lake"
+},
+{
+"aliases": [],
+"label": "Echo Lake",
+"qid": "osm:Echo Lake (Saskatchewan)",
+"sl": 3,
+"wiki": "Echo Lake (Saskatchewan)"
+},
+{
+"aliases": [],
+"label": "Pasqua Lake",
+"qid": "osm:Pasqua Lake",
+"sl": 3,
+"wiki": "Pasqua Lake"
+},
+{
+"aliases": [],
+"label": "Buada Lagoon",
+"qid": "osm:Buada Lagoon",
+"sl": 3,
+"wiki": "Buada Lagoon"
+},
+{
+"aliases": [
+"Ağ Göl"
+],
+"label": "Lake Ağgöl",
+"qid": "osm:Lake Ağgöl",
+"sl": 3,
+"wiki": "Lake Ağgöl"
+},
+{
+"aliases": [
+"Lacul Lebedelor"
+],
+"label": "Swan Lake",
+"qid": "osm:Lacul Lebedelor",
+"sl": 3,
+"wiki": "Lacul Lebedelor"
+},
+{
+"aliases": [],
+"label": "Lägh da Cavloc",
+"qid": "osm:Lägh da Cavloc",
+"sl": 3,
+"wiki": "Lägh da Cavloc"
+},
+{
+"aliases": [],
+"label": "Lac Courte Oreilles",
+"qid": "osm:Lac Courte Oreilles",
+"sl": 3,
+"wiki": "Lac Courte Oreilles"
+},
+{
+"aliases": [],
+"label": "Mission Lake",
+"qid": "osm:Mission Lake",
+"sl": 3,
+"wiki": "Mission Lake"
+},
+{
+"aliases": [],
+"label": "Lake Ruhondo",
+"qid": "osm:Lake Ruhondo",
+"sl": 3,
+"wiki": "Lake Ruhondo"
+},
+{
+"aliases": [
+"Crooked Lake"
+],
+"label": "Krok Lake",
+"qid": "osm:Krok Lake",
+"sl": 3,
+"wiki": "Krok Lake"
+},
+{
+"aliases": [],
+"label": "Pelican Lake",
+"qid": "osm:Pelican Lake (Codington County, South Dakota)",
+"sl": 3,
+"wiki": "Pelican Lake (Codington County, South Dakota)"
+},
+{
+"aliases": [],
+"label": "Lake Kampeska",
+"qid": "osm:Lake Kampeska",
+"sl": 3,
+"wiki": "Lake Kampeska"
+},
+{
+"aliases": [],
+"label": "Clear Lake",
+"qid": "osm:Clear Lake (Deuel County, South Dakota)",
+"sl": 3,
+"wiki": "Clear Lake (Deuel County, South Dakota)"
+},
+{
+"aliases": [
+"Big Spirit Lake"
+],
+"label": "Spirit Lake",
+"qid": "osm:Big Spirit Lake",
+"sl": 3,
+"wiki": "Big Spirit Lake"
+},
+{
+"aliases": [],
+"label": "Blue Dog Lake",
+"qid": "osm:Blue Dog Lake",
+"sl": 3,
+"wiki": "Blue Dog Lake"
+},
+{
+"aliases": [
+"Cultus Lake, British Columbia"
+],
+"label": "Cultus Lake",
+"qid": "osm:Cultus Lake, British Columbia",
+"sl": 3,
+"wiki": "Cultus Lake, British Columbia"
+},
+{
+"aliases": [],
+"label": "Artichoke Lake",
+"qid": "osm:Artichoke Lake",
+"sl": 3,
+"wiki": "Artichoke Lake"
+}
+],
+"Name a river": [],
+"Name a volcano": [],
+"Name an island": [
+{
+"aliases": [
+"Singapore Island"
+],
+"label": "Singapore",
+"qid": "osm:Singapore Island",
+"sl": 184,
+"wiki": "Singapore Island"
+},
+{
+"aliases": [],
+"label": "Great Britain",
+"qid": "osm:Great Britain",
+"sl": 131,
+"wiki": "Great Britain"
+},
+{
+"aliases": [
+"Mann"
+],
+"label": "Isle of Man",
+"qid": "osm:Isle of Man",
+"sl": 119,
+"wiki": "Isle of Man"
+},
+{
+"aliases": [
+"Wadadli"
+],
+"label": "Antigua",
+"qid": "osm:Antigua",
+"sl": 113,
+"wiki": "Antigua"
+},
+{
+"aliases": [],
+"label": "Jersey",
+"qid": "osm:Jersey",
+"sl": 96,
+"wiki": "Jersey"
+},
+{
+"aliases": [],
+"label": "Saint Helena",
+"qid": "osm:Saint Helena",
+"sl": 81,
+"wiki": "Saint Helena"
+},
+{
+"aliases": [],
+"label": "Baker Island",
+"qid": "osm:Baker Island",
+"sl": 77,
+"wiki": "Baker Island"
+},
+{
+"aliases": [
+"North Island / Te Ika-a-Māui"
+],
+"label": "North Island",
+"qid": "osm:North Island",
+"sl": 64,
+"wiki": "North Island"
+},
+{
+"aliases": [
+"South Island / Te Waipounamu"
+],
+"label": "South Island",
+"qid": "osm:South Island",
+"sl": 62,
+"wiki": "South Island"
+},
+{
+"aliases": [
+"Isle of Skye"
+],
+"label": "Skye",
+"qid": "osm:Isle of Skye",
+"sl": 60,
+"wiki": "Isle of Skye"
+},
+{
+"aliases": [
+"ᒥᕐᖑᐃᖅᓯᕐᕕᒃ - Ellesmere Island - Île d'Ellesmere"
+],
+"label": "Ellesmere Island",
+"qid": "osm:Ellesmere Island",
+"sl": 60,
+"wiki": "Ellesmere Island"
+},
+{
+"aliases": [
+"Kitlineq / Victoria Island"
+],
+"label": "Victoria Island",
+"qid": "osm:Victoria Island (Canada)",
+"sl": 57,
+"wiki": "Victoria Island (Canada)"
+},
+{
+"aliases": [],
+"label": "Newfoundland",
+"qid": "osm:Newfoundland (island)",
+"sl": 57,
+"wiki": "Newfoundland (island)"
+},
+{
+"aliases": [],
+"label": "Sark",
+"qid": "osm:Sark",
+"sl": 56,
+"wiki": "Sark"
+},
+{
+"aliases": [],
+"label": "Banks Island",
+"qid": "osm:Banks Island",
+"sl": 55,
+"wiki": "Banks Island"
+},
+{
+"aliases": [
+"Ynys Môn"
+],
+"label": "Anglesey",
+"qid": "osm:Anglesey",
+"sl": 55,
+"wiki": "Anglesey"
+},
+{
+"aliases": [],
+"label": "Alderney",
+"qid": "osm:Alderney",
+"sl": 52,
+"wiki": "Alderney"
+},
+{
+"aliases": [
+"Borneo / Kalimantan"
+],
+"label": "Borneo",
+"qid": "osm:Borneo",
+"sl": 51,
+"wiki": "Borneo"
+},
+{
+"aliases": [],
+"label": "Palmyra Atoll",
+"qid": "osm:Palmyra Atoll",
+"sl": 49,
+"wiki": "Palmyra Atoll"
+},
+{
+"aliases": [],
+"label": "Islay",
+"qid": "osm:Islay",
+"sl": 49,
+"wiki": "Islay"
+},
+{
+"aliases": [
+"Macca"
+],
+"label": "Macquarie Island",
+"qid": "osm:Macquarie Island",
+"sl": 49,
+"wiki": "Macquarie Island"
+},
+{
+"aliases": [
+"Arran"
+],
+"label": "Isle of Arran",
+"qid": "osm:Isle of Arran",
+"sl": 47,
+"wiki": "Isle of Arran"
+},
+{
+"aliases": [
+"Cape Breton"
+],
+"label": "Cape Breton Island",
+"qid": "osm:Cape Breton Island",
+"sl": 47,
+"wiki": "Cape Breton Island"
+},
+{
+"aliases": [
+"Jura, Scotland"
+],
+"label": "Jura",
+"qid": "osm:Jura, Scotland",
+"sl": 44,
+"wiki": "Jura, Scotland"
+},
+{
+"aliases": [
+"Lindisfarne",
+"Holy Island"
+],
+"label": "Holy Island of Lindisfarne",
+"qid": "osm:Lindisfarne",
+"sl": 44,
+"wiki": "Lindisfarne"
+},
+{
+"aliases": [],
+"label": "Iona",
+"qid": "osm:Iona",
+"sl": 44,
+"wiki": "Iona"
+},
+{
+"aliases": [],
+"label": "Herm",
+"qid": "osm:Herm",
+"sl": 43,
+"wiki": "Herm"
+},
+{
+"aliases": [],
+"label": "Gough Island",
+"qid": "osm:Gough Island",
+"sl": 43,
+"wiki": "Gough Island"
+},
+{
+"aliases": [
+"ᑭᙵᐃᓚᒃ - Prince of Wales Island - Île du Prince-de-Galles"
+],
+"label": "Prince of Wales Island",
+"qid": "osm:Prince of Wales Island (Nunavut)",
+"sl": 43,
+"wiki": "Prince of Wales Island (Nunavut)"
+},
+{
+"aliases": [
+"Mull"
+],
+"label": "Isle of Mull",
+"qid": "osm:Isle of Mull",
+"sl": 43,
+"wiki": "Isle of Mull"
+},
+{
+"aliases": [],
+"label": "Melville Island",
+"qid": "osm:Melville Island (Northwest Territories and Nunavut)",
+"sl": 42,
+"wiki": "Melville Island (Northwest Territories and Nunavut)"
+},
+{
+"aliases": [
+"ᕿᑭᖅᑕᖅ King William Island - Île du Roi-Guillaume"
+],
+"label": "King William Island",
+"qid": "osm:King William Island",
+"sl": 41,
+"wiki": "King William Island"
+},
+{
+"aliases": [
+"Stewart Island / Rakiura"
+],
+"label": "Stewart Island",
+"qid": "osm:Stewart Island",
+"sl": 39,
+"wiki": "Stewart Island"
+},
+{
+"aliases": [
+"Losung"
+],
+"label": "Luzon",
+"qid": "osm:Luzon",
+"sl": 39,
+"wiki": "Luzon"
+},
+{
+"aliases": [],
+"label": "Prince Patrick Island",
+"qid": "osm:Prince Patrick Island",
+"sl": 38,
+"wiki": "Prince Patrick Island"
+},
+{
+"aliases": [],
+"label": "Fair Isle",
+"qid": "osm:Fair Isle",
+"sl": 38,
+"wiki": "Fair Isle"
+},
+{
+"aliases": [
+"ᑰᒐᓇᔪᒃ - Somerset Island - Île Somerset"
+],
+"label": "Somerset Island",
+"qid": "osm:Somerset Island (Nunavut)",
+"sl": 37,
+"wiki": "Somerset Island (Nunavut)"
+},
+{
+"aliases": [],
+"label": "Inaccessible Island",
+"qid": "osm:Inaccessible Island",
+"sl": 35,
+"wiki": "Inaccessible Island"
+},
+{
+"aliases": [],
+"label": "East Falkland",
+"qid": "osm:East Falkland",
+"sl": 35,
+"wiki": "East Falkland"
+},
+{
+"aliases": [],
+"label": "Tahiti",
+"qid": "osm:Tahiti",
+"sl": 35,
+"wiki": "Tahiti"
+},
+{
+"aliases": [],
+"label": "Melville Island",
+"qid": "osm:Melville Island (Australia)",
+"sl": 33,
+"wiki": "Melville Island (Australia)"
+},
+{
+"aliases": [
+"Shetland",
+"Mainland"
+],
+"label": "Mainland, Shetland",
+"qid": "osm:Mainland, Shetland",
+"sl": 32,
+"wiki": "Mainland, Shetland"
+},
+{
+"aliases": [
+"Saint Lawrence Island"
+],
+"label": "St. Lawrence Island",
+"qid": "osm:St. Lawrence Island",
+"sl": 32,
+"wiki": "St. Lawrence Island"
+},
+{
+"aliases": [],
+"label": "West Falkland",
+"qid": "osm:West Falkland",
+"sl": 32,
+"wiki": "West Falkland"
+},
+{
+"aliases": [
+"ᐃᓗᐃᓕᖅ Prince Charles Island"
+],
+"label": "Prince Charles Island",
+"qid": "osm:Prince Charles Island",
+"sl": 31,
+"wiki": "Prince Charles Island"
+},
+{
+"aliases": [
+"Isle of Bute"
+],
+"label": "Bute",
+"qid": "osm:Isle of Bute",
+"sl": 31,
+"wiki": "Isle of Bute"
+},
+{
+"aliases": [
+"Yell"
+],
+"label": "Yell, Shetland",
+"qid": "osm:Yell, Shetland",
+"sl": 31,
+"wiki": "Yell, Shetland"
+},
+{
+"aliases": [
+"Île Rodrigues"
+],
+"label": "Rodrigues",
+"qid": "osm:Rodrigues",
+"sl": 30,
+"wiki": "Rodrigues"
+},
+{
+"aliases": [],
+"label": "Ambrym",
+"qid": "osm:Ambrym",
+"sl": 30,
+"wiki": "Ambrym"
+},
+{
+"aliases": [],
+"label": "Hoy",
+"qid": "osm:Hoy",
+"sl": 30,
+"wiki": "Hoy"
+},
+{
+"aliases": [
+"Pemba Island"
+],
+"label": "Pemba",
+"qid": "osm:Pemba Island",
+"sl": 29,
+"wiki": "Pemba Island"
+},
+{
+"aliases": [],
+"label": "Ulva",
+"qid": "osm:Ulva",
+"sl": 29,
+"wiki": "Ulva"
+},
+{
+"aliases": [],
+"label": "Hopen",
+"qid": "osm:Hopen (Svalbard)",
+"sl": 29,
+"wiki": "Hopen (Svalbard)"
+},
+{
+"aliases": [
+"Achill Island - Acaill"
+],
+"label": "Achill Island",
+"qid": "osm:Achill Island",
+"sl": 28,
+"wiki": "Achill Island"
+},
+{
+"aliases": [
+"Bouvetøya"
+],
+"label": "Bouvet Island",
+"qid": "osm:Bouvet Island",
+"sl": 28,
+"wiki": "Bouvet Island"
+},
+{
+"aliases": [],
+"label": "Unst",
+"qid": "osm:Unst",
+"sl": 27,
+"wiki": "Unst"
+},
+{
+"aliases": [
+"Tiriodh"
+],
+"label": "Tiree",
+"qid": "osm:Tiree",
+"sl": 27,
+"wiki": "Tiree"
+},
+{
+"aliases": [
+"ᕿᑭᖅᑖᓗᒃ - Baffin Island - Île de Baffin"
+],
+"label": "Baffin Island",
+"qid": "osm:Baffin Island",
+"sl": 26,
+"wiki": "Baffin Island"
+},
+{
+"aliases": [
+"Beàrnaraigh Mòr"
+],
+"label": "Great Bernera",
+"qid": "osm:Great Bernera",
+"sl": 26,
+"wiki": "Great Bernera"
+},
+{
+"aliases": [
+"Masbate Island"
+],
+"label": "Masbate",
+"qid": "osm:Masbate Island",
+"sl": 23,
+"wiki": "Masbate Island"
+},
+{
+"aliases": [],
+"label": "Bathurst Island",
+"qid": "osm:Bathurst Island (Northern Territory)",
+"sl": 23,
+"wiki": "Bathurst Island (Northern Territory)"
+},
+{
+"aliases": [
+"عبد الكوري"
+],
+"label": "Abd al Kuri",
+"qid": "osm:Abd al Kuri",
+"sl": 23,
+"wiki": "Abd al Kuri"
+},
+{
+"aliases": [],
+"label": "Fetlar",
+"qid": "osm:Fetlar",
+"sl": 23,
+"wiki": "Fetlar"
+},
+{
+"aliases": [],
+"label": "Bressay",
+"qid": "osm:Bressay",
+"sl": 22,
+"wiki": "Bressay"
+},
+{
+"aliases": [],
+"label": "Coll",
+"qid": "osm:Coll",
+"sl": 22,
+"wiki": "Coll"
+},
+{
+"aliases": [],
+"label": "Colonsay",
+"qid": "osm:Colonsay",
+"sl": 22,
+"wiki": "Colonsay"
+},
+{
+"aliases": [
+"Pulau Rote"
+],
+"label": "Rote Island",
+"qid": "osm:Rote Island",
+"sl": 22,
+"wiki": "Rote Island"
+},
+{
+"aliases": [],
+"label": "Guernsey",
+"qid": "osm:Guernsey",
+"sl": 21,
+"wiki": "Guernsey"
+},
+{
+"aliases": [],
+"label": "Saipan",
+"qid": "osm:Saipan",
+"sl": 21,
+"wiki": "Saipan"
+},
+{
+"aliases": [],
+"label": "Stefansson Island",
+"qid": "osm:Stefansson Island",
+"sl": 21,
+"wiki": "Stefansson Island"
+},
+{
+"aliases": [
+"Brechou"
+],
+"label": "Brecqhou",
+"qid": "osm:Brecqhou",
+"sl": 20,
+"wiki": "Brecqhou"
+},
+{
+"aliases": [
+"Holy Island, Anglesey",
+"Holyhead Island"
+],
+"label": "Holy Island",
+"qid": "osm:Holy Island, Anglesey",
+"sl": 20,
+"wiki": "Holy Island, Anglesey"
+},
+{
+"aliases": [
+"Tartupaluk ᑕᕐᑐᐸᓗᒃ / Hans Ø / Hans Island / Île Hans"
+],
+"label": "Hans Island",
+"qid": "osm:Hans Island",
+"sl": 20,
+"wiki": "Hans Island"
+},
+{
+"aliases": [
+"Sehel Island",
+"جزيرة سهيل"
+],
+"label": "Seheil Island",
+"qid": "osm:Sehel Island",
+"sl": 19,
+"wiki": "Sehel Island"
+},
+{
+"aliases": [
+"Charcot Land"
+],
+"label": "Charcot Island",
+"qid": "osm:Charcot Island",
+"sl": 19,
+"wiki": "Charcot Island"
+},
+{
+"aliases": [
+"Árainn",
+"Inismor"
+],
+"label": "Inishmore",
+"qid": "osm:Inishmore",
+"sl": 19,
+"wiki": "Inishmore"
+},
+{
+"aliases": [],
+"label": "Malta",
+"qid": "osm:Malta (island)",
+"sl": 19,
+"wiki": "Malta (island)"
+},
+{
+"aliases": [],
+"label": "Mannar Island",
+"qid": "osm:Mannar Island",
+"sl": 19,
+"wiki": "Mannar Island"
+},
+{
+"aliases": [
+"Vavaʻu ʻUta"
+],
+"label": "Vavaʻu",
+"qid": "osm:Vavaʻu",
+"sl": 17,
+"wiki": "Vavaʻu"
+},
+{
+"aliases": [],
+"label": "Isle of May",
+"qid": "osm:Isle of May",
+"sl": 16,
+"wiki": "Isle of May"
+},
+{
+"aliases": [
+"جزیره قشم"
+],
+"label": "Qeshm Island",
+"qid": "osm:Qeshm Island",
+"sl": 16,
+"wiki": "Qeshm Island"
+},
+{
+"aliases": [],
+"label": "Saba",
+"qid": "osm:Saba",
+"sl": 16,
+"wiki": "Saba"
+},
+{
+"aliases": [
+"Lismore, Scotland"
+],
+"label": "Lismore",
+"qid": "osm:Lismore, Scotland",
+"sl": 16,
+"wiki": "Lismore, Scotland"
+},
+{
+"aliases": [
+"Ascension Island"
+],
+"label": "Ascension",
+"qid": "osm:Ascension Island",
+"sl": 16,
+"wiki": "Ascension Island"
+},
+{
+"aliases": [],
+"label": "South Georgia",
+"qid": "osm:South Georgia",
+"sl": 16,
+"wiki": "South Georgia"
+},
+{
+"aliases": [
+"Saint-Martin / Sint Maarten"
+],
+"label": "Saint Martin",
+"qid": "osm:Saint Martin (island)",
+"sl": 15,
+"wiki": "Saint Martin (island)"
+},
+{
+"aliases": [],
+"label": "Isle of Wight",
+"qid": "osm:Isle of Wight",
+"sl": 15,
+"wiki": "Isle of Wight"
+},
+{
+"aliases": [],
+"label": "Grand Cayman",
+"qid": "osm:Grand Cayman",
+"sl": 15,
+"wiki": "Grand Cayman"
+},
+{
+"aliases": [
+"ᑭᓪᓕᓂᖅ Killiniq Island"
+],
+"label": "Killiniq Island",
+"qid": "osm:Killiniq Island",
+"sl": 15,
+"wiki": "Killiniq Island"
+},
+{
+"aliases": [],
+"label": "Saint Lucia",
+"qid": "osm:Saint Lucia",
+"sl": 15,
+"wiki": "Saint Lucia"
+},
+{
+"aliases": [],
+"label": "King George Island",
+"qid": "osm:King George Island (South Shetland Islands)",
+"sl": 14,
+"wiki": "King George Island (South Shetland Islands)"
+},
+{
+"aliases": [],
+"label": "Spitsbergen",
+"qid": "osm:Spitsbergen",
+"sl": 14,
+"wiki": "Spitsbergen"
+},
+{
+"aliases": [],
+"label": "Tongatapu",
+"qid": "osm:Tongatapu",
+"sl": 14,
+"wiki": "Tongatapu"
+},
+{
+"aliases": [],
+"label": "Jamaica",
+"qid": "osm:Jamaica (island)",
+"sl": 14,
+"wiki": "Jamaica (island)"
+},
+{
+"aliases": [
+"Green Island, Taiwan",
+"綠島"
+],
+"label": "Green Island",
+"qid": "osm:Green Island, Taiwan",
+"sl": 14,
+"wiki": "Green Island, Taiwan"
+},
+{
+"aliases": [
+"Johnston Atoll"
+],
+"label": "Johnston Island",
+"qid": "osm:Johnston Atoll",
+"sl": 13,
+"wiki": "Johnston Atoll"
+},
+{
+"aliases": [],
+"label": "Canvey Island",
+"qid": "osm:Canvey Island",
+"sl": 13,
+"wiki": "Canvey Island"
+},
+{
+"aliases": [
+"St. Matthew Island"
+],
+"label": "Saint Matthew Island",
+"qid": "osm:St. Matthew Island",
+"sl": 13,
+"wiki": "St. Matthew Island"
+},
+{
+"aliases": [],
+"label": "Vancouver Island",
+"qid": "osm:Vancouver Island",
+"sl": 13,
+"wiki": "Vancouver Island"
+},
+{
+"aliases": [],
+"label": "Howland Island",
+"qid": "osm:Howland Island",
+"sl": 13,
+"wiki": "Howland Island"
+},
+{
+"aliases": [],
+"label": "North Sentinel Island",
+"qid": "osm:North Sentinel Island",
+"sl": 12,
+"wiki": "North Sentinel Island"
+},
+{
+"aliases": [
+"Orkney",
+"Mainland"
+],
+"label": "Mainland, Orkney",
+"qid": "osm:Mainland, Orkney",
+"sl": 12,
+"wiki": "Mainland, Orkney"
+},
+{
+"aliases": [],
+"label": "Prince Edward Island",
+"qid": "osm:Prince Edward Island",
+"sl": 12,
+"wiki": "Prince Edward Island"
+},
+{
+"aliases": [],
+"label": "Lastovo",
+"qid": "osm:Lastovo",
+"sl": 12,
+"wiki": "Lastovo"
+},
+{
+"aliases": [
+"Île de la Navasse / Navassa Island"
+],
+"label": "Navassa Island",
+"qid": "osm:Navassa Island",
+"sl": 12,
+"wiki": "Navassa Island"
+},
+{
+"aliases": [
+"Bunker Island"
+],
+"label": "Jarvis Island",
+"qid": "osm:Jarvis Island",
+"sl": 11,
+"wiki": "Jarvis Island"
+},
+{
+"aliases": [
+"Kemmuna"
+],
+"label": "Comino",
+"qid": "osm:Comino",
+"sl": 11,
+"wiki": "Comino"
+},
+{
+"aliases": [],
+"label": "Ross Island",
+"qid": "osm:Ross Island",
+"sl": 11,
+"wiki": "Ross Island"
+},
+{
+"aliases": [],
+"label": "Diego Garcia",
+"qid": "osm:Diego Garcia",
+"sl": 11,
+"wiki": "Diego Garcia"
+},
+{
+"aliases": [
+"Oahu"
+],
+"label": "Oʻahu",
+"qid": "osm:Oahu",
+"sl": 11,
+"wiki": "Oahu"
+},
+{
+"aliases": [],
+"label": "Prince of Wales Island",
+"qid": "osm:Prince of Wales Island (Alaska)",
+"sl": 11,
+"wiki": "Prince of Wales Island (Alaska)"
+},
+{
+"aliases": [
+"تيران"
+],
+"label": "Tiran Island",
+"qid": "osm:Tiran Island",
+"sl": 11,
+"wiki": "Tiran Island"
+},
+{
+"aliases": [
+"Guadalcanal"
+],
+"label": "Guadalcanal Island",
+"qid": "osm:Guadalcanal",
+"sl": 10,
+"wiki": "Guadalcanal"
+},
+{
+"aliases": [],
+"label": "Elephant Island",
+"qid": "osm:Elephant Island",
+"sl": 10,
+"wiki": "Elephant Island"
+},
+{
+"aliases": [
+"Hawaiʻi"
+],
+"label": "Hawaii",
+"qid": "osm:Hawaii",
+"sl": 10,
+"wiki": "Hawaii"
+},
+{
+"aliases": [
+"Nightingale Island"
+],
+"label": "Nightingale Islands",
+"qid": "osm:Nightingale Islands",
+"sl": 10,
+"wiki": "Nightingale Islands"
+},
+{
+"aliases": [
+"Manhattan Island"
+],
+"label": "Manhattan",
+"qid": "osm:Manhattan",
+"sl": 10,
+"wiki": "Manhattan"
+},
+{
+"aliases": [],
+"label": "New Britain",
+"qid": "osm:New Britain",
+"sl": 10,
+"wiki": "New Britain"
+},
+{
+"aliases": [],
+"label": "Tobago",
+"qid": "osm:Tobago",
+"sl": 10,
+"wiki": "Tobago"
+},
+{
+"aliases": [
+"جزیره کیش",
+"Kish Island"
+],
+"label": "Kish",
+"qid": "osm:Kish Island",
+"sl": 10,
+"wiki": "Kish Island"
+},
+{
+"aliases": [],
+"label": "Christmas Island",
+"qid": "osm:Christmas Island",
+"sl": 10,
+"wiki": "Christmas Island"
+},
+{
+"aliases": [],
+"label": "Asuncion Island",
+"qid": "osm:Asuncion Island",
+"sl": 10,
+"wiki": "Asuncion Island"
+},
+{
+"aliases": [],
+"label": "Dursey Island",
+"qid": "osm:Dursey Island",
+"sl": 10,
+"wiki": "Dursey Island"
+},
+{
+"aliases": [],
+"label": "West Burra",
+"qid": "osm:West Burra",
+"sl": 10,
+"wiki": "West Burra"
+},
+{
+"aliases": [],
+"label": "Likoma Island",
+"qid": "osm:Likoma Island",
+"sl": 9,
+"wiki": "Likoma Island"
+},
+{
+"aliases": [],
+"label": "Guam",
+"qid": "osm:Guam",
+"sl": 9,
+"wiki": "Guam"
+},
+{
+"aliases": [],
+"label": "Arorae",
+"qid": "osm:Arorae",
+"sl": 9,
+"wiki": "Arorae"
+},
+{
+"aliases": [],
+"label": "Kvitøya",
+"qid": "osm:Kvitøya",
+"sl": 9,
+"wiki": "Kvitøya"
+},
+{
+"aliases": [],
+"label": "Mindanao",
+"qid": "osm:Mindanao",
+"sl": 9,
+"wiki": "Mindanao"
+},
+{
+"aliases": [],
+"label": "Negros",
+"qid": "osm:Negros",
+"sl": 9,
+"wiki": "Negros"
+},
+{
+"aliases": [],
+"label": "South Andaman Island",
+"qid": "osm:South Andaman Island",
+"sl": 9,
+"wiki": "South Andaman Island"
+},
+{
+"aliases": [
+"ရမ်းဗြဲကျွန်း"
+],
+"label": "Ramree Island",
+"qid": "osm:Ramree Island",
+"sl": 9,
+"wiki": "Ramree Island"
+},
+{
+"aliases": [],
+"label": "Wake Island",
+"qid": "osm:Wake Island",
+"sl": 9,
+"wiki": "Wake Island"
+},
+{
+"aliases": [],
+"label": "Palawan",
+"qid": "osm:Palawan (island)",
+"sl": 8,
+"wiki": "Palawan (island)"
+},
+{
+"aliases": [
+"Havelock Island"
+],
+"label": "Havelock island",
+"qid": "osm:Havelock Island",
+"sl": 8,
+"wiki": "Havelock Island"
+},
+{
+"aliases": [],
+"label": "Berkner Island",
+"qid": "osm:Berkner Island",
+"sl": 8,
+"wiki": "Berkner Island"
+},
+{
+"aliases": [],
+"label": "Alexander Island",
+"qid": "osm:Alexander Island",
+"sl": 8,
+"wiki": "Alexander Island"
+},
+{
+"aliases": [],
+"label": "Adelaide Island",
+"qid": "osm:Adelaide Island",
+"sl": 8,
+"wiki": "Adelaide Island"
+},
+{
+"aliases": [],
+"label": "Kodiak Island",
+"qid": "osm:Kodiak Island",
+"sl": 8,
+"wiki": "Kodiak Island"
+},
+{
+"aliases": [
+"Pulau Buru",
+"Buru"
+],
+"label": "Buru Island",
+"qid": "osm:Buru",
+"sl": 8,
+"wiki": "Buru"
+},
+{
+"aliases": [],
+"label": "Trinidad",
+"qid": "osm:Trinidad",
+"sl": 8,
+"wiki": "Trinidad"
+},
+{
+"aliases": [],
+"label": "Edgeøya",
+"qid": "osm:Edgeøya",
+"sl": 8,
+"wiki": "Edgeøya"
+},
+{
+"aliases": [],
+"label": "Old Harry Rocks",
+"qid": "osm:Old Harry Rocks",
+"sl": 8,
+"wiki": "Old Harry Rocks"
+},
+{
+"aliases": [],
+"label": "Chatham Island",
+"qid": "osm:Chatham Island",
+"sl": 8,
+"wiki": "Chatham Island"
+},
+{
+"aliases": [],
+"label": "Gigha",
+"qid": "osm:Gigha",
+"sl": 8,
+"wiki": "Gigha"
+},
+{
+"aliases": [
+"Pulau Pinang"
+],
+"label": "Penang Island",
+"qid": "osm:Penang Island",
+"sl": 8,
+"wiki": "Penang Island"
+},
+{
+"aliases": [
+"Isla Ardley"
+],
+"label": "Ardley Island",
+"qid": "osm:Ardley Island",
+"sl": 8,
+"wiki": "Ardley Island"
+},
+{
+"aliases": [
+"Chizumulu"
+],
+"label": "Chizumulu Island",
+"qid": "osm:Chizumulu Island",
+"sl": 7,
+"wiki": "Chizumulu Island"
+},
+{
+"aliases": [],
+"label": "Thule Island",
+"qid": "osm:Thule Island",
+"sl": 7,
+"wiki": "Thule Island"
+},
+{
+"aliases": [
+"Paxi",
+"Παξός"
+],
+"label": "Paxos",
+"qid": "osm:Paxi",
+"sl": 7,
+"wiki": "Paxi"
+},
+{
+"aliases": [
+"Niʻihau"
+],
+"label": "Niihau",
+"qid": "osm:Niihau",
+"sl": 7,
+"wiki": "Niihau"
+},
+{
+"aliases": [
+"Kahoʻolawe"
+],
+"label": "Kahoolawe",
+"qid": "osm:Kahoʻolawe",
+"sl": 7,
+"wiki": "Kahoʻolawe"
+},
+{
+"aliases": [],
+"label": "Cornwallis Island",
+"qid": "osm:Cornwallis Island (Nunavut)",
+"sl": 7,
+"wiki": "Cornwallis Island (Nunavut)"
+},
+{
+"aliases": [
+"Mindoro Island"
+],
+"label": "Mindoro",
+"qid": "osm:Mindoro",
+"sl": 7,
+"wiki": "Mindoro"
+},
+{
+"aliases": [
+"ᑕᓪᓗᕈᑎᑦ - Devon Island - Île Devon"
+],
+"label": "Devon Island",
+"qid": "osm:Devon Island",
+"sl": 7,
+"wiki": "Devon Island"
+},
+{
+"aliases": [
+"Great Bermuda, Bermuda"
+],
+"label": "Main Island",
+"qid": "osm:Great Bermuda, Bermuda",
+"sl": 7,
+"wiki": "Great Bermuda, Bermuda"
+},
+{
+"aliases": [
+"Aotea / Great Barrier Island"
+],
+"label": "Great Barrier Island",
+"qid": "osm:Great Barrier Island",
+"sl": 7,
+"wiki": "Great Barrier Island"
+},
+{
+"aliases": [],
+"label": "Thurston Island",
+"qid": "osm:Thurston Island",
+"sl": 7,
+"wiki": "Thurston Island"
+},
+{
+"aliases": [],
+"label": "Anvers Island",
+"qid": "osm:Anvers Island",
+"sl": 7,
+"wiki": "Anvers Island"
+},
+{
+"aliases": [],
+"label": "Deception Island",
+"qid": "osm:Deception Island",
+"sl": 7,
+"wiki": "Deception Island"
+},
+{
+"aliases": [
+"Nusa Penida"
+],
+"label": "Penida Island",
+"qid": "osm:Nusa Penida",
+"sl": 7,
+"wiki": "Nusa Penida"
+},
+{
+"aliases": [
+"St. George's Island, Bermuda"
+],
+"label": "St. George's Island",
+"qid": "osm:St. George's Island, Bermuda",
+"sl": 7,
+"wiki": "St. George's Island, Bermuda"
+},
+{
+"aliases": [],
+"label": "Leyte",
+"qid": "osm:Leyte",
+"sl": 7,
+"wiki": "Leyte"
+},
+{
+"aliases": [],
+"label": "Maui",
+"qid": "osm:Maui",
+"sl": 7,
+"wiki": "Maui"
+},
+{
+"aliases": [],
+"label": "Admiralty Island",
+"qid": "osm:Admiralty Island",
+"sl": 7,
+"wiki": "Admiralty Island"
+},
+{
+"aliases": [],
+"label": "Long Island",
+"qid": "osm:Long Island",
+"sl": 7,
+"wiki": "Long Island"
+},
+{
+"aliases": [],
+"label": "Bylot Island",
+"qid": "osm:Bylot Island",
+"sl": 7,
+"wiki": "Bylot Island"
+},
+{
+"aliases": [
+"New Hanover Island"
+],
+"label": "New Hanover",
+"qid": "osm:New Hanover Island",
+"sl": 7,
+"wiki": "New Hanover Island"
+},
+{
+"aliases": [
+"جزيرة صنافير"
+],
+"label": "Sanafir Island",
+"qid": "osm:Sanafir Island",
+"sl": 7,
+"wiki": "Sanafir Island"
+},
+{
+"aliases": [],
+"label": "Manitoulin Island",
+"qid": "osm:Manitoulin Island",
+"sl": 7,
+"wiki": "Manitoulin Island"
+},
+{
+"aliases": [],
+"label": "Swallow Reef",
+"qid": "osm:Swallow Reef",
+"sl": 7,
+"wiki": "Swallow Reef"
+},
+{
+"aliases": [
+"Saint Christopher"
+],
+"label": "Saint Kitts",
+"qid": "osm:Saint Kitts",
+"sl": 7,
+"wiki": "Saint Kitts"
+},
+{
+"aliases": [
+"Walney Island"
+],
+"label": "Isle of Walney",
+"qid": "osm:Walney Island",
+"sl": 7,
+"wiki": "Walney Island"
+},
+{
+"aliases": [
+"ᕿᑭᖅᑕᕐᔪᐊᖅ Brevoort Island"
+],
+"label": "Brevoort Island",
+"qid": "osm:Brevoort Island",
+"sl": 7,
+"wiki": "Brevoort Island"
+},
+{
+"aliases": [
+"Fraser Island"
+],
+"label": "K'gari",
+"qid": "osm:Fraser Island",
+"sl": 7,
+"wiki": "Fraser Island"
+},
+{
+"aliases": [
+"Te Hauturu-o-Toi / Little Barrier Island"
+],
+"label": "Little Barrier Island",
+"qid": "osm:Little Barrier Island",
+"sl": 7,
+"wiki": "Little Barrier Island"
+},
+{
+"aliases": [
+"Pulau Sebatik"
+],
+"label": "Sebatik Island",
+"qid": "osm:Sebatik Island",
+"sl": 7,
+"wiki": "Sebatik Island"
+},
+{
+"aliases": [
+"Bougainville Island"
+],
+"label": "Bougainville",
+"qid": "osm:Bougainville Island",
+"sl": 7,
+"wiki": "Bougainville Island"
+},
+{
+"aliases": [
+"Agrigan"
+],
+"label": "Agrihan",
+"qid": "osm:Agrihan",
+"sl": 7,
+"wiki": "Agrihan"
+},
+{
+"aliases": [
+"เกาะสมุย",
+"Koh Samui"
+],
+"label": "Ko Samui",
+"qid": "osm:Ko Samui",
+"sl": 7,
+"wiki": "Ko Samui"
+},
+{
+"aliases": [
+"جزر الديمانيات",
+"Ad Dimaniyat Islands"
+],
+"label": "Dimaniyat Islands",
+"qid": "osm:Ad Dimaniyat Islands",
+"sl": 7,
+"wiki": "Ad Dimaniyat Islands"
+},
+{
+"aliases": [
+"Elephantine",
+"جزيرة ألفنتين"
+],
+"label": "Elephantine Island",
+"qid": "osm:Elephantine",
+"sl": 6,
+"wiki": "Elephantine"
+},
+{
+"aliases": [
+"Neduntheevu"
+],
+"label": "Nedunthivu",
+"qid": "osm:Neduntheevu",
+"sl": 6,
+"wiki": "Neduntheevu"
+},
+{
+"aliases": [
+"Île Uvéa",
+"Wallis Island"
+],
+"label": "Wallis",
+"qid": "osm:Wallis (island)",
+"sl": 6,
+"wiki": "Wallis (island)"
+},
+{
+"aliases": [],
+"label": "Henderson Island",
+"qid": "osm:Henderson Island (Pitcairn Islands)",
+"sl": 6,
+"wiki": "Henderson Island (Pitcairn Islands)"
+},
+{
+"aliases": [
+"Isla Saona"
+],
+"label": "Saona Island",
+"qid": "osm:Saona Island",
+"sl": 6,
+"wiki": "Saona Island"
+},
+{
+"aliases": [],
+"label": "Bellingshausen Island",
+"qid": "osm:Bellingshausen Island",
+"sl": 6,
+"wiki": "Bellingshausen Island"
+},
+{
+"aliases": [],
+"label": "Calf of Man",
+"qid": "osm:Calf of Man",
+"sl": 6,
+"wiki": "Calf of Man"
+},
+{
+"aliases": [
+"Остров Родшер"
+],
+"label": "Rodsher",
+"qid": "osm:Rodsher",
+"sl": 6,
+"wiki": "Rodsher"
+},
+{
+"aliases": [
+"Kavaratti Island"
+],
+"label": "Kavaratti",
+"qid": "osm:Kavaratti",
+"sl": 6,
+"wiki": "Kavaratti"
+},
+{
+"aliases": [],
+"label": "Danco Island",
+"qid": "osm:Danco Island",
+"sl": 6,
+"wiki": "Danco Island"
+},
+{
+"aliases": [],
+"label": "Bristol Island",
+"qid": "osm:Bristol Island",
+"sl": 6,
+"wiki": "Bristol Island"
+},
+{
+"aliases": [
+"Hilbre Islands"
+],
+"label": "Hilbre Island",
+"qid": "osm:Hilbre Islands",
+"sl": 6,
+"wiki": "Hilbre Islands"
+},
+{
+"aliases": [
+"Barraigh"
+],
+"label": "Barra",
+"qid": "osm:Barra",
+"sl": 6,
+"wiki": "Barra"
+},
+{
+"aliases": [
+"Uibhist a Deas"
+],
+"label": "South Uist",
+"qid": "osm:South Uist",
+"sl": 6,
+"wiki": "South Uist"
+},
+{
+"aliases": [],
+"label": "Boracay",
+"qid": "osm:Boracay",
+"sl": 6,
+"wiki": "Boracay"
+},
+{
+"aliases": [
+"Molokaʻi"
+],
+"label": "Molokai",
+"qid": "osm:Molokaʻi",
+"sl": 6,
+"wiki": "Molokaʻi"
+},
+{
+"aliases": [],
+"label": "Attu Island",
+"qid": "osm:Attu Island",
+"sl": 6,
+"wiki": "Attu Island"
+},
+{
+"aliases": [],
+"label": "Governors Island",
+"qid": "osm:Governors Island",
+"sl": 6,
+"wiki": "Governors Island"
+},
+{
+"aliases": [],
+"label": "Gerlache Island",
+"qid": "osm:Gerlache Island",
+"sl": 6,
+"wiki": "Gerlache Island"
+},
+{
+"aliases": [
+"Kauaʻi"
+],
+"label": "Kauai",
+"qid": "osm:Kauai",
+"sl": 6,
+"wiki": "Kauai"
+},
+{
+"aliases": [],
+"label": "Thursday Island",
+"qid": "osm:Thursday Island",
+"sl": 6,
+"wiki": "Thursday Island"
+},
+{
+"aliases": [
+"Île d'Anticosti"
+],
+"label": "Anticosti Island",
+"qid": "osm:Anticosti Island",
+"sl": 6,
+"wiki": "Anticosti Island"
+},
+{
+"aliases": [
+"ᓴᓪᓕᖅ - Southampton Island - Île de Southampton"
+],
+"label": "Southampton Island",
+"qid": "osm:Southampton Island",
+"sl": 6,
+"wiki": "Southampton Island"
+},
+{
+"aliases": [
+"جزيرة المصيرة",
+"Masirah Island"
+],
+"label": "Al Masira",
+"qid": "osm:Masirah Island",
+"sl": 6,
+"wiki": "Masirah Island"
+},
+{
+"aliases": [],
+"label": "Tortola",
+"qid": "osm:Tortola",
+"sl": 6,
+"wiki": "Tortola"
+},
+{
+"aliases": [
+"Coney Island, Singapore"
+],
+"label": "Coney Island",
+"qid": "osm:Coney Island, Singapore",
+"sl": 6,
+"wiki": "Coney Island, Singapore"
+},
+{
+"aliases": [],
+"label": "Nevis",
+"qid": "osm:Nevis",
+"sl": 6,
+"wiki": "Nevis"
+},
+{
+"aliases": [],
+"label": "Lubang Island",
+"qid": "osm:Lubang Island",
+"sl": 6,
+"wiki": "Lubang Island"
+},
+{
+"aliases": [],
+"label": "Pitcairn Island",
+"qid": "osm:Pitcairn Island",
+"sl": 6,
+"wiki": "Pitcairn Island"
+},
+{
+"aliases": [],
+"label": "Mahé",
+"qid": "osm:Mahé",
+"sl": 6,
+"wiki": "Mahé"
+},
+{
+"aliases": [],
+"label": "Sentosa",
+"qid": "osm:Sentosa",
+"sl": 6,
+"wiki": "Sentosa"
+},
+{
+"aliases": [
+"Ada Bojana - Ada e Bunës"
+],
+"label": "Ada Bojana",
+"qid": "osm:Ada Bojana",
+"sl": 6,
+"wiki": "Ada Bojana"
+},
+{
+"aliases": [
+"Île Futuna"
+],
+"label": "Futuna",
+"qid": "osm:Futuna (Wallis and Futuna)",
+"sl": 6,
+"wiki": "Futuna (Wallis and Futuna)"
+},
+{
+"aliases": [],
+"label": "Fergusson Island",
+"qid": "osm:Fergusson Island",
+"sl": 6,
+"wiki": "Fergusson Island"
+},
+{
+"aliases": [],
+"label": "Eday",
+"qid": "osm:Eday",
+"sl": 6,
+"wiki": "Eday"
+},
+{
+"aliases": [
+"Èirisgeigh"
+],
+"label": "Eriskay",
+"qid": "osm:Eriskay",
+"sl": 6,
+"wiki": "Eriskay"
+},
+{
+"aliases": [
+"جزيرة الملك فهد",
+"Middle Island",
+"Passport Island"
+],
+"label": "King Fahd Passport Island",
+"qid": "osm:Passport Island",
+"sl": 6,
+"wiki": "Passport Island"
+},
+{
+"aliases": [
+"St Patrick's Isle"
+],
+"label": "Saint Patrick's Isle",
+"qid": "osm:St Patrick's Isle",
+"sl": 5,
+"wiki": "St Patrick's Isle"
+},
+{
+"aliases": [],
+"label": "Eynhallow",
+"qid": "osm:Eynhallow",
+"sl": 5,
+"wiki": "Eynhallow"
+},
+{
+"aliases": [],
+"label": "North Ronaldsay",
+"qid": "osm:North Ronaldsay",
+"sl": 5,
+"wiki": "North Ronaldsay"
+},
+{
+"aliases": [],
+"label": "Papa Westray",
+"qid": "osm:Papa Westray",
+"sl": 5,
+"wiki": "Papa Westray"
+},
+{
+"aliases": [],
+"label": "Pulau Brani",
+"qid": "osm:Pulau Brani",
+"sl": 5,
+"wiki": "Pulau Brani"
+},
+{
+"aliases": [
+"Oransay",
+"Oronsay, Colonsay"
+],
+"label": "Oronsay",
+"qid": "osm:Oronsay, Colonsay",
+"sl": 5,
+"wiki": "Oronsay, Colonsay"
+},
+{
+"aliases": [
+"Cook Island"
+],
+"label": "Cook Island, South Sandwich Islands",
+"qid": "osm:Cook Island, South Sandwich Islands",
+"sl": 5,
+"wiki": "Cook Island, South Sandwich Islands"
+},
+{
+"aliases": [
+"Eagle Islands"
+],
+"label": "Eagle Island",
+"qid": "osm:Eagle Islands",
+"sl": 5,
+"wiki": "Eagle Islands"
+},
+{
+"aliases": [],
+"label": "Davidof Island",
+"qid": "osm:Davidof Island",
+"sl": 5,
+"wiki": "Davidof Island"
+},
+{
+"aliases": [
+"Banaba"
+],
+"label": "Banaba Island",
+"qid": "osm:Banaba Island",
+"sl": 5,
+"wiki": "Banaba Island"
+},
+{
+"aliases": [],
+"label": "Drake's Island",
+"qid": "osm:Drake's Island",
+"sl": 5,
+"wiki": "Drake's Island"
+},
+{
+"aliases": [],
+"label": "Goodenough Island",
+"qid": "osm:Goodenough Island",
+"sl": 5,
+"wiki": "Goodenough Island"
+},
+{
+"aliases": [
+"Saunders Island"
+],
+"label": "Saunders Island, South Sandwich Islands",
+"qid": "osm:Saunders Island, South Sandwich Islands",
+"sl": 5,
+"wiki": "Saunders Island, South Sandwich Islands"
+},
+{
+"aliases": [],
+"label": "Montagu Island",
+"qid": "osm:Montagu Island",
+"sl": 5,
+"wiki": "Montagu Island"
+},
+{
+"aliases": [
+"Ogurjaly adasy"
+],
+"label": "Ogurja Ada",
+"qid": "osm:Ogurja Ada",
+"sl": 5,
+"wiki": "Ogurja Ada"
+},
+{
+"aliases": [
+"Lānaʻi"
+],
+"label": "Lanai",
+"qid": "osm:Lanai",
+"sl": 5,
+"wiki": "Lanai"
+},
+{
+"aliases": [
+"South Rona"
+],
+"label": "Rona",
+"qid": "osm:South Rona",
+"sl": 5,
+"wiki": "South Rona"
+},
+{
+"aliases": [],
+"label": "Brock Island",
+"qid": "osm:Brock Island",
+"sl": 5,
+"wiki": "Brock Island"
+},
+{
+"aliases": [],
+"label": "Mackenzie King Island",
+"qid": "osm:Mackenzie King Island",
+"sl": 5,
+"wiki": "Mackenzie King Island"
+},
+{
+"aliases": [],
+"label": "Eigg",
+"qid": "osm:Eigg",
+"sl": 5,
+"wiki": "Eigg"
+},
+{
+"aliases": [
+"Savāiʻi"
+],
+"label": "Savaiʻi",
+"qid": "osm:Savaiʻi",
+"sl": 5,
+"wiki": "Savaiʻi"
+},
+{
+"aliases": [],
+"label": "Robben Island",
+"qid": "osm:Robben Island",
+"sl": 5,
+"wiki": "Robben Island"
+},
+{
+"aliases": [],
+"label": "Waiheke Island",
+"qid": "osm:Waiheke Island",
+"sl": 5,
+"wiki": "Waiheke Island"
+},
+{
+"aliases": [
+"Pulau Tarakan"
+],
+"label": "Tarakan Island",
+"qid": "osm:Tarakan Island",
+"sl": 5,
+"wiki": "Tarakan Island"
+},
+{
+"aliases": [],
+"label": "Livingston Island",
+"qid": "osm:Livingston Island",
+"sl": 5,
+"wiki": "Livingston Island"
+},
+{
+"aliases": [],
+"label": "Brabant Island",
+"qid": "osm:Brabant Island",
+"sl": 5,
+"wiki": "Brabant Island"
+},
+{
+"aliases": [],
+"label": "Snow Island",
+"qid": "osm:Snow Island (South Shetland Islands)",
+"sl": 5,
+"wiki": "Snow Island (South Shetland Islands)"
+},
+{
+"aliases": [
+"Sanday, Orkney"
+],
+"label": "Sanday",
+"qid": "osm:Sanday, Orkney",
+"sl": 5,
+"wiki": "Sanday, Orkney"
+},
+{
+"aliases": [],
+"label": "Sturge Island",
+"qid": "osm:Sturge Island",
+"sl": 5,
+"wiki": "Sturge Island"
+},
+{
+"aliases": [],
+"label": "Westray",
+"qid": "osm:Westray",
+"sl": 5,
+"wiki": "Westray"
+},
+{
+"aliases": [],
+"label": "South Ronaldsay",
+"qid": "osm:South Ronaldsay",
+"sl": 5,
+"wiki": "South Ronaldsay"
+},
+{
+"aliases": [
+"Jolo"
+],
+"label": "Jolo Island",
+"qid": "osm:Jolo",
+"sl": 5,
+"wiki": "Jolo"
+},
+{
+"aliases": [],
+"label": "Martha's Vineyard",
+"qid": "osm:Martha's Vineyard",
+"sl": 5,
+"wiki": "Martha's Vineyard"
+},
+{
+"aliases": [
+"ᐊᑉᐸᑑᕐᔪᐊᖅ - Coats Island - Île de Coats"
+],
+"label": "Coats Island",
+"qid": "osm:Coats Island",
+"sl": 5,
+"wiki": "Coats Island"
+},
+{
+"aliases": [],
+"label": "Mornington Island",
+"qid": "osm:Mornington Island",
+"sl": 5,
+"wiki": "Mornington Island"
+},
+{
+"aliases": [],
+"label": "Cornwallis Island",
+"qid": "osm:Cornwallis Island (South Shetland Islands)",
+"sl": 5,
+"wiki": "Cornwallis Island (South Shetland Islands)"
+},
+{
+"aliases": [
+"Ilha do Corvo"
+],
+"label": "Corvo Island",
+"qid": "osm:Corvo Island",
+"sl": 5,
+"wiki": "Corvo Island"
+},
+{
+"aliases": [
+"Diu Island"
+],
+"label": "Diu",
+"qid": "osm:Diu Island",
+"sl": 5,
+"wiki": "Diu Island"
+},
+{
+"aliases": [],
+"label": "Mersea Island",
+"qid": "osm:Mersea Island",
+"sl": 5,
+"wiki": "Mersea Island"
+},
+{
+"aliases": [],
+"label": "Karmøy",
+"qid": "osm:Karmøy (island)",
+"sl": 5,
+"wiki": "Karmøy (island)"
+},
+{
+"aliases": [
+"เกาะปอดะ",
+"Ko Poda"
+],
+"label": "Poda",
+"qid": "osm:Ko Poda",
+"sl": 5,
+"wiki": "Ko Poda"
+},
+{
+"aliases": [],
+"label": "New Providence",
+"qid": "osm:New Providence",
+"sl": 5,
+"wiki": "New Providence"
+},
+{
+"aliases": [
+"Taliabu",
+"Pulau Taliabu"
+],
+"label": "Taliabu Island",
+"qid": "osm:Taliabu",
+"sl": 5,
+"wiki": "Taliabu"
+},
+{
+"aliases": [],
+"label": "Rottnest Island",
+"qid": "osm:Rottnest Island",
+"sl": 5,
+"wiki": "Rottnest Island"
+},
+{
+"aliases": [],
+"label": "North Andaman Island",
+"qid": "osm:North Andaman Island",
+"sl": 5,
+"wiki": "North Andaman Island"
+},
+{
+"aliases": [],
+"label": "Balabac Island",
+"qid": "osm:Balabac Island",
+"sl": 5,
+"wiki": "Balabac Island"
+},
+{
+"aliases": [
+"جزيرة شدون",
+"Shadwan Island"
+],
+"label": "Geziret Shadwan",
+"qid": "osm:Shadwan Island",
+"sl": 5,
+"wiki": "Shadwan Island"
+},
+{
+"aliases": [],
+"label": "Nusa Lembongan",
+"qid": "osm:Nusa Lembongan",
+"sl": 5,
+"wiki": "Nusa Lembongan"
+},
+{
+"aliases": [
+"Pulau Semakau"
+],
+"label": "Semakau Island",
+"qid": "osm:Pulau Semakau",
+"sl": 5,
+"wiki": "Pulau Semakau"
+},
+{
+"aliases": [
+"Stari Ulcinj"
+],
+"label": "Old Ulcinj",
+"qid": "osm:Old Ulcinj",
+"sl": 5,
+"wiki": "Old Ulcinj"
+},
+{
+"aliases": [
+"Isla de Cedros"
+],
+"label": "Cedros Island",
+"qid": "osm:Cedros Island",
+"sl": 5,
+"wiki": "Cedros Island"
+},
+{
+"aliases": [
+"Franklin Ø"
+],
+"label": "Franklin Island",
+"qid": "osm:Franklin Island (Greenland)",
+"sl": 5,
+"wiki": "Franklin Island (Greenland)"
+},
+{
+"aliases": [],
+"label": "Stronsay",
+"qid": "osm:Stronsay",
+"sl": 5,
+"wiki": "Stronsay"
+},
+{
+"aliases": [
+"Paşalimanı Adası"
+],
+"label": "Paşalimanı",
+"qid": "osm:Paşalimanı",
+"sl": 5,
+"wiki": "Paşalimanı"
+},
+{
+"aliases": [],
+"label": "Rousay",
+"qid": "osm:Rousay",
+"sl": 5,
+"wiki": "Rousay"
+},
+{
+"aliases": [
+"St. David's Island, Bermuda"
+],
+"label": "St. David's Island",
+"qid": "osm:St. David's Island, Bermuda",
+"sl": 5,
+"wiki": "St. David's Island, Bermuda"
+},
+{
+"aliases": [],
+"label": "Oeno Island",
+"qid": "osm:Oeno Island",
+"sl": 5,
+"wiki": "Oeno Island"
+},
+{
+"aliases": [
+"Terumbu Siput"
+],
+"label": "Erica Reef",
+"qid": "osm:Erica Reef",
+"sl": 5,
+"wiki": "Erica Reef"
+},
+{
+"aliases": [
+"Yılan Adası",
+"Yılan Island"
+],
+"label": "Snake Island",
+"qid": "osm:Yılan Island",
+"sl": 4,
+"wiki": "Yılan Island"
+},
+{
+"aliases": [],
+"label": "Inishtrahull",
+"qid": "osm:Inishtrahull",
+"sl": 4,
+"wiki": "Inishtrahull"
+},
+{
+"aliases": [],
+"label": "Egilsay",
+"qid": "osm:Egilsay",
+"sl": 4,
+"wiki": "Egilsay"
+},
+{
+"aliases": [],
+"label": "Papa Stronsay",
+"qid": "osm:Papa Stronsay",
+"sl": 4,
+"wiki": "Papa Stronsay"
+},
+{
+"aliases": [
+"Pulau Jerejak"
+],
+"label": "Jerejak Island",
+"qid": "osm:Jerejak Island",
+"sl": 4,
+"wiki": "Jerejak Island"
+},
+{
+"aliases": [
+"Mavulis"
+],
+"label": "Mavulis Island",
+"qid": "osm:Mavulis Island",
+"sl": 4,
+"wiki": "Mavulis Island"
+},
+{
+"aliases": [],
+"label": "Whalsay",
+"qid": "osm:Whalsay",
+"sl": 4,
+"wiki": "Whalsay"
+},
+{
+"aliases": [
+"Kaula Rock",
+"Kaʻula"
+],
+"label": "Kaʻula Island",
+"qid": "osm:Kaʻula",
+"sl": 4,
+"wiki": "Kaʻula"
+},
+{
+"aliases": [],
+"label": "Amatignak Island",
+"qid": "osm:Amatignak Island",
+"sl": 4,
+"wiki": "Amatignak Island"
+},
+{
+"aliases": [
+"Île Alofi"
+],
+"label": "Alofi Island",
+"qid": "osm:Alofi Island",
+"sl": 4,
+"wiki": "Alofi Island"
+},
+{
+"aliases": [],
+"label": "Segula Island",
+"qid": "osm:Segula Island",
+"sl": 4,
+"wiki": "Segula Island"
+},
+{
+"aliases": [],
+"label": "Pulau Bukom",
+"qid": "osm:Pulau Bukom",
+"sl": 4,
+"wiki": "Pulau Bukom"
+},
+{
+"aliases": [
+"เกาะเต่า",
+"Koh Tao"
+],
+"label": "Ko Tao",
+"qid": "osm:Ko Tao",
+"sl": 4,
+"wiki": "Ko Tao"
+},
+{
+"aliases": [
+"Koh Samet;Koh Samed",
+"Ko_Samet",
+"เกาะเสม็ด"
+],
+"label": "Ko Samet",
+"qid": "osm:Ko_Samet",
+"sl": 4,
+"wiki": "Ko_Samet"
+},
+{
+"aliases": [
+"Watoa Island"
+],
+"label": "Dobu Island",
+"qid": "osm:Dobu Island",
+"sl": 4,
+"wiki": "Dobu Island"
+},
+{
+"aliases": [
+"Analaitivu"
+],
+"label": "Analativu",
+"qid": "osm:Analaitivu",
+"sl": 4,
+"wiki": "Analaitivu"
+},
+{
+"aliases": [
+"Danger Island, Great Chagos Bank"
+],
+"label": "Danger Island",
+"qid": "osm:Danger Island, Great Chagos Bank",
+"sl": 4,
+"wiki": "Danger Island, Great Chagos Bank"
+},
+{
+"aliases": [],
+"label": "Pulau Pawai",
+"qid": "osm:Pulau Pawai",
+"sl": 4,
+"wiki": "Pulau Pawai"
+},
+{
+"aliases": [],
+"label": "Khvostof Island",
+"qid": "osm:Khvostof Island",
+"sl": 4,
+"wiki": "Khvostof Island"
+},
+{
+"aliases": [
+"Pulau Mabul"
+],
+"label": "Mabul Island",
+"qid": "osm:Mabul Island",
+"sl": 4,
+"wiki": "Mabul Island"
+},
+{
+"aliases": [],
+"label": "Chicken Rock",
+"qid": "osm:Chicken Rock",
+"sl": 4,
+"wiki": "Chicken Rock"
+},
+{
+"aliases": [
+"ފުވައްމުލައް"
+],
+"label": "Fuvahmulah",
+"qid": "osm:Fuvahmulah",
+"sl": 4,
+"wiki": "Fuvahmulah"
+},
+{
+"aliases": [],
+"label": "Esperanto Island",
+"qid": "osm:Esperanto Island",
+"sl": 4,
+"wiki": "Esperanto Island"
+},
+{
+"aliases": [],
+"label": "Visokoi Island",
+"qid": "osm:Visokoi Island",
+"sl": 4,
+"wiki": "Visokoi Island"
+},
+{
+"aliases": [
+"ފޮނަދޫ"
+],
+"label": "Fonadhoo",
+"qid": "osm:Fonadhoo (Laamu Atoll)",
+"sl": 4,
+"wiki": "Fonadhoo (Laamu Atoll)"
+},
+{
+"aliases": [
+"Pulau Pangkor"
+],
+"label": "Pangkor Island",
+"qid": "osm:Pangkor Island",
+"sl": 4,
+"wiki": "Pangkor Island"
+},
+{
+"aliases": [
+"Isle de Jean Charles, Louisiana"
+],
+"label": "Isle de Jean Charles",
+"qid": "osm:Isle de Jean Charles, Louisiana",
+"sl": 4,
+"wiki": "Isle de Jean Charles, Louisiana"
+},
+{
+"aliases": [
+"Nīhoa"
+],
+"label": "Nihoa Island",
+"qid": "osm:Nīhoa",
+"sl": 4,
+"wiki": "Nīhoa"
+},
+{
+"aliases": [],
+"label": "Ailsa Craig",
+"qid": "osm:Ailsa Craig",
+"sl": 4,
+"wiki": "Ailsa Craig"
+},
+{
+"aliases": [],
+"label": "Vostok Island",
+"qid": "osm:Vostok Island",
+"sl": 4,
+"wiki": "Vostok Island"
+},
+{
+"aliases": [
+"Sanday, Inner Hebrides"
+],
+"label": "Sanday",
+"qid": "osm:Sanday, Inner Hebrides",
+"sl": 4,
+"wiki": "Sanday, Inner Hebrides"
+},
+{
+"aliases": [],
+"label": "Tutuila",
+"qid": "osm:Tutuila",
+"sl": 4,
+"wiki": "Tutuila"
+},
+{
+"aliases": [],
+"label": "Lord Howe Island",
+"qid": "osm:Lord Howe Island",
+"sl": 4,
+"wiki": "Lord Howe Island"
+},
+{
+"aliases": [
+"Uibhist a Tuath"
+],
+"label": "North Uist",
+"qid": "osm:North Uist",
+"sl": 4,
+"wiki": "North Uist"
+},
+{
+"aliases": [
+"Arkoi",
+"Αρκοί"
+],
+"label": "Arki",
+"qid": "osm:Arkoi",
+"sl": 4,
+"wiki": "Arkoi"
+},
+{
+"aliases": [
+"Αρμάθια"
+],
+"label": "Armathia",
+"qid": "osm:Armathia",
+"sl": 4,
+"wiki": "Armathia"
+},
+{
+"aliases": [],
+"label": "Rùm",
+"qid": "osm:Rùm",
+"sl": 4,
+"wiki": "Rùm"
+},
+{
+"aliases": [
+"Scalpay, Outer Hebrides",
+"Scalpaigh"
+],
+"label": "Scalpay",
+"qid": "osm:Scalpay, Outer Hebrides",
+"sl": 4,
+"wiki": "Scalpay, Outer Hebrides"
+},
+{
+"aliases": [],
+"label": "Saint Paul Island",
+"qid": "osm:Saint Paul Island (Alaska)",
+"sl": 4,
+"wiki": "Saint Paul Island (Alaska)"
+},
+{
+"aliases": [
+"Kiska"
+],
+"label": "Kiska Island",
+"qid": "osm:Kiska",
+"sl": 4,
+"wiki": "Kiska"
+},
+{
+"aliases": [
+"Amchitka"
+],
+"label": "Amchitka Island",
+"qid": "osm:Amchitka",
+"sl": 4,
+"wiki": "Amchitka"
+},
+{
+"aliases": [],
+"label": "Semisopochnoi Island",
+"qid": "osm:Semisopochnoi Island",
+"sl": 4,
+"wiki": "Semisopochnoi Island"
+},
+{
+"aliases": [
+"Ψωμί"
+],
+"label": "Psomi",
+"qid": "osm:Psomi",
+"sl": 4,
+"wiki": "Psomi"
+},
+{
+"aliases": [],
+"label": "Borden Island",
+"qid": "osm:Borden Island",
+"sl": 4,
+"wiki": "Borden Island"
+},
+{
+"aliases": [],
+"label": "Bathurst Island",
+"qid": "osm:Bathurst Island (Nunavut)",
+"sl": 4,
+"wiki": "Bathurst Island (Nunavut)"
+},
+{
+"aliases": [],
+"label": "Raasay",
+"qid": "osm:Raasay",
+"sl": 4,
+"wiki": "Raasay"
+},
+{
+"aliases": [],
+"label": "Graham Island",
+"qid": "osm:Graham Island",
+"sl": 4,
+"wiki": "Graham Island"
+},
+{
+"aliases": [],
+"label": "Raoul Island",
+"qid": "osm:Raoul Island",
+"sl": 4,
+"wiki": "Raoul Island"
+},
+{
+"aliases": [
+"Campbell Island / Motu Ihupuku"
+],
+"label": "Campbell Island, New Zealand",
+"qid": "osm:Campbell Island, New Zealand",
+"sl": 4,
+"wiki": "Campbell Island, New Zealand"
+},
+{
+"aliases": [],
+"label": "Auckland Island",
+"qid": "osm:Auckland Island",
+"sl": 4,
+"wiki": "Auckland Island"
+},
+{
+"aliases": [],
+"label": "Rangitoto Island",
+"qid": "osm:Rangitoto Island",
+"sl": 4,
+"wiki": "Rangitoto Island"
+},
+{
+"aliases": [
+"Beàrnaraigh"
+],
+"label": "Berneray",
+"qid": "osm:Berneray (North Uist)",
+"sl": 4,
+"wiki": "Berneray (North Uist)"
+},
+{
+"aliases": [
+"Roosevelt Island, Antarctica"
+],
+"label": "Roosevelt Island",
+"qid": "osm:Roosevelt Island, Antarctica",
+"sl": 4,
+"wiki": "Roosevelt Island, Antarctica"
+},
+{
+"aliases": [],
+"label": "Andersson Island",
+"qid": "osm:Andersson Island",
+"sl": 4,
+"wiki": "Andersson Island"
+},
+{
+"aliases": [],
+"label": "Clarence Island",
+"qid": "osm:Clarence Island (South Shetland Islands)",
+"sl": 4,
+"wiki": "Clarence Island (South Shetland Islands)"
+},
+{
+"aliases": [],
+"label": "Dundee Island",
+"qid": "osm:Dundee Island",
+"sl": 4,
+"wiki": "Dundee Island"
+},
+{
+"aliases": [],
+"label": "Greenwich Island",
+"qid": "osm:Greenwich Island",
+"sl": 4,
+"wiki": "Greenwich Island"
+},
+{
+"aliases": [],
+"label": "James Ross Island",
+"qid": "osm:James Ross Island",
+"sl": 4,
+"wiki": "James Ross Island"
+},
+{
+"aliases": [],
+"label": "Robert Island",
+"qid": "osm:Robert Island",
+"sl": 4,
+"wiki": "Robert Island"
+},
+{
+"aliases": [
+"Isla Vega"
+],
+"label": "Vega Island",
+"qid": "osm:Vega Island",
+"sl": 4,
+"wiki": "Vega Island"
+},
+{
+"aliases": [],
+"label": "Low Island",
+"qid": "osm:Low Island (South Shetland Islands)",
+"sl": 4,
+"wiki": "Low Island (South Shetland Islands)"
+},
+{
+"aliases": [],
+"label": "Smith Island",
+"qid": "osm:Smith Island (South Shetland Islands)",
+"sl": 4,
+"wiki": "Smith Island (South Shetland Islands)"
+},
+{
+"aliases": [],
+"label": "Doumer Island",
+"qid": "osm:Doumer Island",
+"sl": 4,
+"wiki": "Doumer Island"
+},
+{
+"aliases": [],
+"label": "Nansen Island",
+"qid": "osm:Nansen Island",
+"sl": 4,
+"wiki": "Nansen Island"
+},
+{
+"aliases": [],
+"label": "Hearst Island",
+"qid": "osm:Hearst Island",
+"sl": 4,
+"wiki": "Hearst Island"
+},
+{
+"aliases": [],
+"label": "Buckle Island",
+"qid": "osm:Buckle Island",
+"sl": 4,
+"wiki": "Buckle Island"
+},
+{
+"aliases": [],
+"label": "Coronation Island",
+"qid": "osm:Coronation Island",
+"sl": 4,
+"wiki": "Coronation Island"
+},
+{
+"aliases": [
+"Langkawi",
+"Pulau Langkawi"
+],
+"label": "Langkawi Island",
+"qid": "osm:Langkawi",
+"sl": 4,
+"wiki": "Langkawi"
+},
+{
+"aliases": [],
+"label": "Isle Royale",
+"qid": "osm:Isle Royale",
+"sl": 4,
+"wiki": "Isle Royale"
+},
+{
+"aliases": [],
+"label": "Aquidneck Island",
+"qid": "osm:Aquidneck Island",
+"sl": 4,
+"wiki": "Aquidneck Island"
+},
+{
+"aliases": [],
+"label": "Nunivak Island",
+"qid": "osm:Nunivak Island",
+"sl": 4,
+"wiki": "Nunivak Island"
+},
+{
+"aliases": [],
+"label": "Baranof Island",
+"qid": "osm:Baranof Island",
+"sl": 4,
+"wiki": "Baranof Island"
+},
+{
+"aliases": [],
+"label": "Groote Eylandt",
+"qid": "osm:Groote Eylandt",
+"sl": 4,
+"wiki": "Groote Eylandt"
+},
+{
+"aliases": [
+"Tinian"
+],
+"label": "Tinian Island",
+"qid": "osm:Tinian",
+"sl": 4,
+"wiki": "Tinian"
+},
+{
+"aliases": [],
+"label": "Rugged Island",
+"qid": "osm:Rugged Island (South Shetland Islands)",
+"sl": 4,
+"wiki": "Rugged Island (South Shetland Islands)"
+},
+{
+"aliases": [
+"西之島"
+],
+"label": "Nishinoshima",
+"qid": "osm:Nishinoshima (Ogasawara)",
+"sl": 4,
+"wiki": "Nishinoshima (Ogasawara)"
+},
+{
+"aliases": [],
+"label": "Polillo Island",
+"qid": "osm:Polillo Island",
+"sl": 4,
+"wiki": "Polillo Island"
+},
+{
+"aliases": [],
+"label": "Saint Croix",
+"qid": "osm:Saint Croix",
+"sl": 4,
+"wiki": "Saint Croix"
+},
+{
+"aliases": [
+"Pitt Island (Rangiauria)"
+],
+"label": "Pitt Island",
+"qid": "osm:Pitt Island",
+"sl": 4,
+"wiki": "Pitt Island"
+},
+{
+"aliases": [
+"ᑲᐳᐃᕖᑦ Jens Munk Island - Ile Jens Munk"
+],
+"label": "Jens Munk Island",
+"qid": "osm:Jens Munk Island",
+"sl": 4,
+"wiki": "Jens Munk Island"
+},
+{
+"aliases": [
+"ᐳᔾᔪᓇᖅ - Mansel Island - Île de Mansel"
+],
+"label": "Mansel Island",
+"qid": "osm:Mansel Island",
+"sl": 4,
+"wiki": "Mansel Island"
+},
+{
+"aliases": [
+"Isla San José"
+],
+"label": "Isle of San José",
+"qid": "osm:Isla San José (Panama)",
+"sl": 4,
+"wiki": "Isla San José (Panama)"
+},
+{
+"aliases": [
+"Bird Island, South Georgia"
+],
+"label": "Bird Island",
+"qid": "osm:Bird Island, South Georgia",
+"sl": 4,
+"wiki": "Bird Island, South Georgia"
+},
+{
+"aliases": [
+"Valentia"
+],
+"label": "Valentia Island",
+"qid": "osm:Valentia Island",
+"sl": 4,
+"wiki": "Valentia Island"
+},
+{
+"aliases": [],
+"label": "Foula",
+"qid": "osm:Foula",
+"sl": 4,
+"wiki": "Foula"
+},
+{
+"aliases": [
+"Motukorea",
+"Browns Island (Motukorea)"
+],
+"label": "Browns Island",
+"qid": "osm:Motukorea",
+"sl": 4,
+"wiki": "Motukorea"
+},
+{
+"aliases": [],
+"label": "Middle Andaman Island",
+"qid": "osm:Middle Andaman Island",
+"sl": 4,
+"wiki": "Middle Andaman Island"
+},
+{
+"aliases": [
+"Little Andaman Island"
+],
+"label": "Little Andaman",
+"qid": "osm:Little Andaman",
+"sl": 4,
+"wiki": "Little Andaman"
+},
+{
+"aliases": [
+"Pulau Sebuku",
+"Sebuku"
+],
+"label": "Sebuku Island",
+"qid": "osm:Sebuku (Sumatra)",
+"sl": 4,
+"wiki": "Sebuku (Sumatra)"
+},
+{
+"aliases": [
+"Abu al Abyad",
+"جزيرة أبو الأبيض"
+],
+"label": "Abu Al Abyad Island",
+"qid": "osm:Abu al Abyad",
+"sl": 4,
+"wiki": "Abu al Abyad"
+},
+{
+"aliases": [
+"Pulau Tebing Tinggi"
+],
+"label": "Tebing Tinggi Island",
+"qid": "osm:Tebing Tinggi Island",
+"sl": 4,
+"wiki": "Tebing Tinggi Island"
+},
+{
+"aliases": [
+"Île Saint-Lanne Gramont"
+],
+"label": "Saint-Lanne Gramont Island",
+"qid": "osm:Île Saint-Lanne Gramont",
+"sl": 4,
+"wiki": "Île Saint-Lanne Gramont"
+},
+{
+"aliases": [],
+"label": "Erraid",
+"qid": "osm:Erraid",
+"sl": 4,
+"wiki": "Erraid"
+},
+{
+"aliases": [
+"Pulau Enggano"
+],
+"label": "Enggano Island",
+"qid": "osm:Enggano Island",
+"sl": 4,
+"wiki": "Enggano Island"
+},
+{
+"aliases": [
+"Pulau Singkep",
+"Singkep"
+],
+"label": "Singkep Island",
+"qid": "osm:Singkep",
+"sl": 4,
+"wiki": "Singkep"
+},
+{
+"aliases": [
+"Pulau Rupat",
+"Rupat"
+],
+"label": "Rupat Island",
+"qid": "osm:Rupat",
+"sl": 4,
+"wiki": "Rupat"
+},
+{
+"aliases": [
+"Qoornup Qeqertarsua"
+],
+"label": "Qoornuup Qeqertarsua Island",
+"qid": "osm:Qoornuup Qeqertarsua Island",
+"sl": 4,
+"wiki": "Qoornuup Qeqertarsua Island"
+},
+{
+"aliases": [],
+"label": "Pungudutivu",
+"qid": "osm:Pungudutivu",
+"sl": 4,
+"wiki": "Pungudutivu"
+},
+{
+"aliases": [],
+"label": "Nainativu",
+"qid": "osm:Nainativu",
+"sl": 4,
+"wiki": "Nainativu"
+},
+{
+"aliases": [],
+"label": "Eluvaitivu",
+"qid": "osm:Eluvaitivu",
+"sl": 4,
+"wiki": "Eluvaitivu"
+},
+{
+"aliases": [],
+"label": "Mandaitivu",
+"qid": "osm:Mandaitivu",
+"sl": 4,
+"wiki": "Mandaitivu"
+},
+{
+"aliases": [
+"Rossøya"
+],
+"label": "Ross Island",
+"qid": "osm:Rossøya",
+"sl": 4,
+"wiki": "Rossøya"
+},
+{
+"aliases": [
+"Шаренградска ада"
+],
+"label": "Island of Šarengrad",
+"qid": "osm:Island of Šarengrad",
+"sl": 4,
+"wiki": "Island of Šarengrad"
+},
+{
+"aliases": [
+"កោះរុង"
+],
+"label": "Koh Rong",
+"qid": "osm:Koh Rong",
+"sl": 4,
+"wiki": "Koh Rong"
+},
+{
+"aliases": [
+"Griomasaigh"
+],
+"label": "Grimsay",
+"qid": "osm:Grimsay",
+"sl": 4,
+"wiki": "Grimsay"
+},
+{
+"aliases": [],
+"label": "Shapinsay",
+"qid": "osm:Shapinsay",
+"sl": 4,
+"wiki": "Shapinsay"
+},
+{
+"aliases": [],
+"label": "Muckle Roe",
+"qid": "osm:Muckle Roe",
+"sl": 4,
+"wiki": "Muckle Roe"
+},
+{
+"aliases": [],
+"label": "Karaitivu",
+"qid": "osm:Karaitivu (Jaffna)",
+"sl": 4,
+"wiki": "Karaitivu (Jaffna)"
+},
+{
+"aliases": [
+"မာန်အောင်ကျွန်း",
+"Manaung Island"
+],
+"label": "Cheduba Island",
+"qid": "osm:Cheduba Island",
+"sl": 4,
+"wiki": "Cheduba Island"
+},
+{
+"aliases": [
+"蒲台 Po Toi"
+],
+"label": "Po Toi",
+"qid": "osm:Po Toi",
+"sl": 4,
+"wiki": "Po Toi"
+},
+{
+"aliases": [],
+"label": "Buldir Island",
+"qid": "osm:Buldir Island",
+"sl": 4,
+"wiki": "Buldir Island"
+},
+{
+"aliases": [
+"South East Island (Rangatira)"
+],
+"label": "South East Island",
+"qid": "osm:South East Island",
+"sl": 4,
+"wiki": "South East Island"
+},
+{
+"aliases": [],
+"label": "Jurong Island",
+"qid": "osm:Jurong Island",
+"sl": 4,
+"wiki": "Jurong Island"
+},
+{
+"aliases": [
+"Pulau Tioman"
+],
+"label": "Tioman Island",
+"qid": "osm:Tioman Island",
+"sl": 4,
+"wiki": "Tioman Island"
+},
+{
+"aliases": [],
+"label": "Auskerry",
+"qid": "osm:Auskerry",
+"sl": 4,
+"wiki": "Auskerry"
+},
+{
+"aliases": [
+"Bozcaada"
+],
+"label": "Tenedos",
+"qid": "osm:Tenedos",
+"sl": 4,
+"wiki": "Tenedos"
+},
+{
+"aliases": [
+"Saint Thomas, U.S. Virgin Islands"
+],
+"label": "Saint Thomas",
+"qid": "osm:Saint Thomas, U.S. Virgin Islands",
+"sl": 4,
+"wiki": "Saint Thomas, U.S. Virgin Islands"
+},
+{
+"aliases": [
+"Saint John, U.S. Virgin Islands"
+],
+"label": "Saint John",
+"qid": "osm:Saint John, U.S. Virgin Islands",
+"sl": 4,
+"wiki": "Saint John, U.S. Virgin Islands"
+},
+{
+"aliases": [
+"Nantucket Island"
+],
+"label": "Nantucket",
+"qid": "osm:Nantucket",
+"sl": 4,
+"wiki": "Nantucket"
+},
+{
+"aliases": [
+"Pulau Besar",
+"Besar Island, Johor"
+],
+"label": "Big Island",
+"qid": "osm:Besar Island, Johor",
+"sl": 4,
+"wiki": "Besar Island, Johor"
+},
+{
+"aliases": [
+"Aur Atoll"
+],
+"label": "Aur",
+"qid": "osm:Aur Atoll",
+"sl": 3,
+"wiki": "Aur Atoll"
+},
+{
+"aliases": [],
+"label": "Alloa Inch",
+"qid": "osm:Alloa Inch",
+"sl": 3,
+"wiki": "Alloa Inch"
+},
+{
+"aliases": [],
+"label": "Isle of Ewe",
+"qid": "osm:Isle of Ewe",
+"sl": 3,
+"wiki": "Isle of Ewe"
+},
+{
+"aliases": [],
+"label": "Potton Island",
+"qid": "osm:Potton Island",
+"sl": 3,
+"wiki": "Potton Island"
+},
+{
+"aliases": [
+"İçada"
+],
+"label": "Iç Ada, Antalya",
+"qid": "osm:Iç Ada, Antalya",
+"sl": 3,
+"wiki": "Iç Ada, Antalya"
+},
+{
+"aliases": [
+"Toraigh",
+"Tory"
+],
+"label": "Tory Island",
+"qid": "osm:Tory Island",
+"sl": 3,
+"wiki": "Tory Island"
+},
+{
+"aliases": [
+"Inishark"
+],
+"label": "Inishshark",
+"qid": "osm:Inishark",
+"sl": 3,
+"wiki": "Inishark"
+},
+{
+"aliases": [
+"Inishere",
+"Inis Oírr"
+],
+"label": "Inisheer",
+"qid": "osm:Inisheer",
+"sl": 3,
+"wiki": "Inisheer"
+},
+{
+"aliases": [],
+"label": "Swona",
+"qid": "osm:Swona",
+"sl": 3,
+"wiki": "Swona"
+},
+{
+"aliases": [
+"Wyre, Orkney"
+],
+"label": "Wyre",
+"qid": "osm:Wyre, Orkney",
+"sl": 3,
+"wiki": "Wyre, Orkney"
+},
+{
+"aliases": [],
+"label": "Faray",
+"qid": "osm:Faray",
+"sl": 3,
+"wiki": "Faray"
+},
+{
+"aliases": [],
+"label": "Copinsay",
+"qid": "osm:Copinsay",
+"sl": 3,
+"wiki": "Copinsay"
+},
+{
+"aliases": [
+"Isla Beauchene"
+],
+"label": "Beauchene Island",
+"qid": "osm:Beauchene Island",
+"sl": 3,
+"wiki": "Beauchene Island"
+},
+{
+"aliases": [],
+"label": "Noss",
+"qid": "osm:Noss",
+"sl": 3,
+"wiki": "Noss"
+},
+{
+"aliases": [
+"Uyea, Northmavine"
+],
+"label": "Uyea",
+"qid": "osm:Uyea, Northmavine",
+"sl": 3,
+"wiki": "Uyea, Northmavine"
+},
+{
+"aliases": [
+"淇澳岛",
+"Qi'ao Island"
+],
+"label": "Qí'ào Island",
+"qid": "osm:Qi'ao Island",
+"sl": 3,
+"wiki": "Qi'ao Island"
+},
+{
+"aliases": [
+"大铲岛"
+],
+"label": "Dachan Island",
+"qid": "osm:Dachan Island",
+"sl": 3,
+"wiki": "Dachan Island"
+},
+{
+"aliases": [
+"الجزيرة العالية"
+],
+"label": "Al Aaliya Island",
+"qid": "osm:Al Aaliya Island",
+"sl": 3,
+"wiki": "Al Aaliya Island"
+},
+{
+"aliases": [
+"ދިއްދޫ"
+],
+"label": "Dhidhdhoo",
+"qid": "osm:Dhidhdhoo",
+"sl": 3,
+"wiki": "Dhidhdhoo"
+},
+{
+"aliases": [
+"ފުނަދޫ"
+],
+"label": "Funadhoo",
+"qid": "osm:Funadhoo (Shaviyani Atoll)",
+"sl": 3,
+"wiki": "Funadhoo (Shaviyani Atoll)"
+},
+{
+"aliases": [
+"މަނަދޫ"
+],
+"label": "Manadhoo",
+"qid": "osm:Manadhoo",
+"sl": 3,
+"wiki": "Manadhoo"
+},
+{
+"aliases": [
+"ކުޅުދުއްފުށި"
+],
+"label": "Kulhudhuffushi",
+"qid": "osm:Kulhudhuffushi",
+"sl": 3,
+"wiki": "Kulhudhuffushi"
+},
+{
+"aliases": [
+"އަލިފުށި"
+],
+"label": "Alifushi",
+"qid": "osm:Alifushi",
+"sl": 3,
+"wiki": "Alifushi"
+},
+{
+"aliases": [
+"ކާށިދޫ"
+],
+"label": "Kaashidhoo",
+"qid": "osm:Kaashidhoo (Kaafu Atoll)",
+"sl": 3,
+"wiki": "Kaashidhoo (Kaafu Atoll)"
+},
+{
+"aliases": [
+"ތޮއްޑޫ"
+],
+"label": "Thoddoo",
+"qid": "osm:Thoddoo (Alif Alif Atoll)",
+"sl": 3,
+"wiki": "Thoddoo (Alif Alif Atoll)"
+},
+{
+"aliases": [
+"ތިމަރަފުށި"
+],
+"label": "Thimarafushi",
+"qid": "osm:Thimarafushi (Thaa Atoll)",
+"sl": 3,
+"wiki": "Thimarafushi (Thaa Atoll)"
+},
+{
+"aliases": [
+"ކުޑަހުވަދޫ"
+],
+"label": "Kudahuvadhoo",
+"qid": "osm:Kudahuvadhoo",
+"sl": 3,
+"wiki": "Kudahuvadhoo"
+},
+{
+"aliases": [
+"ވިލިނގިލި"
+],
+"label": "Villingili",
+"qid": "osm:Villingili (Gaafu Alif Atoll)",
+"sl": 3,
+"wiki": "Villingili (Gaafu Alif Atoll)"
+},
+{
+"aliases": [
+"Big Island",
+"Pulau Besar",
+"Besar Island, Malacca"
+],
+"label": "Besar Island",
+"qid": "osm:Besar Island, Malacca",
+"sl": 3,
+"wiki": "Besar Island, Malacca"
+},
+{
+"aliases": [],
+"label": "Walter Island",
+"qid": "osm:Walter Island",
+"sl": 3,
+"wiki": "Walter Island"
+},
+{
+"aliases": [],
+"label": "Unalga Island",
+"qid": "osm:Unalga Island (Fox Islands)",
+"sl": 3,
+"wiki": "Unalga Island (Fox Islands)"
+},
+{
+"aliases": [
+"Meheti'a"
+],
+"label": "Mehetia",
+"qid": "osm:Mehetia",
+"sl": 3,
+"wiki": "Mehetia"
+},
+{
+"aliases": [
+"Uummannaq"
+],
+"label": "Sugar Loaf Island",
+"qid": "osm:Sugar Loaf Island",
+"sl": 3,
+"wiki": "Sugar Loaf Island"
+},
+{
+"aliases": [
+"Isla Catalina"
+],
+"label": "Catalina Island",
+"qid": "osm:Catalina Island (Dominican Republic)",
+"sl": 3,
+"wiki": "Catalina Island (Dominican Republic)"
+},
+{
+"aliases": [],
+"label": "Heybeliada",
+"qid": "osm:Heybeliada",
+"sl": 3,
+"wiki": "Heybeliada"
+},
+{
+"aliases": [
+"Pulau Pisang"
+],
+"label": "Banana Island",
+"qid": "osm:Pulau Pisang (Johor)",
+"sl": 3,
+"wiki": "Pulau Pisang (Johor)"
+},
+{
+"aliases": [
+"Pulau Menjangan"
+],
+"label": "Menjangan Island",
+"qid": "osm:Menjangan Island",
+"sl": 3,
+"wiki": "Menjangan Island"
+},
+{
+"aliases": [],
+"label": "Little Cayman",
+"qid": "osm:Little Cayman",
+"sl": 3,
+"wiki": "Little Cayman"
+},
+{
+"aliases": [
+"Pulau Gaya"
+],
+"label": "Gaya Island",
+"qid": "osm:Gaya Island",
+"sl": 3,
+"wiki": "Gaya Island"
+},
+{
+"aliases": [
+"Pulau Sepanggar"
+],
+"label": "Sepanggar Island",
+"qid": "osm:Sepanggar Island",
+"sl": 3,
+"wiki": "Sepanggar Island"
+},
+{
+"aliases": [
+"Tiga Island, Malaysia",
+"Pulau Tiga"
+],
+"label": "Tiga Island",
+"qid": "osm:Tiga Island, Malaysia",
+"sl": 3,
+"wiki": "Tiga Island, Malaysia"
+},
+{
+"aliases": [
+"Pulau Aur"
+],
+"label": "Aur Island",
+"qid": "osm:Aur Island",
+"sl": 3,
+"wiki": "Aur Island"
+},
+{
+"aliases": [
+"Pulau Tinggi"
+],
+"label": "Tinggi Island",
+"qid": "osm:Tinggi Island",
+"sl": 3,
+"wiki": "Tinggi Island"
+},
+{
+"aliases": [
+"Pulau Larapan"
+],
+"label": "Larapan Island",
+"qid": "osm:Larapan Island",
+"sl": 3,
+"wiki": "Larapan Island"
+},
+{
+"aliases": [
+"Manjung Power Station"
+],
+"label": "Sultan Azlan Shah Power Station (Manjung Power Station)",
+"qid": "osm:Manjung Power Station",
+"sl": 3,
+"wiki": "Manjung Power Station"
+},
+{
+"aliases": [
+"Kachchatheevu"
+],
+"label": "Katchatheevu",
+"qid": "osm:Katchatheevu",
+"sl": 3,
+"wiki": "Katchatheevu"
+},
+{
+"aliases": [
+"ގަން"
+],
+"label": "Gan",
+"qid": "osm:Gan (Addu Atoll)",
+"sl": 3,
+"wiki": "Gan (Addu Atoll)"
+},
+{
+"aliases": [
+"ހިތަދޫ"
+],
+"label": "Hithadhoo",
+"qid": "osm:Hithadhoo (Addu)",
+"sl": 3,
+"wiki": "Hithadhoo (Addu)"
+},
+{
+"aliases": [
+"Astove"
+],
+"label": "Astove Island",
+"qid": "osm:Astove Island",
+"sl": 3,
+"wiki": "Astove Island"
+},
+{
+"aliases": [],
+"label": "Two Tree Island",
+"qid": "osm:Two Tree Island",
+"sl": 3,
+"wiki": "Two Tree Island"
+},
+{
+"aliases": [],
+"label": "Kitterland",
+"qid": "osm:Kitterland",
+"sl": 3,
+"wiki": "Kitterland"
+},
+{
+"aliases": [],
+"label": "Hildasay",
+"qid": "osm:Hildasay",
+"sl": 3,
+"wiki": "Hildasay"
+},
+{
+"aliases": [],
+"label": "Pike Island",
+"qid": "osm:Pike Island",
+"sl": 3,
+"wiki": "Pike Island"
+},
+{
+"aliases": [],
+"label": "Pulau Sudong",
+"qid": "osm:Pulau Sudong",
+"sl": 3,
+"wiki": "Pulau Sudong"
+},
+{
+"aliases": [],
+"label": "Pulau Senang",
+"qid": "osm:Pulau Senang",
+"sl": 3,
+"wiki": "Pulau Senang"
+},
+{
+"aliases": [
+"凤凰岛"
+],
+"label": "Phoenix Island",
+"qid": "osm:Phoenix Island",
+"sl": 3,
+"wiki": "Phoenix Island"
+},
+{
+"aliases": [],
+"label": "Pulau Busing",
+"qid": "osm:Pulau Busing",
+"sl": 3,
+"wiki": "Pulau Busing"
+},
+{
+"aliases": [
+"Yassıada",
+"Demokrasi ve Özgürlük Adası"
+],
+"label": "Democracy and Freedom Island",
+"qid": "osm:Yassıada",
+"sl": 3,
+"wiki": "Yassıada"
+},
+{
+"aliases": [
+"Pulau Mantanani Besar",
+"Mantanani Islands"
+],
+"label": "Big Mantanani Island",
+"qid": "osm:Mantanani Islands",
+"sl": 3,
+"wiki": "Mantanani Islands"
+},
+{
+"aliases": [],
+"label": "Anegada",
+"qid": "osm:Anegada",
+"sl": 3,
+"wiki": "Anegada"
+},
+{
+"aliases": [
+"Reef Island, Bahrain",
+"جزيرة الريف"
+],
+"label": "Reef Island",
+"qid": "osm:Reef Island, Bahrain",
+"sl": 3,
+"wiki": "Reef Island, Bahrain"
+},
+{
+"aliases": [
+"ތިނަދޫ"
+],
+"label": "Thinadhoo",
+"qid": "osm:Thinadhoo (Huvadhu Atoll)",
+"sl": 3,
+"wiki": "Thinadhoo (Huvadhu Atoll)"
+},
+{
+"aliases": [],
+"label": "Papa Stour",
+"qid": "osm:Papa Stour",
+"sl": 3,
+"wiki": "Papa Stour"
+},
+{
+"aliases": [
+"Preparis",
+"ပါလီပါလဲ့ကျွန်း"
+],
+"label": "Preparis Island",
+"qid": "osm:Preparis",
+"sl": 3,
+"wiki": "Preparis"
+},
+{
+"aliases": [
+"Barra Head",
+"Beàrnaraigh"
+],
+"label": "Berneray",
+"qid": "osm:Barra Head",
+"sl": 3,
+"wiki": "Barra Head"
+},
+{
+"aliases": [],
+"label": "Scott Island",
+"qid": "osm:Scott Island",
+"sl": 3,
+"wiki": "Scott Island"
+},
+{
+"aliases": [],
+"label": "Paulet Island",
+"qid": "osm:Paulet Island",
+"sl": 3,
+"wiki": "Paulet Island"
+},
+{
+"aliases": [],
+"label": "Cockburn Island",
+"qid": "osm:Cockburn Island (Antarctica)",
+"sl": 3,
+"wiki": "Cockburn Island (Antarctica)"
+},
+{
+"aliases": [],
+"label": "Vindication Island",
+"qid": "osm:Vindication Island",
+"sl": 3,
+"wiki": "Vindication Island"
+},
+{
+"aliases": [
+"Plog Island"
+],
+"label": "Plough Island",
+"qid": "osm:Plog Island",
+"sl": 3,
+"wiki": "Plog Island"
+},
+{
+"aliases": [],
+"label": "Drygalski Island",
+"qid": "osm:Drygalski Island",
+"sl": 3,
+"wiki": "Drygalski Island"
+},
+{
+"aliases": [],
+"label": "Masson Island",
+"qid": "osm:Masson Island",
+"sl": 3,
+"wiki": "Masson Island"
+},
+{
+"aliases": [
+"List of islands of Thailand",
+"เกาะมัททรา"
+],
+"label": "Ko Mattra",
+"qid": "osm:List of islands of Thailand",
+"sl": 3,
+"wiki": "List of islands of Thailand"
+},
+{
+"aliases": [],
+"label": "Samphrey",
+"qid": "osm:Samphrey",
+"sl": 3,
+"wiki": "Samphrey"
+},
+{
+"aliases": [],
+"label": "Papa Little",
+"qid": "osm:Papa Little",
+"sl": 3,
+"wiki": "Papa Little"
+},
+{
+"aliases": [
+"Cooper Island, South Georgia"
+],
+"label": "Cooper Island",
+"qid": "osm:Cooper Island, South Georgia",
+"sl": 3,
+"wiki": "Cooper Island, South Georgia"
+},
+{
+"aliases": [],
+"label": "Aitutaki",
+"qid": "osm:Aitutaki",
+"sl": 3,
+"wiki": "Aitutaki"
+},
+{
+"aliases": [
+"Pulau Duyong"
+],
+"label": "Duyong Island",
+"qid": "osm:Duyong Island",
+"sl": 3,
+"wiki": "Duyong Island"
+},
+{
+"aliases": [
+"Pulau Serangan"
+],
+"label": "Serangan Island",
+"qid": "osm:Serangan Island",
+"sl": 3,
+"wiki": "Serangan Island"
+},
+{
+"aliases": [],
+"label": "South Havra",
+"qid": "osm:South Havra",
+"sl": 3,
+"wiki": "South Havra"
+},
+{
+"aliases": [
+"Pulau Aman"
+],
+"label": "Aman Island",
+"qid": "osm:Aman Island",
+"sl": 3,
+"wiki": "Aman Island"
+},
+{
+"aliases": [
+"Pulau Gedung"
+],
+"label": "Gedung Island",
+"qid": "osm:Gedung Island",
+"sl": 3,
+"wiki": "Gedung Island"
+},
+{
+"aliases": [],
+"label": "Lambay Island",
+"qid": "osm:Lambay Island",
+"sl": 3,
+"wiki": "Lambay Island"
+},
+{
+"aliases": [
+"Tobias Ø"
+],
+"label": "Tobias Island",
+"qid": "osm:Tobias Island",
+"sl": 3,
+"wiki": "Tobias Island"
+},
+{
+"aliases": [],
+"label": "Wallasea Island",
+"qid": "osm:Wallasea Island",
+"sl": 3,
+"wiki": "Wallasea Island"
+},
+{
+"aliases": [
+"An Blascaod Mór"
+],
+"label": "Great Blasket Island",
+"qid": "osm:Great Blasket Island",
+"sl": 3,
+"wiki": "Great Blasket Island"
+},
+{
+"aliases": [
+"Pulau Pemanggil"
+],
+"label": "Pemanggil Island",
+"qid": "osm:Pemanggil Island",
+"sl": 3,
+"wiki": "Pemanggil Island"
+},
+{
+"aliases": [
+"Pulau Andaman",
+"Andaman Island, Penang"
+],
+"label": "Andaman Island",
+"qid": "osm:Andaman Island, Penang",
+"sl": 3,
+"wiki": "Andaman Island, Penang"
+},
+{
+"aliases": [
+"جزيرة بوبيان",
+"Bubiyan Island"
+],
+"label": "Bubyan Island",
+"qid": "osm:Bubiyan Island",
+"sl": 3,
+"wiki": "Bubiyan Island"
+},
+{
+"aliases": [
+"Kirkkokari"
+],
+"label": "St. Henry's Island",
+"qid": "osm:Kirkkokari",
+"sl": 3,
+"wiki": "Kirkkokari"
+},
+{
+"aliases": [],
+"label": "Graemsay",
+"qid": "osm:Graemsay",
+"sl": 3,
+"wiki": "Graemsay"
+},
+{
+"aliases": [
+"Canna, Scotland"
+],
+"label": "Canna",
+"qid": "osm:Canna, Scotland",
+"sl": 3,
+"wiki": "Canna, Scotland"
+},
+{
+"aliases": [
+"Beinn na Faoghla"
+],
+"label": "Benbecula",
+"qid": "osm:Benbecula",
+"sl": 3,
+"wiki": "Benbecula"
+},
+{
+"aliases": [
+"Ζαφοράς"
+],
+"label": "Zaforas",
+"qid": "osm:Zaforas",
+"sl": 3,
+"wiki": "Zaforas"
+},
+{
+"aliases": [
+"Καρδιώτισσα"
+],
+"label": "Kardiotissa",
+"qid": "osm:Kardiotissa",
+"sl": 3,
+"wiki": "Kardiotissa"
+},
+{
+"aliases": [
+"Γκράντες"
+],
+"label": "Grandes",
+"qid": "osm:Grandes (islands)",
+"sl": 3,
+"wiki": "Grandes (islands)"
+},
+{
+"aliases": [
+"Στρογγυλό"
+],
+"label": "Strongyli",
+"qid": "osm:Strongyli (Crete)",
+"sl": 3,
+"wiki": "Strongyli (Crete)"
+},
+{
+"aliases": [
+"Αγία Βαρβάρα"
+],
+"label": "Agia Varvara",
+"qid": "osm:Agia Varvara (island)",
+"sl": 3,
+"wiki": "Agia Varvara (island)"
+},
+{
+"aliases": [
+"Βρυονήσι",
+"Prasonisi"
+],
+"label": "Vryonisi",
+"qid": "osm:Vryonisi",
+"sl": 3,
+"wiki": "Vryonisi"
+},
+{
+"aliases": [
+"Κονίδα"
+],
+"label": "Konida",
+"qid": "osm:Konida",
+"sl": 3,
+"wiki": "Konida"
+},
+{
+"aliases": [
+"Αγριόμαντρα"
+],
+"label": "Agriomandra",
+"qid": "osm:Agriomandra",
+"sl": 3,
+"wiki": "Agriomandra"
+},
+{
+"aliases": [
+"Περιστερόβραχοι"
+],
+"label": "Peristerovrachoi",
+"qid": "osm:Peristerovrachoi",
+"sl": 3,
+"wiki": "Peristerovrachoi"
+},
+{
+"aliases": [
+"Παπαδόπλακα"
+],
+"label": "Papadoplaka",
+"qid": "osm:Papadoplaka",
+"sl": 3,
+"wiki": "Papadoplaka"
+},
+{
+"aliases": [
+"Πρασονήσι"
+],
+"label": "Prasonisi",
+"qid": "osm:Prasonisi (Gavdos)",
+"sl": 3,
+"wiki": "Prasonisi (Gavdos)"
+},
+{
+"aliases": [
+"Schisto;Trachili",
+"Σχιστονήσι"
+],
+"label": "Schistonisi",
+"qid": "osm:Schistonisi",
+"sl": 3,
+"wiki": "Schistonisi"
+},
+{
+"aliases": [],
+"label": "Wolfe Island",
+"qid": "osm:Wolfe Island (Ontario)",
+"sl": 3,
+"wiki": "Wolfe Island (Ontario)"
+},
+{
+"aliases": [],
+"label": "Hall Island",
+"qid": "osm:Hall Island (Alaska)",
+"sl": 3,
+"wiki": "Hall Island (Alaska)"
+},
+{
+"aliases": [],
+"label": "Ruapuke Island",
+"qid": "osm:Ruapuke Island",
+"sl": 3,
+"wiki": "Ruapuke Island"
+},
+{
+"aliases": [],
+"label": "Fongafale",
+"qid": "osm:Fongafale",
+"sl": 3,
+"wiki": "Fongafale"
+},
+{
+"aliases": [],
+"label": "Kawau Island",
+"qid": "osm:Kawau Island",
+"sl": 3,
+"wiki": "Kawau Island"
+},
+{
+"aliases": [],
+"label": "Motutapu Island",
+"qid": "osm:Motutapu Island",
+"sl": 3,
+"wiki": "Motutapu Island"
+},
+{
+"aliases": [
+"Alluttoq"
+],
+"label": "Alluttoq Island",
+"qid": "osm:Alluttoq Island",
+"sl": 3,
+"wiki": "Alluttoq Island"
+},
+{
+"aliases": [
+"Rangitoto ki te Tonga / D'Urville Island"
+],
+"label": "D'Urville Island",
+"qid": "osm:D'Urville Island",
+"sl": 3,
+"wiki": "D'Urville Island"
+},
+{
+"aliases": [],
+"label": "Siple Island",
+"qid": "osm:Siple Island",
+"sl": 3,
+"wiki": "Siple Island"
+},
+{
+"aliases": [],
+"label": "Jonassen Island",
+"qid": "osm:Jonassen Island",
+"sl": 3,
+"wiki": "Jonassen Island"
+},
+{
+"aliases": [],
+"label": "Snow Hill Island",
+"qid": "osm:Snow Hill Island",
+"sl": 3,
+"wiki": "Snow Hill Island"
+},
+{
+"aliases": [],
+"label": "Gibbs Island",
+"qid": "osm:Gibbs Island (South Shetland Islands)",
+"sl": 3,
+"wiki": "Gibbs Island (South Shetland Islands)"
+},
+{
+"aliases": [
+"Isla Astrolabe"
+],
+"label": "Astrolabe Island",
+"qid": "osm:Astrolabe Island",
+"sl": 3,
+"wiki": "Astrolabe Island"
+},
+{
+"aliases": [],
+"label": "Lockyer Island",
+"qid": "osm:Lockyer Island",
+"sl": 3,
+"wiki": "Lockyer Island"
+},
+{
+"aliases": [
+"Liége Island"
+],
+"label": "Liège Island",
+"qid": "osm:Liège Island",
+"sl": 3,
+"wiki": "Liège Island"
+},
+{
+"aliases": [],
+"label": "Gand Island",
+"qid": "osm:Gand Island",
+"sl": 3,
+"wiki": "Gand Island"
+},
+{
+"aliases": [],
+"label": "Wiencke Island",
+"qid": "osm:Wiencke Island",
+"sl": 3,
+"wiki": "Wiencke Island"
+},
+{
+"aliases": [
+"Intercurrence Islands"
+],
+"label": "Intercurrence Island",
+"qid": "osm:Intercurrence Island",
+"sl": 3,
+"wiki": "Intercurrence Island"
+},
+{
+"aliases": [],
+"label": "Trinity Island",
+"qid": "osm:Trinity Island",
+"sl": 3,
+"wiki": "Trinity Island"
+},
+{
+"aliases": [],
+"label": "Latady Island",
+"qid": "osm:Latady Island",
+"sl": 3,
+"wiki": "Latady Island"
+},
+{
+"aliases": [],
+"label": "Rothschild Island",
+"qid": "osm:Rothschild Island",
+"sl": 3,
+"wiki": "Rothschild Island"
+},
+{
+"aliases": [],
+"label": "Spaatz Island",
+"qid": "osm:Spaatz Island",
+"sl": 3,
+"wiki": "Spaatz Island"
+},
+{
+"aliases": [],
+"label": "Lundy",
+"qid": "osm:Lundy",
+"sl": 3,
+"wiki": "Lundy"
+},
+{
+"aliases": [],
+"label": "Coulman Island",
+"qid": "osm:Coulman Island",
+"sl": 3,
+"wiki": "Coulman Island"
+},
+{
+"aliases": [],
+"label": "Young Island",
+"qid": "osm:Young Island",
+"sl": 3,
+"wiki": "Young Island"
+},
+{
+"aliases": [],
+"label": "Burray",
+"qid": "osm:Burray",
+"sl": 3,
+"wiki": "Burray"
+},
+{
+"aliases": [],
+"label": "Rota",
+"qid": "osm:Rota (island)",
+"sl": 3,
+"wiki": "Rota (island)"
+},
+{
+"aliases": [
+"St Mary's"
+],
+"label": "St Mary's, Isles of Scilly",
+"qid": "osm:St Mary's, Isles of Scilly",
+"sl": 3,
+"wiki": "St Mary's, Isles of Scilly"
+},
+{
+"aliases": [
+"Pulau Perhentian Besar",
+"Perhentian Islands"
+],
+"label": "Greater Perhentian Island",
+"qid": "osm:Perhentian Islands",
+"sl": 3,
+"wiki": "Perhentian Islands"
+},
+{
+"aliases": [
+"Pulau Redang"
+],
+"label": "Redang Island",
+"qid": "osm:Redang Island",
+"sl": 3,
+"wiki": "Redang Island"
+},
+{
+"aliases": [
+"上川岛",
+"St. John's Island;Schangschwan;Sancian;Sanchão;Chang-Chuang"
+],
+"label": "Shangchuan Island",
+"qid": "osm:Shangchuan Island",
+"sl": 3,
+"wiki": "Shangchuan Island"
+},
+{
+"aliases": [
+"大嶼山 Lantau Island"
+],
+"label": "Lantau Island",
+"qid": "osm:Lantau Island",
+"sl": 3,
+"wiki": "Lantau Island"
+},
+{
+"aliases": [],
+"label": "Prince of Wales Island",
+"qid": "osm:Prince of Wales Island (Queensland)",
+"sl": 3,
+"wiki": "Prince of Wales Island (Queensland)"
+},
+{
+"aliases": [],
+"label": "Late",
+"qid": "osm:Late (Tonga)",
+"sl": 3,
+"wiki": "Late (Tonga)"
+},
+{
+"aliases": [
+"Afognak"
+],
+"label": "Afognak Island",
+"qid": "osm:Afognak",
+"sl": 3,
+"wiki": "Afognak"
+},
+{
+"aliases": [],
+"label": "Adak Island",
+"qid": "osm:Adak Island",
+"sl": 3,
+"wiki": "Adak Island"
+},
+{
+"aliases": [],
+"label": "Gareloi Island",
+"qid": "osm:Gareloi Island",
+"sl": 3,
+"wiki": "Gareloi Island"
+},
+{
+"aliases": [
+"Popov Island"
+],
+"label": "Popof Island",
+"qid": "osm:Popof Island",
+"sl": 3,
+"wiki": "Popof Island"
+},
+{
+"aliases": [],
+"label": "Kerrera",
+"qid": "osm:Kerrera",
+"sl": 3,
+"wiki": "Kerrera"
+},
+{
+"aliases": [],
+"label": "South Bass Island",
+"qid": "osm:South Bass Island",
+"sl": 3,
+"wiki": "South Bass Island"
+},
+{
+"aliases": [
+"Pulau Balambangan"
+],
+"label": "Balambangan Island",
+"qid": "osm:Balambangan Island",
+"sl": 3,
+"wiki": "Balambangan Island"
+},
+{
+"aliases": [
+"伊江島",
+"Iejima"
+],
+"label": "Ieshima",
+"qid": "osm:Iejima",
+"sl": 3,
+"wiki": "Iejima"
+},
+{
+"aliases": [],
+"label": "Barrow Island",
+"qid": "osm:Barrow Island (Western Australia)",
+"sl": 3,
+"wiki": "Barrow Island (Western Australia)"
+},
+{
+"aliases": [],
+"label": "Mokoia Island",
+"qid": "osm:Mokoia Island",
+"sl": 3,
+"wiki": "Mokoia Island"
+},
+{
+"aliases": [],
+"label": "Lifuka",
+"qid": "osm:Lifuka",
+"sl": 3,
+"wiki": "Lifuka"
+},
+{
+"aliases": [],
+"label": "Kao",
+"qid": "osm:Kao (island)",
+"sl": 3,
+"wiki": "Kao (island)"
+},
+{
+"aliases": [
+"เกาะพีพีดอน"
+],
+"label": "Ko Phi Phi Don",
+"qid": "osm:Ko Phi Phi Don",
+"sl": 3,
+"wiki": "Ko Phi Phi Don"
+},
+{
+"aliases": [
+"ᖃᒡᒋᐅᔭᖅ Koch Island - Ile Koch"
+],
+"label": "Koch Island",
+"qid": "osm:Koch Island",
+"sl": 3,
+"wiki": "Koch Island"
+},
+{
+"aliases": [
+"ᑭᖓᖅ - Matty Island - Île Matty"
+],
+"label": "Matty Island",
+"qid": "osm:Matty Island",
+"sl": 3,
+"wiki": "Matty Island"
+},
+{
+"aliases": [
+"Long Island / Île de Long Island"
+],
+"label": "Long Island",
+"qid": "osm:Long Island (Hudson Bay, Nunavut)",
+"sl": 3,
+"wiki": "Long Island (Hudson Bay, Nunavut)"
+},
+{
+"aliases": [],
+"label": "Mangere Island",
+"qid": "osm:Mangere Island",
+"sl": 3,
+"wiki": "Mangere Island"
+},
+{
+"aliases": [],
+"label": "Rathlin Island",
+"qid": "osm:Rathlin Island",
+"sl": 3,
+"wiki": "Rathlin Island"
+},
+{
+"aliases": [
+"Hulhulé Island",
+"Hulhule",
+"ހުޅުލެ"
+],
+"label": "Hulhulé",
+"qid": "osm:Hulhulé Island",
+"sl": 3,
+"wiki": "Hulhulé Island"
+},
+{
+"aliases": [
+"Naṃdik"
+],
+"label": "Namdrik Atoll",
+"qid": "osm:Namdrik Atoll",
+"sl": 3,
+"wiki": "Namdrik Atoll"
+},
+{
+"aliases": [
+"Pagan Island"
+],
+"label": "Pagan",
+"qid": "osm:Pagan (island)",
+"sl": 3,
+"wiki": "Pagan (island)"
+},
+{
+"aliases": [],
+"label": "Sungei Buloh Wetland Reserve",
+"qid": "osm:Sungei Buloh Wetland Reserve",
+"sl": 3,
+"wiki": "Sungei Buloh Wetland Reserve"
+},
+{
+"aliases": [],
+"label": "Sibutu Island",
+"qid": "osm:Sibutu Island",
+"sl": 3,
+"wiki": "Sibutu Island"
+},
+{
+"aliases": [],
+"label": "Collins Reef",
+"qid": "osm:Collins Reef",
+"sl": 3,
+"wiki": "Collins Reef"
+},
+{
+"aliases": [
+"Inishbofin, County Galway"
+],
+"label": "Inishbofin",
+"qid": "osm:Inishbofin, County Galway",
+"sl": 3,
+"wiki": "Inishbofin, County Galway"
+},
+{
+"aliases": [],
+"label": "Ulva Island",
+"qid": "osm:Ulva Island (New Zealand)",
+"sl": 3,
+"wiki": "Ulva Island (New Zealand)"
+},
+{
+"aliases": [
+"Pulau Carey"
+],
+"label": "Carey Island",
+"qid": "osm:Carey Island",
+"sl": 3,
+"wiki": "Carey Island"
+},
+{
+"aliases": [],
+"label": "Gometra",
+"qid": "osm:Gometra",
+"sl": 3,
+"wiki": "Gometra"
+},
+{
+"aliases": [
+"Hiort"
+],
+"label": "Hirta",
+"qid": "osm:Hirta",
+"sl": 3,
+"wiki": "Hirta"
+},
+{
+"aliases": [],
+"label": "Deadman's Island",
+"qid": "osm:Deadman's Island (Vancouver)",
+"sl": 3,
+"wiki": "Deadman's Island (Vancouver)"
+},
+{
+"aliases": [
+"舟山岛"
+],
+"label": "Zhoushan Island",
+"qid": "osm:Zhoushan Island",
+"sl": 3,
+"wiki": "Zhoushan Island"
+},
+{
+"aliases": [],
+"label": "Vypin",
+"qid": "osm:Vypin",
+"sl": 3,
+"wiki": "Vypin"
+},
+{
+"aliases": [
+"Kauati-a-Tamatea / Papatea / Green Island"
+],
+"label": "Green Island",
+"qid": "osm:Green Island (Foveaux Strait)",
+"sl": 3,
+"wiki": "Green Island (Foveaux Strait)"
+},
+{
+"aliases": [
+"Moturoa / Rabbit Island"
+],
+"label": "Rabbit Island",
+"qid": "osm:Moturoa / Rabbit Island",
+"sl": 3,
+"wiki": "Moturoa / Rabbit Island"
+},
+{
+"aliases": [
+"Motumānawa / Pollen Island"
+],
+"label": "Pollen Island",
+"qid": "osm:Motumānawa / Pollen Island",
+"sl": 3,
+"wiki": "Motumānawa / Pollen Island"
+},
+{
+"aliases": [],
+"label": "Tiritiri Matangi Island",
+"qid": "osm:Tiritiri Matangi Island",
+"sl": 3,
+"wiki": "Tiritiri Matangi Island"
+},
+{
+"aliases": [],
+"label": "Rākino Island",
+"qid": "osm:Rākino Island",
+"sl": 3,
+"wiki": "Rākino Island"
+},
+{
+"aliases": [],
+"label": "Pamban Island",
+"qid": "osm:Pamban Island",
+"sl": 3,
+"wiki": "Pamban Island"
+},
+{
+"aliases": [],
+"label": "East Burra",
+"qid": "osm:East Burra",
+"sl": 3,
+"wiki": "East Burra"
+},
+{
+"aliases": [
+"Taʻū",
+"Tau, American Samoa"
+],
+"label": "Tau Island",
+"qid": "osm:Tau, American Samoa",
+"sl": 3,
+"wiki": "Tau, American Samoa"
+},
+{
+"aliases": [],
+"label": "Swains Island",
+"qid": "osm:Swains Island",
+"sl": 3,
+"wiki": "Swains Island"
+},
+{
+"aliases": [
+"Minicoy Island"
+],
+"label": "Minicoy",
+"qid": "osm:Minicoy",
+"sl": 3,
+"wiki": "Minicoy"
+},
+{
+"aliases": [],
+"label": "Machias Seal Island",
+"qid": "osm:Machias Seal Island",
+"sl": 3,
+"wiki": "Machias Seal Island"
+},
+{
+"aliases": [
+"Berhala Island, Sabah",
+"Pulau Berhala"
+],
+"label": "Berhala Island",
+"qid": "osm:Berhala Island, Sabah",
+"sl": 3,
+"wiki": "Berhala Island, Sabah"
+},
+{
+"aliases": [
+"Griomasaigh"
+],
+"label": "Grimsay",
+"qid": "osm:Grimsay (South East Benbecula)",
+"sl": 3,
+"wiki": "Grimsay (South East Benbecula)"
+},
+{
+"aliases": [
+"Niha",
+"Pulau Nias"
+],
+"label": "Nias",
+"qid": "osm:Nias",
+"sl": 3,
+"wiki": "Nias"
+},
+{
+"aliases": [
+"Σφαιρία"
+],
+"label": "Sphaeria",
+"qid": "osm:Sphaeria",
+"sl": 3,
+"wiki": "Sphaeria"
+},
+{
+"aliases": [
+"Sermitsiaq"
+],
+"label": "Sermitsiaq Island",
+"qid": "osm:Sermitsiaq Island",
+"sl": 3,
+"wiki": "Sermitsiaq Island"
+},
+{
+"aliases": [
+"Velanai Island"
+],
+"label": "Kayts",
+"qid": "osm:Velanai Island",
+"sl": 3,
+"wiki": "Velanai Island"
+},
+{
+"aliases": [],
+"label": "Long Cay",
+"qid": "osm:Long Cay",
+"sl": 3,
+"wiki": "Long Cay"
+},
+{
+"aliases": [],
+"label": "Muckle Flugga",
+"qid": "osm:Muckle Flugga",
+"sl": 3,
+"wiki": "Muckle Flugga"
+},
+{
+"aliases": [],
+"label": "Raivavae",
+"qid": "osm:Raivavae",
+"sl": 3,
+"wiki": "Raivavae"
+},
+{
+"aliases": [
+"Batu Kawan",
+"Pulau Batu Kawan"
+],
+"label": "Batu Kawan Island",
+"qid": "osm:Batu Kawan",
+"sl": 3,
+"wiki": "Batu Kawan"
+},
+{
+"aliases": [],
+"label": "Macauley Island",
+"qid": "osm:Macauley Island",
+"sl": 3,
+"wiki": "Macauley Island"
+},
+{
+"aliases": [],
+"label": "Curtis Island",
+"qid": "osm:Curtis Island (New Zealand)",
+"sl": 3,
+"wiki": "Curtis Island (New Zealand)"
+},
+{
+"aliases": [],
+"label": "Cheeseman Island",
+"qid": "osm:Cheeseman Island",
+"sl": 3,
+"wiki": "Cheeseman Island"
+},
+{
+"aliases": [
+"鼓浪屿"
+],
+"label": "Gulangyu",
+"qid": "osm:Gulangyu",
+"sl": 3,
+"wiki": "Gulangyu"
+},
+{
+"aliases": [
+"Kulusuk"
+],
+"label": "Kulusuk Island",
+"qid": "osm:Kulusuk Island",
+"sl": 3,
+"wiki": "Kulusuk Island"
+},
+{
+"aliases": [
+"Foynøya"
+],
+"label": "Foynoya",
+"qid": "osm:Foynøya",
+"sl": 3,
+"wiki": "Foynøya"
+},
+{
+"aliases": [],
+"label": "Reindeer Island",
+"qid": "osm:Reindeer Island",
+"sl": 3,
+"wiki": "Reindeer Island"
+},
+{
+"aliases": [],
+"label": "Unguja",
+"qid": "osm:Unguja",
+"sl": 3,
+"wiki": "Unguja"
+},
+{
+"aliases": [
+"Pulau Banggi"
+],
+"label": "Banggi Island",
+"qid": "osm:Banggi Island",
+"sl": 3,
+"wiki": "Banggi Island"
+},
+{
+"aliases": [
+"蜈支洲岛"
+],
+"label": "Wuzhizhou Island",
+"qid": "osm:Wuzhizhou Island",
+"sl": 3,
+"wiki": "Wuzhizhou Island"
+},
+{
+"aliases": [
+"Ujuaakajiip Nunaa"
+],
+"label": "Danmark Island",
+"qid": "osm:Danmark Island",
+"sl": 3,
+"wiki": "Danmark Island"
+},
+{
+"aliases": [
+"海花岛",
+"Sea Flower Island"
+],
+"label": "Ocean Flower Island",
+"qid": "osm:Ocean Flower Island",
+"sl": 3,
+"wiki": "Ocean Flower Island"
+}
+]
+}

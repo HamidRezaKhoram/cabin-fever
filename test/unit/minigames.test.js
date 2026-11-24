@@ -238,7 +238,8 @@ test('aim minis: Track the Ball, Angle Match, Split the Rope — closest wins, a
     const target = ps[0].state.gameState.target;
     assert.ok(target >= 10 && target <= 170 && Number.isInteger(ps[0].state.gameState.base));
     ps[0].submit({ angle: 200 });
-    ps[0].submit({ angle: target + 3 }); ps[1].submit({ angle: target - 20 }); ps[2].submit({ angle: 'x' });
+    // (A1 is 20° off on the side that stays inside 0–180°: "target - 20" was refused for a target under 20.)
+    ps[0].submit({ angle: target + 3 }); ps[1].submit({ angle: target > 90 ? target - 20 : target + 20 }); ps[2].submit({ angle: 'x' });
     await until(() => h.state.gameState.doneCount === 2, 'two locked in');
     ps[2].submit({ angle: target + 3 });
     const r2 = await result('angle');
