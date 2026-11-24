@@ -32,7 +32,7 @@ test('the pool: enough categories, an 18+ share, obvious answers, no answer in t
   assert.strictEqual(new Set(POOL.map((/** @type {any} */ x) => x.id)).size, POOL.length, 'unique ids');
   for (const it of POOL) {
     assert.ok(it.answers.length >= 20, `${it.q}: ${it.answers.length} answers`);
-    for (const t of [0, 1]) assert.ok(it.answers.some((/** @type {any[]} */ r) => r[0] === t), `${it.q}: tier ${t}`);
+    for (const t of [0, 1, 2]) assert.ok(it.answers.some((/** @type {any[]} */ r) => r[0] === t), `${it.q}: tier ${t} (the game test plays tiers 0–2 in every category)`);
     const seen = new Map();
     for (const r of it.answers) {
       assert.ok(Number.isInteger(r[0]) && r[0] >= 0 && r[0] <= 4 && r.length >= 2, `${it.q}: ${JSON.stringify(r)}`);
@@ -78,7 +78,8 @@ test('a game: depth scores, a shared spot costs a tier, the room judges off-char
   assert.strictEqual(JSON.stringify(ann.state).includes('"tier"'), false, 'the phone is not told how deep (that is the reveal)');
   ben.submit({ text: mid }); cat.submit({ text: ' ' + mid.toUpperCase() });
   let r = await reveal();
-  assert.strictEqual(row(r, 'Ann').gained, at(4)[0] ? 600 : 450);
+  const annRound1 = at(4)[0] ? 600 : 450; // (kept: `at` is the next round's chart by the end)
+  assert.strictEqual(row(r, 'Ann').gained, annRound1);
   assert.strictEqual(row(r, 'Ben').tier, 1, 'two in the same spot: one tier shallower');
   assert.strictEqual(row(r, 'Ben').gained, 150);
   assert.strictEqual(row(r, 'Cat').gained, 150);
@@ -123,5 +124,5 @@ test('a game: depth scores, a shared spot costs a tier, the room judges off-char
   assert.strictEqual(row(r, 'Cat').tierName, 'Stayed on the dock');
   await h.phase('gameover');
   const score = (/** @type {string} */ n) => h.state.players.find((/** @type {any} */ p) => p.nickname === n).score;
-  assert.strictEqual(score('Ann'), (at(4)[0] ? 600 : 450) + 50 + 450 + 450, 'round 1 + two 🤯 + rounds 2 and 3');
+  assert.strictEqual(score('Ann'), annRound1 + 50 + 450 + 450, 'round 1 + two 🤯 + rounds 2 and 3');
 });
