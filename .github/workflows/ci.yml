@@ -79,17 +79,16 @@ jobs:
       - name: docker compose up (full and lite), pages load, a room plays, still up 10 s later
         run: ./scripts/docker-smoke.sh
 
-  deploy:
+  # Build the site and upload it in one job, deploy it in the next (GitHub's own layout). Deploying in the
+  # same job, a few seconds after the upload, the artifact wasn't listed yet: "No artifacts named
+  # github-pages" (runs 45309298137, 45345216700, 45381501239), with every test green.
+  pages-build:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [browser, docker]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
-      pages: write
-      id-token: write
-    concurrency: { group: pages, cancel-in-progress: false }
-    environment: { name: github-pages, url: '${{ steps.deployment.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -108,5 +107,16 @@ jobs:
         env: { CF_ICE_SERVERS: '${{ secrets.CF_ICE_SERVERS }}' }
       - uses: actions/upload-pages-artifact@v5
         with: { path: dist }
+
+  deploy:
+    needs: pages-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    concurrency: { group: pages, cancel-in-progress: false }
+    environment: { name: github-pages, url: '${{ steps.deployment.outputs.page_url }}' }
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
