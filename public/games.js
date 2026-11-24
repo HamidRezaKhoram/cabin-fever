@@ -102,6 +102,10 @@
   /** Campfire Sequence colours (stones by the fire). */
   const MG_COLOURS = ['#ff5e5e', '#ffd23f', '#4fc3f7', '#7ed957'];
   const MG_COLOUR_NAMES = ['RED', 'YELLOW', 'BLUE', 'GREEN'];
+  /** Firefly Count: each firefly's size and glow (style.css; spelled out so the dead-CSS check sees them). */
+  const MG_FLY_SIZE = ['fs0', '', 'fs2'], MG_FLY_GLOW = ['', 'fb1', 'fb2'];
+  /** Angle Match: the angle between two arms, 0–180° (same maths as the server). @param {number} a @param {number} b */
+  const mgBetween = (a, b) => { const d = Math.abs((((b - a) % 360) + 360) % 360); return d > 180 ? 360 - d : d; };
   /** Skip Stones: where the arrow is (0–1) at a time (same maths as the server). @param {number} t @param {number} period */
   const mgSwing = (t, period) => { const x = (((t % period) + period) % period) / period; return x < 0.5 ? x * 2 : 2 - x * 2; };
   /** A canvas sized to its box (pixel-crisp), drawn on the shared 30 fps clock. @param {HTMLCanvasElement} cv @param {(g: CanvasRenderingContext2D, w: number, h: number) => void} draw */
@@ -122,20 +126,88 @@
   /** Tug / Canoe: has this round's clock (server time, as the phone first saw it) run out?
    * @param {any} g @param {() => number} now */
   const mgTimeUp = (g, now) => { const end = Number(g.endsAt) || 0; return () => !!end && now() >= end; };
+  /** Angle Match / Split the Rope: what to aim for. @param {any} g @param {string} cls @param {string} [tag] */
+  const mgGoal = (g, cls, tag = 'p') => (g.mini === 'angle' ? `<${tag} class="${cls}">${g.target}°</${tag}>` : g.mini === 'split' ? `<${tag} class="${cls}">${g.target}</${tag}>` : '');
+  /** The hidden answer, said on the result screen. @param {string} mini @param {number} a @param {(ms: number) => string} secs */
+  const mgAnswer = (mini, a, secs) => (mini === 'fireflies' ? `${a} fireflies` : mini === 'track' ? `It landed at ${a} m` : mini === 'angle' ? `The angle: ${a}°`
+    : mini === 'split' ? `The cut: ${a}` : 'Target: ' + secs(a));
+  /** Track the Ball: the field the TV draws on the 30 fps clock (below). `start` animates the flight.
+   * @param {any} track @param {{ nickname: string, v: number }[] | null} guesses @param {number | null} [start] @param {boolean} [small] (the result screen: room for the list under it) */
+  const mgTrackCanvas = (track, guesses, start = null, small = false) => `<canvas class="mg-track ${small ? 'mg-small' : ''}" width="960" height="400" data-track="${esc(JSON.stringify({ ...track, guesses, start }))}"></canvas>
+    <p class="mg-ends tv ${small ? 'mg-small' : ''}"><span>0 m</span><span>50 m</span><span>100 m</span></p>`;
+  /** Split the Rope's reveal: the real cut and everyone's. @param {number} answer @param {{ nickname: string, v: number }[] | null} guesses @param {boolean} flip */
+  const mgRope = (answer, guesses, flip) => {
+    const at = (/** @type {number} */ v) => { const x = ((v - 1) / 999) * 100; return (flip ? 100 - x : x).toFixed(1); };
+    return `<div class="mg-rope"><i class="mg-cut" style="left:${at(answer)}%"></i>${(guesses || []).map((x) => `<span class="mg-mark" style="left:${at(x.v)}%">${av(x.nickname)}</span>`).join('')}</div>
+      <p class="mg-ends tv"><span>${flip ? 1000 : 1}</span><span>${flip ? 1 : 1000}</span></p>`;
+  };
+  /** Track the Ball on the TV: sky, a ruler on the ground, the flight so far and the fog it vanishes
+   * into; on the result screen, the whole arc, where it landed and everyone's flags. */
+  const MG_FLAGS = ['#ff5e5e', '#ffd23f', '#4fc3f7', '#7ed957', '#ff7bd5', '#ffb347', '#c8ff6b', '#b39ddb'];
+  const mgTracks = document.getElementsByClassName('mg-track'); // live: no page search per frame
+  /** @type {WeakMap<Element, { raw: string, d: any }>} */
+  const mgTrackData = new WeakMap();
+  window.Rumpus.clock.add((tick) => {
+    const el = mgTracks[0];
+    if (!el || el.nodeName !== 'CANVAS') return;
+    const cv = /** @type {HTMLCanvasElement} */ (el);
+    const raw = cv.dataset.track || '';
+    let m = mgTrackData.get(cv);
+    if (!m || m.raw !== raw) {
+      try { m = { raw, d: JSON.parse(raw) }; } catch (e) { return; }
+      mgTrackData.set(cv, m);
+    }
+    const d = m.d, g = cv.getContext('2d');
+    if (!g || !d || !Array.isArray(d.pts)) return;
+    const W = cv.width, H = cv.height, ground = H - 36;
+    const X = (/** @type {number} */ x) => Math.round((x / 100) * W), Y = (/** @type {number} */ y) => Math.round(ground - (y / 100) * (ground - 24));
+    g.fillStyle = '#16324f'; g.fillRect(0, 0, W, ground);
+    g.fillStyle = '#2f5d2a'; g.fillRect(0, ground, W, H - ground);
+    g.fillStyle = '#e8f0d8';
+    for (let k = 0; k <= 10; k++) { const x = Math.min(W - 4, X(k * 10)); g.fillRect(x, ground, 4, k % 5 ? 10 : 22); }
+    const pts = /** @type {number[][]} */ (d.pts);
+    // How much of the flight is on screen: all of it once it has gone into the fog (or on the result).
+    const f = d.start ? Math.max(0, Math.min(1, (window.Rumpus.time.now() - d.start) / Math.max(1, d.ms))) : 1;
+    const k = f * (pts.length - 1), i = Math.floor(k);
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    for (let j = 0; j <= i; j++) g.fillRect(X(pts[j][0]) - 2, Y(pts[j][1]) - 2, 4, 4);
+    if (!d.land) {
+      if (f < 1) {
+        const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)], t = k - i;
+        const bx = X(a[0] + (b[0] - a[0]) * t), by = Y(a[1] + (b[1] - a[1]) * t);
+        g.fillStyle = '#ffffff'; g.fillRect(bx - 8, by - 8, 16, 16);
+        g.fillStyle = '#ff5e5e'; g.fillRect(bx - 8, by - 2, 16, 4);
+      }
+      // The fog bank: everything past the point where the ball vanishes.
+      const fx = X(d.fog);
+      for (let y = 0; y < ground; y += 8) { g.fillStyle = (y / 8 + Math.floor(tick / 10)) % 2 ? 'rgba(200,210,222,0.92)' : 'rgba(176,188,204,0.92)'; g.fillRect(fx, y, W - fx, 8); }
+      return;
+    }
+    (d.guesses || []).forEach((/** @type {{ v: number }} */ q, /** @type {number} */ n) => {
+      const x = X(q.v);
+      g.fillStyle = '#e8f0d8'; g.fillRect(x - 2, ground - 40, 4, 40);
+      g.fillStyle = MG_FLAGS[n % MG_FLAGS.length]; g.fillRect(x + 2, ground - 40, 22, 14);
+    });
+    const lx = X(d.land);
+    g.fillStyle = '#ffffff'; g.fillRect(lx - 10, ground - 6, 20, 6);
+    g.fillStyle = '#ff5e5e';
+    for (let s = -10; s <= 10; s += 2) { g.fillRect(lx + s - 2, ground + 4 + Math.abs(s), 4, 4); }
+  });
   register('minigames', {
     host(s) {
       const g = s.gameState;
       const tag = `<p class="round-tag">Minigame ${g.round} of ${g.totalRounds}</p>`;
       const secs = (/** @type {number} */ ms) => (ms / 1000).toFixed(1) + ' s';
       if (s.phase === 'mg-intro') {
-        return `${tag}<h1 class="prompt mg-title">${esc(g.miniName)}</h1><p class="big-sub mg-rule">${esc(g.rule)}</p>${g.mini === 'roast' ? `<p class="big-answer">Target: ${secs(g.target)}</p>` : ''}`;
+        return `${tag}<h1 class="prompt mg-title">${esc(g.miniName)}</h1><p class="big-sub mg-rule">${esc(g.rule)}</p>${g.mini === 'roast' ? `<p class="big-answer">Target: ${secs(g.target)}</p>` : ''}${mgGoal(g, 'big-answer')}`;
       }
       if (s.phase === 'mg-result') {
         const r = g.result;
         const head = r.winnerTeam ? (r.winnerTeam === 'tie' ? 'TIE!' : `${teamName(r.winnerTeam)} WINS!`) : r.rows[0] && r.rows[0].gained ? `${esc(r.rows[0].nickname)} WINS!` : 'NOBODY!';
         return `${tag}<h1 class="prompt">${esc(g.miniName)}: ${head}</h1>
-          ${r.answer != null ? `<p class="big-answer">${g.mini === 'fireflies' ? r.answer + ' fireflies' : 'Target: ' + secs(r.answer)}</p>` : ''}
-          <ol class="answers results">${r.rows.map((/** @type {any} */ row) => `<li class="${row.gained ? 'winner' : ''} ${row.team ? 'team-' + row.team : ''}">
+          ${r.answer != null ? `<p class="big-answer">${mgAnswer(g.mini, r.answer, secs)}</p>` : ''}
+          ${g.mini === 'track' && r.track ? mgTrackCanvas(r.track, r.guesses, null, true) : g.mini === 'split' ? mgRope(r.answer, r.guesses, !!g.flip) : ''}
+          <ol class="answers results ${g.mini === 'track' || g.mini === 'split' ? 'mg-two' : ''}">${r.rows.map((/** @type {any} */ row) => `<li class="${row.gained ? 'winner' : ''} ${row.team ? 'team-' + row.team : ''}">
             ${av(row.nickname)} ${esc(row.nickname)} — ${esc(row.burnt ? 'BURNT 🔥' : row.value)}${typeof row.value === 'number' && row.unit ? ' ' + row.unit : ''}
             ${row.gained ? `<span class="votes">+${row.gained}</span>` : ''}</li>`).join('')}</ol>`;
       }
@@ -159,7 +231,7 @@
         }
         case 'quickdraw': return g.sub === 'go' ? `<div class="qd go">GO!</div>` : `<div class="qd wait">WAIT…</div>`;
         case 'fireflies':
-          if (g.sub === 'show') return `<div class="fly-field">${g.flies.map((/** @type {any} */ f) => `<i style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
+          if (g.sub === 'show') return `<div class="fly-field">${g.flies.map((/** @type {any} */ f) => `<i class="${MG_FLY_SIZE[f.s] || ''} ${MG_FLY_GLOW[f.b] || ''}" style="left:${f.x}%;top:${f.y}%;animation-delay:${f.d / 10}s"></i>`).join('')}</div>`;
           return `${tag}<h1 class="prompt">How many fireflies?</h1><p class="big-sub">Guess on your phones! ${T}</p>${count(g.doneCount, g.totalPlayers, 'guesses in')}`;
         case 'roast': // no clock on screen: feel the seconds
           return `${tag}<h1 class="prompt">🔥 ROAST! 🍡</h1><p class="big-answer">Let go at ${secs(g.target)}</p><p class="big-sub">No clock to help you — count it in your head…</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
@@ -180,13 +252,19 @@
           }
           return `${tag}<h1 class="prompt">Repeat it on your phone!</h1><p class="big-sub">${g.length} sparks · right and fast wins ${T}</p>${count(g.doneCount, g.totalPlayers, 'done')}`;
         case 'stack': return `${tag}<h1 class="prompt">🪵 Stack the woodpile!</h1><p class="big-sub">Tap to drop each log on the pile ${T}</p>${count(g.doneCount, g.totalPlayers, 'piles done')}`;
+        case 'track':
+          return `${tag}<h1 class="prompt">${g.sub === 'show' ? '⚾ Watch the ball!' : 'Where will it land?'}</h1>${mgTrackCanvas(g.track, null, g.playStart)}
+            <p class="big-sub">${g.sub === 'show' ? 'Follow it until the fog swallows it…' : `Tap the spot on your phones ${T}`}</p>${count(g.doneCount, g.totalPlayers, 'guesses in')}`;
+        case 'angle': case 'split':
+          return `${tag}<h1 class="prompt">${g.mini === 'angle' ? '📐 Make this angle' : '🪢 Cut the rope at'}</h1>${mgGoal(g, 'big-answer mg-goal')}
+            <p class="big-sub">${g.mini === 'angle' ? 'Swing the arm on your phone' : 'Somewhere between 1 and 1000…'} ${T}</p>${count(g.doneCount, g.totalPlayers, 'locked in')}`;
         default: return tag;
       }
     },
     player(s) {
       const g = s.gameState, you = s.you;
       const badge = you.team ? `<p class="team-badge team-${you.team}">${teamName(you.team)}</p>` : '';
-      if (s.phase === 'mg-intro') return `${badge}<h1>${esc(g.miniName)}</h1><p class="prompt">${esc(g.rule)}</p>${g.mini === 'roast' ? `<p class="big-answer">Let go at ${(g.target / 1000).toFixed(1)} s</p>` : ''}<p>Get ready…</p>`;
+      if (s.phase === 'mg-intro') return `${badge}<h1>${esc(g.miniName)}</h1><p class="prompt">${esc(g.rule)}</p>${g.mini === 'roast' ? `<p class="big-answer">Let go at ${(g.target / 1000).toFixed(1)} s</p>` : ''}${mgGoal(g, 'big-answer')}<p>Get ready…</p>`;
       if (s.phase === 'mg-result') return `<h1>${you.gained ? `+${you.gained}! 🎉` : 'Next one! 💪'}</h1>`;
       if (you.early) return g.mini === 'quickdraw' ? '<h1>SPLASH! 💦</h1><p>Too early!</p>' : g.mini === 'spot' ? '<h1>Wrong bird! 🦆</h1><p>That was a duck.</p>' : '<h1>Oops! ✗</h1><p>Not quite the right order.</p>';
       switch (g.mini) {
@@ -217,6 +295,15 @@
           if (you.done) return waiting('Sequence in');
           if (g.sub !== 'go') return watchTv('<p>Remember the colours of the sparks…</p>');
           return `<p class="mg-count" data-mg-seq>${'○ '.repeat(g.length || 0)}</p><div class="simon-pad">${MG_COLOURS.map((c, i) => `<button class="mg-big simon" style="--c:${c}" data-mg-colour="${i}">${MG_COLOUR_NAMES[i]}</button>`).join('')}</div>`;
+        case 'track': case 'angle': case 'split': {
+          if (you.done) return waiting('Locked in');
+          const head = g.mini === 'track' ? '<h2>Where will the ball land?</h2>' : `<h2>${g.mini === 'angle' ? 'Make' : 'Cut at'} ${mgGoal(g, 'mg-goal-inline', 'b')}</h2>`;
+          const ends = g.mini === 'track' ? ['0 m', '50 m', '100 m'] : g.mini === 'split' ? (g.flip ? ['1000', '', '1'] : ['1', '', '1000']) : null;
+          return `${head}<canvas class="mg-canvas mg-aim ${g.mini === 'angle' ? 'mg-aim-angle' : g.mini === 'split' ? 'mg-aim-split' : 'mg-aim-track'}" data-mg-aim="${g.mini}"></canvas>
+            ${ends ? `<p class="mg-ends">${ends.map((e) => `<span>${e}</span>`).join('')}</p>` : ''}
+            <p class="mg-count" data-mg-aimv>${g.mini === 'angle' ? 'Drag to swing the arm' : 'Tap where it goes'}</p>
+            <button type="button" class="wide" data-mg-lock>Lock it in</button>`;
+        }
         case 'stack':
           if (you.done) return waiting('Pile done');
           return `<p class="mg-count" data-mg-height data-live>0 logs</p><canvas class="mg-canvas mg-field" data-mg-stack></canvas><p class="hint">Tap anywhere on the pile to drop the log</p>`;
@@ -386,6 +473,62 @@
         root.addEventListener('pointerdown', onTap);
         api.onCleanup(() => root.removeEventListener('pointerdown', onTap));
       }
+      // Track the Ball / Angle Match / Split the Rope: aim on the pad (tap or drag), then lock it in.
+      const aim = /** @type {HTMLCanvasElement | null} */ (root.querySelector('[data-mg-aim]'));
+      const lock = /** @type {HTMLButtonElement | null} */ (root.querySelector('[data-mg-lock]'));
+      if (aim && lock) {
+        const kind = aim.dataset.mgAim || '';
+        /** Strip: 0–1 along it. Angle: the arm's direction in degrees (counter-clockwise, 0 = right). @type {number | null} */
+        let v = null;
+        let sent = false;
+        const label = /** @type {HTMLElement} */ (root.querySelector('[data-mg-aimv]'));
+        const base = Number(g.base) || 0;
+        const rad = (/** @type {number} */ deg) => (deg * Math.PI) / 180;
+        api.onCleanup(mgCanvas(aim, (c, w, h) => {
+          if (kind === 'angle') {
+            c.fillStyle = '#13284a'; c.fillRect(0, 0, w, h);
+            const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.44;
+            const arm = (/** @type {number} */ deg, /** @type {string} */ col) => {
+              c.fillStyle = col;
+              for (let r = 0; r < R; r += 4) c.fillRect(Math.round(cx + Math.cos(rad(deg)) * r) - 3, Math.round(cy - Math.sin(rad(deg)) * r) - 3, 6, 6);
+            };
+            arm(base, '#e8f0d8');
+            if (v !== null) arm(v, '#ffd23f');
+            c.fillStyle = '#ff7bd5'; c.fillRect(cx - 7, cy - 7, 14, 14);
+            return;
+          }
+          c.fillStyle = kind === 'track' ? '#2f5d2a' : '#1d2b3a'; c.fillRect(0, 0, w, h);
+          if (kind === 'track') { c.fillStyle = '#e8f0d8'; for (let k = 0; k <= 10; k++) c.fillRect(Math.min(w - 3, Math.round((k / 10) * w)), 0, 3, k % 5 ? 12 : 24); }
+          else { // a twisted rope across the middle, no marks on it
+            const y = Math.round(h / 2);
+            for (let x = 0; x < w; x += 8) { c.fillStyle = (x / 8) % 2 ? '#a86f45' : '#d4a373'; c.fillRect(x, y - 7, 8, 14); }
+          }
+          if (v !== null) { const x = Math.round(v * w); c.fillStyle = kind === 'track' ? '#ffd23f' : '#ff5e5e'; c.fillRect(x - 3, 0, 6, h); }
+        }));
+        let buzzed = 0;
+        const set = (/** @type {PointerEvent} */ e) => {
+          if (sent) return;
+          const r = aim.getBoundingClientRect();
+          if (kind === 'angle') v = (Math.atan2(r.top + r.height / 2 - e.clientY, e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+          else v = Math.max(0, Math.min(1, (e.clientX - r.left) / Math.max(1, r.width)));
+          // (No number for Angle Match or the rope: reading it off the phone would be the whole game.)
+          label.textContent = kind === 'track' ? `Lands at ${Math.round(v * 100)} m?` : kind === 'angle' ? 'Arm set — lock it in' : 'Rope marked — lock it in';
+          const t = performance.now();
+          if (t - buzzed > 80) { buzzed = t; window.Rumpus.haptic(4); }
+        };
+        aim.addEventListener('pointerdown', (e) => { e.preventDefault(); aim.setPointerCapture(e.pointerId); set(e); });
+        aim.addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') set(e); });
+        lock.addEventListener('click', () => {
+          if (sent) return;
+          if (v === null) { label.textContent = kind === 'angle' ? 'Drag on the dial first' : 'Tap the pad first'; window.Rumpus.haptic([10, 40, 10]); return; }
+          const value = kind === 'track' ? Math.round(v * 1000) / 10
+            : kind === 'split' ? (g.flip ? 1000 - Math.round(v * 999) : 1 + Math.round(v * 999))
+              : Math.round(mgBetween(base, v));
+          sent = true;
+          window.Rumpus.haptic(20);
+          api.send({ [kind]: value });
+        });
+      }
       // Woodpile Stack: a log slides back and forth; tap to drop it; the overhang is cut off.
       const st = /** @type {HTMLCanvasElement | null} */ (root.querySelector('[data-mg-stack]'));
       if (st) {
@@ -422,6 +565,71 @@
           else api.send({ stack: pile.length - 1, partial: true }); // counts if the round is ended early
         });
       }
+    },
+  });
+
+  // ---------------------------------------------------------------- The Deep End
+  /** The category line with the stakes badge. @param {any} g */
+  const ddTag = (g) => `<p class="round-tag">Category ${g.round} of ${g.totalRounds}${g.multiplier > 1 ? `<span class="double-badge">${g.multiplier}× POINTS</span>` : ''}</p>`;
+  /** How deep each tier goes (the TV's key while people think). @param {{ name: string, m: number }[]} tiers */
+  const ddKey = (tiers) => `<ol class="dd-key">${(tiers || []).map((t, i) => `<li class="dd-t${i}"><b>${esc(t.name)}</b> ${t.m} m</li>`).join('')}</ol>`;
+  const DD_TIER_CLS = ['dd-t0', 'dd-t1', 'dd-t2', 'dd-t3', 'dd-t4'];
+  register('deepend', {
+    /** @param {any} s */
+    narrate(s) {
+      const g = s.gameState;
+      if (s.phase === 'dd-answer') return `${g.prompt}. Skip the obvious: the rarer it is, the deeper you dive.`;
+      if (s.phase === 'dd-judge') return 'Some of you went off the chart. Does it count?';
+      if (s.phase === 'dd-reveal') return 'Everybody off the dock. Let’s see who hit the bottom.';
+      return null;
+    },
+    host(s) {
+      const g = s.gameState;
+      if (s.phase === 'dd-answer') {
+        return `${ddTag(g)}<h1 class="prompt" data-fit>${esc(g.prompt)}</h1>
+          <p class="big-sub">Skip the obvious: rare answers dive deeper ${T}</p>${ddKey(g.tiers)}
+          ${count(g.answeredCount, g.totalPlayers, 'answers in')}${waitingRow(g.waitingOn, 'diving')}`;
+      }
+      if (s.phase === 'dd-judge') {
+        return `${ddTag(g)}<h1 class="prompt">Off the chart! Does it count?</h1><p class="big-sub">${esc(g.prompt)}: vote on your phones ${T}</p>
+          <div class="dd-judge">${(g.judging || []).map((/** @type {any} */ j) => `<div class="dd-card">“${esc(j.text)}”</div>`).join('')}</div>
+          ${count(g.judgedCount, g.totalPlayers, 'judges done')}${waitingRow(g.waitingOn, 'judging')}`;
+      }
+      const r = g.result || { rows: [], obvious: [] };
+      const step = (g.stepMs || 2200) / 1000;
+      const end = r.rows.length * step;
+      return `${ddTag(g)}<h1 class="prompt">${esc(g.prompt)}</h1>
+        <ol class="dd-dives ${r.rows.length > 4 ? 'dd-many' : ''}">${r.rows.map((/** @type {any} */ row, /** @type {number} */ i) => `<li class="${row.tier === null ? 'dd-flop' : DD_TIER_CLS[row.tier]}" style="animation-delay:${(i * step).toFixed(1)}s">
+          <span class="dd-top"><span class="dd-who">${av(row.nickname, 'avatar')} ${esc(row.nickname)}</span>
+            <span class="dd-said">${row.text ? `“${esc(row.text)}”` : '—'}</span>
+            ${row.gained ? `<span class="votes">+${row.gained}</span>` : ''}${row.wows ? `<span class="dd-wow">🤯 ×${row.wows}</span>` : ''}</span>
+          <span class="dd-bottom"><span class="dd-depth"><i style="width:${(row.m / 30) * 100}%"></i></span>
+            <span class="dd-tier">${esc(row.tierName)}${row.m ? ` · ${row.m} m` : ''}</span>
+            ${row.note ? `<span class="dd-note">${esc(row.note)}</span>` : ''}</span></li>`).join('')}</ol>
+        <p class="big-sub dd-after" style="animation-delay:${end.toFixed(1)}s">Most people say: ${(r.obvious || []).map(esc).join(', ')}${r.treasure ? ` · Lake-bottom treasure: <b>${esc(r.treasure)}</b>` : ''}</p>`;
+    },
+    player(s) {
+      const g = s.gameState, you = s.you;
+      if (s.phase === 'dd-answer') {
+        const status = you.answer ? `<p class="dd-mine">Your answer: <b>“${esc(you.answer)}”</b> · ${you.onChart ? '✓ on our chart' : '❓ not on our chart: the room will judge it'}</p>` : '';
+        return `${ddTag(g)}<h2 class="prompt">${esc(g.prompt)}</h2>${status}
+          <p>${you.answer ? 'Change it until time is up:' : 'The rarer the deeper. Obvious ones barely count.'}</p>
+          ${textForm('Your rarest answer…', 40, you.answer ? 'Change answer' : 'Dive in 🤿')}`;
+      }
+      if (s.phase === 'dd-judge') {
+        if (!(you.judge || []).length) return waiting('Your answer is on the vote', 'The room is deciding if it counts…');
+        return `<h2>Does it count for “${esc(g.prompt)}”?</h2><div class="dd-votes">${you.judge.map((/** @type {any} */ j) => `<div class="dd-vote"><p class="prompt">“${esc(j.text)}”</p>
+          <div class="crush-pair"><button class="vote-btn" data-send="${esc(JSON.stringify({ judge: j.key, ok: true }))}" aria-pressed="${j.vote === true}">👍 Counts</button>
+          <button class="vote-btn bad" data-send="${esc(JSON.stringify({ judge: j.key, ok: false }))}" aria-pressed="${j.vote === false}">👎 Nope</button></div></div>`).join('')}</div>`;
+      }
+      const row = you.row;
+      const head = !row || row.tier === null ? `<h1>${row && row.text ? 'Belly flop! 💦' : 'You stayed on the dock'}</h1><p>${row && row.note ? esc(row.note) : 'Dive in next time!'}</p>`
+        : `<h1>${esc(row.tierName)}! ${row.m} m 🤿</h1><p class="prompt">“${esc(row.text)}” · +${row.gained}</p>${row.note ? `<p>${esc(row.note)}</p>` : ''}`;
+      // 🤯 on the others' answers while the dives play (+25 each to them).
+      const others = ((g.result || {}).rows || []).filter((/** @type {any} */ r) => r.text && r.id !== you.playerId);
+      const wowed = new Set(you.wowed || []);
+      return head + (others.length ? `<p class="hint">Never heard of it? 🤯 gives them +25</p><div class="vote-list dd-wows">${others.map((/** @type {any} */ r) =>
+        `<button class="vote-btn" data-send="${esc(JSON.stringify({ wow: r.id }))}" aria-pressed="${wowed.has(r.id)}" ${wowed.has(r.id) ? 'disabled' : ''}>🤯 “${esc(r.text)}”</button>`).join('')}</div>` : '');
     },
   });
 
@@ -821,7 +1029,7 @@
 
   // ---------------------------------------------------------------- Loon Call (rhythm)
   /** @typedef {{ steps: number[], by: string | null, callAt: number, echoAt: number }} LcPhrase */
-  /** @typedef {{ kind: string, name: string, bpm: number, root: number, startAt: number, barMs: number, countIn: number, endAt: number, clicks: number[], phrases: LcPhrase[], caller: string | null, steps: number, beats?: number, feel?: string }} LcSched */
+  /** @typedef {{ kind: string, name: string, bpm: number, root: number, startAt: number, barMs: number, countIn: number, endAt: number, clicks: number[], phrases: LcPhrase[], caller: string | null, steps: number, beats?: number, feel?: string, win?: { perfect: number, good: number, match: number } }} LcSched */
   /** @type {LcSched | null} the schedule on screen (TV or phone) */
   let lcSched = null;
   let lcScheduledAt = 0;
@@ -842,7 +1050,11 @@
     const r = m.rhythm;
     r.stop(); // a new schedule replaces whatever was still booked (a song cut short by Skip)
     const ctxNow = r.now(), srvNow = window.Rumpus.time.now();
-    const at = (/** @type {number} */ ms) => ctxNow + (ms - srvNow) / 1000;
+    // Booked early by the TV's output delay, so the call is HEARD on the beat the phones judge and
+    // show. (Booked on time, it came out of a TV's speakers 0.1–0.25 s late: the echo the room played
+    // back to the sound didn't match the call's grid.)
+    const lag = r.latency ? r.latency() : 0;
+    const at = (/** @type {number} */ ms) => ctxNow + (ms - srvNow) / 1000 - lag;
     const future = (/** @type {number} */ ms) => ms > srvNow + 20;
     const beats = s.beats || 4;
     s.clicks.forEach((c, i) => { if (future(c)) r.click(at(c), i % beats === 0); });
@@ -862,6 +1074,9 @@
           if (onBeat && beat === 2) r.bass(at(t), (s.root / 4) * 1.5);
         }
         if (isCall) for (const st of p.steps) { const t = bar + st * step; if (future(t)) r.call(at(t), s.root * LC_PITCH[Math.floor((st * 8) / s.steps) % 8]); }
+        // "Your turn next": a soft pickup chime one beat before the echo bar (on its first beat it
+        // sounded like a note to tap, and some echoes start later in the bar).
+        else if (future(bar - s.barMs / beats) && r.cue) r.cue(at(bar - s.barMs / beats), s.root);
       }
     });
   }
@@ -892,6 +1107,71 @@
   const lcMeters = document.getElementsByClassName('lc-meter');
   const lcLeads = document.getElementsByClassName('lc-lead');
   const lcTaps = document.getElementsByClassName('lc-tap');
+  const lcHwys = document.getElementsByClassName('lc-hwy');
+  /** This phone's own taps this song (server ms), drawn on its highway. @type {number[]} */
+  let lcMine = [];
+  let lcBuzzKey = '';
+  /**
+   * The note highway (TV: notes slide in from the right; phone: they fall from the top). Each note
+   * reaches the hit line at the moment to tap it, so the echo can be seen coming a bar ahead instead
+   * of only remembered. Filled notes are yours to tap; hollow ones are the loon's call (listen).
+   * @param {HTMLCanvasElement} cv @param {LcSched} s @param {number} t server ms now
+   */
+  function lcHighway(cv, s, t) {
+    const g = cv.getContext('2d');
+    if (!g) return;
+    const W = cv.clientWidth, H = cv.clientHeight;
+    if (!W || !H) return;
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const down = H > W; // the phone's lane runs top to bottom
+    const L = down ? H : W;
+    const hit = Math.round(down ? L * 0.84 : L * 0.16);
+    const LOOK = s.barMs * 1.25; // how far ahead you can see
+    /** Where a moment is along the lane. @param {number} nt */
+    const at = (nt) => (down ? hit - ((nt - t) / LOOK) * hit : hit + ((nt - t) / LOOK) * (W - hit));
+    const span = (/** @type {number} */ a, /** @type {number} */ b, /** @type {string} */ col) => {
+      const p0 = Math.max(0, Math.min(L, at(a))), p1 = Math.max(0, Math.min(L, at(b)));
+      if (Math.abs(p1 - p0) < 1) return;
+      g.fillStyle = col;
+      if (down) g.fillRect(0, Math.min(p0, p1), W, Math.abs(p1 - p0)); else g.fillRect(Math.min(p0, p1), 0, Math.abs(p1 - p0), H);
+    };
+    const mark = (/** @type {number} */ p, /** @type {number} */ thick, /** @type {string} */ col) => {
+      if (p < -thick || p > L + thick) return;
+      g.fillStyle = col;
+      if (down) g.fillRect(0, Math.round(p - thick / 2), W, thick); else g.fillRect(Math.round(p - thick / 2), 0, thick, H);
+    };
+    const NOTE = Math.max(14, Math.round((down ? W : H) * 0.34));
+    const note = (/** @type {number} */ p, /** @type {boolean} */ filled, /** @type {string} */ col) => {
+      if (p < -NOTE || p > L + NOTE) return;
+      const x = down ? (W - NOTE) / 2 : p - NOTE / 3, y = down ? p - NOTE / 3 : (H - NOTE) / 2, w = down ? NOTE : (NOTE * 2) / 3, h = down ? (NOTE * 2) / 3 : NOTE;
+      g.fillStyle = col;
+      if (filled) g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      else { const k = 4; g.fillRect(x, y, w, k); g.fillRect(x, y + h - k, w, k); g.fillRect(x, y, k, h); g.fillRect(x + w - k, y, k, h); }
+    };
+    g.fillStyle = '#0b1a2b'; g.fillRect(0, 0, W, H);
+    const win = (s.win && s.win.match) || 240;
+    const beats = s.beats || 4, beatMs = s.barMs / beats, step = s.barMs / (s.steps || 8);
+    // The bars: the loon's (listen) and yours (echo).
+    for (const p of s.phrases) { span(p.callAt, p.callAt + s.barMs, 'rgba(127,227,208,0.10)'); span(p.echoAt, p.echoAt + s.barMs, 'rgba(255,210,63,0.13)'); }
+    // Beat lines, a stronger one at each bar.
+    const first = s.startAt, k0 = Math.max(0, Math.floor((t - LOOK - first) / beatMs)), k1 = Math.ceil((t + LOOK - first) / beatMs);
+    for (let k = k0; k <= k1; k++) { const bt = first + k * beatMs; if (bt <= s.endAt) mark(at(bt), k % beats === 0 ? 4 : 2, k % beats === 0 ? 'rgba(244,241,232,0.35)' : 'rgba(244,241,232,0.14)'); }
+    if (s.phrases.length) {
+      for (const p of s.phrases) {
+        for (const st of p.steps) {
+          note(at(p.callAt + st * step), false, 'rgba(127,227,208,0.8)');
+          const nt = p.echoAt + st * step;
+          note(at(nt), true, nt < t - win ? 'rgba(160,170,190,0.45)' : '#ffd23f');
+        }
+      }
+    } else if (s.kind === 'tune') for (const c of s.clicks) note(at(c), true, c < t - win ? 'rgba(160,170,190,0.45)' : '#ffd23f');
+    // The hit line: it pulses on every beat.
+    const since = ((t - first) % beatMs + beatMs) % beatMs;
+    const pulse = t >= first && t <= s.endAt && since < 120;
+    mark(hit, pulse ? 10 : 6, pulse ? '#ffffff' : 'rgba(244,241,232,0.75)');
+    // Your own taps (phone only), so you can see early / late against the notes.
+    if (down) for (const tp of lcMine) { const p = at(tp); if (p > hit - 4 && p < L) { g.fillStyle = '#ff7bd5'; g.fillRect(Math.round(W * 0.1), Math.round(p) - 2, Math.round(W * 0.8), 4); } }
+  }
   /** @typedef {{ key: string, mode: HTMLElement, dots: HTMLElement, cells: HTMLElement[], modeCls: string, label: string, dotsTxt: string, step: number, laneMode: string }} LcMeterParts */
   /** @type {WeakMap<Element, LcMeterParts>} */
   const lcParts = new WeakMap();
@@ -939,6 +1219,14 @@
       }
     }
     for (let i = 0; i < lcLeads.length; i++) lcLeads[i].classList.toggle('singing', w.callNote);
+    const now = window.Rumpus.time.now();
+    for (let i = 0; i < lcHwys.length; i++) { const el = lcHwys[i]; if (el.nodeName === 'CANVAS') lcHighway(/** @type {HTMLCanvasElement} */ (el), s, now); }
+    // Feel the beat on the phone: a buzz on each count-in beat and on the beat before every echo.
+    if (lcTaps.length) {
+      const pickup = w.mode === 'call' && w.beat === nb - 1;
+      const bk = `${s.startAt}/${w.bar}/${w.beat}`;
+      if ((w.mode === 'count' || pickup) && bk !== lcBuzzKey) { lcBuzzKey = bk; window.Rumpus.haptic(pickup ? 18 : 10); }
+    }
     for (let i = 0; i < lcTaps.length; i++) {
       const el = /** @type {HTMLElement} */ (lcTaps[i]);
       const own = el.dataset.lcLabel || '';
@@ -990,6 +1278,7 @@
       const syncFlash = (g.syncs || []).length ? `<p class="lc-sync" data-n="${g.syncs.length}">🎶 IN SYNC ×${g.syncs.length}</p>` : '';
       return `${lcStageTag(g)}${head}
         <div class="lc-stage">${lcLead()}<div class="lc-meter" data-live data-lc-meter></div></div>
+        <canvas class="lc-hwy tv" data-live aria-hidden="true"></canvas>
         ${lcChoir(g.choir)}${syncFlash}`;
     },
     player(s) {
@@ -1002,7 +1291,7 @@
       }
       if (s.phase === 'lc-compose' && !you.isCaller) return watchTv(`<p>${esc(g.composer)} is writing a call — get ready to echo it!</p>`);
       const sub = s.phase === 'lc-tune' ? 'Tap along with the clicks' : s.phase === 'lc-compose' ? 'Count-in, then tap your own rhythm for one bar!' : you.isCaller ? 'Your call! Echo it with everyone — you also score for every note they get right 🎤' : 'Listen to the call on the TV, then tap it back';
-      return `<p class="hint">${sub}</p><button class="mg-big lc-tap" data-live data-lc-label="" aria-label="Tap on the beat">TAP!</button><p class="lc-fb" aria-live="off"></p>`;
+      return `<p class="hint">${sub}</p><canvas class="lc-hwy" data-live aria-hidden="true"></canvas><button class="mg-big lc-tap" data-live data-lc-label="" aria-label="Tap on the beat">TAP!</button><p class="lc-fb" aria-live="off"></p>`;
     },
     bind(root, api) {
       const btn = /** @type {HTMLElement | null} */ (root.querySelector('.lc-tap'));
@@ -1013,6 +1302,9 @@
         e.preventDefault();
         const t = window.Rumpus.time.now();
         api.send({ tap: t });
+        if (lcSched && (!lcMine.length || lcMine[0] < lcSched.startAt - 1000)) lcMine = [];
+        lcMine.push(t);
+        if (lcMine.length > 24) lcMine.shift();
         // Instant feedback on the phone itself (no round trip): judge against the nearest note of
         // the echo bar we're in, with this phone's measured delay — and a buzz you can feel.
         const s = lcSched;
@@ -1022,7 +1314,8 @@
           const notes = s.phrases.flatMap((p) => p.steps.map((st) => p.echoAt + (st * s.barMs) / s.steps));
           const near = notes.reduce((a, b) => (Math.abs(b - ct) < Math.abs(a - ct) ? b : a), Infinity);
           const d = ct - near;
-          kind = Math.abs(d) <= 70 ? 'perfect' : Math.abs(d) <= 140 ? 'good' : Math.abs(d) <= 220 ? 'miss' : 'extra';
+          const win = s.win || { perfect: 80, good: 150, match: 240 };
+          kind = Math.abs(d) <= win.perfect ? 'perfect' : Math.abs(d) <= win.good ? 'good' : Math.abs(d) <= win.match ? 'miss' : 'extra';
           label = kind === 'perfect' ? 'PERFECT!' : kind === 'good' ? (d > 0 ? 'A bit late' : 'A bit early') : kind === 'miss' ? (d > 0 ? 'Too late' : 'Too early') : 'Oops — no note';
         }
         window.Rumpus.haptic(kind === 'perfect' ? 30 : kind === 'good' ? 18 : kind === 'tap' ? 12 : [10, 50, 10]);

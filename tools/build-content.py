@@ -14,7 +14,7 @@ Output
 
 Run:  python3 tools/build-content.py
 """
-import hashlib, html, json, random, re, sys
+import hashlib, html, json, random, re, sys, unicodedata
 from typing import Any, Callable
 
 Item = dict[str, Any]
@@ -411,6 +411,41 @@ for r in wd.get('city_nickname', []):
     nick = r['v'].strip()
     if nick and r['label'].lower() not in nick.lower() and len(nick) <= 30:
         fib.append({'q': f"{r['label']} is nicknamed \"____\".", 'answer': nick, 'cat': 'City nicknames', 'a': False, 'src': wd_src(r)})
+# First lines of classics (Project Gutenberg, public domain; content-src/vendor/gutenberg.json from
+# tools/fetch-gutenberg.py). Only the books in content-src/gutenberg-ok.txt: each first line checked by
+# hand, with the title as people know it.
+gut_path = VENDOR / 'gutenberg.json'
+gut: dict[str, Item] = json.loads(gut_path.read_text(encoding='utf-8')) if gut_path.exists() else {}
+for line in (SRC / 'gutenberg-ok.txt').read_text(encoding='utf-8').splitlines() if (SRC / 'gutenberg-ok.txt').exists() else []:
+    if not line.strip() or line.startswith('#'):
+        continue
+    parts = [x.strip() for x in line.split('|', 2)]
+    gid, title = parts[0], parts[1]
+    book = gut.get(gid) or {}
+    first = parts[2] if len(parts) > 2 and parts[2] else str(book.get('line') or '')
+    if first:
+        fib.append({'q': f'The classic book that begins "{first}" is called ____.', 'answer': title, 'cat': 'First lines', 'a': False, 'src': f'Project Gutenberg #{gid} (public domain)'})
+
+# Curious real words (Wiktionary's Words of the Day, CC BY-SA 4.0; content-src/vendor/wotd.json from
+# tools/fetch-wotd.py): one word, a short definition that doesn't give the word away.
+wotd_path = VENDOR / 'wotd.json'
+wotd_fib: list[Item] = []
+for w in (json.loads(wotd_path.read_text(encoding='utf-8')) if wotd_path.exists() else []):
+    word, pos, d = str(w['word']), str(w['pos']), str(w['def']).split('#')[0]
+    if '=' in d or d.lstrip().startswith(('.', ',', ';')):
+        continue  # a template left-over, not a definition (an older download's parse)
+    meaning = re.split(r'[;:]|, (?:especially|usually|often|typically|such as|e\.g\.)', d)[0].strip().rstrip('.')
+    meaning = re.sub(r'^\(.*?\)\s*', '', meaning)
+    if (' ' in word or not word.islower() or not word.isalpha() or pos not in ('n', 'v', 'adj', 'adv')
+            or not 10 <= len(meaning) <= 40 or word.lower()[:5] in meaning.lower() or not benign(meaning) or local_only(meaning)
+            or re.search(r'\b(a|an|the|of|to|or|and|that|with|by|for|in|on|which|who)$', meaning, re.I)):  # (cut off mid-sentence)
+        continue
+    meaning = meaning[0].lower() + meaning[1:]
+    wotd_fib.append({'q': f'In English, "{word}" means ____.', 'answer': meaning, 'cat': 'Curious words',
+                     'a': bool(ADULT_RE.search(meaning) or re.search(r'marijuana|cannabis|drug', meaning, re.I)), 'src': f'Wiktionary: {word} (CC BY-SA 4.0)'})
+# At most 300 (the same ones each build): more and Fish Tales would be mostly definitions.
+fib.extend(sorted(wotd_fib, key=lambda x: sid('wotd', x['q']))[:300])
+
 write('fibbage', dedupe(fib, lambda x: x['q']))
 
 for c in closest:
@@ -427,6 +462,31 @@ OBVIOUS = re.compile(r"atomic number|legs does (a|an) (spider|insect)|arms does 
     r"weeks are in a year|countries border Canada|babies \(joeys\)|valves does|keys does a standard harmonica|"
     r"players are on a curling|points is a (touchdown|field goal)|downs does|bottles of wine are in a standard case|"
     r"beers are in a Canadian", re.I)
+# Our World in Data (CC BY 4.0, content-src/vendor/owid.json, tools/fetch-owid.py): one question per
+# indicator for a spread of countries, the year in the question so it stays true.
+OWID_Q: dict[str, tuple[str, str, Callable[[float], float]]] = {
+    'life-expectancy': ('What is life expectancy at birth in {c} ({y}), in years?', 'years', lambda v: round(v, 1)),
+    'population': ('How many people live in {c} ({y}), in millions?', 'million', lambda v: round(v / 1e6, 1)),
+    'median-age': ('What is the median age of the people of {c} ({y})?', 'years', lambda v: round(v, 1)),
+    'co-emissions-per-capita': ('How many tonnes of CO₂ does an average person in {c} emit in a year ({y})?', 't', lambda v: round(v, 1)),
+    'children-per-woman-un': ('On average, how many children does a woman in {c} have ({y})?', '', lambda v: round(v, 2)),
+    'daily-per-capita-caloric-supply': ('How many calories of food a day are there per person in {c} ({y})?', 'kcal', lambda v: float(round(v))),
+    'share-of-individuals-using-the-internet': ('What percentage of people in {c} use the internet ({y})?', '%', lambda v: float(round(v))),
+    'meat-supply-per-person': ('How many kilograms of meat does an average person in {c} eat in a year ({y})?', 'kg', lambda v: float(round(v))),
+}
+OWID_THE = {'United States', 'United Kingdom', 'Netherlands', 'Philippines'}
+owid_path = VENDOR / 'owid.json'
+owid: dict[str, dict[str, Item]] = json.loads(owid_path.read_text(encoding='utf-8')) if owid_path.exists() else {}
+for slug, by_country in owid.items():
+    if slug not in OWID_Q:
+        continue
+    tpl, unit, fmt = OWID_Q[slug]
+    # The same ~22 countries each build (a hash order), a different pick per indicator.
+    for country in sorted(by_country, key=lambda c: sid('owid', slug, c))[:22]:
+        owid_row = by_country[country]
+        name = ('the ' + country) if country in OWID_THE else country
+        closest.append({'q': tpl.format(c=name, y=owid_row['year']), 'answer': fmt(float(owid_row['value'])), 'unit': unit, 'a': False, 'src': 'Our World in Data (CC BY 4.0)'})
+
 closest = [c for c in closest if not OBVIOUS.search(c['q'])]
 write('closest', dedupe(closest, lambda x: x['q']))
 
@@ -495,5 +555,178 @@ write('telephone', dedupe(tel + french('telephone.txt'), lambda x: x['text']))
 for pool_name, src in (('crush-openers', 'crush-openers.txt'), ('crush-replies', 'crush-replies.txt')):
     f_lines, a_lines = read_txt(src)
     write(pool_name, [{'text': t, 'a': False} for t in f_lines] + [{'text': t, 'a': True} for t in a_lines], 20)
+
+# ----------------------------------------------------------------- The Deep End (answer charts)
+# Hand-written charts (content-src/deepend.txt, depth 0 = obvious … 4 = lake bottom), plus every
+# member of a category Wikidata knows (content-src/vendor/deepend-wikidata.json, tools/fetch-deepend.py)
+# with its depth set from how many Wikipedias have an article on it, calibrated on the hand-tiered
+# answers of the same category. An item's answers: [depth, name, alias…]. Wikidata never adds a
+# depth-0 answer (the obvious ones are hand-picked) and never moves a hand-tiered one.
+def dd_word(w: str) -> str:
+    """One word made singular, exactly as games/deepend.js keyOf() does."""
+    if len(w) > 4 and w.endswith('ies'):
+        return w[:-3] + 'y'
+    if len(w) > 4 and re.search(r'(ches|shes|xes|sses|oes)$', w):
+        return w[:-2]
+    if len(w) > 3 and w.endswith('s') and not w.endswith('ss') and not w.endswith('us'):
+        return w[:-1]
+    return w
+
+def dd_key(s: str) -> str:
+    """The game's match key (games/deepend.js keyOf), so two spellings the game treats as one answer are
+    merged here too — plus "st." = "saint" for merging names."""
+    s = unicodedata.normalize('NFD', s)
+    s = re.sub(r'[\u0300-\u036f]', '', s).lower().replace('&', ' and ')
+    s = re.sub(r'\([^)]*\)', ' ', s)
+    s = re.sub(r'\bst\.?\s', 'saint ', s)
+    words = [w for w in re.sub(r'[^a-z0-9 ]+', ' ', s).split() if w]
+    while len(words) > 1 and words[0] in ('the', 'a', 'an', 'some'):
+        words.pop(0)
+    return ''.join(dd_word(w) for w in words)
+
+# Wikidata names carry their class or a food label ("comté cheese", "grana padano PDO", "newfoundland
+# dog"); nobody says those, so they come off. Names that read like a list or a classification go.
+DD_TAIL = re.compile(r'\s+(cheese|dog|breed|pasta|bread|soup|sauce|cocktail|dance|pdo|pgi|aop|doc|docg|dop|igp|aoc|tsg)$')
+DD_JUNK = re.compile(r'\b(official|list|type|types|style|styles|family|variety|cuisine|category|class|genre|in|of the|hybrid|mythical|drink|drinks|beverage)\b')
+# People categories stay hand-written: "painter" on Wikidata is anyone who ever painted (presidents,
+# poets, film directors came out as the shallowest "famous painters").
+DD_SKIP_WIKIDATA = {'Name a famous painter', 'Name a famous scientist',
+                    'Name a capital city'}  # (P36 also lists districts' capitals: Baramulla, Sopore…)
+# The words a longer name may add to a hand-written answer and still be the same thing ("jack russell
+# terrier" = "jack russell"); anything else is a different thing ("american bulldog", "porn star martini").
+DD_FILLER = {'terrier', 'hound', 'dog', 'cat', 'cheese', 'grape', 'fish', 'bird', 'tree', 'flower', 'mountain', 'mount', 'lake', 'sea', 'ocean', 'the', 'common'}
+
+def dd_clean(s: str) -> str | None:
+    """A Wikidata name as a player would type it, or None if nobody would."""
+    s = re.sub(r"\s*\([^)]*\)", '', html.unescape(s)).strip().lower()
+    for _ in range(2):
+        s = DD_TAIL.sub('', s).strip()
+    if not s or len(s) > 32 or re.search(r'[0-9,;:/"]', s) or not re.search(r'[a-z]', s) or DD_JUNK.search(s):
+        return None
+    return s
+
+def dd_median(xs: list[int]) -> float | None:
+    xs = sorted(xs)
+    return float(xs[len(xs) // 2]) if xs else None
+
+# Wiktionary's thesaurus (content-src/vendor/deepend-wiktionary.json, tools/fetch-wiktionary.py): the
+# word categories' synonyms with their labels. The labels set the depth; anything Wiktionary marks as
+# offensive, or that is a slur, never goes in (and 18+ words stay out of the family categories).
+DD_RARE = re.compile(r'\b(archaic|obsolete|dated|rare|historical|nonce|poetic|literary)\b', re.I)
+DD_SLANG = re.compile(r'\b(slang|colloquial|informal|rhyming|regional|dialect\w*|cockney|scotland|ireland|australia|new zealand|britain|uk|us|canada|south africa|india)\b', re.I)
+DD_OFFENSIVE = re.compile(r'\b(offensive|derogatory|pejorative|vulgar|ethnic slur|slur|disparaging|ableist)\b', re.I)
+SLUR_RE = re.compile(r'\b(retard\w*|tard|spaz|spastic|mong|mongol\w*|cretin\w*|fag\w*|dyke|poof\w*|nigg\w*|negro\w*|coon|chink|gook|spic|kike|paki|gyp\w*|wog|wop|dago|cripple|midget|whore\w*|slut\w*|cunt\w*|twat\w*|bitch\w*|tranny|shemale|injun|squaw|honky)\b', re.I)
+dd_wikt: dict[str, list[Item]] = json.loads((VENDOR / 'deepend-wiktionary.json').read_text(encoding='utf-8')) if (VENDOR / 'deepend-wiktionary.json').exists() else {}
+dd_wikt_added = 0
+dd_wd: dict[str, list[Item]] = json.loads((VENDOR / 'deepend-wikidata.json').read_text(encoding='utf-8')) if (VENDOR / 'deepend-wikidata.json').exists() else {}
+# GBIF (tools/fetch-gbif.py: the most-recorded birds and insects, their record count as `sl`) and
+# OpenStreetMap (tools/fetch-osm.py: islands, lakes, volcanoes, rivers; the number of languages their
+# name is written in as `sl`), shaped like the Wikidata rows, for categories Wikidata doesn't fill.
+for dd_file in ('deepend-gbif.json', 'deepend-osm.json'):
+    for dd_cat, dd_rows in (json.loads((VENDOR / dd_file).read_text(encoding='utf-8')) if (VENDOR / dd_file).exists() else {}).items():
+        if dd_rows and not dd_wd.get(dd_cat):
+            dd_wd[dd_cat] = dd_rows
+deepend: list[Item] = []
+dd_adult = False
+dd_cur: Item | None = None
+for raw in (SRC / 'deepend.txt').read_text(encoding='utf-8').splitlines():
+    line = raw.strip()
+    if line.lower() == '## adult':
+        dd_adult = True
+        continue
+    if not line or line.startswith('#'):
+        continue
+    if line.startswith('Q:'):
+        dd_cur = {'q': line[2:].strip(), 'answers': [], 'a': dd_adult}
+        deepend.append(dd_cur)
+        continue
+    m = re.match(r'^([0-4]):(.*)$', line)
+    if not m or dd_cur is None:
+        sys.exit(f'deepend.txt: bad line {line!r}')
+    for dd_ans in m.group(2).split(','):
+        forms = [f.strip().lower() for f in dd_ans.split('/') if f.strip()]
+        if forms:
+            dd_cur['answers'].append([int(m.group(1)), *forms])
+dd_added = 0
+for it in deepend:
+    # One answer per key: the first (shallowest) time an answer is listed wins.
+    seen_keys: dict[str, int] = {}
+    kept: list[list[Any]] = []
+    for dd_row in it['answers']:
+        keys = [dd_key(f) for f in dd_row[1:]]
+        if any(k in seen_keys for k in keys):
+            continue
+        for k in keys:
+            seen_keys[k] = int(dd_row[0])
+        kept.append(dd_row)
+    rows = [] if it['q'] in DD_SKIP_WIKIDATA else dd_wd.get(it['q'], [])
+    if rows:
+        by_tier: dict[int, list[int]] = {t: [] for t in range(5)}
+        for r in rows:
+            for f in [r['label'], *r.get('aliases', [])]:
+                t = seen_keys.get(dd_key(f))
+                if t is not None:
+                    by_tier[t].append(int(r['sl']))
+                    break
+        sls = sorted(int(r['sl']) for r in rows)
+        def dd_pct(q: float, xs: list[int] = sls) -> float:
+            return float(xs[min(len(xs) - 1, int(len(xs) * q))])
+        t1 = dd_median(by_tier[1]) or dd_pct(0.95)
+        t2 = dd_median(by_tier[2]) or dd_pct(0.75)
+        t3 = dd_median(by_tier[3]) or dd_pct(0.4)
+        # A hand-written answer plus a filler word ("jack russell terrier") is another way to say it, at the
+        # hand-picked depth — not a new, rarer answer.
+        rows_by_words = {' '.join(dd_clean(f) or f for f in [w]).strip(): row for row in kept for w in row[1:]}
+        def dd_parent(name: str) -> list[Any] | None:
+            words = name.split()
+            for i in range(len(words)):
+                rest = words[:i] + words[i + 1:]
+                if words[i] in DD_FILLER and rest and ' '.join(rest) in rows_by_words:
+                    return rows_by_words[' '.join(rest)]
+            return None
+        for r in rows:
+            label = dd_clean(r['label'])
+            if not label or dd_key(label) in seen_keys:
+                continue  # the thing itself is on the chart already (or isn't something people say)
+            # Aliases that are another answer's name ("santiago" for Caracas) are dropped, not the item.
+            names = [label] + [n for n in (dd_clean(x) for x in r.get('aliases', [])) if n and len(n) >= 4 and dd_key(n) not in seen_keys]
+            parent = dd_parent(label)
+            if parent is not None:
+                for n in names:
+                    if dd_key(n) not in seen_keys:
+                        seen_keys[dd_key(n)] = int(parent[0])
+                        parent.append(n)
+                continue
+            names = list(dict.fromkeys(names))[:4]
+            sl = int(r['sl'])
+            tier = 1 if sl >= t1 else 2 if sl >= t2 else 3 if sl >= t3 else 4
+            # GBIF's record counts follow where birders and moth-trappers live, not what people know: a
+            # species the hand chart doesn't list is never shallower than the drop-off.
+            if str(r.get('qid', '')).startswith('gbif:'):
+                tier = max(3, tier)
+            for n in names:
+                seen_keys[dd_key(n)] = tier
+            kept.append([tier, *names])
+            dd_added += 1
+        it['src'] = SRC_LABEL['wikidata'] + ' + original'
+    dd_words: list[Item] = dd_wikt.get(it['q'], [])
+    for dd_w in dd_words:
+        labels = ' '.join(str(x) for x in dd_w.get('labels', []))
+        name = re.sub(r'\s+', ' ', html.unescape(str(dd_w['w']))).strip().lower()
+        if (not name or len(name) > 32 or len(name.split()) > 4 or re.search(r'[0-9;:/"]', name) or DD_OFFENSIVE.search(labels) or SLUR_RE.search(name)
+                or (not it['a'] and ADULT_RE.search(name)) or not benign(name) or dd_key(name) in seen_keys
+                or re.search(r'\b' + re.escape(name) + r'\b', it['q'].lower())):  # (not the category's own word: "money")
+            continue
+        tier = 4 if DD_RARE.search(labels) else 3 if DD_SLANG.search(labels) else 2
+        seen_keys[dd_key(name)] = tier
+        kept.append([tier, name])
+        dd_wikt_added += 1
+    if dd_words:
+        it['src'] = ((it.get('src') or 'original') + ' + Wiktionary (CC BY-SA 4.0)').replace('original + ', '')
+    it['answers'] = kept
+    if not any(r[0] == 0 for r in kept) or len(kept) < 20:
+        sys.exit(f"deepend.txt: {it['q']!r} needs obvious (0) answers and at least 20 in all")
+write('deepend', dedupe(deepend, lambda x: x['q']), 60)
+print(f'deepend: {dd_added} answers added from Wikidata, {dd_wikt_added} from Wiktionary')
 
 print('\nPools written to', OUT.relative_to(ROOT))

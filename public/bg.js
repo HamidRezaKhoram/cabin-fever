@@ -40,6 +40,7 @@
     lantern:    { sky: ['#1b1030', '#2a1640', '#3d1f4f', '#57285a', '#7a345e', '#a1455e', '#c9605a'], hills: '#1a1028', pines: '#0d0816', lake: ['#162a4c', '#193055', '#1c365e', '#1f3c67'], orb: '#ffd9a0', orbShade: '#ffb870', stars: true, fly: '#ffd23f', glow: '255,200,120', window: '#ffcf80' },
     looncall:   { sky: ['#0b1630', '#10203f', '#162b4f', '#1d3760', '#264570', '#30537f', '#3d628c'], hills: '#0f1e33', pines: '#08121f', lake: ['#12304d', '#153657', '#183c61', '#1b426b'], orb: '#f4f1e8', orbShade: '#cfd2dc', stars: true, fly: '#7fe3d0', glow: '200,255,240', window: '#ffe9a8' },
     crush:      { sky: ['#1a0820', '#2a0d33', '#3d1248', '#53185c', '#6b1f6c', '#86287a', '#a33486'], hills: '#2a0b2e', pines: '#140516', lake: ['#2a0c33', '#33103d', '#3c1447', '#451851'], orb: '#ffd6e8', orbShade: '#ffa8cc', stars: true, fly: '#ff8fb3', glow: '255,170,210', window: '#ffb0d0' },
+    deepend:    { sky: ['#0d3a5c', '#124768', '#185574', '#1f6380', '#28718b', '#337f95', '#408d9f'], hills: '#174a3a', pines: '#0b2f24', lake: ['#0b4a6e', '#08405f', '#063651', '#042c43'], orb: '#fff2c0', orbShade: '#ffe08a', stars: false, fly: '#c9f3ff', glow: '200,240,255', window: '#fff2c0' },
     minigames:  { sky: ['#0a6fb0', '#1580c0', '#2391cf', '#35a2dc', '#4ab3e6', '#62c3ee', '#7dd2f4'], hills: '#2f8f5a', pines: '#14603a', lake: ['#1a78c8', '#176ebc', '#1464b0', '#115aa4'], orb: '#fff4a0', orbShade: '#ffe060', stars: false, fly: '#ffffff', glow: '255,255,220', window: '#fff6c8' },
   };
 
@@ -130,6 +131,10 @@
       for (let x = 199; x < 214; x += 3) R(g, x, 125, 1, 1, '#f4f1e8');
       R(g, 214, 116, 3, 9, '#2b2d42'); R(g, 214, 119, 3, 1, '#f4f1e8'); R(g, 213, 113, 5, 4, '#1a1423'); R(g, 216, 114, 1, 1, '#e83f5b'); R(g, 218, 115, 4, 1, '#6b7a8f');
     },
+    deepend(g) { // a dock reaching out over deep water, a diving board at its end
+      R(g, 150, 124, 110, 4, '#8a5a3b'); for (let x = 154; x < 260; x += 16) R(g, x, 128, 3, 14, '#5c3a24');
+      R(g, 252, 118, 30, 3, '#f4f1e8'); R(g, 252, 121, 3, 5, '#a9b0bf');
+    },
     minigames(g) { // finish line buoys + flag on the far shore
       for (let y = 118; y < 178; y += 10) { D(g, 286, y, 2, '#ff9f1c'); }
       R(g, 290, 92, 2, 22, '#f4f1e8');
@@ -195,6 +200,10 @@
         if (k < 80) { R(g, x, y, 3, 2, '#7fe3d0'); R(g, x + 2, y - 6, 1, 6, '#7fe3d0'); R(g, x + 3, y - 6, 2, 1, '#7fe3d0'); }
       }
       for (let i = 0; i < 3; i++) { const w = 10 + ((t * 0.5 + i * 12) % 36); R(g, 207 - w / 2, 133 + i, w, 1, 'rgba(244,241,232,0.18)'); }
+    },
+    deepend(g, t) { // bubbles rising from a diver far below + rings where they went in
+      for (let i = 0; i < 4; i++) { const k = (t * 0.6 + i * 22) % 70, x = 270 + Math.round(Math.sin(t / 9 + i) * 3); if (k < 60) R(g, x + i * 2, 178 - k, 2, 2, 'rgba(201,243,255,0.55)'); }
+      for (let i = 0; i < 2; i++) { const w = 8 + ((t * 0.4 + i * 18) % 30); R(g, 276 - w / 2, 140 + i * 2, w, 1, 'rgba(244,241,232,0.2)'); }
     },
     minigames(g, t) { // red vs blue canoes racing
       for (const [y, col, sp] of /** @type {[number, string, number][]} */ ([[132, '#e83f5b', 1.1], [152, '#1e88e5', 1.0]])) {

@@ -226,14 +226,17 @@ testing tools: `docs/design/testing-and-bots.md`. The short version:
   The TV marks the screen it shows with `#phase-view[data-phase]`.
 - Phones: everything tappable is ≥ 48px (`body.play #game-view button` etc.); the lab checks it.
 - **TV menu** (`gamePicker` in host.js, retro console): title ("Choose a game" / "Play again?") with
-  🏆 Stats and ⚙ Settings in its top-right corner; a shelf of old-console cartridges (`.shelf .cart`:
-  grey shell, grip ridges, a label with art + name, nothing else) that turns like a wheel: the picked
+  🏆 Stats and ⚙ Settings in its top-right corner; kind-of-game tabs (All / Laugh / Think / Move / Scheme,
+  `GENRES` + `CART_LOOK` in host.js) over a shelf of old-console cartridges (`.shelf .cart`: a shell in the
+  game's own colour, one hue per game, grip ridges, a label with its verb band (WRITE, BLUFF, TILT…), art
+  and name, and a sticker for NEW or NEEDS N players; owner's pick Nov 23) that turns like a wheel: the picked
   cartridge sits in the middle (`centreCart`) and each one that passes clicks (`sfx.wheel`); ◀ ▶ wrap
   round. Under it a fixed description box (`#game-detail`, from `data-blurb`/`data-min` + `GAME_TAGS`;
   only its pointer moves, `placeDetail`). Locked games stay selectable (`aria-disabled`) and say why.
   Every setting is in ⚙ Settings (`.settings-more`, `moreOpen`); Back/Escape closes a box. Dialogs are
   old-console boxes (`.retro-box`). **One palette**: white, a soft grey for small print, the dark panels
-  and the games' own art — no yellow/green/red on the menu (style.css "One palette on the TV menu").
+  and the games' own art (incl. each cartridge's colour) — no other yellow/green/red on the menu (style.css
+  "One palette on the TV menu"). 🎲 Surprise us (`surprise()`) turns the wheel to a random playable game.
   The lab's remote-press budget is 8 (half the shelf, computed from its size).
 - **Menu layout pattern**: every area has one place. Main column: title → shelf → description (a fixed
   box; only its pointer moves to the pick, `--arrow-x`) → command bar (`.cmd-bar`: the lineup on the

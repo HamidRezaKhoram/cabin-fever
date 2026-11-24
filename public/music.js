@@ -213,6 +213,7 @@
     minigames:  { mode: 'major', bpm: 152, lead: 'bouncy', drums: 'drive', arp: 'up', bass: 'eighth', root: 62 },
     lantern:    { mode: 'lydian', bpm: 84, lead: 'sparse', drums: 'halftime', arp: 'updown', bass: 'root', root: 62, swing: 0.12 },
     looncall:   { mode: 'mixo', bpm: 96, lead: 'sparse', drums: 'pop', arp: 'updown', bass: 'octave', root: 60, swing: 0.1 },
+    deepend:    { mode: 'dorian', bpm: 104, lead: 'melodic', drums: 'bossa', arp: 'broken', bass: 'walk', root: 58, swing: 0.08 },
   };
 
   /** @type {Record<string, Spec[]>} cue → recipes */
@@ -360,6 +361,8 @@
   // gain fades them). Rhythm games book their whole song at once (`rhythm` below) — not affected.
   const LOOKAHEAD = 0.5, TICK_MS = 100;
   let hurry = false;
+  /** How much faster the music plays in the last 10 seconds of a timed screen. */
+  const HURRY_RATE = 1.12;
   let intensity = 1; // 1 = round 1, 2 = round 2 (faster, busier); the final round has its own cue
   /** @type {((e: { cue: string, name: string }) => void)[]} */
   const listeners = [];
@@ -376,7 +379,7 @@
   /** @param {Deck} d */
   function scheduleDeck(d) {
     const tr = d.tr;
-    const boost = tr.once ? 1 : (hurry ? 1.12 : 1) * (intensity >= 2 ? 1.08 : 1);
+    const boost = tr.once ? 1 : (hurry ? HURRY_RATE : 1) * (intensity >= 2 ? 1.08 : 1);
     const tempo = tr.bpm * boost;
     const six = 60 / tempo / 4;
     const out = d.gain;
@@ -689,7 +692,15 @@
   }
 
   /** @param {boolean} on */
-  function setHurry(on) { hurry = !!on; }
+  function setHurry(on) {
+    hurry = !!on;
+    // A song from a file (the bundled tracks, music/ drop-ins) speeds up too: it used to keep its
+    // pace, so the last 10 seconds only felt urgent with the chiptunes. Pitch is kept (no chipmunks).
+    if (customAudio) {
+      const rate = hurry ? HURRY_RATE : 1;
+      if (customAudio.playbackRate !== rate) { customAudio.preservesPitch = true; customAudio.playbackRate = rate; }
+    }
+  }
   /** @param {number} n */
   function setIntensity(n) { intensity = n; }
 
@@ -751,6 +762,11 @@
   const rhythm = {
     ready: () => !!ctx && enabled,
     now: () => (ctx ? ctx.currentTime : 0),
+    /** Seconds between booking a sound and hearing it (the device's output buffer; TVs and HDMI
+     * soundbars add 0.1–0.25 s). Rhythm games book that much earlier, so what you hear is on the beat. */
+    latency: () => (ctx ? Math.max(0, Math.min(0.4, (/** @type {any} */ (ctx).outputLatency || 0) + (ctx.baseLatency || 0))) : 0),
+    /** "Your turn next": a soft, high rising two-note chime one beat before an echo bar. @param {number} t @param {number} f */
+    cue: (t, f) => { voice(rS(), f * 2, t, 0.05, { wave: 0.125, vol: 0.06 }); voice(rS(), f * 3, t + 0.07, 0.07, { wave: 0.125, vol: 0.06 }); },
     /** @param {number} t */ kick: (t) => { voice(rM(), 150, t, 0.16, { type: 'sine', vol: 0.5, slide: 0.35, release: 0.1 }); },
     /** @param {number} t */ hat: (t) => noise(rM(), t, 0.04, 0.05, 7000),
     /** @param {number} t @param {boolean} accent */ click: (t, accent) => voice(rS(), accent ? 1568 : 1175, t, 0.05, { wave: 0.5, vol: 0.12 }),

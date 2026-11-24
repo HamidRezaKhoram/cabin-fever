@@ -6,7 +6,7 @@ const assert = require('node:assert');
 const { startServer, until, makeHost, makePlayer } = require('../helpers');
 const LoonCall = require('../../games/looncall');
 
-test('judging: perfect ±70 ms, good ±140, misses, extra taps cost points, clean bar bonus', () => {
+test('judging: perfect ±80 ms, good ±150, misses, extra taps cost points, clean bar bonus', () => {
   const notes = [1000, 1500, 2000];
   const perfect = LoonCall.judge(notes, [1010, 1490, 2060]);
   assert.deepStrictEqual(perfect.hits.map((h) => h.kind), ['perfect', 'perfect', 'perfect']);
@@ -98,15 +98,16 @@ test('a full game: tune-up calibrates each phone, echoes score, the trailing pla
     const cs = comp.gameState.sched;
     await until(() => Date.now() > cs.endAt, 'call written', 10000);
     const bar = cs.startAt + cs.barMs;
-    cat.submit({ taps: [0, 2, 3, 6].map((st) => bar + (st * cs.barMs) / 8 + 15) });
+    // On the song's own grid (8ths, triplets or 16ths): steps 0, 2, 3, 6 exist on all of them.
+    cat.submit({ taps: [0, 2, 3, 6].map((st) => bar + (st * cs.barMs) / cs.steps + 15) });
     const callSong = (await until(() => h.state.phase === 'lc-song' && h.state.gameState.sched.kind === 'call' && h.state, 'call song', 5000)).gameState.sched;
     assert.deepStrictEqual(callSong.phrases[0].steps, [0, 2, 3, 6], "the room echoes Cat's own rhythm");
     assert.strictEqual(callSong.caller, 'Cat');
     const cp = callSong.phrases[0];
     await until(() => Date.now() > cp.echoAt + callSong.barMs, 'call echoed', 10000);
     const catBeforeCall = sc('Cat');
-    ann.submit({ taps: cp.steps.map((st) => cp.echoAt + (st * callSong.barMs) / 8 + 40) });
-    ben.submit({ taps: cp.steps.map((st) => cp.echoAt + (st * callSong.barMs) / 8) });
+    ann.submit({ taps: cp.steps.map((st) => cp.echoAt + (st * callSong.barMs) / callSong.steps + 40) });
+    ben.submit({ taps: cp.steps.map((st) => cp.echoAt + (st * callSong.barMs) / callSong.steps) });
     await until(() => h.state.gameState.scoredPhrases === 1, 'call scored', 5000);
     // Caller: 10 per echoed note, averaged over the others (both got all 4) → 40, ×2 for song 2.
     // Cat didn't echo her own call this time (she could have, for normal echo points).

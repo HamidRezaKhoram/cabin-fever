@@ -346,6 +346,35 @@ const { check, errors } = t;
     return { tvP, ph, rc };
   };
 
+  await check('Lantern Lake on the website: steering goes over the fast WebRTC channel and moves each phone\'s boat on the TV', async () => {
+    const { tvP, ph } = await rtcRoom(ctx, 'Lia');
+    const ph2 = await ctx.newPage();
+    watch(ph2, 'Max');
+    const rc = await tvP.textContent('#room-code');
+    await ph2.addInitScript(() => { if (!sessionStorage.getItem('cf.test')) { localStorage.removeItem('rumpus.seat'); sessionStorage.setItem('cf.test', '1'); } });
+    await ph2.goto(`${BASE}play.html?code=${rc}&net=rtc-local&debug=1`);
+    await ph2.fill('#nick-input', 'Max');
+    await ph2.click('#join-form button[type="submit"]');
+    await tvP.waitForFunction(() => new Function('return state')().players.filter((/** @type {any} */ x) => x.connected).length === 2, null, { timeout: 20000 });
+    await tvP.evaluate(() => new Function('return socket')().emit('host:startGame', { gameId: 'lantern' }));
+    for (const p of [ph, ph2]) await p.waitForSelector('.ll-pad', { timeout: 15000 });
+    await tvP.waitForFunction(() => window.Rumpus.frame && window.Rumpus.frame.boats && window.Rumpus.frame.boats.filter(Boolean).length === 2, null, { timeout: 15000 });
+    const names = /** @type {string[]} */ (await tvP.evaluate(() => (new Function('return state')().gameState.boats || []).map((/** @type {any} */ b) => b.nickname)));
+    for (const [p, who] of [[ph, 'Lia'], [ph2, 'Max']]) {
+      const i = Math.max(0, names.indexOf(who));
+      const x0 = await tvP.evaluate((k) => window.Rumpus.frame.boats[k][0], i);
+      const dir = x0 > 160 ? -1 : 1;
+      const box = await p.locator('.ll-pad').boundingBox();
+      await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await p.mouse.down();
+      await p.mouse.move(box.x + box.width * (0.5 + 0.45 * dir), box.y + box.height / 2, { steps: 4 });
+      await tvP.waitForFunction(([k, x, d]) => (window.Rumpus.frame.boats[k][0] - x) * d > 15, [i, x0, dir], { timeout: 8000 })
+        .catch(() => { throw new Error(`${who}'s boat did not move on the website TV (fast channel steering)`); });
+      await p.mouse.up();
+    }
+    await ph2.close(); await ph.close(); await tvP.close();
+  });
+
   await check('an Android phone (Chrome) and an iPhone (Safari\'s WebKit) both join a website TV over WebRTC', async () => {
     const android = await browser.newContext({ ...devices['Pixel 7'] });
     const a = await rtcRoom(android, 'Andi');

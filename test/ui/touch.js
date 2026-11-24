@@ -90,6 +90,9 @@ function plan() {
   if (peek && w.__bot.peeked !== info.key) { w.__bot.peeked = info.key; return { ...info, kind: 'peek', el: mark(peek) }; }
   const roast = one('[data-mg="roast"]');
   if (roast) return { ...info, kind: 'hold', el: mark(roast), ms: (st.gameState.target || 3000) };
+  // Aim pads (Track the Ball, Angle Match, Split the Rope): touch the pad, then press Lock it in.
+  const aim = one('[data-mg-aim]'), lock = one('[data-mg-lock]');
+  if (aim && lock) return { ...info, kind: 'aim', el: mark(aim), lock: mark(lock) };
   const field = one('[data-mg-swat], [data-mg-stack]');
   if (field) return { ...info, kind: 'pokes', el: mark(field) };
   const bal = one('[data-mg-balance]');
@@ -336,6 +339,14 @@ function plan() {
       const box = await p.locator(`[data-bot="${a.el}"]`).boundingBox({ timeout: 1000 }).catch(() => null);
       if (!box) return; // gone from the screen: look again next turn
       for (let i = 0; i < 6; i++) { await p.touchscreen.tap(box.x + box.width * Math.random(), box.y + box.height * Math.random()); await p.waitForTimeout(120); }
+    } else if (a.kind === 'aim') {
+      const box = await p.locator(`[data-bot="${a.el}"]`).boundingBox({ timeout: 1000 }).catch(() => null);
+      if (!box) return; // gone from the screen: look again next turn
+      await p.touchscreen.tap(box.x + box.width * (0.1 + 0.8 * Math.random()), box.y + box.height * (0.1 + 0.8 * Math.random()));
+      await p.waitForTimeout(200);
+      if (!(await fingerAt(p, a.lock))) return;
+      const after = await mustReact(p, before, what);
+      assert.ok(after.out > before.out, `${what}: Lock it in sent the guess to the TV`);
     } else if (a.kind === 'trace') {
       const box = await p.locator(`[data-bot="${a.el}"]`).boundingBox({ timeout: 1000 }).catch(() => null);
       if (!box) return; // gone from the screen: look again next turn

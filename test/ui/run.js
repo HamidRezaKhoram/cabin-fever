@@ -810,12 +810,13 @@ const allPages = t.pages;
     assert.strictEqual(await tv.evaluate(() => document.body.dataset.theme), 'lobby');
     await tv.click('[data-game-id="minigames"]');
     // Play whatever minigame comes first (they're picked at random) by reacting to each phone's screen.
-    const ANY = '[data-mg], .number-form, [data-mg-side], [data-mg-swat], [data-mg-balance], [data-mg-stack], .spot-btn, [data-mg-colour]';
+    const ANY = '[data-mg], .number-form, [data-mg-side], [data-mg-swat], [data-mg-balance], [data-mg-stack], .spot-btn, [data-mg-colour], [data-mg-aim]';
     await phones[0].waitForSelector(ANY + ', .mg-count', { timeout: 20000 });
     await phones[0].waitForSelector(ANY, { timeout: 20000 }); // (Campfire Sequence shows the sparks on the TV first)
     const kind = await phones[0].evaluate(() => {
       const b = /** @type {HTMLElement | null} */ (document.querySelector('[data-mg]'));
       if (b) return b.dataset.mg;
+      if (document.querySelector('[data-mg-aim]')) return 'aim'; // Track the Ball, Angle Match, Split the Rope
       return document.querySelector('.number-form') ? 'number' : document.querySelector('[data-mg-side]') ? 'paddle' : document.querySelector('.spot-btn') ? 'spot'
         : document.querySelector('[data-mg-colour]') ? 'simon' : 'canvas';
     });
@@ -827,6 +828,7 @@ const allPages = t.pages;
       else if (kind === 'skip') { for (let i = 0; i < 3; i++) { await p.click('[data-mg="skip"]'); await p.waitForTimeout(150); } }
       else if (kind === 'paddle') { for (let i = 0; i < 6; i++) await p.click(`[data-mg-side="${i % 2 ? 'R' : 'L'}"]`); }
       else if (kind === 'spot') await p.click('.spot-btn');
+      else if (kind === 'aim') { await p.click('[data-mg-aim]'); await p.click('[data-mg-lock]'); }
       else if (kind === 'simon') { const n = await p.evaluate(() => (document.querySelector('[data-mg-seq]') || { textContent: '' }).textContent.split('○').length - 1); for (let i = 0; i < n; i++) await p.click('[data-mg-colour="0"]'); }
       else if (kind === 'canvas') { const c = await p.$('[data-mg-swat], [data-mg-balance], [data-mg-stack]'); if (c) await c.click(); }
       else { await p.waitForSelector('[data-mg="draw"].go', { timeout: 10000 }); await p.click('[data-mg="draw"]'); }
@@ -953,6 +955,33 @@ const allPages = t.pages;
     await shot(tv, '31-lantern');
     await endGame();
     await tv.waitForSelector('.game-pick');
+  });
+
+  await check('the shelf: one colour per cartridge, a verb, stickers, kind-of-game tabs and 🎲 Surprise us', async () => {
+    await tv.waitForSelector('.shelf .game-pick');
+    const looks = await tv.$$eval('.shelf .game-pick', (els) => els.map((e) => {
+      const shell = /** @type {HTMLElement} */ (e.querySelector('.cart-shell'));
+      return { id: /** @type {HTMLElement} */ (e).dataset.gameId, colour: shell.style.getPropertyValue('--shell'), verb: (e.querySelector('.cart-verb') || { textContent: '' }).textContent,
+        sticker: (e.querySelector('.cart-sticker') || { textContent: '' }).textContent, locked: e.getAttribute('aria-disabled') === 'true' };
+    }));
+    assert.strictEqual(looks.length, 16, 'All: every game on the shelf');
+    assert.strictEqual(new Set(looks.map((l) => l.colour)).size, looks.length, `a colour of its own for every cartridge: ${looks.map((l) => l.colour)}`);
+    assert.ok(looks.every((l) => l.verb.trim()), 'every cartridge says what you do in it');
+    assert.strictEqual(looks.find((l) => l.id === 'deepend').sticker, 'NEW');
+    for (const l of looks.filter((x) => x.locked)) assert.match(l.sticker, /^NEEDS \d+$/, `${l.id}: says how many players it needs`);
+    // Tabs: one kind only, then everything again.
+    await tv.click('[data-act="genre"][data-genre="laugh"]');
+    await tv.waitForFunction(() => document.querySelectorAll('.shelf .game-pick').length === 4);
+    assert.deepStrictEqual((await tv.$$eval('.shelf .game-pick', (els) => els.map((e) => /** @type {HTMLElement} */ (e).dataset.gameId))).sort(), ['cah', 'mostlikely', 'quiplash', 'telephone']);
+    assert.strictEqual(await tv.getAttribute('[data-genre="laugh"]', 'aria-pressed'), 'true');
+    await tv.click('[data-act="genre"][data-genre="all"]');
+    await tv.waitForFunction(() => document.querySelectorAll('.shelf .game-pick').length === 16);
+    // 🎲 Surprise us: the wheel goes to a game this room can play now — and it doesn't start by itself.
+    await tv.click('[data-act="surprise"]');
+    const picked = await tv.waitForFunction(() => { const a = document.activeElement; return a && a.matches('.game-pick') && /** @type {HTMLElement} */ (a).dataset.gameId; });
+    const id = await picked.jsonValue();
+    assert.ok(id && !looks.find((l) => l.id === id).locked, `surprise picked a playable game (${id})`);
+    assert.ok(await tv.$('.shelf'), 'still on the menu: a surprise only picks');
   });
 
   await check('the game menu fits on one screen — no scrolling — on a 720p TV and a 1080p one, with a full room', async () => {

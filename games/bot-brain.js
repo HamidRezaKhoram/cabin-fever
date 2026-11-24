@@ -21,6 +21,15 @@ const LINES = [
 ];
 const WORDS = ['beer', 'pizza', 'dog', 'beach', 'campfire', 'canoe', 'moose', 'bacon'];
 
+/** The Deep End's chart for a category (bots read the pool the server draws from). @param {string} q
+ * @returns {{ answers: any[][] } | null} */
+function deepItem(q) {
+  try {
+    const pool = /** @type {{ all: any[] }} */ (require('./library').load('deepend'));
+    return pool.all.find((x) => x.q === q) || null;
+  } catch (e) { return null; }
+}
+
 /** @param {any[]} a @param {() => number} rnd */
 const pick = (a, rnd) => a[Math.floor(rnd() * a.length)];
 
@@ -159,12 +168,49 @@ function decide(view, rnd = Math.random) {
       const taps = human(p.steps.map((/** @type {number} */ st) => p.echoAt + (st * s.barMs) / s.steps));
       return { payload: { taps: taps.length ? taps : [p.echoAt + s.barMs * 0.97] }, kind: 'beat' }; // all missed: one stray tap
     }
+    // The Deep End: an answer off the category's chart, mostly a common one (as people do); now and
+    // then one the chart doesn't know, so the room has something to judge. Then judge the others'.
+    case 'dd-answer': {
+      if (you.answer) return null;
+      const item = deepItem(g.prompt);
+      const rows = item ? item.answers : [];
+      if (!rows.length || rnd() < 0.12) return write({ text: pick(LINES, rnd) });
+      const want = rnd() < 0.45 ? 0 : rnd() < 0.5 ? 1 : 2 + Math.floor(rnd() * 3);
+      const tier = rows.filter((/** @type {any[]} */ r) => r[0] === want);
+      return write({ text: String(pick(tier.length ? tier : rows, rnd)[1]) });
+    }
+    case 'dd-reveal': {
+      // Now and then a 🤯 for an answer it "never heard of" (a deep one, mostly).
+      const wowed = new Set(you.wowed || []);
+      const rows = ((g.result || {}).rows || []).filter((/** @type {any} */ r) => r.text && r.id !== you.playerId && !wowed.has(r.id) && (r.tier === null ? 0 : r.tier) >= 2);
+      return rows.length && rnd() < 0.5 ? tap({ wow: pick(rows, rnd).id }) : null;
+    }
+    case 'dd-judge': {
+      const open = (you.judge || []).find((/** @type {{ vote: boolean | null }} */ j) => j.vote === null);
+      return open ? tap({ judge: open.key, ok: rnd() < 0.75 }) : null;
+    }
     // Cottage Olympics
     case 'mg-play':
       // 1–2 taps every 250 ms ≈ 6/s, a person's pace (3–6 was ~18/s: bots won every tap race).
       if (g.mini === 'tug') return { payload: { tap: 1 + Math.floor(rnd() * 2) }, kind: 'mash' };
       if (g.mini === 'quickdraw') return !you.done && !you.early && g.sub === 'go' ? { payload: { tap: true }, kind: 'react' } : null;
-      if (g.mini === 'fireflies') return !you.done ? tap({ number: 5 + Math.floor(rnd() * 30) }) : null;
+      if (g.mini === 'fireflies') {
+        // Counts what it saw on the TV, give or take (a blind guess never won).
+        const memo = view.memo || {}, tv = view.tv || {};
+        if (Array.isArray(tv.flies)) memo.flies = tv.flies.length;
+        if (you.done || g.sub !== 'guess') return null;
+        const seen = Number(memo.flies) || 30;
+        return tap({ number: Math.max(0, Math.round(seen * (0.75 + rnd() * 0.5))) });
+      }
+      if (g.mini === 'track') {
+        // Reads the arc the TV showed and guesses roughly where it comes down.
+        const tv = view.tv || {}, pts = tv.track && Array.isArray(tv.track.pts) ? tv.track.pts : null;
+        if (you.done || g.sub !== 'guess') return null;
+        const est = pts && pts.length > 1 ? pts[0][0] + (pts[pts.length - 1][0] - pts[0][0]) * (2.4 + rnd() * 0.9) : 20 + rnd() * 70;
+        return tap({ track: Math.max(0, Math.min(100, Math.round(est * 10) / 10)) });
+      }
+      if (g.mini === 'angle') return !you.done ? tap({ angle: Math.max(0, Math.min(180, Math.round((g.target || 90) + (rnd() - 0.5) * 50))) }) : null;
+      if (g.mini === 'split') return !you.done ? tap({ split: Math.max(1, Math.min(1000, Math.round((g.target || 500) + (rnd() - 0.5) * 300))) }) : null;
       if (g.mini === 'roast') return !you.done ? tap({ hold: Math.round((g.target || 3000) * (0.7 + rnd() * 0.6)) }) : null;
       if (you.done || you.early) return null;
       if (g.mini === 'skip') return { payload: { throw: Date.now() }, kind: 'react' };

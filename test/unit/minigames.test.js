@@ -51,7 +51,8 @@ test('free-for-all series: tap race, quick draw, fireflies, roast — scoring an
   // 3. Fireflies: the exact count wins.
   const show = await playing(h, 'fireflies', 'show');
   const n = show.gameState.flies.length;
-  assert.ok(n >= 12 && n <= 40);
+  assert.ok(n >= 18 && n <= 64, `${n} fireflies`);
+  assert.ok(show.gameState.flies.every((f) => [0, 1, 2].includes(f.s) && [0, 1, 2].includes(f.b) && f.x >= 2 && f.x <= 97 && f.y >= 3 && f.y <= 94), 'sizes, glows and spots in bounds');
   ps[1].submit({ number: n }); // locking in while the fireflies are still showing is allowed
   await until(() => h.state.gameState.doneCount === 1, 'early guess counted');
   await playing(h, 'fireflies', 'guess');
@@ -196,4 +197,73 @@ test('the seven new minis: skip stones, loon spotting, swat, balance, canoe spri
     assert.strictEqual(row(r7, 'Q0').value, 12);
     await h.phase('gameover');
   } finally { await srv2.stop(); }
+});
+
+test('aim minis: Track the Ball, Angle Match, Split the Rope — closest wins, answers stay hidden, bounds', async () => {
+  const srv3 = await startServer({ RUMPUS_MG_ORDER: 'track,angle,split', RUMPUS_MG_INTRO_MS: '100', RUMPUS_MG_RESULT_MS: '200', RUMPUS_MG_PLAY_MS: '6000', RUMPUS_MG_TRACK_GUESS_MS: '4000' });
+  try {
+    const h = await makeHost(srv3);
+    const ps = [];
+    for (let i = 0; i < 3; i++) ps.push(await makePlayer(srv3, h.code, 'A' + i));
+    await until(() => h.state.players.length === 3, 'joined');
+    h.emit('host:settings', { rounds: 3 });
+    await until(() => h.state.settings.rounds === 3, 'rounds');
+    h.emit('host:startGame', { gameId: 'minigames' });
+    const row = (st, n) => st.gameState.result.rows.find((r) => r.nickname === n);
+    const result = (mini) => until(() => h.state.phase === 'mg-result' && h.state.gameState.mini === mini && h.state, `${mini} result`);
+    const play = (mini, sub) => until(() => h.state.phase === 'mg-play' && h.state.gameState.mini === mini && (!sub || h.state.gameState.sub === sub) && ps.every((p) => p.state.phase === 'mg-play') && h.state, mini);
+    // Track the Ball: the TV shows only part of the climb (before the top of the arc) and the fog;
+    // nobody is told where it lands until the result.
+    const tr = await play('track', 'show');
+    const { pts, fog } = tr.gameState.track;
+    assert.ok(pts.length > 2 && fog === pts[pts.length - 1][0], 'the fog starts where the ball vanishes');
+    assert.ok(pts.every((p, i) => i === 0 || p[1] >= pts[i - 1][1]), 'it vanishes while still climbing');
+    assert.strictEqual(tr.gameState.track.land, undefined, 'the TV is not sent the landing spot');
+    assert.strictEqual(tr.gameState.land, undefined);
+    assert.strictEqual(JSON.stringify(ps[0].state.gameState).includes('pts'), false, 'phones watch the TV');
+    ps[0].submit({ track: 140 }); // off the field: refused
+    await play('track', 'guess');
+    ps[0].submit({ track: 50 }); ps[0].submit({ track: 10 }); // the second one is ignored (locked in)
+    ps[1].submit({ track: 99.9 });
+    ps[2].submit({ track: 0 });
+    const r1 = await result('track');
+    const land = r1.gameState.result.answer;
+    assert.ok(land >= 38 && land <= 96, `landed at ${land}`);
+    assert.strictEqual(row(r1, 'A0').value, 50);
+    const best = ['A0', 'A1', 'A2'].map((n) => [n, Math.abs(row(r1, n).value - land)]).sort((a, b) => a[1] - b[1])[0][0];
+    assert.strictEqual(row(r1, best).gained, 300, 'the closest guess wins');
+    assert.ok(r1.gameState.result.track.pts.length > pts.length - 1 && r1.gameState.result.guesses.length === 3, 'the result shows the whole flight and every flag');
+    // Angle Match: the angle between the arms; anything outside 0–180° is refused.
+    const an = await play('angle');
+    const target = ps[0].state.gameState.target;
+    assert.ok(target >= 10 && target <= 170 && Number.isInteger(ps[0].state.gameState.base));
+    ps[0].submit({ angle: 200 });
+    ps[0].submit({ angle: target + 3 }); ps[1].submit({ angle: target - 20 }); ps[2].submit({ angle: 'x' });
+    await until(() => h.state.gameState.doneCount === 2, 'two locked in');
+    ps[2].submit({ angle: target + 3 });
+    const r2 = await result('angle');
+    assert.strictEqual(row(r2, 'A0').gained, 300, 'ties share the better placing');
+    assert.strictEqual(row(r2, 'A2').gained, 300);
+    assert.strictEqual(row(r2, 'A1').gained, 100);
+    assert.strictEqual(an.gameState.target, target, 'the TV shows the angle to make');
+    // Split the Rope: 1–1000; the final round is ×3.
+    await play('split');
+    const cut = ps[0].state.gameState.target;
+    assert.ok(cut >= 1 && cut <= 1000 && typeof ps[0].state.gameState.flip === 'boolean');
+    ps[0].submit({ split: 0 }); ps[0].submit({ split: 1001 });
+    ps[0].submit({ split: cut }); ps[1].submit({ split: cut > 500 ? 1 : 1000 });
+    const r3 = await result('split');
+    assert.strictEqual(row(r3, 'A0').value, cut);
+    assert.strictEqual(row(r3, 'A0').gained, 900);
+    assert.strictEqual(row(r3, 'A2').value, '—', 'no cut: no score');
+    await h.phase('gameover');
+  } finally { await srv3.stop(); }
+});
+
+test('Angle Match maths: the angle between two arms is 0–180° whichever way round', () => {
+  const M = require('../../games/minigames');
+  assert.strictEqual(M.between(10, 50), 40);
+  assert.strictEqual(M.between(350, 20), 30);
+  assert.strictEqual(M.between(0, 270), 90);
+  assert.strictEqual(M.between(90, -90), 180);
 });

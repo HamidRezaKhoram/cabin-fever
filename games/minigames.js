@@ -38,12 +38,14 @@ const CLOCK_SLACK_MS = 300; // network + clock-sync wiggle
 const THROW_GAP_MS = 250;   // Skip Stones: one throw at a time
 const MAX_LOGS_PER_SEC = 4; // Woodpile Stack: a log has to slide over before it can drop
 
-/** @typedef {'tug'|'quickdraw'|'fireflies'|'roast'|'skip'|'spot'|'swat'|'balance'|'paddle'|'simon'|'stack'} MiniId */
+const TRACK_GUESS_MS = env('RUMPUS_MG_TRACK_GUESS_MS', 10000);
+
+/** @typedef {'tug'|'quickdraw'|'fireflies'|'roast'|'skip'|'spot'|'swat'|'balance'|'paddle'|'simon'|'stack'|'track'|'angle'|'split'} MiniId */
 /** @type {Record<MiniId, { name: string, rule: string, better: 'low' | 'high' }>} */
 const MINIS = {
   tug: { name: 'Tug of Lake', rule: 'TAP AS FAST AS YOU CAN!', better: 'high' },
   quickdraw: { name: 'Quick Draw', rule: 'Wait for GO… then tap first. Too early = SPLASH!', better: 'low' },
-  fireflies: { name: 'Firefly Count', rule: 'Count the fireflies on the TV. Closest guess wins.', better: 'low' },
+  fireflies: { name: 'Firefly Count', rule: 'Count the fireflies on the TV before they fly off. Some barely glow! Closest guess wins.', better: 'low' },
   roast: { name: 'Marshmallow Roast', rule: 'Hold to roast, let go at the target time — no clock to help you. Too long = burnt!', better: 'low' },
   skip: { name: 'Skip Stones', rule: 'Three throws: tap when the swinging arrow is in the green. Most skips wins.', better: 'high' },
   spot: { name: 'Loon Spotting', rule: 'One loon is hiding among the ducks on the TV. Tap its spot on your phone — first right answer wins!', better: 'low' },
@@ -52,7 +54,16 @@ const MINIS = {
   paddle: { name: 'Canoe Sprint', rule: 'Paddle LEFT, RIGHT, LEFT, RIGHT… only alternating strokes count!', better: 'high' },
   simon: { name: 'Campfire Sequence', rule: 'Watch the 4 sparks on the TV, then repeat the colours on your phone. Right and fast wins.', better: 'low' },
   stack: { name: 'Woodpile Stack', rule: 'Tap to drop the sliding log on the pile. Miss the edge and it gets smaller. Tallest pile wins!', better: 'high' },
+  track: { name: 'Track the Ball', rule: 'Watch the ball fly on the TV until it vanishes into the fog. Tap where it will land. Closest wins.', better: 'low' },
+  angle: { name: 'Angle Match', rule: 'Swing the arm on your phone to make the angle shown. No protractor! Closest wins.', better: 'low' },
+  split: { name: 'Split the Rope', rule: 'The rope runs from 1 to 1000. Cut it at the number shown. Closest cut wins.', better: 'low' },
 };
+/** The "closest wins" minis: a guess per player against a hidden answer. */
+const AIMED = ['fireflies', 'track', 'angle', 'split'];
+/** Track the Ball: where the ball is at t (0 = thrown, 1 = landed), in % of the field (y up). @param {{ x0: number, land: number, apex: number }} p @param {number} t */
+function ballAt(p, t) { return { x: p.x0 + (p.land - p.x0) * t, y: p.apex * 4 * t * (1 - t) }; }
+/** Angle Match: the angle between the two arms (0–180°), from the moving arm's direction. @param {number} base @param {number} arm */
+function between(base, arm) { const d = Math.abs((((arm - base) % 360) + 360) % 360); return d > 180 ? 360 - d : d; }
 const ORDER = /** @type {MiniId[]} */ ((process.env.RUMPUS_MG_ORDER || '').split(',').filter((x) => x in MINIS));
 const SPOT_CELLS = 12;
 const COLOURS = 4;
@@ -158,6 +169,26 @@ class MinigamesGame extends BaseGame {
       case 'stack': return { speed: Math.round(r.range(0.9, 1.3) * 100) / 100, speedUp: 1.08 };
       case 'tug': return { ms: r.int(Math.round(TUG_MS * 0.75), TUG_MS) };
       case 'paddle': return { ms: r.int(Math.round(PLAY_MS * 0.7), PLAY_MS) };
+      case 'fireflies': {
+        // Harder and less predictable (playtest: "too easy"): 18–64 of them, 3–5 s to count, some in
+        // clumps, three sizes and three glows — the faint ones are easy to miss.
+        const n = r.int(18, 64);
+        const clumps = Array.from({ length: r.int(1, 3) }, () => ({ x: r.int(15, 85), y: r.int(15, 80) }));
+        const flies = Array.from({ length: n }, () => {
+          const c = r.next() < 0.5 ? clumps[r.int(0, clumps.length - 1)] : null;
+          const x = c ? c.x + r.int(-9, 9) : r.int(4, 95), y = c ? c.y + r.int(-9, 9) : r.int(6, 91);
+          return { x: Math.max(2, Math.min(97, x)), y: Math.max(3, Math.min(94, y)), d: r.int(0, 9), s: r.int(0, 2), b: r.int(0, 2) };
+        });
+        return { flies, showMs: r.int(Math.round(FLY_SHOW_MS * 0.6), FLY_SHOW_MS) };
+      }
+      case 'track': {
+        // Thrown from the left; it vanishes into the fog while still climbing (before the top of its
+        // arc), so the landing has to be worked out from the curve so far.
+        const land = Math.round(r.range(38, 96) * 10) / 10;
+        return { x0: Math.round(r.range(3, 10) * 10) / 10, land, apex: Math.round(r.range(35, 85)), flight: r.int(2600, 3800), seen: Math.round(r.range(0.3, 0.45) * 100) / 100 };
+      }
+      case 'angle': return { target: r.int(10, 170), base: r.int(0, 359) };
+      case 'split': return { target: r.int(1, 1000), flip: r.int(0, 1) === 1 };
       default: return {};
     }
   }
@@ -177,9 +208,13 @@ class MinigamesGame extends BaseGame {
       }
       case 'fireflies': {
         this.sub = 'show';
-        const n = this.rng.int(12, 40);
-        this.flies = Array.from({ length: n }, () => ({ x: this.rng.int(4, 95), y: this.rng.int(6, 91), d: this.rng.int(0, 9) }));
-        this.setTimer(FLY_SHOW_MS, () => { this.sub = 'guess'; this.setTimer(FLY_GUESS_MS, done, false); this.push(); }, false);
+        this.flies = p.flies;
+        this.setTimer(p.showMs, () => { this.sub = 'guess'; this.setTimer(FLY_GUESS_MS, done, false); this.push(); }, false);
+        break;
+      }
+      case 'track': {
+        this.sub = 'show';
+        this.setTimer(Math.round(p.flight * p.seen) + 900, () => { this.sub = 'guess'; this.setTimer(TRACK_GUESS_MS, done, false); this.push(); }, false);
         break;
       }
       case 'spot': this.sub = 'go'; this.goAt = Date.now(); this.setTimer(PLAY_MS, done, false); break;
@@ -267,6 +302,16 @@ class MinigamesGame extends BaseGame {
         const n = Number(payload.number);
         if (!Number.isFinite(n) || n < 0 || n > 999 || this.entries.has(id)) return;
         this.entries.set(id, Math.round(n));
+        if (!this.maybeDone()) this.push();
+        return;
+      }
+      case 'track': case 'angle': case 'split': {
+        // One locked-in guess: a landing spot (0–100 m), an angle (0–180°) or a cut (1–1000).
+        const v = Number(payload[this.mini]);
+        const [lo, hi] = this.mini === 'track' ? [0, 100] : this.mini === 'angle' ? [0, 180] : [1, 1000];
+        if (this.entries.has(id)) return; // already locked in
+        if (!Number.isFinite(v) || v < lo || v > hi) return false;
+        this.entries.set(id, this.mini === 'track' ? Math.round(v * 10) / 10 : Math.round(v));
         if (!this.maybeDone()) this.push();
         return;
       }
@@ -376,13 +421,24 @@ class MinigamesGame extends BaseGame {
     for (const id of this.playerIds()) {
       const v = this.raw(id);
       if (v === null) continue;
-      if (this.mini === 'fireflies') rows.push([id, Math.abs(v - this.flies.length)]);
+      const answer = this.answer();
+      if (answer !== null) rows.push([id, Math.round(Math.abs(v - answer) * 10) / 10]);
       // Letting go at once isn't a roast: it has to reach half the target and not burn.
       else if (this.mini === 'roast') { if (v <= this.params.burn && v >= this.params.target / 2) rows.push([id, Math.abs(v - this.params.target)]); }
       else if (MINIS[/** @type {MiniId} */ (this.mini)].better === 'high') { if (v > 0) rows.push([id, -v]); }
       else rows.push([id, v]);
     }
     return rows.sort((a, b) => a[1] - b[1]);
+  }
+
+  /** The hidden answer of a "closest wins" mini (null for the others). @returns {number | null} */
+  answer() {
+    switch (this.mini) {
+      case 'fireflies': return this.flies.length;
+      case 'track': return this.params.land;
+      case 'angle': case 'split': return this.params.target;
+      default: return null;
+    }
   }
 
   finish() {
@@ -432,7 +488,7 @@ class MinigamesGame extends BaseGame {
       });
     }
     /** @type {Record<MiniId, string>} */
-    const UNIT = { tug: 'taps', quickdraw: 'ms', fireflies: '', roast: 'ms', skip: 'skips', spot: 'ms', swat: 'swats', balance: '%', paddle: 'strokes', simon: 'ms', stack: 'logs' };
+    const UNIT = { tug: 'taps', quickdraw: 'ms', fireflies: '', roast: 'ms', skip: 'skips', spot: 'ms', swat: 'swats', balance: '%', paddle: 'strokes', simon: 'ms', stack: 'logs', track: 'm', angle: '°', split: '' };
     const valueOf = (/** @type {string} */ id) => {
       if (this.early.has(id)) return this.mini === 'quickdraw' ? 'SPLASH' : this.mini === 'spot' ? 'WRONG BIRD' : 'WRONG';
       const v = this.raw(id);
@@ -440,7 +496,10 @@ class MinigamesGame extends BaseGame {
     };
     this.result = {
       winnerTeam,
-      answer: this.mini === 'fireflies' ? this.flies.length : this.mini === 'roast' ? this.params.target : null,
+      answer: this.mini === 'roast' ? this.params.target : this.answer(),
+      // Track the Ball: the whole flight and where everyone said it would land (the TV draws it).
+      track: this.mini === 'track' ? { ...this.trackPath(1), land: this.params.land } : null,
+      guesses: this.mini && AIMED.includes(this.mini) ? this.playerIds().filter((id) => this.entries.has(id)).map((id) => ({ nickname: this.nick(id), v: this.entries.get(id) })) : null,
       tug: this.mini === 'tug' && this.teamsOn() ? this.tugTotals() : null,
       rows: this.playerIds()
         .map((id) => ({ nickname: this.nick(id), team: this.teamOf(id) || null, value: valueOf(id), unit: UNIT[/** @type {MiniId} */ (this.mini)],
@@ -450,6 +509,13 @@ class MinigamesGame extends BaseGame {
     this.phase = 'mg-result';
     this.setTimer(RESULT_MS, () => this.nextRound(), false);
     this.push();
+  }
+
+  /** Track the Ball: points along the flight up to `upto` (0–1), and how long that part takes. @param {number} upto */
+  trackPath(upto) {
+    const p = { x0: Number(this.params.x0), land: Number(this.params.land), apex: Number(this.params.apex) }, steps = 24, flight = Number(this.params.flight);
+    const pts = Array.from({ length: steps + 1 }, (_, i) => { const b = ballAt(p, (upto * i) / steps); return [Math.round(b.x * 10) / 10, Math.round(b.y * 10) / 10]; });
+    return { pts, ms: Math.round(flight * upto), fog: pts[pts.length - 1][0] };
   }
 
   /** @param {string} id */
@@ -484,7 +550,8 @@ class MinigamesGame extends BaseGame {
     /** @type {Record<string, unknown>} */
     const pub = this.mini === 'roast' ? { target: p.target } : this.mini === 'skip' ? { period: p.period, sweet: p.sweet, zone: p.zone }
       : this.mini === 'swat' ? { bugs: p.bugs } : this.mini === 'balance' ? { ax: p.ax, ay: p.ay, px: p.px, py: p.py, radius: p.radius }
-        : this.mini === 'stack' ? { speed: p.speed, speedUp: p.speedUp } : this.mini === 'spot' ? { cells: SPOT_CELLS } : this.mini === 'simon' ? { colours: COLOURS, length: (p.seq || []).length } : {};
+        : this.mini === 'stack' ? { speed: p.speed, speedUp: p.speedUp } : this.mini === 'spot' ? { cells: SPOT_CELLS } : this.mini === 'simon' ? { colours: COLOURS, length: (p.seq || []).length }
+          : this.mini === 'angle' ? { target: p.target, base: p.base } : this.mini === 'split' ? { target: p.target, flip: p.flip } : {};
     // Marshmallow Roast hides the clock: no countdown on the TV or the phones while roasting.
     // Quick Draw hides it while waiting: the clock then runs to the (random) moment of GO.
     const noClock = this.phase === 'mg-play' && (this.mini === 'roast' || (this.mini === 'quickdraw' && this.sub === 'wait')) ? { endsAt: null } : {};
@@ -500,6 +567,8 @@ class MinigamesGame extends BaseGame {
         : { ...c, taps: this.playerIds().map((id) => ({ nickname: this.nick(id), taps: this.taps.get(id) || 0 })).sort((a, b) => b.taps - a.taps) };
     }
     if (this.phase === 'mg-play' && this.mini === 'fireflies' && this.sub === 'show') return { ...c, flies: this.flies };
+    // The TV gets the part of the flight it shows — not the landing spot.
+    if (this.phase === 'mg-play' && this.mini === 'track') return { ...c, track: this.trackPath(this.params.seen), doneCount: this.entries.size, totalPlayers: this.room.players.size };
     if (this.phase === 'mg-play' && this.mini === 'spot') return { ...c, loon: this.params.loon, ducks: this.params.ducks, doneCount: this.reactions.size + this.early.size, totalPlayers: this.room.players.size };
     if (this.phase === 'mg-play' && this.mini === 'simon' && this.sub === 'show') return { ...c, seq: this.params.seq, showMs: SHOW_MS };
     if (this.phase === 'mg-play' && this.mini === 'swat') return { ...c, board: this.playerIds().map((id) => ({ nickname: this.nick(id), n: (this.swatted.get(id) || new Set()).size })).sort((a, b) => b.n - a.n) };
@@ -529,11 +598,12 @@ class MinigamesGame extends BaseGame {
 MinigamesGame.meta = {
   id: 'minigames',
   name: 'Cottage Olympics',
-  blurb: 'Eleven quick real-time phone challenges — tap, react, count, roast, swat, paddle, stack. Best with Teams on!',
+  blurb: 'Fourteen quick real-time phone challenges: tap, react, count, roast, swat, paddle, stack, aim. Best with Teams on!',
   minPlayers: 2,
 };
 MinigamesGame.MINIS = MINIS;
 MinigamesGame.swing = swing;
 MinigamesGame.skipsFor = skipsFor;
+MinigamesGame.between = between;
 
 module.exports = MinigamesGame;

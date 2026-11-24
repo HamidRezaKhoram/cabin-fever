@@ -123,6 +123,7 @@ const QUICK = {
   RUMPUS_ST_ROLES_MS: '2000', RUMPUS_ST_VOTE_SHOW_MS: '150', RUMPUS_ST_CARD_MS: '100', RUMPUS_ST_FINAL_MS: '200',
   RUMPUS_TT_STEP_MS: '60', RUMPUS_MG_PLAY_MS: '1500', RUMPUS_MG_SHOW_MS: '40',
   RUMPUS_LL_INTRO_MS: '300', RUMPUS_LL_PLAY_MS: '2500', RUMPUS_LL_RESULT_MS: '200',
+  RUMPUS_MG_TRACK_GUESS_MS: '1500', RUMPUS_DD_REVEAL_STEP_MS: '60', RUMPUS_DD_REVEAL_END_MS: '200',
 };
 
 module.exports = { QUICK, ROOT, startServer, once, until, sleep, makeHost, makePlayer, makeRoom, joinError, get, contentDir, tmpDir, PNG };

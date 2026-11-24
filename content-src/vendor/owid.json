@@ -1,0 +1,1554 @@
+{
+"children-per-woman-un": {
+"Argentina": {
+"value": 1.5,
+"year": 2023
+},
+"Australia": {
+"value": 1.638,
+"year": 2023
+},
+"Bangladesh": {
+"value": 2.163,
+"year": 2023
+},
+"Brazil": {
+"value": 1.619,
+"year": 2023
+},
+"Canada": {
+"value": 1.349,
+"year": 2023
+},
+"Chile": {
+"value": 1.167,
+"year": 2023
+},
+"China": {
+"value": 0.999,
+"year": 2023
+},
+"Colombia": {
+"value": 1.645,
+"year": 2023
+},
+"Cuba": {
+"value": 1.439,
+"year": 2023
+},
+"Egypt": {
+"value": 2.75,
+"year": 2023
+},
+"Ethiopia": {
+"value": 3.989,
+"year": 2023
+},
+"France": {
+"value": 1.639,
+"year": 2023
+},
+"Germany": {
+"value": 1.441,
+"year": 2023
+},
+"Greece": {
+"value": 1.334,
+"year": 2023
+},
+"Iceland": {
+"value": 1.54,
+"year": 2023
+},
+"India": {
+"value": 1.975,
+"year": 2023
+},
+"Indonesia": {
+"value": 2.127,
+"year": 2023
+},
+"Iran": {
+"value": 1.695,
+"year": 2023
+},
+"Ireland": {
+"value": 1.598,
+"year": 2023
+},
+"Israel": {
+"value": 2.83,
+"year": 2023
+},
+"Italy": {
+"value": 1.198,
+"year": 2023
+},
+"Jamaica": {
+"value": 1.358,
+"year": 2023
+},
+"Japan": {
+"value": 1.208,
+"year": 2023
+},
+"Kenya": {
+"value": 3.208,
+"year": 2023
+},
+"Mexico": {
+"value": 1.91,
+"year": 2023
+},
+"Morocco": {
+"value": 2.23,
+"year": 2023
+},
+"Netherlands": {
+"value": 1.43,
+"year": 2023
+},
+"New Zealand": {
+"value": 1.667,
+"year": 2023
+},
+"Nigeria": {
+"value": 4.482,
+"year": 2023
+},
+"Norway": {
+"value": 1.405,
+"year": 2023
+},
+"Pakistan": {
+"value": 3.605,
+"year": 2023
+},
+"Peru": {
+"value": 1.98,
+"year": 2023
+},
+"Philippines": {
+"value": 1.916,
+"year": 2023
+},
+"Poland": {
+"value": 1.299,
+"year": 2023
+},
+"Portugal": {
+"value": 1.508,
+"year": 2023
+},
+"Russia": {
+"value": 1.449,
+"year": 2023
+},
+"Saudi Arabia": {
+"value": 2.28,
+"year": 2023
+},
+"South Africa": {
+"value": 2.216,
+"year": 2023
+},
+"South Korea": {
+"value": 0.72,
+"year": 2023
+},
+"Spain": {
+"value": 1.213,
+"year": 2023
+},
+"Sweden": {
+"value": 1.43,
+"year": 2023
+},
+"Switzerland": {
+"value": 1.433,
+"year": 2023
+},
+"Thailand": {
+"value": 1.212,
+"year": 2023
+},
+"Turkey": {
+"value": 1.625,
+"year": 2023
+},
+"Ukraine": {
+"value": 0.977,
+"year": 2023
+},
+"United Kingdom": {
+"value": 1.56,
+"year": 2023
+},
+"United States": {
+"value": 1.624,
+"year": 2023
+},
+"Vietnam": {
+"value": 1.913,
+"year": 2023
+}
+},
+"co-emissions-per-capita": {
+"Argentina": {
+"value": 3.842302,
+"year": 2025
+},
+"Australia": {
+"value": 14.04207,
+"year": 2025
+},
+"Bangladesh": {
+"value": 0.65975106,
+"year": 2025
+},
+"Brazil": {
+"value": 2.3339157,
+"year": 2025
+},
+"Canada": {
+"value": 13.639751,
+"year": 2025
+},
+"Chile": {
+"value": 3.840541,
+"year": 2025
+},
+"China": {
+"value": 8.768821,
+"year": 2025
+},
+"Colombia": {
+"value": 1.7981434,
+"year": 2025
+},
+"Cuba": {
+"value": 2.167712,
+"year": 2025
+},
+"Egypt": {
+"value": 2.0893877,
+"year": 2025
+},
+"Ethiopia": {
+"value": 0.14047056,
+"year": 2025
+},
+"France": {
+"value": 3.831121,
+"year": 2025
+},
+"Germany": {
+"value": 6.8208766,
+"year": 2025
+},
+"Greece": {
+"value": 5.4174876,
+"year": 2025
+},
+"Iceland": {
+"value": 8.753368,
+"year": 2025
+},
+"India": {
+"value": 2.1883202,
+"year": 2025
+},
+"Indonesia": {
+"value": 2.876242,
+"year": 2025
+},
+"Iran": {
+"value": 9.254488,
+"year": 2025
+},
+"Ireland": {
+"value": 5.972053,
+"year": 2025
+},
+"Israel": {
+"value": 6.1861076,
+"year": 2025
+},
+"Italy": {
+"value": 4.9693775,
+"year": 2025
+},
+"Jamaica": {
+"value": 2.9226403,
+"year": 2025
+},
+"Japan": {
+"value": 7.800306,
+"year": 2025
+},
+"Kenya": {
+"value": 0.39886183,
+"year": 2025
+},
+"Mexico": {
+"value": 3.568726,
+"year": 2025
+},
+"Morocco": {
+"value": 1.8690416,
+"year": 2025
+},
+"Netherlands": {
+"value": 6.3369966,
+"year": 2025
+},
+"New Zealand": {
+"value": 5.910158,
+"year": 2025
+},
+"Nigeria": {
+"value": 0.59904313,
+"year": 2025
+},
+"Norway": {
+"value": 6.483642,
+"year": 2025
+},
+"Pakistan": {
+"value": 0.82978594,
+"year": 2025
+},
+"Peru": {
+"value": 1.9954526,
+"year": 2025
+},
+"Philippines": {
+"value": 1.4489245,
+"year": 2025
+},
+"Poland": {
+"value": 7.4389467,
+"year": 2025
+},
+"Portugal": {
+"value": 3.544582,
+"year": 2025
+},
+"Russia": {
+"value": 12.268769,
+"year": 2025
+},
+"Saudi Arabia": {
+"value": 18.464415,
+"year": 2025
+},
+"South Africa": {
+"value": 7.1064916,
+"year": 2025
+},
+"South Korea": {
+"value": 11.238018,
+"year": 2025
+},
+"Spain": {
+"value": 4.39535,
+"year": 2025
+},
+"Sweden": {
+"value": 3.7532136,
+"year": 2025
+},
+"Switzerland": {
+"value": 3.472643,
+"year": 2025
+},
+"Thailand": {
+"value": 3.580945,
+"year": 2025
+},
+"Turkey": {
+"value": 5.541829,
+"year": 2025
+},
+"Ukraine": {
+"value": 3.5598795,
+"year": 2025
+},
+"United Kingdom": {
+"value": 4.599254,
+"year": 2025
+},
+"United States": {
+"value": 14.500179,
+"year": 2025
+},
+"Vietnam": {
+"value": 3.6879144,
+"year": 2025
+}
+},
+"daily-per-capita-caloric-supply": {
+"Argentina": {
+"value": 3360.4297,
+"year": 2023
+},
+"Australia": {
+"value": 3561.929,
+"year": 2023
+},
+"Bangladesh": {
+"value": 2587.65,
+"year": 2023
+},
+"Brazil": {
+"value": 3423.45,
+"year": 2023
+},
+"Canada": {
+"value": 3590.0403,
+"year": 2023
+},
+"Chile": {
+"value": 3057.4695,
+"year": 2023
+},
+"China": {
+"value": 3526.8997,
+"year": 2023
+},
+"Colombia": {
+"value": 3126.3198,
+"year": 2023
+},
+"Cuba": {
+"value": 3385.1208,
+"year": 2019
+},
+"Egypt": {
+"value": 3094.01,
+"year": 2023
+},
+"Ethiopia": {
+"value": 2558.4197,
+"year": 2023
+},
+"France": {
+"value": 3489.5496,
+"year": 2023
+},
+"Germany": {
+"value": 3534.5398,
+"year": 2023
+},
+"Greece": {
+"value": 3381.65,
+"year": 2023
+},
+"Iceland": {
+"value": 3681.0696,
+"year": 2023
+},
+"India": {
+"value": 2668.5,
+"year": 2023
+},
+"Indonesia": {
+"value": 2900.3,
+"year": 2023
+},
+"Iran": {
+"value": 2875.16,
+"year": 2023
+},
+"Ireland": {
+"value": 3920.9207,
+"year": 2023
+},
+"Israel": {
+"value": 3753.8994,
+"year": 2023
+},
+"Italy": {
+"value": 3752.6597,
+"year": 2023
+},
+"Jamaica": {
+"value": 2892.0652,
+"year": 2023
+},
+"Japan": {
+"value": 2670.09,
+"year": 2022
+},
+"Kenya": {
+"value": 2146.0098,
+"year": 2023
+},
+"Mexico": {
+"value": 3304.56,
+"year": 2023
+},
+"Morocco": {
+"value": 3353.8586,
+"year": 2023
+},
+"Netherlands": {
+"value": 3466.9788,
+"year": 2023
+},
+"New Zealand": {
+"value": 3121.5017,
+"year": 2023
+},
+"Nigeria": {
+"value": 2470.11,
+"year": 2023
+},
+"Norway": {
+"value": 3475.592,
+"year": 2023
+},
+"Pakistan": {
+"value": 2513.76,
+"year": 2023
+},
+"Peru": {
+"value": 2810.5205,
+"year": 2023
+},
+"Philippines": {
+"value": 2982.9,
+"year": 2023
+},
+"Poland": {
+"value": 3730.1392,
+"year": 2023
+},
+"Portugal": {
+"value": 3552.9316,
+"year": 2023
+},
+"Russia": {
+"value": 3528.4,
+"year": 2023
+},
+"Saudi Arabia": {
+"value": 3659.84,
+"year": 2023
+},
+"South Africa": {
+"value": 2693.9397,
+"year": 2023
+},
+"South Korea": {
+"value": 3430.3496,
+"year": 2023
+},
+"Spain": {
+"value": 3377.1597,
+"year": 2023
+},
+"Sweden": {
+"value": 3366.779,
+"year": 2023
+},
+"Switzerland": {
+"value": 3402.3882,
+"year": 2023
+},
+"Thailand": {
+"value": 2855.2698,
+"year": 2023
+},
+"Turkey": {
+"value": 3892.23,
+"year": 2023
+},
+"Ukraine": {
+"value": 2785.7905,
+"year": 2023
+},
+"United Kingdom": {
+"value": 3434.5898,
+"year": 2023
+},
+"United States": {
+"value": 3947.3303,
+"year": 2023
+},
+"Vietnam": {
+"value": 3086.03,
+"year": 2023
+}
+},
+"life-expectancy": {
+"Argentina": {
+"value": 77.3947,
+"year": 2023
+},
+"Australia": {
+"value": 83.9228,
+"year": 2023
+},
+"Bangladesh": {
+"value": 74.6723,
+"year": 2023
+},
+"Brazil": {
+"value": 75.8482,
+"year": 2023
+},
+"Canada": {
+"value": 82.6302,
+"year": 2023
+},
+"Chile": {
+"value": 81.1667,
+"year": 2023
+},
+"China": {
+"value": 77.9529,
+"year": 2023
+},
+"Colombia": {
+"value": 77.7246,
+"year": 2023
+},
+"Cuba": {
+"value": 78.0855,
+"year": 2023
+},
+"Egypt": {
+"value": 71.6335,
+"year": 2023
+},
+"Ethiopia": {
+"value": 67.315,
+"year": 2023
+},
+"France": {
+"value": 83.3253,
+"year": 2023
+},
+"Germany": {
+"value": 81.3777,
+"year": 2023
+},
+"Greece": {
+"value": 81.8568,
+"year": 2023
+},
+"Iceland": {
+"value": 82.6911,
+"year": 2023
+},
+"India": {
+"value": 72.0026,
+"year": 2023
+},
+"Indonesia": {
+"value": 71.1457,
+"year": 2023
+},
+"Iran": {
+"value": 77.6545,
+"year": 2023
+},
+"Ireland": {
+"value": 82.4118,
+"year": 2023
+},
+"Israel": {
+"value": 82.408,
+"year": 2023
+},
+"Italy": {
+"value": 83.7157,
+"year": 2023
+},
+"Jamaica": {
+"value": 71.4789,
+"year": 2023
+},
+"Japan": {
+"value": 84.7123,
+"year": 2023
+},
+"Kenya": {
+"value": 63.6459,
+"year": 2023
+},
+"Mexico": {
+"value": 75.069,
+"year": 2023
+},
+"Morocco": {
+"value": 75.3128,
+"year": 2023
+},
+"Netherlands": {
+"value": 82.1576,
+"year": 2023
+},
+"New Zealand": {
+"value": 82.088,
+"year": 2023
+},
+"Nigeria": {
+"value": 54.4623,
+"year": 2023
+},
+"Norway": {
+"value": 83.3078,
+"year": 2023
+},
+"Pakistan": {
+"value": 67.649,
+"year": 2023
+},
+"Peru": {
+"value": 77.7401,
+"year": 2023
+},
+"Philippines": {
+"value": 69.8327,
+"year": 2023
+},
+"Poland": {
+"value": 78.6329,
+"year": 2023
+},
+"Portugal": {
+"value": 82.3599,
+"year": 2023
+},
+"Russia": {
+"value": 73.1541,
+"year": 2023
+},
+"Saudi Arabia": {
+"value": 78.7321,
+"year": 2023
+},
+"South Africa": {
+"value": 66.1387,
+"year": 2023
+},
+"South Korea": {
+"value": 84.3288,
+"year": 2023
+},
+"Spain": {
+"value": 83.6703,
+"year": 2023
+},
+"Sweden": {
+"value": 83.2624,
+"year": 2023
+},
+"Switzerland": {
+"value": 83.9536,
+"year": 2023
+},
+"Thailand": {
+"value": 76.4115,
+"year": 2023
+},
+"Turkey": {
+"value": 77.1557,
+"year": 2023
+},
+"Ukraine": {
+"value": 73.4225,
+"year": 2023
+},
+"United Kingdom": {
+"value": 81.3015,
+"year": 2023
+},
+"United States": {
+"value": 79.3043,
+"year": 2023
+},
+"Vietnam": {
+"value": 74.5883,
+"year": 2023
+}
+},
+"meat-supply-per-person": {
+"Argentina": {
+"value": 114.94999,
+"year": 2023
+},
+"Australia": {
+"value": 116.77997,
+"year": 2023
+},
+"Bangladesh": {
+"value": 4.49,
+"year": 2023
+},
+"Brazil": {
+"value": 104.57,
+"year": 2023
+},
+"Canada": {
+"value": 94.79001,
+"year": 2023
+},
+"Chile": {
+"value": 98.539986,
+"year": 2023
+},
+"China": {
+"value": 73.54,
+"year": 2023
+},
+"Colombia": {
+"value": 62.589996,
+"year": 2023
+},
+"Cuba": {
+"value": 65.72002,
+"year": 2019
+},
+"Egypt": {
+"value": 27.62,
+"year": 2023
+},
+"Ethiopia": {
+"value": 6.9099994,
+"year": 2023
+},
+"France": {
+"value": 80.30999,
+"year": 2023
+},
+"Germany": {
+"value": 70.66999,
+"year": 2023
+},
+"Greece": {
+"value": 81.99,
+"year": 2023
+},
+"Iceland": {
+"value": 98.050255,
+"year": 2023
+},
+"India": {
+"value": 8.12,
+"year": 2023
+},
+"Indonesia": {
+"value": 19.95,
+"year": 2023
+},
+"Iran": {
+"value": 29.900002,
+"year": 2023
+},
+"Ireland": {
+"value": 98.38001,
+"year": 2023
+},
+"Israel": {
+"value": 108.72999,
+"year": 2023
+},
+"Italy": {
+"value": 71.2,
+"year": 2023
+},
+"Jamaica": {
+"value": 66.96012,
+"year": 2023
+},
+"Japan": {
+"value": 59.914444,
+"year": 2022
+},
+"Kenya": {
+"value": 10.179999,
+"year": 2023
+},
+"Mexico": {
+"value": 78.22,
+"year": 2023
+},
+"Morocco": {
+"value": 32.789986,
+"year": 2023
+},
+"Netherlands": {
+"value": 71.57998,
+"year": 2023
+},
+"New Zealand": {
+"value": 79.54005,
+"year": 2023
+},
+"Nigeria": {
+"value": 7.11,
+"year": 2023
+},
+"Norway": {
+"value": 70.40004,
+"year": 2023
+},
+"Pakistan": {
+"value": 21.24,
+"year": 2023
+},
+"Peru": {
+"value": 55.440006,
+"year": 2023
+},
+"Philippines": {
+"value": 33.64,
+"year": 2023
+},
+"Poland": {
+"value": 83.30998,
+"year": 2023
+},
+"Portugal": {
+"value": 99.32005,
+"year": 2023
+},
+"Russia": {
+"value": 84.77,
+"year": 2023
+},
+"Saudi Arabia": {
+"value": 58.08,
+"year": 2023
+},
+"South Africa": {
+"value": 58.269993,
+"year": 2023
+},
+"South Korea": {
+"value": 83.99999,
+"year": 2023
+},
+"Spain": {
+"value": 100.78999,
+"year": 2023
+},
+"Sweden": {
+"value": 68.34998,
+"year": 2023
+},
+"Switzerland": {
+"value": 63.96997,
+"year": 2023
+},
+"Thailand": {
+"value": 24.479998,
+"year": 2023
+},
+"Turkey": {
+"value": 49.37,
+"year": 2023
+},
+"Ukraine": {
+"value": 49.45001,
+"year": 2023
+},
+"United Kingdom": {
+"value": 84.439995,
+"year": 2023
+},
+"United States": {
+"value": 122.060005,
+"year": 2023
+},
+"Vietnam": {
+"value": 60.48,
+"year": 2023
+}
+},
+"median-age": {
+"Argentina": {
+"value": 32.122,
+"year": 2023
+},
+"Australia": {
+"value": 37.751,
+"year": 2023
+},
+"Bangladesh": {
+"value": 25.325,
+"year": 2023
+},
+"Brazil": {
+"value": 33.942,
+"year": 2023
+},
+"Canada": {
+"value": 40.343,
+"year": 2023
+},
+"Chile": {
+"value": 35.969,
+"year": 2023
+},
+"China": {
+"value": 39.066,
+"year": 2023
+},
+"Colombia": {
+"value": 31.606,
+"year": 2023
+},
+"Cuba": {
+"value": 41.709,
+"year": 2023
+},
+"Egypt": {
+"value": 24.028,
+"year": 2023
+},
+"Ethiopia": {
+"value": 18.733,
+"year": 2023
+},
+"France": {
+"value": 41.817,
+"year": 2023
+},
+"Germany": {
+"value": 45.147,
+"year": 2023
+},
+"Greece": {
+"value": 45.747,
+"year": 2023
+},
+"Iceland": {
+"value": 35.808,
+"year": 2023
+},
+"India": {
+"value": 28.06,
+"year": 2023
+},
+"Indonesia": {
+"value": 29.831,
+"year": 2023
+},
+"Iran": {
+"value": 32.866,
+"year": 2023
+},
+"Ireland": {
+"value": 38.416,
+"year": 2023
+},
+"Israel": {
+"value": 29.15,
+"year": 2023
+},
+"Italy": {
+"value": 47.461,
+"year": 2023
+},
+"Jamaica": {
+"value": 31.673,
+"year": 2023
+},
+"Japan": {
+"value": 48.958,
+"year": 2023
+},
+"Kenya": {
+"value": 19.526,
+"year": 2023
+},
+"Mexico": {
+"value": 28.886,
+"year": 2023
+},
+"Morocco": {
+"value": 29.194,
+"year": 2023
+},
+"Netherlands": {
+"value": 41.396,
+"year": 2023
+},
+"New Zealand": {
+"value": 37.28,
+"year": 2023
+},
+"Nigeria": {
+"value": 17.754,
+"year": 2023
+},
+"Norway": {
+"value": 39.54,
+"year": 2023
+},
+"Pakistan": {
+"value": 20.287,
+"year": 2023
+},
+"Peru": {
+"value": 29.451,
+"year": 2023
+},
+"Philippines": {
+"value": 25.287,
+"year": 2023
+},
+"Poland": {
+"value": 41.31,
+"year": 2023
+},
+"Portugal": {
+"value": 46.2,
+"year": 2023
+},
+"Russia": {
+"value": 39.454,
+"year": 2023
+},
+"Saudi Arabia": {
+"value": 29.247,
+"year": 2023
+},
+"South Africa": {
+"value": 28.213,
+"year": 2023
+},
+"South Korea": {
+"value": 44.486,
+"year": 2023
+},
+"Spain": {
+"value": 44.903,
+"year": 2023
+},
+"Sweden": {
+"value": 39.913,
+"year": 2023
+},
+"Switzerland": {
+"value": 42.331,
+"year": 2023
+},
+"Thailand": {
+"value": 39.658,
+"year": 2023
+},
+"Turkey": {
+"value": 32.52,
+"year": 2023
+},
+"Ukraine": {
+"value": 41.984,
+"year": 2023
+},
+"United Kingdom": {
+"value": 39.782,
+"year": 2023
+},
+"United States": {
+"value": 38.023,
+"year": 2023
+},
+"Vietnam": {
+"value": 32.429,
+"year": 2023
+}
+},
+"population": {
+"Argentina": {
+"value": 45538402.0,
+"year": 2023
+},
+"Australia": {
+"value": 26451126.0,
+"year": 2023
+},
+"Bangladesh": {
+"value": 171466986.0,
+"year": 2023
+},
+"Brazil": {
+"value": 211140731.0,
+"year": 2023
+},
+"Canada": {
+"value": 39299098.0,
+"year": 2023
+},
+"Chile": {
+"value": 19658833.0,
+"year": 2023
+},
+"China": {
+"value": 1422584930.0,
+"year": 2023
+},
+"Colombia": {
+"value": 52321152.0,
+"year": 2023
+},
+"Cuba": {
+"value": 11019932.0,
+"year": 2023
+},
+"Egypt": {
+"value": 114535772.0,
+"year": 2023
+},
+"Ethiopia": {
+"value": 128691695.0,
+"year": 2023
+},
+"France": {
+"value": 66438828.0,
+"year": 2023
+},
+"Germany": {
+"value": 84548233.0,
+"year": 2023
+},
+"Greece": {
+"value": 10242910.0,
+"year": 2023
+},
+"Iceland": {
+"value": 387559.0,
+"year": 2023
+},
+"India": {
+"value": 1438069597.0,
+"year": 2023
+},
+"Indonesia": {
+"value": 281190068.0,
+"year": 2023
+},
+"Iran": {
+"value": 90608708.0,
+"year": 2023
+},
+"Ireland": {
+"value": 5196629.0,
+"year": 2023
+},
+"Israel": {
+"value": 9256311.0,
+"year": 2023
+},
+"Italy": {
+"value": 59499452.0,
+"year": 2023
+},
+"Jamaica": {
+"value": 2839785.0,
+"year": 2023
+},
+"Japan": {
+"value": 124370947.0,
+"year": 2023
+},
+"Kenya": {
+"value": 55339007.0,
+"year": 2023
+},
+"Mexico": {
+"value": 129739761.0,
+"year": 2023
+},
+"Morocco": {
+"value": 37712516.0,
+"year": 2023
+},
+"Netherlands": {
+"value": 18092526.0,
+"year": 2023
+},
+"New Zealand": {
+"value": 5172837.0,
+"year": 2023
+},
+"Nigeria": {
+"value": 227882949.0,
+"year": 2023
+},
+"Norway": {
+"value": 5519167.0,
+"year": 2023
+},
+"Pakistan": {
+"value": 247504505.0,
+"year": 2023
+},
+"Peru": {
+"value": 33845616.0,
+"year": 2023
+},
+"Philippines": {
+"value": 114891199.0,
+"year": 2023
+},
+"Poland": {
+"value": 38762847.0,
+"year": 2023
+},
+"Portugal": {
+"value": 10430735.0,
+"year": 2023
+},
+"Russia": {
+"value": 145440502.0,
+"year": 2023
+},
+"Saudi Arabia": {
+"value": 33264289.0,
+"year": 2023
+},
+"South Africa": {
+"value": 63212386.0,
+"year": 2023
+},
+"South Korea": {
+"value": 51748744.0,
+"year": 2023
+},
+"Spain": {
+"value": 47911583.0,
+"year": 2023
+},
+"Sweden": {
+"value": 10551493.0,
+"year": 2023
+},
+"Switzerland": {
+"value": 8870564.0,
+"year": 2023
+},
+"Thailand": {
+"value": 71702436.0,
+"year": 2023
+},
+"Turkey": {
+"value": 87270502.0,
+"year": 2023
+},
+"Ukraine": {
+"value": 37732833.0,
+"year": 2023
+},
+"United Kingdom": {
+"value": 68682965.0,
+"year": 2023
+},
+"United States": {
+"value": 343477330.0,
+"year": 2023
+},
+"Vietnam": {
+"value": 100352189.0,
+"year": 2023
+}
+},
+"share-of-individuals-using-the-internet": {
+"Argentina": {
+"value": 89.66715,
+"year": 2024
+},
+"Australia": {
+"value": 96.1314,
+"year": 2024
+},
+"Bangladesh": {
+"value": 53.421715,
+"year": 2024
+},
+"Brazil": {
+"value": 84.46347,
+"year": 2024
+},
+"Canada": {
+"value": 94.3533,
+"year": 2024
+},
+"Chile": {
+"value": 95.59024,
+"year": 2024
+},
+"China": {
+"value": 91.6,
+"year": 2025
+},
+"Colombia": {
+"value": 79.345436,
+"year": 2024
+},
+"Cuba": {
+"value": 70.477,
+"year": 2024
+},
+"Egypt": {
+"value": 74.6484,
+"year": 2024
+},
+"Ethiopia": {
+"value": 21.9413,
+"year": 2024
+},
+"France": {
+"value": 88.65382,
+"year": 2024
+},
+"Germany": {
+"value": 93.49999,
+"year": 2024
+},
+"Greece": {
+"value": 86.26969,
+"year": 2024
+},
+"Iceland": {
+"value": 98.2092,
+"year": 2024
+},
+"India": {
+"value": 70.0,
+"year": 2025
+},
+"Indonesia": {
+"value": 72.780754,
+"year": 2024
+},
+"Iran": {
+"value": 85.3404,
+"year": 2024
+},
+"Ireland": {
+"value": 97.1877,
+"year": 2024
+},
+"Israel": {
+"value": 88.18242,
+"year": 2024
+},
+"Italy": {
+"value": 89.22072,
+"year": 2024
+},
+"Jamaica": {
+"value": 90.1087,
+"year": 2024
+},
+"Japan": {
+"value": 85.541534,
+"year": 2024
+},
+"Kenya": {
+"value": 34.976227,
+"year": 2024
+},
+"Mexico": {
+"value": 83.12234,
+"year": 2024
+},
+"Morocco": {
+"value": 91.2,
+"year": 2024
+},
+"Netherlands": {
+"value": 97.0068,
+"year": 2024
+},
+"New Zealand": {
+"value": 93.5193,
+"year": 2024
+},
+"Nigeria": {
+"value": 41.2114,
+"year": 2024
+},
+"Norway": {
+"value": 99.0,
+"year": 2024
+},
+"Pakistan": {
+"value": 57.253,
+"year": 2024
+},
+"Peru": {
+"value": 81.95706,
+"year": 2024
+},
+"Philippines": {
+"value": 67.26301,
+"year": 2024
+},
+"Poland": {
+"value": 88.58496,
+"year": 2024
+},
+"Portugal": {
+"value": 88.487045,
+"year": 2024
+},
+"Russia": {
+"value": 94.36495,
+"year": 2024
+},
+"Saudi Arabia": {
+"value": 100.0,
+"year": 2024
+},
+"South Africa": {
+"value": 78.3576,
+"year": 2024
+},
+"South Korea": {
+"value": 97.89564,
+"year": 2024
+},
+"Spain": {
+"value": 95.757454,
+"year": 2024
+},
+"Sweden": {
+"value": 95.7663,
+"year": 2025
+},
+"Switzerland": {
+"value": 97.32104,
+"year": 2025
+},
+"Thailand": {
+"value": 90.86719,
+"year": 2024
+},
+"Turkey": {
+"value": 89.77024,
+"year": 2025
+},
+"Ukraine": {
+"value": 82.4749,
+"year": 2024
+},
+"United Kingdom": {
+"value": 95.4721,
+"year": 2024
+},
+"United States": {
+"value": 94.6938,
+"year": 2024
+},
+"Vietnam": {
+"value": 84.15,
+"year": 2024
+}
+}
+}

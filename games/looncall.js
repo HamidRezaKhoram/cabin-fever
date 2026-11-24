@@ -19,7 +19,8 @@ const PHRASES = env('RUMPUS_LC_PHRASES', 6);          // phrases per song
 const CALL_REPEATS = env('RUMPUS_LC_CALL_REPEATS', 3);
 
 // Judging windows (after calibration). Party-sized: tighter would punish phones, not players.
-const PERFECT = 70, GOOD = 140, MATCH = 220;
+// (Widened from 70/140/220 after the Nov 2026 cottage night: "hard and easy to mess up".)
+const PERFECT = 80, GOOD = 150, MATCH = 240;
 // A stray tap costs half a good hit: at −5, mashing every step scored 55–75% of a perfect song unheard.
 const PTS = { perfect: 30, good: 15, extra: -15, clean: 20, sync: 10, callNote: 10 };
 const STEPS = 8; // a caller's own call: 8th-note grid, one bar of 4/4
@@ -262,9 +263,10 @@ class LoonCallGame extends BaseGame {
     const song = this.current();
     this.phase = 'lc-compose';
     // One bar of count-in clicks, then the caller taps their call over the second bar — in the
-    // song's own metre (a waltz is 3 beats a bar), on an 8th-note grid.
+    // song's own metre (a waltz is 3 beats a bar) and on its own grid: snapped to 8ths, a call tapped
+    // with triplets or 16ths came back as a different rhythm from the one the caller played.
     const beats = song.beats;
-    const s = this.schedule({ kind: 'call', name: 'Your Call', bpm: song.bpm, root: song.root, beats, steps: beats * 2, countIn: 0, clicks: beats * 2, caller });
+    const s = this.schedule({ kind: 'call', name: 'Your Call', bpm: song.bpm, root: song.root, beats, steps: song.steps, countIn: 0, clicks: beats * 2, caller });
     this.setTimer(s.endAt + GRACE_MS - Date.now(), () => this.callSong(), false);
     this.push();
   }
@@ -274,7 +276,7 @@ class LoonCallGame extends BaseGame {
     const caller = /** @type {string} */ (this.composer);
     const recStart = s.startAt + s.barMs; // the second bar of clicks
     let steps = quantise((this.taps.get(caller) || []).map((t) => t - (this.calib.get(caller) || 0)), recStart, s.barMs, s.steps);
-    if (steps.length < 2) steps = Array.from({ length: s.beats }, (_, i) => i * 2); // too shy: the loon helps out (one per beat)
+    if (steps.length < 2) steps = Array.from({ length: s.beats }, (_, i) => (i * s.steps) / s.beats); // too shy: the loon helps out (one per beat)
     const song = this.current();
     this.phase = 'lc-song';
     const next = this.schedule({ kind: 'call', name: `${this.nick(caller)}'s Call`, bpm: song.bpm, root: song.root, beats: s.beats, steps: s.steps, countIn: 1, clicks: s.beats, phrases: Array(CALL_REPEATS).fill(steps), caller });
@@ -412,7 +414,9 @@ class LoonCallGame extends BaseGame {
     const s = this.sched;
     if (!s) return null;
     return { kind: s.kind, name: s.name, bpm: s.bpm, root: s.root, startAt: s.startAt, barMs: s.barMs, countIn: s.countIn, endAt: s.endAt,
-      clicks: s.clicks, phrases: s.phrases, caller: s.caller ? this.nick(s.caller) : null, steps: s.steps, beats: s.beats, feel: s.feel };
+      clicks: s.clicks, phrases: s.phrases, caller: s.caller ? this.nick(s.caller) : null, steps: s.steps, beats: s.beats, feel: s.feel,
+      // The judging windows, so a phone's instant feedback says what the server will.
+      win: { perfect: PERFECT, good: GOOD, match: MATCH } };
   }
 
   hostView() {

@@ -1,0 +1,43 @@
+# Fish Tales "First lines" round: Project Gutenberg books (public domain), each first line checked by hand.
+# One per line: ebook number | the title as people know it (the answer the room's fake titles compete
+# with) | optionally, the first line itself — when the download picked up a contents page, a preface or a
+# later book instead (tools/fetch-gutenberg.py → content-src/vendor/gutenberg.json), or to keep just the
+# famous first sentence. Books not listed here are not used.
+2701 | Moby-Dick | Call me Ishmael.
+84 | Frankenstein
+1661 | The Adventures of Sherlock Holmes
+76 | Adventures of Huckleberry Finn
+1260 | Jane Eyre
+768 | Wuthering Heights
+2600 | War and Peace
+46 | A Christmas Carol
+161 | Sense and Sensibility
+35 | The Time Machine
+164 | Twenty Thousand Leagues Under the Sea
+113 | The Secret Garden
+2413 | Madame Bovary
+521 | Robinson Crusoe
+910 | White Fang
+271 | Black Beauty
+766 | David Copperfield
+1023 | Bleak House | London. Michaelmas term lately over, and the Lord Chancellor sitting in Lincoln’s Inn Hall.
+996 | Don Quixote | In a village of La Mancha, the name of which I have no desire to call to mind, there lived not long since one of those gentlemen that keep a lance in the lance-rack.
+1342 | Pride and Prejudice | It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.
+98 | A Tale of Two Cities | It was the best of times, it was the worst of times.
+74 | The Adventures of Tom Sawyer | “TOM!” No answer.
+514 | Little Women | “Christmas won’t be Christmas without any presents,” grumbled Jo, lying on the rug.
+4300 | Ulysses | Stately, plump Buck Mulligan came from the stairhead, bearing a bowl of lather on which a mirror and a razor lay crossed.
+1399 | Anna Karenina | Happy families are all alike; every unhappy family is unhappy in its own way.
+64317 | The Great Gatsby | In my younger and more vulnerable years my father gave me some advice that I’ve been turning over in my mind ever since.
+11 | Alice's Adventures in Wonderland | Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.
+1400 | Great Expectations | My father’s family name being Pirrip, and my Christian name Philip, my infant tongue could make of both names nothing longer or more explicit than Pip.
+174 | The Picture of Dorian Gray | The studio was filled with the rich odour of roses.
+158 | Emma | Emma Woodhouse, handsome, clever, and rich, with a comfortable home and happy disposition, seemed to unite some of the best blessings of existence.
+105 | Persuasion | Sir Walter Elliot, of Kellynch Hall, in Somersetshire, was a man who, for his own amusement, never took up any book but the Baronetage.
+36 | The War of the Worlds | No one would have believed in the last years of the nineteenth century that this world was being watched keenly and closely by intelligences greater than man’s.
+55 | The Wonderful Wizard of Oz | Dorothy lived in the midst of the great Kansas prairies, with Uncle Henry, who was a farmer, and Aunt Em, who was the farmer’s wife.
+16 | Peter Pan | All children, except one, grow up.
+103 | Around the World in Eighty Days | Mr. Phileas Fogg lived, in 1872, at No. 7, Saville Row, Burlington Gardens, the house in which Sheridan died in 1816.
+1952 | The Yellow Wallpaper | It is very seldom that mere ordinary people like John and myself secure ancestral halls for the summer.
+2814 | Dubliners | There was no hope for him this time: it was the third stroke.
+219 | Heart of Darkness | The Nellie, a cruising yawl, swung to her anchor without a flutter of the sails, and was at rest.

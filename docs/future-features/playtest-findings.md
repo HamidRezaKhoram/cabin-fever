@@ -71,3 +71,9 @@ Tooling: `worstIdleAt` in the report names the stretch; a static test forces eve
 |---|---|---|---|
 | Rainy Day Cards | 2.9 actions/min, worst idle 29 s | 4.5 actions/min, 23 s (4p); 4.2 actions/min, 25 s (6p) | **Room favourite**: while the Czar judges, everyone else ❤ one card (not their own); the most-liked card(s) get +200 × stakes. Shown on the reveal. |
 | Storm Watch | worst idle 31–35 s (the talk phase) | 30 s (5p), 33 s (8p), 3.6–4.1 actions/min; worst stretch is now the vote | **Private hunch**: during the talk everyone but the leader taps who they suspect (changeable), shown with ✔/✘ on the final role reveal. |
+
+## Round 5 (Nov 23 2026)
+| Game | Before | After | What changed |
+|---|---|---|---|
+| The Deep End (new) | worst idle 50 s (4p) / 57 s (6p), 2.6 / 1.7 actions/min | 43 s, 3.4 actions/min, 3.8 min (4p); 43 s, 3.8 actions/min, 5.4 min (6p) | 🤯 "Never heard of it!" on the others' answers while the dives play (+25 each to the diver); answer 35 → 30 s, reveal steps 2.2 → 1.8 s. |
+| Cottage Olympics (+ Track the Ball, Angle Match, Split the Rope; harder Firefly Count) | — | 2.9 min, 16 actions/min, worst idle 42 s (4p: Marshmallow Roast → Track); 2.5 min, 41 actions/min, 20 s (6p) | Within the targets. |

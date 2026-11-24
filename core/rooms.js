@@ -36,7 +36,7 @@ for (const G of [
   require('../games/quiplash'), require('../games/fibbage'), require('../games/trivia'), require('../games/closest'),
   require('../games/majority'), require('../games/mostlikely'), require('../games/imposter'), require('../games/twotruths'),
   require('../games/telephone'), require('../games/minigames'), require('../games/looncall'), require('../games/lantern'),
-  require('../games/storm'), require('../games/crush'), require('../games/cah'),
+  require('../games/storm'), require('../games/crush'), require('../games/cah'), require('../games/deepend'),
 ]) GAMES[G.meta.id] = G;
 // Each game with its own length / timer choices (the TV menu's description box shows them).
 const GAME_LIST = Object.values(GAMES).map((G) => ({ ...G.meta, play: playOptions(G.meta.id) }));

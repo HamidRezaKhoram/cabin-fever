@@ -224,6 +224,26 @@ async function views(/** @type {string} */ code) { try { return await (await fet
             const b = /** @type {HTMLElement | null} */ (inp.form && inp.form.querySelector('button[type=submit], button:not([type])'));
             if (b) { b.setAttribute('data-lab-pick', ''); return 'form'; }
           }
+          // Storm Watch's leader picks a crew (toggle names, then Send) and the crew plays a card: these
+          // aren't [data-send] buttons, so a lab phone that led (or went out on a crew) used to sit out
+          // the whole 60 s talk timer and the 20 s crew timer — Storm "did not reach the end" in 480 s.
+          const stSend = /** @type {HTMLButtonElement | null} */ (gv.querySelector('[data-st-send]'));
+          if (stSend && stSend.offsetParent) {
+            const pick = /** @type {HTMLElement | null} */ (gv.querySelector('[data-st-pick][aria-pressed="false"]'));
+            (stSend.disabled && pick ? pick : stSend).setAttribute('data-lab-pick', '');
+            if (!stSend.disabled || pick) return 'tap';
+          }
+          const card = /** @type {HTMLElement | null} */ (gv.querySelector('[data-st-card="help"]'));
+          if (card && card.offsetParent) { card.setAttribute('data-lab-pick', ''); return 'tap'; }
+          // Aim pads (Cottage Olympics: Track, Angles, Split): poke the pad, then lock it in.
+          const aim = /** @type {HTMLElement | null} */ (gv.querySelector('[data-mg-aim]'));
+          const lock = /** @type {HTMLElement | null} */ (gv.querySelector('[data-mg-lock]'));
+          if (aim && lock && aim.offsetParent) {
+            const w = /** @type {any} */ (window);
+            w.__labAim = (w.__labAim || 0) + 1;
+            (w.__labAim % 2 ? aim : lock).setAttribute('data-lab-pick', '');
+            return 'tap';
+          }
           const btns = /** @type {HTMLElement[]} */ ([...gv.querySelectorAll('[data-send]:not([disabled]):not(.sent)')]).filter((b) => b.offsetParent);
           if (!btns.length) return '';
           btns[Math.floor(Math.random() * btns.length)].setAttribute('data-lab-pick', '');

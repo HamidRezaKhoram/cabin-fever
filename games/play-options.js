@@ -24,6 +24,7 @@ const PLAY = {
   imposter: { rounds: { def: 3, opts: [2, 3, 4, 5], unit: 'rounds' }, timed: true },
   crush: { rounds: { def: 4, opts: [2, 3, 4, 5, 6], unit: 'evenings' }, timed: true },
   twotruths: { rounds: { def: 3, opts: [1, 2, 3], unit: 'rounds' }, timed: true },
+  deepend: { rounds: { def: 6, opts: [4, 6, 8], unit: 'categories' }, timed: true },
   telephone: { rounds: null, timed: true }, // one step per player
   storm: { rounds: null, timed: true }, // five chores
   minigames: { rounds: { def: 9, opts: [3, 5, 7, 9, 11], unit: 'challenges' }, timed: false },

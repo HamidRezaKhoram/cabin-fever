@@ -1,0 +1,708 @@
+# The Deep End — answer charts (original, written for Cabin Fever; AGPLv3 project, content CC BY-SA 4.0).
+# A category, then its answers by depth: 0 = what nearly everyone says … 4 = lake bottom.
+# "a/b" = two ways to say the same answer. Plurals, accents, "the"/"a" and one-letter typos match anyway.
+# Keep it international (no one country's teams, shows or states) and only list answers that are right.
+# Answers that aren't on a chart go to a room vote on the night, so a chart needs the obvious answers
+# above all: if the room keeps judging the same answer, add it to the chart.
+
+Q: Name a fruit
+0: apple, banana, orange, strawberry, grape
+1: mango, pineapple, watermelon, pear, peach, cherry, lemon, kiwi, blueberry, raspberry
+2: plum, apricot, papaya, pomegranate, lime, grapefruit, nectarine, coconut, fig, cantaloupe, blackberry, cranberry, melon, tangerine/mandarin, clementine
+3: lychee, passion fruit, guava, persimmon, dragon fruit/pitaya, kumquat, quince, gooseberry, star fruit/carambola, date, mulberry, elderberry, rhubarb, honeydew, avocado, tomato
+4: durian, rambutan, mangosteen, jackfruit, jabuticaba, salak/snake fruit, cherimoya, feijoa, longan, loquat, medlar, ackee, soursop, tamarillo, sapodilla, pawpaw, cloudberry, lingonberry, yuzu, miracle fruit
+
+Q: Name a vegetable
+0: carrot, potato, broccoli, lettuce, tomato, onion
+1: cucumber, peas, corn, spinach, cabbage, pepper/bell pepper, celery, cauliflower, green beans, mushroom
+2: zucchini/courgette, eggplant/aubergine, asparagus, kale, garlic, sweet potato, beetroot/beet, radish, pumpkin, squash, leek, brussels sprouts
+3: artichoke, parsnip, turnip, okra, fennel, bok choy, swiss chard/chard, watercress, shallot, rutabaga/swede, arugula/rocket, endive, chili pepper
+4: kohlrabi, celeriac, salsify, jicama, daikon, romanesco, taro, cassava/yuca, sunchoke/jerusalem artichoke, lotus root, burdock, fiddlehead, bitter melon, chayote, samphire, mizuna, yam, water chestnut, oca
+
+Q: Name a country in Africa
+0: egypt, south africa, nigeria, kenya, morocco
+1: ethiopia, ghana, algeria, tanzania, uganda, zimbabwe, madagascar, somalia, sudan, senegal
+2: tunisia, libya, congo/democratic republic of the congo, angola, cameroon, mozambique, zambia, rwanda, namibia, botswana, mali, ivory coast/cote d'ivoire
+3: niger, chad, malawi, burkina faso, guinea, sierra leone, liberia, benin, togo, gabon, mauritania, eritrea, south sudan, gambia, lesotho, mauritius, central african republic
+4: eswatini/swaziland, djibouti, equatorial guinea, guinea-bissau, cape verde/cabo verde, comoros, sao tome and principe, seychelles, burundi
+
+Q: Name a capital city
+0: london, paris, tokyo, rome, berlin
+1: madrid, beijing, moscow, ottawa, canberra, cairo, washington, athens, dublin, lisbon
+2: amsterdam, vienna, brussels, stockholm, oslo, copenhagen, helsinki, seoul, bangkok, buenos aires, mexico city, new delhi, nairobi, prague, warsaw, budapest
+3: wellington, lima, santiago, bogota, hanoi, jakarta, manila, kabul, tehran, riyadh, ankara, reykjavik, bern, havana, kyiv/kiev, bucharest, accra, addis ababa
+4: ulaanbaatar, thimphu, ouagadougou, ashgabat, bishkek, dushanbe, tbilisi, yerevan, nuku'alofa, funafuti, paramaribo, asuncion, windhoek, antananarivo, vientiane, tegucigalpa, port moresby, bujumbura, ljubljana, chisinau, valletta, vaduz, naypyidaw, astana
+
+Q: Name a bird
+0: eagle, robin, pigeon, crow, parrot, owl, duck
+1: penguin, flamingo, swan, seagull/gull, sparrow, hawk, chicken, peacock, ostrich, goose, blue jay, hummingbird, woodpecker, turkey
+2: loon, pelican, toucan, falcon, heron, crane, stork, magpie, raven, cardinal, finch, canary, vulture, kingfisher, starling, emu, dove
+3: puffin, albatross, cormorant, osprey, kestrel, egret, ibis, kiwi, cockatoo, macaw, budgie/budgerigar, wren, nightingale, swift, condor, cassowary, roadrunner, lark
+4: hoatzin, shoebill, kakapo, lyrebird, bowerbird, oxpecker, quetzal, hoopoe, bee-eater, nightjar, whip-poor-will, frigatebird, booby, spoonbill, oystercatcher, jacana, kookaburra, cuckoo, nuthatch, tit/titmouse, waxwing
+
+Q: Name a dog breed
+0: labrador, golden retriever, german shepherd, poodle, bulldog, chihuahua
+1: beagle, husky, pug, dachshund, rottweiler, boxer, border collie, corgi, dalmatian, great dane, shih tzu, pit bull
+2: doberman, yorkshire terrier/yorkie, cocker spaniel, greyhound, french bulldog, maltese, pomeranian, saint bernard, jack russell, bichon frise, chow chow, akita, collie, sheepdog
+3: newfoundland, bernese mountain dog, weimaraner, whippet, shiba inu, samoyed, basset hound, bloodhound, mastiff, shar pei, schnauzer, vizsla, west highland terrier/westie, cavalier king charles spaniel, papillon
+4: xoloitzcuintli, basenji, borzoi, puli, komondor, saluki, affenpinscher, schipperke, lagotto romagnolo, otterhound, leonberger, kooikerhondje, azawakh, bergamasco, dandie dinmont terrier, catahoula, lundehund
+
+Q: Name a musical instrument
+0: guitar, piano, drums, violin, flute, trumpet
+1: saxophone, cello, clarinet, bass, harp, ukulele, keyboard, trombone, harmonica, tambourine
+2: accordion, banjo, tuba, oboe, xylophone, triangle, bagpipes, viola, recorder, organ, french horn, double bass, mandolin
+3: bassoon, harpsichord, sitar, didgeridoo, piccolo, glockenspiel, marimba, cowbell, castanets, bongos, steel drum, theremin, lute, kazoo, timpani
+4: hurdy-gurdy, oud, kora, balalaika, koto, shamisen, erhu, duduk, tabla, mbira/kalimba, zither, hang drum/handpan, celesta, dulcimer, ocarina, contrabassoon, cajon, bouzouki, gamelan, nyckelharpa, sousaphone
+
+Q: Name a cheese
+0: cheddar, mozzarella, parmesan, swiss, brie
+1: feta, gouda, camembert, blue cheese, cream cheese, goat cheese, cottage cheese, ricotta, provolone
+2: gorgonzola, roquefort, stilton, emmental, gruyere, edam, halloumi, mascarpone, monterey jack, colby, havarti, pecorino, manchego, burrata
+3: comte, raclette, paneer, brie de meaux, reblochon, taleggio, asiago, fontina, munster, jarlsberg, wensleydale, red leicester, double gloucester, boursin, queso fresco, labneh
+4: epoisses, limburger, casu marzu, vacherin, morbier, beaufort, tomme, caciocavallo, scamorza, oaxaca, cotija, mimolette, livarot, pont-l'eveque, kashkaval, sulguni, brunost, stracchino, saint-nectaire, lancashire
+
+Q: Name a type of pasta
+0: spaghetti, penne, macaroni, lasagna, fettuccine
+1: ravioli, linguine, tortellini, rigatoni, fusilli, farfalle/bow tie, tagliatelle, gnocchi
+2: orzo, rotini, ziti, cannelloni, angel hair/capellini, pappardelle, conchiglie/shells, vermicelli, manicotti
+3: orecchiette, bucatini, gemelli, cavatappi, ditalini, radiatori, campanelle, paccheri, tortelloni, agnolotti, cappelletti, stelline, strozzapreti
+4: trofie, casarecce, mafaldine, malloreddus, pici, garganelli, lumache, fregola, corzetti, lorighittas, cencioni, maltagliati, anelli, tagliolini, scialatielli, culurgiones
+
+Q: Name a planet, moon or dwarf planet in our solar system
+0: earth, mars, jupiter, saturn, the moon
+1: venus, mercury, neptune, uranus, pluto
+2: titan, europa, ganymede, io, ceres, phobos, deimos
+3: callisto, enceladus, triton, charon, eris, makemake, haumea, miranda, oberon, titania
+4: mimas, iapetus, rhea, dione, tethys, hyperion, phoebe, ariel, umbriel, nereid, proteus, amalthea, sedna, quaoar, orcus, gonggong, dysnomia, nix, hydra, kerberos, styx
+
+Q: Name a bone in the human body
+0: skull, femur, rib, spine
+1: tibia, fibula, humerus, pelvis, jaw/mandible, collarbone/clavicle, kneecap/patella, sternum, vertebra
+2: radius, ulna, scapula/shoulder blade, tailbone/coccyx, hip bone, cranium, phalanges, metatarsals, sacrum
+3: hyoid, stapes/stirrup, incus/anvil, malleus/hammer, carpals, tarsals, metacarpals, maxilla, zygomatic/cheekbone, talus, calcaneus/heel bone, atlas, axis
+4: scaphoid, lunate, triquetrum, pisiform, trapezium, trapezoid, capitate, hamate, cuboid, navicular, cuneiform, sphenoid, ethmoid, vomer, lacrimal, palatine, occipital, parietal, temporal bone, ilium, ischium, pubis
+
+Q: Name a colour (any shade counts)
+0: red, blue, green, yellow, purple, orange, black
+1: pink, white, brown, grey/gray, gold, silver, turquoise, navy
+2: teal, maroon, beige, violet, magenta, lavender, crimson, indigo, cyan, lime, olive, cream, burgundy, peach
+3: chartreuse, vermilion, cerulean, ochre, mauve, taupe, fuchsia, scarlet, ivory, amber, coral, khaki, mint, periwinkle, aquamarine, sienna, umber, sepia
+4: puce, gamboge, fulvous, smaragdine, glaucous, falu red, wenge, coquelicot, celadon, eau de nil, heliotrope, xanadu, zaffre, viridian, cinnabar, caput mortuum, isabelline, verdigris, mikado yellow, tyrian purple
+
+Q: Name a board game
+0: chess, monopoly, scrabble, checkers/draughts, snakes and ladders
+1: clue/cluedo, risk, backgammon, connect four, battleship, trivial pursuit, jenga, pictionary, sorry, game of life
+2: go, catan/settlers of catan, ticket to ride, mahjong, mancala, chinese checkers, parcheesi/ludo, stratego, operation, guess who, othello/reversi, dominoes, cranium
+3: pandemic, carcassonne, codenames, dixit, azul, splendor, mouse trap, kingdomino, blokus, scattergories, taboo, boggle, rummikub, axis and allies, diplomacy
+4: agricola, puerto rico, twilight struggle, power grid, terraforming mars, wingspan, gloomhaven, el grande, tigris and euphrates, hive, shogi, xiangqi, nine men's morris, hnefatafl, pente, abalone, cathedral, crokinole, carrom, senet
+
+Q: Name a sport
+0: football/soccer, basketball, tennis, swimming, baseball, golf
+1: hockey, volleyball, rugby, cricket, boxing, cycling, skiing, running/athletics, badminton, table tennis/ping pong
+2: wrestling, surfing, skateboarding, snowboarding, fencing, rowing, archery, gymnastics, handball, sailing, climbing, karate, judo, lacrosse, water polo
+3: curling, squash, polo, bobsled, luge, skeleton, biathlon, triathlon, kayaking, canoeing, bowling, darts, snooker, softball, netball, ultimate frisbee, pickleball
+4: sepak takraw, kabaddi, hurling, korfball, bandy, underwater hockey, jai alai, bossaball, chess boxing, shinty, pesapallo, kin-ball, roller derby, orienteering, buzkashi, teqball, padel, floorball, camogie, quidditch
+
+Q: Name a tree
+0: oak, maple, pine, palm, apple tree
+1: birch, willow, cherry tree, spruce, redwood, fir, cedar, elm, christmas tree
+2: ash, poplar, beech, sycamore, eucalyptus, magnolia, chestnut, walnut, cypress, olive tree, aspen, hemlock, sequoia
+3: baobab, banyan, juniper, larch, alder, hazel, hickory, cottonwood, dogwood, linden, yew, mahogany, teak, acacia, ginkgo, bonsai, jacaranda, rowan
+4: wollemi pine, monkey puzzle, dragon blood tree, hornbeam, tamarack, ironwood, balsa, sassafras, tulip tree, catalpa, ailanthus, paulownia, kapok, rubber tree, sweetgum, buttonwood, quaking aspen, bristlecone pine, tupelo, sandalwood
+
+Q: Name a flower
+0: rose, tulip, daisy, sunflower, lily
+1: orchid, daffodil, carnation, lavender, poppy, dandelion, lotus, violet
+2: chrysanthemum, hydrangea, peony, iris, marigold, jasmine, lilac, hibiscus, magnolia, cherry blossom, geranium, pansy, petunia, begonia
+3: gardenia, camellia, azalea, rhododendron, zinnia, dahlia, gerbera, freesia, foxglove, snapdragon, bluebell, buttercup, morning glory, forget-me-not, cornflower, crocus, amaryllis, edelweiss
+4: protea, bird of paradise, gladiolus, anemone, ranunculus, hellebore, columbine, delphinium, larkspur, lupin, cosmos, nasturtium, amaranth, plumeria/frangipani, bougainvillea, rafflesia, corpse flower, ghost orchid, waratah, gentian, trillium
+
+Q: Name an animal that lives in the sea
+0: shark, whale, dolphin, octopus, fish
+1: jellyfish, crab, starfish, seal, turtle, squid, lobster, stingray, clownfish, seahorse
+2: orca, walrus, sea lion, eel, shrimp, swordfish, tuna, coral, manatee, sea urchin, oyster, clam, otter
+3: narwhal, beluga, manta ray, barracuda, pufferfish, lionfish, anglerfish, hammerhead, krill, sea cucumber, cuttlefish, nautilus, dugong, moray, marlin, mussel, sea anemone, sea slug
+4: blobfish, mola mola/sunfish, oarfish, goblin shark, frilled shark, coelacanth, vampire squid, gulper eel, sea pig, sea butterfly, siphonophore, mantis shrimp, hagfish, lamprey, nudibranch, leafy sea dragon, barreleye, axolotl, pyrosome
+
+Q: Name a herb or spice
+0: salt, pepper, basil, oregano, cinnamon, garlic
+1: parsley, rosemary, thyme, mint, ginger, paprika, cumin, chili/chilli, nutmeg, dill
+2: turmeric, coriander/cilantro, sage, bay leaf, cloves, cardamom, saffron, curry, vanilla, chives, allspice, cayenne, tarragon
+3: fennel seed, star anise, mustard seed, caraway, fenugreek, marjoram, lemongrass, sumac, za'atar, juniper, sesame, poppy seed, lavender, galangal, chervil
+4: asafoetida, nigella/black seed, grains of paradise, mahlab, ajwain, annatto, long pepper, sichuan pepper, mace, epazote, lovage, savory, sorrel, borage, kaffir lime leaf, curry leaf, amchur, berbere, ras el hanout, shiso, wattleseed, hyssop
+
+Q: Name a type of bread
+0: white bread, baguette, bagel, croissant, sourdough
+1: rye, pita, naan, whole wheat/wholemeal, brioche, ciabatta, tortilla, garlic bread, banana bread, cornbread
+2: focaccia, pretzel, english muffin, challah, flatbread, roti, pumpernickel, multigrain, soda bread, crumpet, scone, dinner roll
+3: chapati, paratha, injera, lavash, matzo, arepa, bao, ciabatta rolls, pan de muerto, panettone, stollen, brezel, kaiser roll, cottage loaf, focaccia barese, rye crispbread, bannock
+4: pane carasau, khachapuri, lefse, simit, pandesal, puri, bhatura, kulcha, appam, dosa, taboon, barbari, sangak, tsoureki, kalach, borodinsky, pao de queijo, pain d'epi, fougasse, bolillo, piadina, damper
+
+Q: Name a language
+0: english, spanish, french, chinese/mandarin, german, japanese
+1: italian, russian, arabic, portuguese, hindi, korean, dutch, greek, latin
+2: swedish, polish, turkish, hebrew, cantonese, vietnamese, thai, urdu, bengali, persian/farsi, swahili, norwegian, danish, finnish, irish/gaelic, sign language
+3: tagalog/filipino, indonesian, malay, punjabi, tamil, telugu, ukrainian, czech, hungarian, romanian, welsh, icelandic, afrikaans, zulu, yoruba, amharic, esperanto, catalan, basque
+4: quechua, guarani, nahuatl, maori, hawaiian, inuktitut, cree, sami, faroese, maltese, georgian, armenian, kurdish, pashto, tigrinya, xhosa, wolof, hausa, igbo, mongolian, tibetan, khmer, lao, klingon, sanskrit, breton, frisian, romansh
+
+Q: Name a dance
+0: salsa, ballet, tango, hip hop, waltz
+1: breakdance, tap, swing, disco, foxtrot, cha-cha, line dancing, the macarena, belly dance, flamenco
+2: samba, rumba, jive, irish dance, polka, conga, twist, moonwalk, jazz, contemporary, square dance, limbo
+3: lindy hop, charleston, quickstep, paso doble, mambo, merengue, bachata, zumba, krump, voguing, can-can, hula, morris dance, the robot, haka, ceilidh
+4: kizomba, kuduro, bhangra, kathak, bharatanatyam, capoeira, tarantella, hora, sirtaki, mazurka, gavotte, minuet, polonaise, jota, cueca, lambada, cumbia, dabke, lezginka, sardana, schuhplattler
+
+Q: Name a piece of furniture
+0: chair, table, bed, sofa/couch, desk
+1: dresser, bookshelf, wardrobe, stool, nightstand, cabinet, bench, armchair, crib
+2: futon, recliner, ottoman, bunk bed, coffee table, rocking chair, beanbag, hammock, chest of drawers, sideboard, hutch, vanity
+3: chaise longue, loveseat, credenza, armoire, chiffonier, davenport, settee, divan, daybed, footstool, hat stand, coat rack, hope chest, murphy bed, futon
+4: escritoire, secretaire, tallboy, highboy, lowboy, whatnot, etagere, canterbury, fainting couch, tuffet, pouffe, cheval mirror, washstand, commode, hall tree, bergere, fauteuil, prie-dieu, tatami, kotatsu
+
+Q: Name a kitchen utensil or gadget
+0: spoon, fork, knife, spatula, whisk, ladle
+1: tongs, peeler, grater, rolling pin, can opener, colander, cutting board, measuring cup, blender, toaster
+2: garlic press, potato masher, sieve, corkscrew, pizza cutter, ice cream scoop, salad spinner, mortar and pestle, zester, nutcracker, timer, kettle
+3: mandoline, microplane, pastry brush, baster, melon baller, egg slicer, apple corer, cheese slicer, citrus press/juicer, mezzaluna, bench scraper, spider, splatter screen
+4: chinois, tamis, cherry pitter, egg topper, butter curler, lobster pick, mouli, tortilla press, spaetzle maker, dough docker, pie bird, tagine, molcajete, suribachi, bain-marie, larding needle, sous vide, garlic rocker
+
+Q: Name a dinosaur
+0: t-rex/tyrannosaurus, triceratops, stegosaurus, velociraptor, brontosaurus
+1: pterodactyl, diplodocus, brachiosaurus, spinosaurus, ankylosaurus, raptor
+2: allosaurus, iguanodon, parasaurolophus, pachycephalosaurus, dilophosaurus, archaeopteryx, gallimimus, carnotaurus, apatosaurus
+3: compsognathus, giganotosaurus, argentinosaurus, deinonychus, oviraptor, therizinosaurus, styracosaurus, protoceratops, baryonyx, edmontosaurus, maiasaura, megalosaurus
+4: microraptor, amargasaurus, nigersaurus, kentrosaurus, troodon, coelophysis, herrerasaurus, mamenchisaurus, utahraptor, dreadnoughtus, pentaceratops, yutyrannus, minmi, irritator, mapusaurus, sinosauropteryx, citipati, psittacosaurus
+
+Q: Name an element on the periodic table
+0: oxygen, hydrogen, gold, carbon, iron
+1: helium, nitrogen, silver, copper, sodium, calcium, aluminium/aluminum, lead, uranium
+2: zinc, magnesium, potassium, mercury, chlorine, neon, sulfur/sulphur, tin, platinum, nickel, lithium, plutonium, titanium, silicon, iodine
+3: argon, fluorine, phosphorus, cobalt, chromium, tungsten, radon, radium, krypton, xenon, boron, arsenic, manganese, barium, cesium/caesium, bismuth
+4: yttrium, ytterbium, erbium, terbium, gadolinium, praseodymium, neodymium, hafnium, rhenium, osmium, iridium, ruthenium, rhodium, technetium, promethium, francium, astatine, protactinium, einsteinium, oganesson, tennessine, moscovium, nihonium, dysprosium, lutetium, thulium, holmium
+
+Q: Name a gemstone
+0: diamond, ruby, emerald, sapphire, pearl
+1: amethyst, opal, jade, topaz, garnet, turquoise
+2: aquamarine, onyx, quartz, peridot, citrine, amber, jasper, lapis lazuli, moonstone, tanzanite, obsidian
+3: tourmaline, zircon, agate, alexandrite, malachite, bloodstone, beryl, spinel, morganite, tiger's eye, carnelian, coral, jet, rose quartz
+4: benitoite, taaffeite, grandidierite, painite, larimar, red beryl, musgravite, jeremejevite, kunzite, iolite, sphene, chrysoprase, sodalite, labradorite, ammolite, sunstone, kyanite, hiddenite, demantoid, chrysoberyl
+
+Q: Name a mythical creature
+0: dragon, unicorn, mermaid, vampire, werewolf, ghost
+1: phoenix, griffin, centaur, troll, fairy, zombie, elf, goblin, bigfoot/sasquatch, yeti
+2: pegasus, minotaur, kraken, medusa/gorgon, cyclops, siren, banshee, leprechaun, loch ness monster/nessie, hydra, sphinx, ogre, gnome, genie
+3: chimera, basilisk, cerberus, kitsune, golem, wendigo, chupacabra, selkie, manticore, harpy, satyr, faun, valkyrie, djinn, kelpie, dwarf, imp
+4: tanuki, kappa, tengu, bunyip, taniwha, qilin, baku, nuckelavee, wyvern, cockatrice, hippogriff, ammit, simurgh, roc, bake-kujira, encantado, mokele-mbembe, tikbalang, aswang, nian, krampus, jorogumo
+
+Q: Name an insect or creepy-crawly
+0: ant, bee, butterfly, spider, fly, mosquito
+1: ladybug/ladybird, cockroach, beetle, wasp, grasshopper, caterpillar, dragonfly, moth, flea, cricket
+2: termite, firefly, centipede, millipede, praying mantis, scorpion, tick, louse/lice, stick insect, earwig, hornet, bumblebee
+3: cicada, weevil, aphid, silverfish, bedbug, dung beetle, stag beetle, locust, gnat, horsefly, katydid, damselfly, mayfly, water strider, tarantula, daddy longlegs
+4: lacewing, thrips, springtail, bristletail, mantisfly, antlion, scorpionfly, caddisfly, stonefly, snakefly, earwigfly, velvet ant, tarantula hawk, bombardier beetle, goliath beetle, atlas moth, assassin bug, froghopper, treehopper, katydid
+
+Q: Name an ocean or sea
+0: pacific, atlantic, indian ocean, arctic, mediterranean
+1: southern ocean, caribbean, red sea, dead sea, black sea, north sea, baltic
+2: caspian, arabian sea, south china sea, adriatic, aegean, coral sea, bering sea, sea of japan, gulf of mexico, tasman sea, irish sea
+3: sargasso, ionian, tyrrhenian, ligurian, barents, kara sea, laptev, beaufort sea, weddell, ross sea, labrador sea, celtic sea, yellow sea, sea of okhotsk, andaman, timor sea, salton sea, aral sea
+4: sea of marmara, sea of azov, white sea, chukchi, east siberian sea, alboran, balearic sea, sulu sea, celebes sea, banda sea, molucca sea, bismarck sea, solomon sea, arafura, sea of crete, wadden sea, scotia sea, amundsen sea, bellingshausen sea, sea of galilee
+
+Q: Name a hat
+0: baseball cap, cowboy hat, beanie, top hat, sun hat
+1: beret, fedora, bucket hat, helmet, crown, sombrero, chef's hat, party hat, bowler hat
+2: trilby, panama hat, visor, bonnet, turban, hijab, beanie, tiara, witch's hat, hard hat, snapback, flat cap, fez
+3: deerstalker, stetson, boater, beefeater, busby, bearskin, balaclava, ushanka, tam o'shanter, newsboy cap, pork pie hat, cloche, fascinator, kippah/yarmulke, mitre, sou'wester
+4: tricorne, bicorne, homburg, pith helmet, toque, kufi, taqiyah, pillbox hat, glengarry, balmoral, zucchetto, biretta, kepi, shako, chullo, montera, kalpak, deerstalker, phrygian cap, akubra, gat
+
+Q: Name something you wear on your feet
+0: shoes, socks, sneakers/trainers, boots, sandals, slippers
+1: flip-flops, high heels, crocs, loafers, rain boots/wellies, cleats, ice skates, flippers
+2: ballet flats, clogs, mules, wedges, stilettos, ski boots, hiking boots, moccasins, espadrilles, platforms, oxfords
+3: brogues, chelsea boots, derby, monk straps, birkenstocks, jellies, galoshes, snowshoes, crampons, waders, kitten heels, gladiator sandals, slingbacks, pointe shoes, tabi
+4: geta, zori, jutti, mojari, kolhapuri, huaraches, sabots, opanci, valenki, mukluks, pattens, chopines, winklepickers, creepers, spats, gaiters, puttees, toe shoes, kamik, sabaton
+
+Q: Name a type of boat
+0: canoe, kayak, sailboat, yacht, ship, rowboat
+1: cruise ship, submarine, ferry, speedboat, raft, paddle boat, fishing boat, pirate ship
+2: catamaran, gondola, tugboat, barge, dinghy, steamboat, houseboat, aircraft carrier, lifeboat, jet ski, pontoon, cargo ship
+3: schooner, galleon, junk, trawler, hovercraft, clipper, frigate, destroyer, icebreaker, dhow, punt, pedalo, narrowboat, longship, rib
+4: sampan, felucca, trireme, coracle, umiak, outrigger, dragon boat, caique, pirogue, bireme, carrack, caravel, brigantine, ketch, yawl, sloop, xebec, lorcha, junk rig, felucca, quinquereme, vaporetto
+
+Q: Name a nut or seed you can eat
+0: peanut, almond, cashew, walnut, pistachio
+1: hazelnut, pecan, macadamia, sunflower seed, pumpkin seed, coconut, brazil nut
+2: chestnut, pine nut, sesame seed, chia seed, flax seed, acorn, hemp seed, poppy seed
+3: hickory nut, beechnut, butternut, kola nut, betel nut, tiger nut, candlenut, pili nut, sacha inchi, quinoa, watermelon seed
+4: marula, mongongo, baru nut, bunya nut, kukui, ginkgo nut, monkey puzzle nut, jack bean, lotus seed, yellowhorn, shea nut, ackee seed, cupuacu, sapucaia, paradise nut
+
+Q: Name a breakfast food
+0: eggs, pancakes, cereal, toast, bacon, waffles
+1: oatmeal/porridge, yogurt, sausage, french toast, bagel, croissant, muffin, omelette, hash browns, fruit
+2: granola, smoothie, scrambled eggs, eggs benedict, crepes, avocado toast, breakfast burrito, beans, porridge, muesli
+3: shakshuka, congee, huevos rancheros, kedgeree, black pudding, chilaquiles, full english, miso soup, dosa, idli, poha, frittata, quiche, fry bread
+4: nasi lemak, khao tom, menemen, ful medames, msemen, gallo pinto, kaya toast, natto, pho, tamagoyaki, akara, mandazi, aloo paratha, upma, haggis, laverbread, farls, baleada, cachapa, simit
+
+Q: Name a soup
+0: chicken noodle, tomato soup, minestrone, french onion, clam chowder
+1: miso, pho, ramen, gazpacho, lentil soup, mushroom soup, vegetable soup, pea soup
+2: borscht, gumbo, bouillabaisse, tom yum, wonton soup, chowder, broccoli cheddar, butternut squash, potato leek, hot and sour, matzo ball
+3: vichyssoise, mulligatawny, pozole, menudo, laksa, harira, avgolemono, cock-a-leekie, cullen skink, tortilla soup, egusi, caldo verde, sopa de lima, goulash
+4: solyanka, okroshka, shchi, kharcho, tarator, sinigang, bun bo hue, ajiaco, sancocho, callaloo, ezogelin, ash reshteh, tom kha, pepperpot, rassolnik, caldo de siete mares, cioppino, ribollita, zurek, bird's nest soup
+
+Q: Name a dessert
+0: ice cream, cake, cookies, brownie, apple pie, cheesecake
+1: pudding, donut, tiramisu, cupcake, chocolate mousse, crème brûlée/creme brulee, pie, jelly, sundae, macarons
+2: baklava, churros, panna cotta, gelato, pavlova, trifle, eclair, profiteroles, banana split, flan, mochi, sorbet, crumble
+3: cannoli, tarte tatin, souffle, black forest cake, sticky toffee pudding, key lime pie, baked alaska, gulab jamun, tres leches, eton mess, lamington, madeleine, strudel, clafoutis
+4: knafeh, kulfi, halo-halo, bingsu, cendol, malva pudding, brigadeiro, alfajor, pastel de nata, mille-feuille, kouign-amann, semla, kladdkaka, rasmalai, mochi ice cream, dango, basbousa, sachertorte, gateau basque, cremeschnitte, spotted dick, koeksister
+
+Q: Name a famous painter
+0: picasso, van gogh, leonardo da vinci, monet, michelangelo
+1: rembrandt, frida kahlo, salvador dali, andy warhol, banksy, raphael, botticelli
+2: matisse, cezanne, renoir, degas, klimt, munch, vermeer, jackson pollock, caravaggio, goya, magritte, kandinsky, bob ross
+3: turner, constable, hokusai, georgia o'keeffe, edward hopper, basquiat, rothko, titian, el greco, toulouse-lautrec, manet, chagall, gauguin, seurat, mondrian
+4: bosch, bruegel, durer, holbein, velazquez, artemisia gentileschi, hilma af klint, caspar david friedrich, egon schiele, modigliani, kahlo's husband diego rivera/diego rivera, tamara de lempicka, kusama, amrita sher-gil, paula rego, sorolla, repin, aivazovsky, utagawa hiroshige, francis bacon
+
+Q: Name a god or goddess from Greek mythology
+0: zeus, poseidon, hades, athena, aphrodite
+1: apollo, ares, hermes, hera, artemis, dionysus
+2: hephaestus, demeter, persephone, eros, nike, gaia, kronos/cronus, hestia
+3: nemesis, hecate, pan, morpheus, helios, selene, eos, iris, nyx, uranus, rhea, tyche, hypnos, thanatos
+4: eris, hebe, ganymede, asclepius, hygieia, aeolus, boreas, zephyrus, priapus, triton, proteus, nereus, mnemosyne, themis, metis, tethys, oceanus, erebus, chaos, ananke, enyo, phobos, deimos, aether, hemera
+
+Q: Name an animal that lives in Australia
+0: kangaroo, koala, crocodile, emu, platypus
+1: wombat, dingo, kookaburra, tasmanian devil, wallaby, snake, cockatoo, great white shark
+2: echidna, possum, quokka, cassowary, bilby, numbat, sugar glider, funnel-web spider, redback spider, galah, budgie
+3: thorny devil, frilled lizard, quoll, bandicoot, cane toad, taipan, lyrebird, bowerbird, box jellyfish, saltwater crocodile, goanna, flying fox, wallaroo
+4: tree kangaroo, bettong, potoroo, dunnart, antechinus, mulgara, kowari, pademelon, quokka, cuscus, gouldian finch, malleefowl, bilby, dugong, blue-ringed octopus, stonefish, irukandji, tasmanian tiger/thylacine, kultarr, woylie
+
+Q: Name a currency
+0: dollar, euro, pound, yen
+1: peso, rupee, yuan/renminbi, franc, ruble/rouble, bitcoin
+2: won, real, krona, krone, lira, rand, shekel, dinar, dirham, baht, riyal
+3: zloty, forint, koruna, ringgit, rupiah, dong, naira, shilling, kwacha, leu, lev, peso, sol, rial, taka
+4: lari, dram, manat, som, tenge, tugrik, kyat, kip, riel, ngultrum, pula, loti, lilangeni, ouguiya, birr, nakfa, cedi, dalasi, guarani, boliviano, colon, cordoba, lempira, quetzal, gourde, balboa, kuna, hryvnia, denar, pa'anga, tala, vatu
+
+Q: Name a martial art
+0: karate, kung fu, judo, taekwondo, boxing
+1: jiu-jitsu, kickboxing, mma, muay thai, wrestling, sumo, fencing
+2: aikido, capoeira, krav maga, tai chi, kendo, wing chun, brazilian jiu-jitsu, sambo, jeet kune do
+3: hapkido, kali/eskrima, silat, savate, systema, bojutsu, ninjutsu, iaido, kyokushin, shotokan, sanda, lethwei, kudo
+4: bokator, kalaripayattu, glima, pankration, bartitsu, gatka, kajukenbo, shuai jiao, hwa rang do, tessenjutsu, yaw-yan, pencak silat, laamb, dambe, la canne, okichitaw, ssireum, gouren, kuresh, malla-yuddha
+
+Q: Name a way to cook food
+0: fry, bake, boil, grill, roast
+1: steam, microwave, barbecue, saute, toast, deep fry, stir fry, poach
+2: broil, simmer, braise, smoke, slow cook, pressure cook, sear, air fry, stew, scramble
+3: sous vide, blanch, flambe, confit, caramelise, poach, coddle, parboil, reduce, pan-fry, char, cure, pickle, ferment, dehydrate
+4: en papillote, tandoor, tataki, escabeche, gratin, rotisserie, spit-roast, pit-roast, hangi, umu, lovo, clay pot, tagine, salt crust, plank, bain-marie, temper, nixtamalise, glaze, sweat
+
+Q: Name a sauce or condiment
+0: ketchup, mustard, mayonnaise, barbecue sauce, soy sauce, hot sauce
+1: ranch, salsa, gravy, pesto, relish, sriracha, guacamole, vinegar, honey, tartar sauce
+2: hummus, teriyaki, tzatziki, hollandaise, aioli, worcestershire, sweet chilli, marinara, alfredo, buffalo sauce, peanut sauce, horseradish
+3: chimichurri, harissa, tahini, fish sauce, hoisin, oyster sauce, bechamel, bearnaise, gochujang, mole, wasabi, chutney, romesco, tabasco, piri piri/peri peri
+4: nuoc cham, sambal, ponzu, ajvar, zhoug, toum, mojo, nam prik, gremolata, salsa verde, xo sauce, chermoula, amba, sofrito, beurre blanc, espagnole, velouté, agrodolce, kecap manis, garum, doenjang, ssamjang, mostarda, harissa paste
+
+Q: Name something with wheels
+0: car, bike/bicycle, bus, truck, train, skateboard
+1: motorcycle, scooter, wheelchair, shopping cart/trolley, stroller/pram, wagon, tractor, roller skates
+2: wheelbarrow, unicycle, tricycle, go-kart, ambulance, fire truck, airplane, tram, limousine, suitcase, office chair, segway
+3: rickshaw, tuk-tuk, chariot, stagecoach, penny-farthing, hovercraft, forklift, combine harvester, bulldozer, monster truck, rollerblades, golf cart, moon buggy/lunar rover
+4: hansom cab, gurney, dolly, sulky, velocipede, draisine, trolleybus, funicular, zamboni, howdah, caravan, mars rover, potter's wheel, spinning wheel, roulette wheel, hamster wheel, ferris wheel, pinwheel, water wheel, cheese wheel
+
+Q: Name a word that rhymes with "cat"
+0: hat, bat, rat, mat, sat
+1: fat, pat, flat, chat, that, splat, brat
+2: gnat, spat, vat, scat, tat, drat, slat, at, prat
+3: acrobat, diplomat, thermostat, aristocrat, combat, doormat, wombat, democrat, bureaucrat, format, chitchat, copycat, tomcat
+4: cravat, habitat, laundromat, ziggurat, autocrat, plutocrat, technocrat, kittycat, ratatat, caveat, aerostat, rheostat, photostat, concordat, pussycat, polecat, muskrat
+
+Q: Name something in a toolbox
+0: hammer, screwdriver, wrench, nails, tape measure, pliers
+1: screws, drill, saw, spanner, level, tape, allen key, utility knife
+2: chisel, file, clamp, vice grip, socket set, stud finder, sandpaper, hacksaw, crowbar, mallet, nuts and bolts, flashlight
+3: awl, rasp, plane, bradawl, multimeter, soldering iron, wire stripper, caulking gun, putty knife, torque wrench, nail set, try square, chalk line, spirit level
+4: spokeshave, scraper, pipe wrench, adjustable spanner, tin snips, rivet gun, punch, countersink, center punch, feeler gauge, vernier caliper, sliding bevel, coping saw, drawknife, tap and die, ratchet, glue gun, deburring tool
+
+Q: Name a fabric
+0: cotton, silk, wool, denim, leather, polyester
+1: linen, velvet, nylon, satin, fleece, lace, cashmere, spandex/lycra
+2: corduroy, suede, flannel, chiffon, tweed, jersey, rayon, canvas, felt, tulle, acrylic, faux fur
+3: taffeta, organza, muslin, gingham, chenille, mohair, alpaca, angora, seersucker, gabardine, damask, brocade, chintz, poplin, georgette, crepe
+4: bombazine, toile, voile, batiste, dimity, shantung, dupioni, charmeuse, cheesecloth, calico, madras, ikat, kente, tapa, barkcloth, merino, vicuna, qiviut, pashmina, moleskine, loden, oilcloth, sharkskin, ripstop, cordura
+
+Q: Name a famous scientist
+0: albert einstein, isaac newton, marie curie, charles darwin, stephen hawking
+1: galileo, nikola tesla, thomas edison, ada lovelace, alan turing, copernicus
+2: rosalind franklin, louis pasteur, gregor mendel, niels bohr, michael faraday, carl sagan, richard feynman, alexander fleming, archimedes, aristotle
+3: johannes kepler, max planck, werner heisenberg, erwin schrodinger, dmitri mendeleev, james clerk maxwell, jane goodall, edwin hubble, robert hooke, enrico fermi, lise meitner, tycho brahe, ernest rutherford
+4: emmy noether, srinivasa ramanujan, ibn al-haytham, al-khwarizmi, hypatia, chien-shiung wu, barbara mcclintock, dorothy hodgkin, alfred wegener, ignaz semmelweis, antoine lavoisier, carl linnaeus, alexander von humboldt, katherine johnson, tu youyou, mary anning, cecilia payne, subrahmanyan chandrasekhar, lynn margulis, henrietta leavitt, rachel carson
+
+Q: Name a hairstyle
+0: ponytail, braid, bun, mohawk, bob
+1: pixie cut, buzz cut, afro, dreadlocks/locs, mullet, fringe/bangs, pigtails, cornrows, crew cut
+2: french braid, fishtail, top knot, undercut, perm, quiff, pompadour, comb-over, man bun, layers, shag, bowl cut, faux hawk
+3: box braids, bantu knots, beehive, chignon, fade, flattop, rattail, finger waves, space buns, wolf cut, lob, high top, curtains, twists
+4: jheri curl, marcel wave, victory rolls, chonmage, tonsure, queue, fontange, pompadour, croydon facelift, ducktail, liberty spikes, devilock, odango, hime cut, sidelocks/payot, frohawk, flapper bob, gibson girl
+
+Q: Name a mammal that lives in water
+0: whale, dolphin, seal, otter, walrus
+1: sea lion, manatee, orca/killer whale, beaver, hippo, polar bear
+2: narwhal, beluga, platypus, dugong, porpoise, blue whale, humpback, sea otter, elephant seal
+3: muskrat, mink, water vole, capybara, sperm whale, leopard seal, fur seal, river dolphin, minke whale, bowhead
+4: vaquita, desman, water shrew, yapok/water opossum, solenodon, sirenian, baiji, tucuxi, boto, nutria/coypu, sitatunga, water deer, fishing cat, marsh mongoose, giant otter, hooded seal, ribbon seal, bearded seal, crabeater seal, rakali
+
+Q: Name something you find at a cottage or a lake
+0: dock, canoe, fishing rod, campfire, boat, lake
+1: kayak, life jacket, mosquito, cabin, hammock, marshmallows, loon, deck chair, fish, cooler
+2: paddle, bonfire pit, outhouse, raft, beach towel, water ski, firewood, screen door, bug spray, sunscreen, rope swing, deer, beaver
+3: muskoka chair/adirondack chair, citronella candle, wood stove, propane tank, tackle box, minnow bucket, inner tube, dragonfly, leech, snapping turtle, birch bark, bear spray, jigsaw puzzle
+4: lily pad, bullrush/cattail, loon nest, boathouse, weathervane, crayfish, blackfly, deer fly, horsefly, porcupine, water snake, pickerel weed, lake trout, walleye, pike, perch, sauna, kerosene lamp, transistor radio, swim platform
+
+Q: Name a constellation
+0: big dipper, orion, little dipper, ursa major
+1: ursa minor, scorpio/scorpius, leo, cassiopeia, gemini, taurus, cancer, aries, pisces, virgo, libra, sagittarius, capricorn, aquarius
+2: southern cross/crux, pegasus, andromeda, draco, cygnus, perseus, lyra, aquila, hercules, centaurus
+3: canis major, canis minor, bootes, cepheus, auriga, ophiuchus, corona borealis, delphinus, eridanus, hydra, lepus, monoceros, cetus
+4: camelopardalis, lacerta, vulpecula, sagitta, equuleus, triangulum, coma berenices, sextans, crater, corvus, antlia, pyxis, puppis, vela, carina, fornax, sculptor, horologium, reticulum, dorado, mensa, octans, telescopium, microscopium, norma, circinus, musca, chamaeleon, volans, pictor
+
+Q: Name a famous wonder or landmark
+0: eiffel tower, great wall of china, pyramids, statue of liberty, taj mahal, colosseum
+1: big ben, stonehenge, machu picchu, sydney opera house, mount everest, niagara falls, leaning tower of pisa, grand canyon
+2: petra, christ the redeemer, acropolis, parthenon, angkor wat, golden gate bridge, sagrada familia, burj khalifa, great barrier reef, kremlin, louvre
+3: chichen itza, alhambra, neuschwanstein, mont saint-michel, hagia sophia, forbidden city, uluru, victoria falls, easter island, moai, iguazu falls, terracotta army, the matterhorn, borobudur
+4: great zimbabwe, lalibela, derinkuyu, bagan, persepolis, hampi, moai of ahu tongariki, nazca lines, sigiriya, mesa verde, jiuzhaigou, socotra, chand baori, mount roraima, door to hell, rock of cashel, carnac stones, gobekli tepe, timbuktu, ha long bay
+
+Q: Name a bird of prey
+0: eagle, hawk, owl, falcon
+1: vulture, condor, bald eagle, golden eagle, osprey, kestrel
+2: buzzard, kite, harrier, peregrine falcon, barn owl, snowy owl, harpy eagle, sparrowhawk
+3: goshawk, merlin, hobby, gyrfalcon, secretary bird, caracara, lammergeier/bearded vulture, tawny owl, great horned owl, eagle owl, sea eagle
+4: lanner, saker, hen harrier, honey buzzard, shikra, crested caracara, laughing falcon, pygmy falcon, philippine eagle, steller's sea eagle, bateleur, crowned eagle, martial eagle, king vulture, griffon vulture, burrowing owl, elf owl
+
+Q: Name a famous detective (any book, show or film)
+0: sherlock holmes, batman, scooby-doo
+1: hercule poirot, miss marple, inspector gadget, columbo, nancy drew, dick tracy
+2: the hardy boys, inspector clouseau, philip marlowe, sam spade, jessica fletcher, encyclopedia brown, dr watson, veronica mars
+3: inspector morse, father brown, kurt wallander, sherlock's brother mycroft/mycroft holmes, lord peter wimsey, maigret, inspector lestrade, lisbeth salander, adrian monk, temperance brennan, precious ramotswe
+4: auguste dupin, ellery queen, nero wolfe, judge dee, brother cadfael, inspector rebus, harry hole, salvo montalbano, detective conan, sexton blake, sergeant cuff, kinsey millhone, kogoro akechi, erast fandorin, jules maigret, sister boniface, vera stanhope
+
+Q: Name a famous ship (real or fictional)
+0: titanic, the black pearl, noah's ark
+1: mayflower, the flying dutchman, enterprise, santa maria, nautilus, queen mary
+2: lusitania, hms victory, bismarck, the beagle, the bounty, cutty sark, the endurance, the millennium falcon, argo, jolly roger
+3: mary rose, endeavour, the golden hind, pequod, the vasa, the pinta, the nina, kon-tiki, the hispaniola, the dawn treader, the yamato, the hms beagle
+4: the mary celeste, the essex, the terror, the erebus, the fram, the batavia, the san jose, the edmund fitzgerald, the andrea gail, the calypso, the rainbow warrior, the argo navis, the nautilus submarine, the uss constitution, the sea venture, the endurance22, the bluenose, the karluk
+
+Q: Name a famous wizard, witch or magician (any story)
+0: harry potter, gandalf, merlin, hermione, dumbledore
+1: voldemort, the wicked witch of the west, houdini, sabrina, glinda, mickey mouse (the sorcerer's apprentice)
+2: doctor strange, saruman, snape, ron weasley, hagrid, elsa, maleficent, jafar, the white witch, rincewind, howl
+3: prospero, morgan le fay, circe, medea, baba yaga, radagast, zatanna, willow rosenberg, hermione granger, the witch-king, raistlin, elphaba, ursula
+4: ged/sparrowhawk, mister norrell, jonathan strange, granny weatherwax, nanny ogg, pug, belgarath, polgara, elminster, mordenkainen, allanon, kvothe, rand al'thor, morgause, vilgefortz, yennefer, triss, the enchantress, prospero's daughter miranda
+
+Q: Name a famous mountain
+0: everest, kilimanjaro, mount fuji, k2, the alps
+1: mont blanc, matterhorn, olympus, denali, aconcagua, etna, vesuvius
+2: mount kenya, elbrus, mount rushmore, table mountain, ben nevis, mount cook/aoraki, mount kosciuszko, mount sinai, mount ararat, popocatepetl, kangchenjunga
+3: annapurna, lhotse, makalu, cho oyu, nanga parbat, eiger, jungfrau, mount rainier, mount st helens, mount logan, cotopaxi, chimborazo, mount olympus, sugarloaf
+4: dhaulagiri, manaslu, gasherbrum, broad peak, shishapangma, ama dablam, fitz roy, cerro torre, huascaran, mauna kea, puncak jaya, vinson, mount erebus, kailash, damavand, toubkal, rwenzori, mount wilhelm, triglav, zugspitze, musala
+
+Q: Name a cookie or biscuit
+0: chocolate chip, oatmeal raisin, oreo, sugar cookie, shortbread
+1: peanut butter cookie, gingerbread, macaron, snickerdoodle, fortune cookie, ginger snap, digestive, wafer
+2: biscotti, macaroon, fig roll, jammie dodger, custard cream, hobnob, anzac biscuit, linzer, black and white cookie, rich tea, graham cracker
+3: speculoos, florentine, amaretti, madeleine, stroopwafel, alfajor, polvoron, kourabiedes, rugelach, hamantaschen, pfeffernusse, lebkuchen, springerle, garibaldi, bourbon
+4: tuile, langue de chat, ricciarelli, cantucci, mamoul, ghraybeh, nankhatai, krumkake, pizzelle, kransekake, vanillekipferl, berger cookie, koulourakia, pepparkakor, melomakarona, polvorones, galletas maria, kurabiye, sable, brutti ma buoni
+
+Q: Name a tool used in a garden
+0: shovel/spade, rake, hose, lawn mower, watering can
+1: wheelbarrow, hoe, trowel, pruners/secateurs, gloves, sprinkler, leaf blower, shears
+2: pitchfork, garden fork, hedge trimmer, weed whacker/strimmer, chainsaw, loppers, edger, compost bin, seed tray, kneeling pad
+3: dibber, cultivator, rototiller, aerator, bulb planter, pruning saw, scythe, sickle, mattock, pick-axe, edging iron, soil thermometer, rain gauge
+4: dutch hoe, hori-hori, billhook, scuffle hoe, broadfork, cold frame, cloche, riddle/sieve, weeding fork, japanese pull saw, swoe, onion hoe, half-moon edger, besom, tamper, wheel hoe, cobrahead, grafting knife
+
+Q: Name a famous painting
+0: mona lisa, the starry night, the scream, the last supper
+1: the birth of venus, girl with a pearl earring, the persistence of memory, american gothic, the creation of adam, sunflowers, water lilies, guernica
+2: the kiss, the night watch, the great wave, the son of man, the garden of earthly delights, las meninas, the school of athens, nighthawks
+3: the arnolfini portrait, liberty leading the people, the raft of the medusa, the hay wain, a sunday afternoon on la grande jatte, impression sunrise, the treachery of images, the fighting temeraire, wanderer above the sea of fog
+4: the ambassadors, the garden of eden, saturn devouring his son, the third of may 1808, olympia, the luncheon on the grass, the isle of the dead, the nightmare, ophelia, the lady of shalott, the death of marat, the anatomy lesson, judith slaying holofernes, the hunters in the snow, the tower of babel, the gleaners, the ninth wave
+
+Q: Name a famous duo
+0: batman and robin, tom and jerry, salt and pepper, romeo and juliet, mario and luigi
+1: bonnie and clyde, laurel and hardy, sherlock and watson, simon and garfunkel, thelma and louise, adam and eve, bert and ernie, ant and dec
+2: lilo and stitch, timon and pumbaa, han and chewie, frodo and sam, wallace and gromit, rick and morty, beavis and butthead, sonny and cher, hall and oates, jekyll and hyde
+3: lewis and clark, watson and crick, gilbert and sullivan, rodgers and hammerstein, abbott and costello, fred and ginger, penn and teller, statler and waldorf, asterix and obelix, tintin and snowy, calvin and hobbes
+4: castor and pollux, romulus and remus, gog and magog, tristan and isolde, heloise and abelard, orpheus and eurydice, cheech and chong, pinky and the brain, ren and stimpy, ike and tina, siegfried and roy, chip and dale, vladimir and estragon, rosencrantz and guildenstern
+
+Q: Name a word for a group of animals (like "a pack of wolves")
+0: pack, herd, flock, school, swarm
+1: pride, colony, litter, hive, pod, gaggle, troop
+2: murder (of crows), parliament (of owls), shoal, gang, nest, team, army (of ants), band (of gorillas), drove
+3: crash (of rhinos), tower (of giraffes), bloat (of hippos), business (of ferrets), dazzle (of zebras), cackle (of hyenas), leap (of leopards), mob (of kangaroos), murmuration (of starlings), skulk (of foxes), sleuth (of bears)
+4: exaltation (of larks), unkindness (of ravens), charm (of finches), clowder (of cats), kindle (of kittens), parade (of elephants), prickle (of porcupines), shrewdness (of apes), murmuration, ostentation (of peacocks), knot (of toads), smack (of jellyfish), siege (of herons), rhumba (of rattlesnakes), wisdom (of wombats), implausibility (of gnus)
+
+Q: Name a famous robot or AI (any story)
+0: r2-d2, c-3po, wall-e, the terminator, optimus prime
+1: bumblebee, robocop, baymax, iron giant, data, hal 9000, bender, eve
+2: johnny 5, k-9, the tin man, marvin, megatron, ultron, vision, jarvis, sonny, ava, chappie, rosie the robot
+3: robby the robot, gort, maria (metropolis), skynet, the borg, astro boy, mechagodzilla, cylon, glados, kitt, ash, bishop, david, the t-1000
+4: tik-tok of oz, talos, hymie, huey dewey and louie (silent running), box, the iron man, mechanical hound, hk-47, bb-8, edi, legion, mettaton, tachikoma, doraemon, gigolo joe, dorothy (the big o), roy batty, rachael, colossus, mother, the machine
+
+# Places: the famous ones by hand; OpenStreetMap (tools/fetch-osm.py) adds the rest, deeper the fewer
+# languages a place's name is written in.
+
+Q: Name an island
+0: hawaii, iceland, madagascar, greenland, bali, sicily
+1: ireland, japan, cuba, jamaica, tasmania, crete, ibiza, borneo, sri lanka
+2: sardinia, corsica, mallorca/majorca, cyprus, malta, java, sumatra, tahiti, fiji, zanzibar, santorini, galapagos
+3: newfoundland, baffin island, sakhalin, hokkaido, okinawa, svalbard, faroe islands, easter island, socotra, mauritius
+4: tristan da cunha, pitcairn, kerguelen, bouvet island, jan mayen, wrangel island, ellesmere island, saint helena, bougainville, rapa nui
+
+Q: Name a lake
+0: lake superior, lake victoria, lake michigan, loch ness, lake geneva
+1: lake titicaca, lake baikal, lake como, caspian sea, lake tahoe, lake ontario, lake erie
+2: lake huron, lake garda, lake malawi, lake tanganyika, lake constance, dead sea, great salt lake, lake louise
+3: lake ladoga, lake onega, lake balaton, lake bled, lake chad, lake toba, lake taupo, lake winnipeg, lake maracaibo
+4: lake vostok, lake hillier, lake natron, lake nicaragua, lake inari, lake ohrid, lake issyk-kul, lake van, lake turkana
+
+Q: Name a volcano
+0: vesuvius, mount etna, mount fuji, mount st helens, krakatoa
+1: kilauea, mauna loa, eyjafjallajokull, popocatepetl, stromboli, mount pinatubo, kilimanjaro
+2: mount rainier, hekla, cotopaxi, mount erebus, mount kilauea, yellowstone, tambora, mount pelee
+3: nyiragongo, merapi, sakurajima, villarrica, mount ararat, mount shasta, mount hood, piton de la fournaise, taal
+4: ojos del salado, erta ale, ol doinyo lengai, mount yasur, klyuchevskaya sopka, novarupta, laki, katla, mount nyamuragira
+
+Q: Name a river
+0: nile, amazon, mississippi, thames, danube
+1: yangtze, ganges, rhine, seine, volga, congo, mekong, colorado
+2: tigris, euphrates, zambezi, niger, indus, missouri, rio grande, st lawrence, yukon, loire, ebro
+3: orinoco, parana, murray, darling, ob, yenisei, lena, irrawaddy, brahmaputra, tagus, dnieper, oder, elbe
+4: amur, mackenzie, salween, okavango, limpopo, purus, kolyma, shatt al-arab, drina, vistula, guadalquivir
+
+# Word categories: the obvious words by hand; Wiktionary's thesaurus (tools/fetch-wiktionary.py) adds the
+# rest, deeper the rarer its labels say they are.
+
+Q: Name a slang word for money
+0: cash, dough, bucks, bread, moolah
+1: dosh, quid, loot, bank, coin, green
+2: wonga, readies, dinero, cheddar, bones, clams, lolly, wedge
+3: spondulicks, brass, simoleons, lucre, filthy lucre
+
+Q: Name a word for nonsense
+0: rubbish, garbage, nonsense, baloney, gibberish
+1: bull, hogwash, drivel, tosh, poppycock, codswallop, twaddle
+2: balderdash, claptrap, malarkey, bunkum, piffle, tommyrot, hokum, gobbledygook
+3: flapdoodle, bosh, horsefeathers, folderol, blather
+
+Q: Name a word for the toilet
+0: loo, bathroom, restroom, toilet, john
+1: lavatory, washroom, wc, potty, can, throne
+2: privy, latrine, outhouse, dunny, khazi, bog, head
+3: water closet, comfort station, jakes, little boys' room, powder room
+
+Q: Name a slang word for the police
+0: cops, the fuzz, pigs, coppers, five-o
+1: the law, bobbies, the feds, po-po, plod, the old bill
+2: boys in blue, filth, rozzers, flatfoot, gendarmes, smokey
+3: peelers, bizzies, the heat, bluebottles, john law
+
+Q: Name a word for a fool
+0: idiot, fool, dummy, clown, nitwit
+1: twit, dope, numpty, doofus, dimwit, nincompoop, airhead
+2: buffoon, dolt, dunce, plonker, ninny, simpleton, muppet, pillock
+3: dunderhead, lummox, galoot, mooncalf, gormless git, prat
+
+Q: Name a word that means excellent
+0: awesome, amazing, great, brilliant, fantastic
+1: superb, outstanding, magnificent, terrific, wonderful, epic, cool
+2: stellar, splendid, marvellous, top-notch, first-rate, ace, wicked, sick
+3: bodacious, boss, champion, spiffing, bonzer, the bee's knees, the cat's pyjamas
+
+Q: Name a slang word for food
+0: grub, eats, chow, snacks, munchies
+1: nosh, tucker, scran, nibbles, fuel
+2: vittles, provisions, fare, sustenance, comestibles
+3: scoff, chuck, nosebag, tuck, bait, victuals
+
+Q: Name a word for a friend
+0: buddy, pal, mate, bestie, bro
+1: chum, homie, amigo, bff, comrade, sidekick
+2: compadre, partner, sis, crony, confidant, ally
+3: cobber, bruv, homeboy, china, oppo, wingman
+
+Q: Name a slang word for your head
+0: noggin, nut, dome, skull, brain
+1: bonce, noodle, melon, block, loaf
+2: noddle, nob, coconut, crown, pate
+3: crumpet, swede, attic, upper storey, conk
+
+Q: Name a slang word for your nose
+0: schnoz, beak, sniffer, snout, honker
+1: schnozzle, hooter, conk, snoot, nozzle
+2: proboscis, bugle, snitch, neb, schnozz
+3: smeller, beezer, boko, snorer, nozzer
+
+Q: Name a way to say "throw up"
+0: puke, vomit, barf, hurl, be sick
+1: spew, chunder, upchuck, heave, ralph
+2: retch, regurgitate, toss your cookies, blow chunks, chuck up
+3: technicolor yawn, call for hughie, liquid laugh, shout at the ground, honk
+
+Q: Name a way to say "go to sleep"
+0: nap, snooze, crash, doze, hit the hay
+1: hit the sack, catch some z's, kip, nod off, turn in
+2: drop off, conk out, slumber, forty winks, get some shut-eye
+3: saw logs, rack out, crash out, bed down, zizz
+
+Q: Name a way to say someone died
+0: passed away, kicked the bucket, croaked, bit the dust, passed on
+1: snuffed it, popped their clogs, six feet under, pushing up daisies, departed
+2: gave up the ghost, bought the farm, met their maker, carked it, shuffled off
+3: shuffled off this mortal coil, cashed in their chips, joined the choir invisible, went west, turned up their toes
+
+Q: Name a way to say "steal"
+0: rob, nick, pinch, swipe, take
+1: nab, lift, snatch, shoplift, pilfer, loot
+2: filch, pocket, poach, embezzle, purloin, rip off
+3: half-inch, knock off, liberate, snaffle, boost, thieve
+
+Q: Name a way to say "eat"
+0: munch, chow down, scoff, devour, gobble
+1: snack, feast, nosh, wolf down, dig in, chomp
+2: graze, nibble, scarf, pig out, tuck in, inhale
+3: masticate, ingest, partake, nom, trough, stuff your face
+
+Q: Name a word for chatter
+0: gossip, chat, babble, jabber, blab
+1: natter, prattle, yak, gab, small talk, chinwag
+2: chitchat, blather, rabbit, jaw, waffle, ramble
+3: tittle-tattle, palaver, chuntering, yammer, schmooze, confab
+
+Q: Name a word for rich
+0: loaded, wealthy, rolling in it, minted, well off
+1: affluent, flush, well-heeled, prosperous, made of money
+2: well-to-do, moneyed, comfortable, filthy rich, stinking rich
+3: plutocratic, opulent, in clover, on easy street, quids in
+
+Q: Name a slang word for prison
+0: jail, the slammer, the clink, lockup, the can
+1: the nick, the big house, behind bars, the joint, the pen
+2: the cooler, stir, the pokey, the hoosegow, porridge
+3: chokey, the jug, quod, the calaboose, the glasshouse
+
+Q: Name a word for good-looking
+0: hot, gorgeous, beautiful, handsome, cute
+1: stunning, pretty, fit, attractive, dreamy, sexy
+2: foxy, lush, fetching, comely, dishy, bonny
+3: pulchritudinous, easy on the eyes, a looker, a knockout, a stunner
+
+Q: Name a word for your bottom
+0: butt, bum, behind, rear, backside
+1: booty, tush, derriere, buttocks, bottom, rump
+2: tushie, keister, caboose, hindquarters, heinie
+3: posterior, sit-upon, nates, glutes, jacksie, kazoo
+
+## adult
+
+Q: Name a cocktail
+0: margarita, mojito, martini, pina colada, cosmopolitan
+1: old fashioned, bloody mary, long island iced tea, daiquiri, manhattan, sex on the beach, gin and tonic, mai tai, negroni
+2: aperol spritz, whiskey sour, moscow mule, caipirinha, tequila sunrise, white russian, espresso martini, mimosa, sangria, cuba libre, paloma
+3: sazerac, sidecar, aviation, gimlet, french 75, dark and stormy, tom collins, mint julep, bellini, kir royale, pisco sour, hurricane, zombie, singapore sling
+4: corpse reviver, last word, vieux carre, boulevardier, clover club, ramos gin fizz, bramble, hanky panky, jungle bird, penicillin, paper plane, naked and famous, brandy alexander, grasshopper, rusty nail, rob roy, sgroppino, michelada, caesar
+
+Q: Name a spirit (a strong alcoholic drink)
+0: vodka, whisky/whiskey, rum, gin, tequila
+1: brandy, bourbon, scotch, cognac, sake, absinthe
+2: mezcal, sambuca, schnapps, ouzo, grappa, baileys, jagermeister, soju, cachaca, pisco
+3: armagnac, calvados, aquavit/akvavit, rakia, arak, raki, slivovitz, kirsch, poitin, baijiu, shochu, limoncello, chartreuse, palinka, horilka
+4: chacha, singani, feni, mahua, tuba, lambanog, clairin, guaro, aguardiente, pastis, zivania, tsipouro, mastika, rakija, oghi, tej, kumis, arrack, awamori, eau de vie, genever
+
+Q: Name a slang word for being drunk
+0: drunk, wasted, hammered, tipsy, smashed
+1: plastered, sloshed, trashed, buzzed, loaded, tanked, blitzed, legless
+2: pissed, sozzled, merry, three sheets to the wind, blotto, pickled, steaming, tiddly, lit, rat-arsed
+3: trolleyed, wellied, mullered, bladdered, paralytic, stewed, soused, half-cut, squiffy, tired and emotional, kalied, bombed
+4: rotten, cabbaged, rubbered, steamboats, rinsed, cut, langers, scuttered, mouldy, stocious, maggoted, tired and emotional, newted, tight, lubricated, ossified, crunk, fried
+
+Q: Name a word for kissing
+0: making out, smooching, snogging, french kissing, necking
+1: pecking, smacking lips, swapping spit, tonsil hockey, frenching, canoodling
+2: sucking face, macking, getting off with, a peck, a smacker, osculating
+3: pashing, sharing a bisou, eskimo kiss, butterfly kiss, playing tonsil tennis, locking lips, spit swapping, snog
+4: neck nuzzling, nibbling, a bisou, a buss, a smackeroo, playing tonsil hockey, lip-locking, a lip lock, the french, a nose rub, a hickey, a love bite, a smooch
+
+Q: Name a drinking game
+0: beer pong, never have I ever, flip cup, kings/ring of fire, truth or dare
+1: quarters, power hour, drunk jenga, spin the bottle, waterfall, would you rather, most likely to
+2: rage cage, ride the bus, fuck the dealer, circle of death, boat race, centurion, edward fortyhands, slap cup
+3: beer die, stack cup, civil war, buffalo, thumper, horse race, cheers to the governor, ibble dibble, fizz buzz, paranoia
+4: chandeliers, bizz buzz, wizard staff, sink the ship, red or black, irish poker, baseball (drinking), beer golf, kastenlauf, bierkastenlauf, flunkyball, landsknecht, gaigai
+
+Q: Name a wine grape
+0: merlot, cabernet sauvignon, chardonnay, pinot noir, sauvignon blanc
+1: pinot grigio/pinot gris, riesling, shiraz/syrah, malbec, zinfandel, prosecco
+2: tempranillo, sangiovese, grenache, moscato, chenin blanc, gewurztraminer, viognier, cabernet franc, semillon
+3: nebbiolo, barbera, carmenere, pinotage, gamay, mourvedre, albarino, gruner veltliner, torrontes, petit verdot, primitivo, montepulciano, verdejo
+4: tannat, furmint, assyrtiko, xinomavro, saperavi, aglianico, nero d'avola, touriga nacional, blaufrankisch, zweigelt, vermentino, fiano, greco, picpoul, trousseau, savagnin, mencia, rkatsiteli, agiorgitiko, carignan
+
+Q: Name a famous lover from history or a story
+0: romeo, juliet, casanova, cleopatra, don juan
+1: mark antony, lancelot, guinevere, tristan, isolde, jack and rose, elizabeth bennet, mr darcy
+2: helen of troy, paris, antony and cleopatra, napoleon and josephine, heathcliff, cathy, scarlett o'hara, rhett butler, bonnie and clyde
+3: abelard, heloise, orpheus, eurydice, pyramus, thisbe, dante and beatrice, shah jahan, mumtaz mahal, eros, psyche, layla and majnun, valmont
+4: lancelot and elaine, troilus and cressida, aeneas and dido, hero and leander, paolo and francesca, shirin and farhad, heer and ranjha, cyrano, roxane, tamino, pamina, daphnis and chloe, marcus and lucretia, catherine the great
+
+Q: Name a place people have sex (other than a bed)
+0: car, shower, couch/sofa, kitchen table, hot tub
+1: beach, tent, bath, floor, hotel, back seat, office, pool
+2: plane (the mile high club), elevator/lift, sauna, dressing room, park, boat, balcony, stairs, library
+3: train, cinema, hammock, rooftop, closet, laundry room, washing machine, haystack, treehouse, canoe, ski lift
+4: confessional, photo booth, ferris wheel, gondola, observatory, igloo, bouncy castle, sleeper train, lighthouse, wine cellar, recording studio, outhouse
+
+Q: Name a hangover cure
+0: water, coffee, sleep, painkillers/aspirin, greasy food
+1: hair of the dog, pizza, bacon, electrolytes, sports drink, fry-up, burger, banana
+2: pickle juice, eggs, toast, coconut water, a bloody mary, ginger, honey, pho, ramen, shower
+3: menudo, pho, kimchi, prairie oyster, haejangguk, pickled herring, a cold shower, a long walk, an iv drip, sauna
+4: rollmops, pacha, khash, chilaquiles, tripe soup, sauerkraut juice, rassol, umeboshi, cholent, a corpse reviver, raw egg, borscht, poutine
+
+Q: Name something you might find in a nightstand drawer
+0: condoms, lube, phone charger, tissues, a book
+1: vibrator, handcuffs, lip balm, glasses, pens, hand cream, earplugs, sleeping mask
+2: massage oil, blindfold, love letters, a diary, candles, a flashlight, medication, a bible, batteries
+3: fuzzy handcuffs, a feather, edible underwear, a crop, a tickler, a ring, an old receipt, a key nobody remembers, ear plugs
+4: nipple clamps, love dice, a sex position deck, a gag, a paddle, a love swing manual, flavoured condoms, glow condoms, a deck of tarot cards
+
+Q: Name an item of lingerie
+0: bra, thong, panties/underwear, stockings, garter
+1: corset, negligee, teddy, bodysuit, lace, g-string, nightie, boy shorts
+2: bustier, chemise, babydoll, suspenders, garter belt, robe, kimono, push-up bra, fishnets
+3: basque, merry widow, bralette, camisole, tap pants, cheekies, pasties, slip, bodystocking
+4: peignoir, longline bra, cupless bra, crotchless panties, garter skirt, waspie, harness, merry widow corset, bed jacket, cami-knickers, tanga, bloomers
+
+Q: Name a food people say is an aphrodisiac
+0: oysters, chocolate, strawberries, champagne
+1: honey, chilli, avocado, figs, bananas, red wine
+2: asparagus, pomegranate, truffles, watermelon, vanilla, cinnamon, ginseng, saffron
+3: maca, horny goat weed, damiana, cardamom, nutmeg, almonds, artichoke, caviar
+4: spanish fly, rhino horn, tiger's penis, mandrake, durian, yohimbe, catuaba, oyster sauce, sea cucumber, ambergris, cobra blood
+
+Q: Name a cheeky word for sex
+0: hooking up, getting lucky, shagging, doing it, making love
+1: bonking, nookie, hanky-panky, banging, knocking boots, netflix and chill
+2: rumpy-pumpy, horizontal tango, a roll in the hay, bumping uglies, getting laid, sleeping together
+3: how's your father, slap and tickle, the beast with two backs, bow chicka wow wow, a quickie, afternoon delight, the deed
+4: a bit of the other, rumpo, jiggy, the horizontal mambo, hide the sausage, a leg-over, a tumble, coitus, conjugal visit, a bout of mattress dancing
+
+Q: Name a body part people find attractive
+0: eyes, smile, butt, legs, lips
+1: hands, hair, arms, abs, chest, shoulders, back, neck
+2: dimples, collarbones, freckles, jawline, calves, forearms, thighs, hips
+3: wrists, ankles, earlobes, nape, cheekbones, adam's apple, lower back, v-line
+4: the small of the back, philtrum, eyelashes, cupid's bow, back dimples, the dip of the hip, clavicle, achilles tendon, crook of the elbow

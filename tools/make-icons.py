@@ -261,10 +261,22 @@ def storm() -> Canvas:                 # a cottage under a storm cloud, a raccoo
     c.rect(20, 23, 7, 2, 'G'); c.rect(26, 22, 2, 1, 'C')                                      # body, ringed tail
     c.outline(); return c
 
+def deepend() -> Canvas:               # a diver off the end of a dock, deeper water below
+    c = Canvas(30, 26)
+    c.rect(0, 12, 30, 14, 'U')                                   # the lake
+    c.rect(0, 19, 30, 7, 'Q')                                    # the deep part (darker)
+    for x in range(1, 29, 6): c.set(x, 13, 'A'); c.set(x + 3, 15, 'A')  # ripples
+    c.rect(0, 9, 12, 2, 'B'); c.rect(2, 11, 1, 4, 'B'); c.rect(9, 11, 1, 4, 'B')  # the dock
+    c.disc(19, 4, 1.8, 'H'); c.line(19, 6, 21, 10, 'R'); c.line(20, 8, 23, 6, 'R'); c.line(21, 10, 24, 11, 'R')  # the diver, mid-jump
+    for y in (17, 20, 23): c.set(23, y, 'W')                     # bubbles going down
+    c.disc(11, 22, 1.6, 'Y'); c.set(11, 22, 'O')                 # treasure at the bottom
+    c.outline(); return c
+
 ICONS: dict[str, Callable[[], Canvas]] = {
     'quiplash': punchline, 'fibbage': fibbage, 'trivia': trivia, 'closest': closest,
     'majority': majority, 'mostlikely': mostlikely, 'imposter': imposter,
     'twotruths': twotruths, 'telephone': telephone, 'cah': cah, 'minigames': minigames, 'looncall': looncall, 'lantern': lantern, 'storm': storm, 'crush': crush,
+    'deepend': deepend,
 }
 
 PAL: dict[str, str] = {'K': '#1a1423', 'W': '#f4f1e8', 'E': '#1a1423', 'O': '#e8762b', 'B': '#8a5a3b', 'L': '#d9b38c', 'T': '#e6c48a',

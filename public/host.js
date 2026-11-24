@@ -97,8 +97,9 @@ const RULES = {
   storm: ['Secret roles: most of you are Cottagers — a few are Raccoons', 'The leader picks a crew; everyone votes; the crew secretly helps or sabotages', 'Three chores done: Cottagers win — unless the Raccoons unmask the Lookout'],
   crush: ['Slip notes to your crushes — phones only', 'Reply, then secretly pick a date', 'It’s a date only if they pick you too'],
   lantern: ['Tilt your phone to glide (or drag on the circle)', 'Four scenes: fireflies, moonbeam, tag, lily pad, ducklings…', 'One of them: everyone steers the same raft'],
+  deepend: ['Name something in the category: not the obvious thing', 'The rarer your answer, the deeper you dive', 'Off the chart? The room votes if it counts'],
   looncall: ['Listen to the loon\'s call', 'Tap the same rhythm back on your phone', 'Nail it together for IN SYNC bonuses'],
-  minigames: ['Quick real-time challenges on your phone', 'Eleven minis — the rules show before each one', 'Turn on Teams for Red vs Blue!'],
+  minigames: ['Quick real-time challenges on your phone', 'Fourteen minis — the rules show before each one', 'Turn on Teams for Red vs Blue!'],
 };
 // --- narrator (Rocco reads prompts aloud and in a speech bubble) -------------
 let lastSpoken = '';
@@ -366,6 +367,14 @@ document.addEventListener('click', (e) => {
     lineup = [];
   }
   if (act.dataset.act === 'fullscreen') fsBtn.click();
+  if (act.dataset.act === 'genre') {
+    genre = act.dataset.genre || 'all';
+    render();
+    // The shelf now holds that kind only: its first cartridge comes to the middle (the tab keeps the focus).
+    const first = /** @type {HTMLElement | null} */ (document.querySelector('.shelf .game-pick'));
+    if (first) centreCart(first, true);
+  }
+  if (act.dataset.act === 'surprise') surprise();
   if (act.dataset.act === 'edit-players') { editPlayers = !editPlayers; render(); }
   if (act.dataset.act === 'stats') {
     statsOpen = !statsOpen; moreOpen = false;
@@ -502,14 +511,34 @@ const T = '<span class="timer"></span>';
 /** @type {Record<string, string>} */
 const ART_BG = {
   quiplash: '#3b1f5e', fibbage: '#5a3b22', trivia: '#1d2b5c', closest: '#173d2a', majority: '#2b5f8f',
-  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e',
+  mostlikely: '#5c1d3e', imposter: '#3d4a1d', twotruths: '#24324a', telephone: '#4a3a12', cah: '#1a1423', minigames: '#123d4f', looncall: '#0f2a3d', lantern: '#13284a', storm: '#141a2e', deepend: '#062a3f',
 };
-/** An old-console cartridge (the menu shelf, the lineup, "NEXT GAME", the game's title card): grey
- * shell, grip ridges, a label with the game's art and name. @param {string} id @param {string} name @param {string} [cls] */
+/**
+ * Each game's cartridge (owner's pick, Nov 23: "the icons are not distinct enough, it's hard to find the
+ * game you want"): its own colour of plastic, what you do in it in one word, and its kind of game (the
+ * shelf's tabs). One hue per game, far apart, so a cartridge can be told from the couch by colour alone.
+ * @type {Record<string, [string, string, 'laugh' | 'think' | 'move' | 'scheme']>}
+ */
+const CART_LOOK = {
+  quiplash: ['#d9542b', 'WRITE', 'laugh'], cah: ['#55525e', 'FILL IN', 'laugh'], telephone: ['#d18a2a', 'DRAW', 'laugh'], mostlikely: ['#c2378a', 'VOTE', 'laugh'],
+  trivia: ['#2f5fd0', 'ANSWER', 'think'], deepend: ['#1797c9', 'GO RARE', 'think'], closest: ['#3a9a46', 'GUESS', 'think'], fibbage: ['#9c5f2d', 'BLUFF', 'think'],
+  minigames: ['#e04848', 'TAP!', 'move'], looncall: ['#1fa89a', 'RHYTHM', 'move'], lantern: ['#3c4fa8', 'TILT', 'move'],
+  majority: ['#c9a227', 'AGREE', 'scheme'], imposter: ['#7ea12a', 'SPOT IT', 'scheme'], storm: ['#5f6b85', 'SCHEME', 'scheme'], twotruths: ['#6b4fb8', 'CONFESS', 'scheme'], crush: ['#e36fa6', 'FLIRT', 'scheme'],
+};
+/** The shelf's tabs: every game, or one kind. */
+const GENRES = /** @type {[string, string][]} */ ([['all', 'All'], ['laugh', 'Laugh'], ['think', 'Think'], ['move', 'Move'], ['scheme', 'Scheme']]);
+/** Games new on the shelf (a NEW sticker). */
+const NEW_GAMES = ['deepend'];
+/** The tab picked on the shelf. */
+let genre = 'all';
+/** An old-console cartridge (the menu shelf, the lineup, "NEXT GAME", the game's title card): a shell in the
+ * game's own colour, grip ridges, a label with the game's art, its verb and its name.
+ * @param {string} id @param {string} name @param {string} [cls] */
 function cartHtml(id, name, cls = '') {
-  return `<span class="cart-shell ${cls}" style="--art-bg:${/** @type {Record<string, string>} */ (ART_BG)[id] || '#2f2850'}">
+  const look = CART_LOOK[id];
+  return `<span class="cart-shell ${cls}" style="--art-bg:${/** @type {Record<string, string>} */ (ART_BG)[id] || '#2f2850'};--shell:${look ? look[0] : '#9c9aa3'}">
     <span class="cart-ridges" aria-hidden="true"></span>
-    <span class="cart-label">${art(id)}<span class="game-name">${esc(name)}</span></span></span>`;
+    <span class="cart-label">${look ? `<span class="cart-verb">${look[1]}</span>` : ''}${art(id)}<span class="game-name">${esc(name)}</span></span></span>`;
 }
 window.Rumpus.cartHtml = cartHtml;
 const art = (/** @type {any} */ id) => {
@@ -523,7 +552,7 @@ const art = (/** @type {any} */ id) => {
 const GAME_TAGS = /** @type {Record<string, string>} */ ({
   quiplash: 'Comedy', cah: 'Comedy', fibbage: 'Bluffing', twotruths: 'Bluffing', trivia: 'Trivia', closest: 'Guessing',
   majority: 'Mind-reading', mostlikely: 'Party vote', crush: 'Romance', imposter: 'Deduction', storm: 'Hidden roles',
-  telephone: 'Drawing', minigames: 'Action', lantern: 'Tilt', looncall: 'Rhythm',
+  telephone: 'Drawing', minigames: 'Action', lantern: 'Tilt', looncall: 'Rhythm', deepend: 'Words',
 });
 /** The ⚙ Settings panel on the menu is open. */
 let moreOpen = false;
@@ -667,6 +696,16 @@ function centreCart(card, smooth = false) {
     if (k >= 1) stopSpin();
   });
 }
+/** 🎲 Surprise us: the wheel turns to a random game that can be played now (from the tab on show), and shows
+ * it — it doesn't start: OK plays it, or spin again. */
+function surprise() {
+  const carts = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.shelf .game-pick:not([aria-disabled="true"])')]);
+  const pool = carts.length > 1 ? carts.filter((c) => c.dataset.gameId !== pickId) : carts;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  if (!pick) return;
+  sfx.select();
+  pick.focus({ preventScroll: true }); // focusin shows its description and turns the wheel
+}
 /** The cartridge in the middle of the shelf now. @param {Element} shelf @returns {HTMLElement | null} */
 function middleCart(shelf) {
   if (spinCache && spinCache.shelf === shelf) {
@@ -778,6 +817,7 @@ function gamePicker(/** @type {any} */ label) {
         </div>`;
   // Every menu button sits together in one group at the end of the command bar.
   const commands = `<div class="cmd-group">
+          <button data-act="surprise" class="surprise-btn">🎲 Surprise us</button>
           ${state.phase === 'gameover' ? '<button data-act="scores" class="ghost">◀ Scores</button>' : ''}
           ${lineup.length ? `<button class="lineup-play" data-act="lineup-play">▶ Play ${lineup.length} game${lineup.length === 1 ? '' : 's'}</button>
           <button class="link-btn" data-act="lineup-clear">Clear</button>` : ''}
@@ -834,9 +874,14 @@ function gamePicker(/** @type {any} */ label) {
         ${corner}
       </div>
       <div class="shelf-wrap">
+        <nav class="genre-tabs" aria-label="Kinds of game">${GENRES.map(([g, name]) => {
+          const n = g === 'all' ? (state.availableGames || []).length : (state.availableGames || []).filter((/** @type {any} */ x) => CART_LOOK[x.id] && CART_LOOK[x.id][2] === g).length;
+          return `<button class="genre-tab" data-act="genre" data-genre="${g}" aria-pressed="${genre === g}">${name} <small>${n}</small></button>`;
+        }).join('')}</nav>
         <div class="shelf">` +
-    (state.availableGames || []).map((/** @type {any} */ gm) => {
+    (state.availableGames || []).filter((/** @type {any} */ gm) => genre === 'all' || (CART_LOOK[gm.id] && CART_LOOK[gm.id][2] === genre)).map((/** @type {any} */ gm) => {
       const locked = count < gm.minPlayers;
+      const sticker = locked ? `NEEDS ${gm.minPlayers}` : NEW_GAMES.includes(gm.id) ? 'NEW' : '';
       // An old-console cartridge: grey shell, grip ridges, a label with the art and the name. Nothing else.
       // Too few players: it looks like the others (no lock, no players-needed line; the user's call, Nov 13)
       // and a press says what it needs instead of starting.
@@ -844,6 +889,7 @@ function gamePicker(/** @type {any} */ label) {
           data-min="Needs ${gm.minPlayers}+ players" ${locked ? 'aria-disabled="true"' : ''}
 >
         ${cartHtml(gm.id, gm.name)}
+        ${sticker ? `<span class="cart-sticker">${sticker}</span>` : ''}
         ${lineup.includes(gm.id) ? `<span class="cart-num" aria-label="number ${lineup.indexOf(gm.id) + 1} in the lineup">${lineup.indexOf(gm.id) + 1}</span>` : ''}
         ${st.lang === 'fr' && !FRENCH_GAMES.includes(gm.id) ? '<span class="game-lang" title="Questions in English">EN</span>' : ''}
       </button>`;
@@ -1299,7 +1345,8 @@ phaseView.addEventListener('load', (e) => {
 
 function tick(/** @type {any} */ left) {
   if (left > 0 && left <= 5) sfx.tick();
-  const inputish = state && !/lobby|gameover|reveal|results/.test(state.phase);
+  // Only while people are still answering: not on a reveal, a result (mg-result, lc-result…) or an intro card.
+  const inputish = state && !/lobby|gameover|reveal|result|intro|night-next/.test(state.phase);
   music.setHurry(inputish && left > 0 && left <= 10);
 }
 

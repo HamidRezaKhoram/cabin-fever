@@ -1,0 +1,7380 @@
+{
+"Name a cheeky word for sex": [],
+"Name a slang word for being drunk": [
+{
+"labels": [
+"Australia"
+],
+"w": "Adrian Quist"
+},
+{
+"labels": [
+"US"
+],
+"w": "adrip"
+},
+{
+"labels": [],
+"w": "aled up"
+},
+{
+"labels": [],
+"w": "all mops and brooms"
+},
+{
+"labels": [
+"taboo"
+],
+"w": "arseholed"
+},
+{
+"labels": [],
+"w": "a sheet in the wind"
+},
+{
+"labels": [],
+"w": "a sheet in the wind's eye"
+},
+{
+"labels": [],
+"w": "bedrunken"
+},
+{
+"labels": [],
+"w": "befuddled"
+},
+{
+"labels": [],
+"w": "beliquored"
+},
+{
+"labels": [],
+"w": "besotted"
+},
+{
+"labels": [],
+"w": "besotten"
+},
+{
+"labels": [],
+"w": "bevvied"
+},
+{
+"labels": [],
+"w": "bibacious"
+},
+{
+"labels": [],
+"w": "bibulous"
+},
+{
+"labels": [],
+"w": "binned"
+},
+{
+"labels": [],
+"w": "bingoed"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "bladdered"
+},
+{
+"labels": [],
+"w": "blasted"
+},
+{
+"labels": [],
+"w": "blewed"
+},
+{
+"labels": [],
+"w": "blind"
+},
+{
+"labels": [],
+"w": "blind drunk"
+},
+{
+"labels": [],
+"w": "blitzed"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "blocked"
+},
+{
+"labels": [],
+"w": "blootered"
+},
+{
+"labels": [],
+"w": "blottoed"
+},
+{
+"labels": [],
+"w": "blue"
+},
+{
+"labels": [
+"taboo"
+],
+"w": "bollocksed"
+},
+{
+"labels": [],
+"w": "bombed"
+},
+{
+"labels": [],
+"w": "boozy"
+},
+{
+"labels": [],
+"w": "bosky"
+},
+{
+"labels": [],
+"w": "bottled"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "Brahms"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "Brahms and Liszt"
+},
+{
+"labels": [],
+"w": "budgy"
+},
+{
+"labels": [],
+"w": "bungalowed"
+},
+{
+"labels": [
+"rare"
+],
+"w": "bungfu"
+},
+{
+"labels": [
+"Britain dialect"
+],
+"w": "burlin'"
+},
+{
+"labels": [],
+"w": "canned"
+},
+{
+"labels": [
+"US"
+],
+"w": "clobbered"
+},
+{
+"labels": [],
+"w": "corned"
+},
+{
+"labels": [],
+"w": "cocked"
+},
+{
+"labels": [],
+"w": "cockeyed"
+},
+{
+"labels": [],
+"w": "crapulous"
+},
+{
+"labels": [
+"North America"
+],
+"w": "crocked"
+},
+{
+"labels": [
+"taboo"
+],
+"w": "cunted"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "cup-shot"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "cup-shotten"
+},
+{
+"labels": [],
+"w": "cut"
+},
+{
+"labels": [],
+"w": "dead drunk"
+},
+{
+"labels": [],
+"w": "destroyed"
+},
+{
+"labels": [],
+"w": "disguised"
+},
+{
+"labels": [],
+"w": "drunk"
+},
+{
+"labels": [],
+"w": "drunk as a piper"
+},
+{
+"labels": [],
+"w": "drunked up"
+},
+{
+"labels": [],
+"w": "drunken"
+},
+{
+"labels": [],
+"w": "ebriated"
+},
+{
+"labels": [],
+"w": "ebriose"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "elephant's"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "elephant's trunk"
+},
+{
+"labels": [],
+"w": "elevated"
+},
+{
+"labels": [],
+"w": "faced"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "fap"
+},
+{
+"labels": [],
+"w": "fershnickered"
+},
+{
+"labels": [
+"dated"
+],
+"w": "flooey"
+},
+{
+"labels": [],
+"w": "floored"
+},
+{
+"labels": [],
+"w": "flush"
+},
+{
+"labels": [],
+"w": "flushed"
+},
+{
+"labels": [],
+"w": "flustered"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "fluted"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "fluthered"
+},
+{
+"labels": [
+"euphemistic"
+],
+"w": "feeling no pain"
+},
+{
+"labels": [
+"Scotland"
+],
+"w": "fou"
+},
+{
+"labels": [],
+"w": "four sheets in the wind"
+},
+{
+"labels": [],
+"w": "fresh"
+},
+{
+"labels": [],
+"w": "fried"
+},
+{
+"labels": [],
+"w": "frosted"
+},
+{
+"labels": [
+"taboo"
+],
+"w": "fuckered up"
+},
+{
+"labels": [
+"taboo"
+],
+"w": "fuckfaced"
+},
+{
+"labels": [],
+"w": "fuddled"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "full"
+},
+{
+"labels": [],
+"w": "fuzzy-headed"
+},
+{
+"labels": [],
+"w": "fuzzy-minded"
+},
+{
+"labels": [],
+"w": "gassed"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "gattered"
+},
+{
+"labels": [
+"Ireland",
+"slang"
+],
+"w": "gee-eyed"
+},
+{
+"labels": [
+"South Africa"
+],
+"w": "gesuip"
+},
+{
+"labels": [
+"dated"
+],
+"w": "ginned"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "gished"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "glorious"
+},
+{
+"labels": [
+"dated"
+],
+"w": "groggified"
+},
+{
+"labels": [],
+"w": "groggy"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "half polluted"
+},
+{
+"labels": [],
+"w": "half cut"
+},
+{
+"labels": [],
+"w": "half lit"
+},
+{
+"labels": [
+"slang"
+],
+"w": "half seas over"
+},
+{
+"labels": [],
+"w": "hammered"
+},
+{
+"labels": [],
+"w": "have drink taken"
+},
+{
+"labels": [],
+"w": "have the sun in one's eyes"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "hazed"
+},
+{
+"labels": [],
+"w": "high as a Georgia pine"
+},
+{
+"labels": [
+"often refers to drugs"
+],
+"w": "high as a kite"
+},
+{
+"labels": [
+"rare"
+],
+"w": "high"
+},
+{
+"labels": [],
+"w": "hog-whimpering"
+},
+{
+"labels": [],
+"w": "honkers"
+},
+{
+"labels": [],
+"w": "hooched up"
+},
+{
+"labels": [],
+"w": "hooted"
+},
+{
+"labels": [],
+"w": "hoovered"
+},
+{
+"labels": [],
+"w": "hosed"
+},
+{
+"labels": [
+"slang, obsolete"
+],
+"w": "how came you so"
+},
+{
+"labels": [],
+"w": "impaired"
+},
+{
+"labels": [],
+"w": "in liquor"
+},
+{
+"labels": [
+"archaic",
+"idiomatic"
+],
+"w": "in one's altitudes"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "in one's cups"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "in the bag"
+},
+{
+"labels": [
+"dated",
+"idiomatic"
+],
+"w": "in the drink"
+},
+{
+"labels": [],
+"w": "inebriate"
+},
+{
+"labels": [],
+"w": "inebriated"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "inebrious"
+},
+{
+"labels": [],
+"w": "insober"
+},
+{
+"labels": [
+"rare"
+],
+"w": "insobrietous"
+},
+{
+"labels": [],
+"w": "inter pocula"
+},
+{
+"labels": [],
+"w": "jaked"
+},
+{
+"labels": [],
+"w": "jarred"
+},
+{
+"labels": [],
+"w": "juiced"
+},
+{
+"labels": [],
+"w": "juiced up"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "kaylied"
+},
+{
+"labels": [],
+"w": "kettled"
+},
+{
+"labels": [
+"slang"
+],
+"w": "kisky"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "lamped"
+},
+{
+"labels": [
+"Ireland dialect"
+],
+"w": "langered"
+},
+{
+"labels": [
+"Ireland dialect"
+],
+"w": "langers"
+},
+{
+"labels": [],
+"w": "larruped"
+},
+{
+"labels": [
+"British slang"
+],
+"w": "lash"
+},
+{
+"labels": [
+"British slang"
+],
+"w": "lashed"
+},
+{
+"labels": [],
+"w": "lathered"
+},
+{
+"labels": [],
+"w": "legless"
+},
+{
+"labels": [],
+"w": "liquored up"
+},
+{
+"labels": [],
+"w": "liquory"
+},
+{
+"labels": [],
+"w": "lit"
+},
+{
+"labels": [],
+"w": "loaded"
+},
+{
+"labels": [],
+"w": "looped"
+},
+{
+"labels": [],
+"w": "loopy"
+},
+{
+"labels": [],
+"w": "loose"
+},
+{
+"labels": [],
+"w": "lubed"
+},
+{
+"labels": [],
+"w": "lubed up"
+},
+{
+"labels": [],
+"w": "lubricated"
+},
+{
+"labels": [],
+"w": "lushed"
+},
+{
+"labels": [
+"Singapore"
+],
+"w": "mabok"
+},
+{
+"labels": [],
+"w": "mad with it"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "maggot"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "maggoted"
+},
+{
+"labels": [],
+"w": "mashed"
+},
+{
+"labels": [],
+"w": "maudlin"
+},
+{
+"labels": [
+"euphemistic"
+],
+"w": "medicated"
+},
+{
+"labels": [],
+"w": "messed up"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "monged"
+},
+{
+"labels": [],
+"w": "mortal"
+},
+{
+"labels": [],
+"w": "mortalled"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "Mozart and Liszt"
+},
+{
+"labels": [],
+"w": "muddled"
+},
+{
+"labels": [
+"obsolete slang"
+],
+"w": "muggy"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "mullered"
+},
+{
+"labels": [],
+"w": "munted"
+},
+{
+"labels": [],
+"w": "muzzy"
+},
+{
+"labels": [],
+"w": "MWI"
+},
+{
+"labels": [],
+"w": "nappy"
+},
+{
+"labels": [],
+"w": "newted"
+},
+{
+"labels": [],
+"w": "nimptopsical"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "obfuscated"
+},
+{
+"labels": [],
+"w": "obliviated"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "off one's box"
+},
+{
+"labels": [
+"idiomatic",
+"often refers to drugs"
+],
+"w": "off one's head"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "off one's tits"
+},
+{
+"labels": [],
+"w": "oiled"
+},
+{
+"labels": [],
+"w": "oiled up"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "Oliver"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "Oliver Twist"
+},
+{
+"labels": [
+"archaic",
+"slang"
+],
+"w": "on the ran tan"
+},
+{
+"labels": [
+"Ireland",
+"US"
+],
+"w": "ossified"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "out of it"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "out of one's box"
+},
+{
+"labels": [],
+"w": "out of one's face"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "out of one's head"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "out of sight"
+},
+{
+"labels": [],
+"w": "overcome"
+},
+{
+"labels": [
+"jocular or euphemistic"
+],
+"w": "overrefreshed"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "overtaken"
+},
+{
+"labels": [],
+"w": "paralytic"
+},
+{
+"labels": [],
+"w": "parlatic"
+},
+{
+"labels": [
+"Canada"
+],
+"w": "pickled"
+},
+{
+"labels": [],
+"w": "pie-eyed"
+},
+{
+"labels": [],
+"w": "pixilated"
+},
+{
+"labels": [],
+"w": "plastered"
+},
+{
+"labels": [],
+"w": "ploughed"
+},
+{
+"labels": [
+"US"
+],
+"w": "plowed"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "polluted"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "potshot"
+},
+{
+"labels": [],
+"w": "potted"
+},
+{
+"labels": [],
+"w": "pounded"
+},
+{
+"labels": [],
+"w": "primed"
+},
+{
+"labels": [],
+"w": "puggled"
+},
+{
+"labels": [],
+"w": "quisby"
+},
+{
+"labels": [],
+"w": "raddled"
+},
+{
+"labels": [],
+"w": "ratfaced"
+},
+{
+"labels": [],
+"w": "razzled"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "ripe"
+},
+{
+"labels": [],
+"w": "ripped"
+},
+{
+"labels": [],
+"w": "rolling"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "rubbered"
+},
+{
+"labels": [],
+"w": "sauced"
+},
+{
+"labels": [],
+"w": "sauced up"
+},
+{
+"labels": [],
+"w": "scammered"
+},
+{
+"labels": [],
+"w": "schloshed"
+},
+{
+"labels": [],
+"w": "schnockered"
+},
+{
+"labels": [],
+"w": "screwed"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "scuttered"
+},
+{
+"labels": [],
+"w": "sewed up"
+},
+{
+"labels": [],
+"w": "shedded"
+},
+{
+"labels": [],
+"w": "shellacked"
+},
+{
+"labels": [],
+"w": "shicker"
+},
+{
+"labels": [
+"Australia",
+"NZ"
+],
+"w": "shickered"
+},
+{
+"labels": [
+"US",
+"taboo"
+],
+"w": "shitty"
+},
+{
+"labels": [],
+"w": "skunked"
+},
+{
+"labels": [],
+"w": "slammed"
+},
+{
+"labels": [],
+"w": "slarmied"
+},
+{
+"labels": [
+"also refers to drugs"
+],
+"w": "slizzard"
+},
+{
+"labels": [],
+"w": "sloppy drunk"
+},
+{
+"labels": [],
+"w": "sloshed"
+},
+{
+"labels": [],
+"w": "smashed"
+},
+{
+"labels": [],
+"w": "snockered"
+},
+{
+"labels": [],
+"w": "snookered"
+},
+{
+"labels": [],
+"w": "snozzled"
+},
+{
+"labels": [],
+"w": "snuffy"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "soaken"
+},
+{
+"labels": [],
+"w": "sodden"
+},
+{
+"labels": [],
+"w": "soshed"
+},
+{
+"labels": [],
+"w": "sotted"
+},
+{
+"labels": [],
+"w": "sottish"
+},
+{
+"labels": [
+"US Navy slang"
+],
+"w": "souped-up"
+},
+{
+"labels": [],
+"w": "soused"
+},
+{
+"labels": [],
+"w": "sozzled"
+},
+{
+"labels": [],
+"w": "sozzly"
+},
+{
+"labels": [],
+"w": "spanceled"
+},
+{
+"labels": [],
+"w": "spannered"
+},
+{
+"labels": [],
+"w": "spiffed"
+},
+{
+"labels": [],
+"w": "splashed"
+},
+{
+"labels": [],
+"w": "spongy"
+},
+{
+"labels": [],
+"w": "sprung"
+},
+{
+"labels": [],
+"w": "squiffed"
+},
+{
+"labels": [
+"Britain",
+"Ireland",
+"slang"
+],
+"w": "steamboats"
+},
+{
+"labels": [],
+"w": "stewed"
+},
+{
+"labels": [],
+"w": "stinking"
+},
+{
+"labels": [],
+"w": "stinko"
+},
+{
+"labels": [
+"UK slang"
+],
+"w": "stoated"
+},
+{
+"labels": [
+"rare – usually refers to drugs"
+],
+"w": "stoned"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "stonkered"
+},
+{
+"labels": [],
+"w": "stotious"
+},
+{
+"labels": [
+"Scotland",
+"obsolete"
+],
+"w": "strut"
+},
+{
+"labels": [],
+"w": "swacked"
+},
+{
+"labels": [],
+"w": "tanked"
+},
+{
+"labels": [],
+"w": "tanked up"
+},
+{
+"labels": [],
+"w": "temulent"
+},
+{
+"labels": [],
+"w": "temulentive"
+},
+{
+"labels": [],
+"w": "three sheets in the wind"
+},
+{
+"labels": [
+"idiomatic"
+],
+"w": "three sheets to the wind"
+},
+{
+"labels": [],
+"w": "throwed"
+},
+{
+"labels": [],
+"w": "tight as a tick"
+},
+{
+"labels": [],
+"w": "tight"
+},
+{
+"labels": [],
+"w": "tilted"
+},
+{
+"labels": [],
+"w": "tippled"
+},
+{
+"labels": [],
+"w": "tipsy"
+},
+{
+"labels": [
+"Britain",
+"jocular or euphemistic"
+],
+"w": "tired and emotional"
+},
+{
+"labels": [],
+"w": "toasted"
+},
+{
+"labels": [],
+"w": "top-heavy"
+},
+{
+"labels": [
+"rare",
+"idiomatic"
+],
+"w": "top-heavy with drink"
+},
+{
+"labels": [],
+"w": "toping"
+},
+{
+"labels": [],
+"w": "trashed"
+},
+{
+"labels": [],
+"w": "tuned"
+},
+{
+"labels": [
+"Britain",
+"taboo"
+],
+"w": "twatfaced"
+},
+{
+"labels": [],
+"w": "twisted"
+},
+{
+"labels": [],
+"w": "wastey"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "wazzed"
+},
+{
+"labels": [
+"Britain"
+],
+"w": "wazzocked"
+},
+{
+"labels": [],
+"w": "well-oiled"
+},
+{
+"labels": [],
+"w": "wellied"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "wet"
+},
+{
+"labels": [],
+"w": "whittled"
+},
+{
+"labels": [],
+"w": "withered"
+},
+{
+"labels": [],
+"w": "wobbly"
+},
+{
+"labels": [],
+"w": "woozy"
+},
+{
+"labels": [],
+"w": "worse for liquor"
+},
+{
+"labels": [
+"euphemistic"
+],
+"w": "worse for wear"
+},
+{
+"labels": [],
+"w": "wrecked"
+},
+{
+"labels": [],
+"w": "zoned"
+},
+{
+"labels": [],
+"w": "zonked"
+},
+{
+"labels": [],
+"w": "zooted"
+},
+{
+"labels": [],
+"w": "zorched"
+},
+{
+"labels": [],
+"w": "zotzed"
+}
+],
+"Name a slang word for food": [
+{
+"labels": [],
+"w": "aliment"
+},
+{
+"labels": [],
+"w": "bait"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "belly-timber"
+},
+{
+"labels": [
+"slang"
+],
+"w": "chow"
+},
+{
+"labels": [
+"formal"
+],
+"w": "comestibles"
+},
+{
+"labels": [],
+"w": "cuisine"
+},
+{
+"labels": [],
+"w": "eatables"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eats"
+},
+{
+"labels": [],
+"w": "edibles"
+},
+{
+"labels": [
+"for domesticated animals"
+],
+"w": "feed"
+},
+{
+"labels": [
+"for domesticated animals"
+],
+"w": "fodder"
+},
+{
+"labels": [],
+"w": "foodstuffs"
+},
+{
+"labels": [],
+"w": "food"
+},
+{
+"labels": [
+"slang"
+],
+"w": "grub"
+},
+{
+"labels": [
+"New Zealand"
+],
+"w": "kai"
+},
+{
+"labels": [],
+"w": "meals"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "meat"
+},
+{
+"labels": [],
+"w": "munchable"
+},
+{
+"labels": [],
+"w": "nibbles"
+},
+{
+"labels": [
+"informal"
+],
+"w": "nosebag"
+},
+{
+"labels": [],
+"w": "nosh"
+},
+{
+"labels": [],
+"w": "nourishment"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "om nom nom"
+},
+{
+"labels": [
+"dated"
+],
+"w": "provender"
+},
+{
+"labels": [],
+"w": "provisions"
+},
+{
+"labels": [],
+"w": "rations"
+},
+{
+"labels": [
+"Northern England"
+],
+"w": "scran"
+},
+{
+"labels": [],
+"w": "stodge"
+},
+{
+"labels": [],
+"w": "sustenance"
+},
+{
+"labels": [
+"Britain",
+"India"
+],
+"w": "tiffin"
+},
+{
+"labels": [],
+"w": "tucker"
+},
+{
+"labels": [
+"Britain",
+"dated"
+],
+"w": "tuck"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "viands"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "victuals"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "vittles"
+}
+],
+"Name a slang word for money": [
+{
+"labels": [
+"in the plural",
+"Britain",
+"slang"
+],
+"w": "ackers"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "bees and honey"
+},
+{
+"labels": [
+"UK",
+"archaic"
+],
+"w": "blunt"
+},
+{
+"labels": [
+"US"
+],
+"w": "bones"
+},
+{
+"labels": [
+"slang"
+],
+"w": "brass"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "bread"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "bread and honey"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "Bugs Bunny"
+},
+{
+"labels": [
+"slang"
+],
+"w": "cake"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "cheddar"
+},
+{
+"labels": [
+"slang"
+],
+"w": "cheese"
+},
+{
+"labels": [
+"slang"
+],
+"w": "ching"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "clams"
+},
+{
+"labels": [
+"slang"
+],
+"w": "coin"
+},
+{
+"labels": [],
+"w": "cream"
+},
+{
+"labels": [],
+"w": "tender"
+},
+{
+"labels": [],
+"w": "currency"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dinero"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dosh"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dough"
+},
+{
+"labels": [
+"slang"
+],
+"w": "feds"
+},
+{
+"labels": [
+"US",
+"archaic"
+],
+"w": "fedi"
+},
+{
+"labels": [],
+"w": "finances"
+},
+{
+"labels": [
+"slang",
+"African American Vernacular, London Multicultural English"
+],
+"w": "flizz"
+},
+{
+"labels": [
+"slang"
+],
+"w": "flow"
+},
+{
+"labels": [],
+"w": "funding"
+},
+{
+"labels": [],
+"w": "funds"
+},
+{
+"labels": [],
+"w": "gravy"
+},
+{
+"labels": [
+"slang",
+"African American Vernacular, London Multicultural English"
+],
+"w": "gwop"
+},
+{
+"labels": [
+"slang",
+"African American Vernacular, London Multicultural English"
+],
+"w": "gwolla"
+},
+{
+"labels": [
+"slang",
+"Australia",
+"US"
+],
+"w": "jack"
+},
+{
+"labels": [
+"US slang"
+],
+"w": "legal tender"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "lolly"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "lovely jubbly"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "mazuma"
+},
+{
+"labels": [],
+"w": "means"
+},
+{
+"labels": [],
+"w": "money"
+},
+{
+"labels": [
+"slang"
+],
+"w": "moola"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "mozzarella"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "muck"
+},
+{
+"labels": [
+"dated",
+"Britain",
+"slang"
+],
+"w": "oof"
+},
+{
+"labels": [
+"archaic",
+"Britain",
+"slang"
+],
+"w": "ooftish"
+},
+{
+"labels": [
+"slang"
+],
+"w": "paper"
+},
+{
+"labels": [
+"archaic",
+"slang"
+],
+"w": "rhino"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "scratch"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "scrilla"
+},
+{
+"labels": [
+"slang"
+],
+"w": "shrapnel"
+},
+{
+"labels": [
+"slang"
+],
+"w": "simoleons"
+},
+{
+"labels": [
+"slang"
+],
+"w": "smackers"
+},
+{
+"labels": [
+"slang"
+],
+"w": "smackeroos"
+},
+{
+"labels": [
+"slang"
+],
+"w": "smackeroonies"
+},
+{
+"labels": [
+"slang"
+],
+"w": "spend"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "spondulicks"
+},
+{
+"labels": [
+"slang"
+],
+"w": "swag"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "wampum"
+},
+{
+"labels": [
+"Britain",
+"NZ",
+"slang"
+],
+"w": "wonga"
+},
+{
+"labels": [
+"Britain",
+"back slang"
+],
+"w": "yenom"
+}
+],
+"Name a slang word for prison": [
+{
+"labels": [],
+"w": "big house"
+},
+{
+"labels": [],
+"w": "borstal"
+},
+{
+"labels": [],
+"w": "bridewell"
+},
+{
+"labels": [],
+"w": "brig"
+},
+{
+"labels": [
+"US",
+"Australia"
+],
+"w": "calaboose"
+},
+{
+"labels": [],
+"w": "can"
+},
+{
+"labels": [
+"UK"
+],
+"w": "chokey"
+},
+{
+"labels": [],
+"w": "clink"
+},
+{
+"labels": [],
+"w": "correctional facility"
+},
+{
+"labels": [],
+"w": "correctional institution"
+},
+{
+"labels": [],
+"w": "crowbar hotel"
+},
+{
+"labels": [],
+"w": "detention centre"
+},
+{
+"labels": [],
+"w": "dungeon"
+},
+{
+"labels": [],
+"w": "gaol"
+},
+{
+"labels": [],
+"w": "glasshouse"
+},
+{
+"labels": [],
+"w": "graybar hotel"
+},
+{
+"labels": [],
+"w": "guardhouse"
+},
+{
+"labels": [],
+"w": "gulag"
+},
+{
+"labels": [],
+"w": "hock"
+},
+{
+"labels": [],
+"w": "hole"
+},
+{
+"labels": [],
+"w": "honor farm"
+},
+{
+"labels": [],
+"w": "hoosegow"
+},
+{
+"labels": [],
+"w": "house of detention"
+},
+{
+"labels": [],
+"w": "iron house"
+},
+{
+"labels": [],
+"w": "jail"
+},
+{
+"labels": [],
+"w": "jailhouse"
+},
+{
+"labels": [],
+"w": "joint"
+},
+{
+"labels": [],
+"w": "jug"
+},
+{
+"labels": [],
+"w": "juvenile hall"
+},
+{
+"labels": [],
+"w": "juvie"
+},
+{
+"labels": [],
+"w": "lockup"
+},
+{
+"labels": [
+"slang",
+"vulgar",
+"offensive"
+],
+"w": "nigger university"
+},
+{
+"labels": [],
+"w": "nick"
+},
+{
+"labels": [],
+"w": "pen"
+},
+{
+"labels": [],
+"w": "penal colony"
+},
+{
+"labels": [],
+"w": "penitentiary"
+},
+{
+"labels": [],
+"w": "pokey"
+},
+{
+"labels": [
+"UK"
+],
+"w": "porridge"
+},
+{
+"labels": [],
+"w": "prison"
+},
+{
+"labels": [],
+"w": "prison camp"
+},
+{
+"labels": [],
+"w": "prison farm"
+},
+{
+"labels": [],
+"w": "prison hulk"
+},
+{
+"labels": [],
+"w": "prison ship"
+},
+{
+"labels": [
+"UK cant",
+"Polari"
+],
+"w": "queer ken"
+},
+{
+"labels": [],
+"w": "remand center"
+},
+{
+"labels": [],
+"w": "roundhouse"
+},
+{
+"labels": [],
+"w": "slammer"
+},
+{
+"labels": [],
+"w": "slam"
+},
+{
+"labels": [],
+"w": "stalag"
+},
+{
+"labels": [],
+"w": "stir"
+},
+{
+"labels": [],
+"w": "stockade"
+},
+{
+"labels": [
+"South Africa"
+],
+"w": "tronk"
+},
+{
+"labels": [],
+"w": "up the river"
+},
+{
+"labels": [],
+"w": "workhouse"
+},
+{
+"labels": [],
+"w": "Alcatraz"
+},
+{
+"labels": [],
+"w": "Attica"
+},
+{
+"labels": [],
+"w": "Bastille"
+},
+{
+"labels": [],
+"w": "Dartmoor"
+},
+{
+"labels": [],
+"w": "Devil's Island"
+},
+{
+"labels": [],
+"w": "Folsom"
+},
+{
+"labels": [],
+"w": "Hanoi Hilton"
+},
+{
+"labels": [],
+"w": "Leavenworth"
+},
+{
+"labels": [],
+"w": "Lefortovo"
+},
+{
+"labels": [],
+"w": "Maze"
+},
+{
+"labels": [],
+"w": "Pelican Bay"
+},
+{
+"labels": [],
+"w": "San Quentin"
+},
+{
+"labels": [],
+"w": "Sing Sing"
+},
+{
+"labels": [],
+"w": "Tower"
+}
+],
+"Name a slang word for the police": [
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "5-O"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "alphabet"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "barney"
+},
+{
+"labels": [
+"archaic",
+"rare"
+],
+"w": "beatsman"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "bizzie"
+},
+{
+"labels": [
+"slang"
+],
+"w": "bluebottle"
+},
+{
+"labels": [
+"dated"
+],
+"w": "bluecoat"
+},
+{
+"labels": [
+"Australia",
+"slang"
+],
+"w": "blue heeler"
+},
+{
+"labels": [
+"derogatory",
+"slang"
+],
+"w": "blue meanie"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "bobby"
+},
+{
+"labels": [
+"slang",
+"humorous",
+"pejorative",
+"obsolete"
+],
+"w": "body snatcher"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "bogey"
+},
+{
+"labels": [
+"US"
+],
+"w": "boy in blue"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "bull"
+},
+{
+"labels": [
+"Australia",
+"derogatory",
+"slang"
+],
+"w": "bullyman"
+},
+{
+"labels": [
+"slang"
+],
+"w": "buttons"
+},
+{
+"labels": [
+"Jersey"
+],
+"w": "centenier"
+},
+{
+"labels": [
+"UK",
+"Polari"
+],
+"w": "charpering omi"
+},
+{
+"labels": [
+"slang"
+],
+"w": "chazzer"
+},
+{
+"labels": [
+"slang"
+],
+"w": "cobbler"
+},
+{
+"labels": [
+"slang"
+],
+"w": "cop"
+},
+{
+"labels": [
+"slang"
+],
+"w": "copper"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "cozzer"
+},
+{
+"labels": [
+"US",
+"derogatory",
+"slang"
+],
+"w": "cracker"
+},
+{
+"labels": [
+"slang"
+],
+"w": "crusher"
+},
+{
+"labels": [
+"slang",
+"US",
+"referring to Ford Crown Victoria patrol cars"
+],
+"w": "crowns"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "dibble"
+},
+{
+"labels": [],
+"w": "fed"
+},
+{
+"labels": [
+"UK",
+"derogatory",
+"slang"
+],
+"w": "filth"
+},
+{
+"labels": [
+"informal",
+"chiefly plural"
+],
+"w": "finest"
+},
+{
+"labels": [
+"obsolete",
+"US",
+"slang"
+],
+"w": "finger"
+},
+{
+"labels": [],
+"w": "five-o"
+},
+{
+"labels": [
+"colloquial",
+"archaic",
+"pejorative"
+],
+"w": "flatfoot"
+},
+{
+"labels": [
+"archaic",
+"US",
+"slang"
+],
+"w": "flatty"
+},
+{
+"labels": [],
+"w": "fuzz"
+},
+{
+"labels": [
+"Ireland"
+],
+"w": "garda"
+},
+{
+"labels": [
+"France"
+],
+"w": "gendarme"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "glowie"
+},
+{
+"labels": [
+"Ireland",
+"informal"
+],
+"w": "guardian of the peace"
+},
+{
+"labels": [
+"obsolete",
+"thieves' cant"
+],
+"w": "harman"
+},
+{
+"labels": [
+"obsolete",
+"thieves' cant"
+],
+"w": "harman-beck"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "Inspector Knacker"
+},
+{
+"labels": [
+"Australia",
+"UK",
+"slang"
+],
+"w": "jack"
+},
+{
+"labels": [
+"Australia",
+"UK",
+"slang"
+],
+"w": "jackboot"
+},
+{
+"labels": [
+"US",
+"MLE",
+"slang"
+],
+"w": "jake"
+},
+{
+"labels": [],
+"w": "John Law"
+},
+{
+"labels": [
+"US"
+],
+"w": "John Q. Law"
+},
+{
+"labels": [
+"UK",
+"Cockney rhyming slang"
+],
+"w": "Johnny Hopper"
+},
+{
+"labels": [],
+"w": "lawman"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "mee-maw"
+},
+{
+"labels": [
+"Aboriginal English"
+],
+"w": "monarch"
+},
+{
+"labels": [
+"UK",
+"Australia",
+"slang"
+],
+"w": "Mr Plod"
+},
+{
+"labels": [
+"UK",
+"archaic",
+"slang"
+],
+"w": "mutton shunter"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "nuthook"
+},
+{
+"labels": [
+"derogatory",
+"slang"
+],
+"w": "oinker"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "Officer Friendly"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "Old Bill"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "one-time"
+},
+{
+"labels": [
+"UK",
+"informal"
+],
+"w": "PC Plod"
+},
+{
+"labels": [
+"derogatory",
+"slang"
+],
+"w": "pig"
+},
+{
+"labels": [
+"UK",
+"derogatory",
+"slang"
+],
+"w": "piggy"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "peeler"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "plod"
+},
+{
+"labels": [],
+"w": "police"
+},
+{
+"labels": [],
+"w": "police officer"
+},
+{
+"labels": [],
+"w": "policeman"
+},
+{
+"labels": [],
+"w": "policeperson"
+},
+{
+"labels": [
+"UK"
+],
+"w": "polis"
+},
+{
+"labels": [],
+"w": "po-po"
+},
+{
+"labels": [
+"obsolete",
+"slang"
+],
+"w": "raw lobster"
+},
+{
+"labels": [
+"slang"
+],
+"w": "roller"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "rozzer"
+},
+{
+"labels": [
+"UK",
+"slang",
+"dated"
+],
+"w": "scufter"
+},
+{
+"labels": [
+"UK",
+"back slang"
+],
+"w": "slop"
+},
+{
+"labels": [
+"derogatory",
+"slang"
+],
+"w": "swine"
+},
+{
+"labels": [
+"New England",
+"US",
+"slang",
+"a state trooper"
+],
+"w": "statie"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "twelve"
+},
+{
+"labels": [
+"derogatory",
+"slang"
+],
+"w": "tyre biter"
+},
+{
+"labels": [
+"obsolete",
+"slang"
+],
+"w": "unboiled lobster"
+},
+{
+"labels": [
+"Australia",
+"slang"
+],
+"w": "walloper"
+},
+{
+"labels": [
+"UK",
+"idiomatic"
+],
+"w": "wooden-top"
+}
+],
+"Name a slang word for your head": [
+{
+"labels": [],
+"w": "bean"
+},
+{
+"labels": [],
+"w": "beaner"
+},
+{
+"labels": [],
+"w": "belfry"
+},
+{
+"labels": [],
+"w": "block"
+},
+{
+"labels": [],
+"w": "bonce"
+},
+{
+"labels": [],
+"w": "[[brainbox#English:_the skull or the head"
+},
+{
+"labels": [],
+"w": "[[brain bucket#English:_the skull or the head"
+},
+{
+"labels": [],
+"w": "calabash"
+},
+{
+"labels": [],
+"w": "dome"
+},
+{
+"labels": [],
+"w": "head"
+},
+{
+"labels": [],
+"w": "loaf"
+},
+{
+"labels": [],
+"w": "lolly"
+},
+{
+"labels": [],
+"w": "napper"
+},
+{
+"labels": [],
+"w": "noodle"
+},
+{
+"labels": [],
+"w": "noddle"
+},
+{
+"labels": [],
+"w": "noggin"
+},
+{
+"labels": [],
+"w": "nut"
+},
+{
+"labels": [],
+"w": "sconce"
+},
+{
+"labels": [],
+"w": "skull"
+}
+],
+"Name a slang word for your nose": [
+{
+"labels": [],
+"w": "nose"
+},
+{
+"labels": [],
+"w": "beak"
+},
+{
+"labels": [],
+"w": "beezer"
+},
+{
+"labels": [
+"dated",
+"UK"
+],
+"w": "boko"
+},
+{
+"labels": [],
+"w": "conk"
+},
+{
+"labels": [],
+"w": "honker"
+},
+{
+"labels": [],
+"w": "hooter"
+},
+{
+"labels": [],
+"w": "neb"
+},
+{
+"labels": [
+"UK"
+],
+"w": "pecker"
+},
+{
+"labels": [],
+"w": "proboscis"
+},
+{
+"labels": [],
+"w": "schnozz"
+},
+{
+"labels": [],
+"w": "schnozzle"
+},
+{
+"labels": [],
+"w": "schnozzola"
+},
+{
+"labels": [],
+"w": "schnoz"
+},
+{
+"labels": [],
+"w": "smeller"
+},
+{
+"labels": [
+"UK"
+],
+"w": "sneck"
+},
+{
+"labels": [],
+"w": "sniffer"
+},
+{
+"labels": [],
+"w": "snitch"
+},
+{
+"labels": [],
+"w": "snoot"
+},
+{
+"labels": [],
+"w": "snotbox"
+},
+{
+"labels": [],
+"w": "snout"
+},
+{
+"labels": [],
+"w": "trunk"
+}
+],
+"Name a way to say \"eat\"": [
+{
+"labels": [],
+"w": "eat"
+},
+{
+"labels": [],
+"w": "have"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "fret"
+}
+],
+"Name a way to say \"go to sleep\"": [
+{
+"labels": [
+"slang"
+],
+"w": "bed booger"
+},
+{
+"labels": [
+"slang"
+],
+"w": "crusty"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eye booger"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eye bogie"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eye crust"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eye goop"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eye gunk"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "eye sand"
+},
+{
+"labels": [
+"slang"
+],
+"w": "eye snot"
+},
+{
+"labels": [
+"UK dialectal"
+],
+"w": "gound"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "sleeper"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "sleepies"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "sleepy"
+},
+{
+"labels": [
+"slang"
+],
+"w": "sleepy booger"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "sleepy dust"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "sleepy sand"
+}
+],
+"Name a way to say \"steal\"": [
+{
+"labels": [],
+"w": "steal"
+},
+{
+"labels": [],
+"w": "abduct"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "abstract"
+},
+{
+"labels": [],
+"w": "appropriate"
+},
+{
+"labels": [],
+"w": "bag"
+},
+{
+"labels": [],
+"w": "bandit"
+},
+{
+"labels": [],
+"w": "bash and grab"
+},
+{
+"labels": [],
+"w": "bone"
+},
+{
+"labels": [],
+"w": "boost"
+},
+{
+"labels": [],
+"w": "burgle"
+},
+{
+"labels": [],
+"w": "burglarize"
+},
+{
+"labels": [],
+"w": "borrow"
+},
+{
+"labels": [],
+"w": "cheat"
+},
+{
+"labels": [],
+"w": "chore"
+},
+{
+"labels": [],
+"w": "commandeer"
+},
+{
+"labels": [],
+"w": "confiscate"
+},
+{
+"labels": [],
+"w": "convert"
+},
+{
+"labels": [],
+"w": "cop"
+},
+{
+"labels": [],
+"w": "cozen"
+},
+{
+"labels": [],
+"w": "crib"
+},
+{
+"labels": [],
+"w": "embezzle"
+},
+{
+"labels": [],
+"w": "filch"
+},
+{
+"labels": [],
+"w": "fleece"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "flog"
+},
+{
+"labels": [],
+"w": "gaffle"
+},
+{
+"labels": [
+"Scotland"
+],
+"w": "gilravage"
+},
+{
+"labels": [
+"Cockney rhyming slang"
+],
+"w": "half-inch"
+},
+{
+"labels": [
+"thieves' cant"
+],
+"w": "heave"
+},
+{
+"labels": [],
+"w": "heist"
+},
+{
+"labels": [],
+"w": "jack"
+},
+{
+"labels": [],
+"w": "kidnap"
+},
+{
+"labels": [],
+"w": "knock off"
+},
+{
+"labels": [],
+"w": "kipe"
+},
+{
+"labels": [],
+"w": "kyper"
+},
+{
+"labels": [],
+"w": "liberate"
+},
+{
+"labels": [],
+"w": "lift"
+},
+{
+"labels": [],
+"w": "loot"
+},
+{
+"labels": [],
+"w": "make off with"
+},
+{
+"labels": [
+"obsolete",
+"thieves' cant"
+],
+"w": "mill"
+},
+{
+"labels": [],
+"w": "misappropriate"
+},
+{
+"labels": [],
+"w": "mooch"
+},
+{
+"labels": [],
+"w": "moonlight requisition"
+},
+{
+"labels": [],
+"w": "nick"
+},
+{
+"labels": [],
+"w": "nip"
+},
+{
+"labels": [],
+"w": "own"
+},
+{
+"labels": [],
+"w": "peculate"
+},
+{
+"labels": [],
+"w": "pickpocket"
+},
+{
+"labels": [],
+"w": "pilfer"
+},
+{
+"labels": [],
+"w": "pinch"
+},
+{
+"labels": [],
+"w": "pillage"
+},
+{
+"labels": [],
+"w": "pirate"
+},
+{
+"labels": [
+"common"
+],
+"w": "plunder"
+},
+{
+"labels": [],
+"w": "poach"
+},
+{
+"labels": [],
+"w": "pocket"
+},
+{
+"labels": [],
+"w": "prig"
+},
+{
+"labels": [],
+"w": "purloin"
+},
+{
+"labels": [],
+"w": "raid"
+},
+{
+"labels": [],
+"w": "ransack"
+},
+{
+"labels": [],
+"w": "rape"
+},
+{
+"labels": [],
+"w": "relieve"
+},
+{
+"labels": [
+"obsolete sense"
+],
+"w": "rape"
+},
+{
+"labels": [],
+"w": "ransack"
+},
+{
+"labels": [],
+"w": "reave"
+},
+{
+"labels": [],
+"w": "rip"
+},
+{
+"labels": [],
+"w": "rip off"
+},
+{
+"labels": [],
+"w": "rob"
+},
+{
+"labels": [],
+"w": "run off with"
+},
+{
+"labels": [],
+"w": "snag"
+},
+{
+"labels": [],
+"w": "snatch"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "sniggle"
+},
+{
+"labels": [
+"dated"
+],
+"w": "snitch"
+},
+{
+"labels": [],
+"w": "swindle"
+},
+{
+"labels": [],
+"w": "swipe"
+},
+{
+"labels": [],
+"w": "thieve"
+},
+{
+"labels": [],
+"w": "yoink"
+},
+{
+"labels": [],
+"w": "walk off with"
+}
+],
+"Name a way to say \"throw up\"": [
+{
+"labels": [],
+"w": "barf"
+},
+{
+"labels": [],
+"w": "bait"
+},
+{
+"labels": [],
+"w": "boke"
+},
+{
+"labels": [],
+"w": "boot"
+},
+{
+"labels": [],
+"w": "chunder"
+},
+{
+"labels": [],
+"w": "honk"
+},
+{
+"labels": [],
+"w": "pavement pizza"
+},
+{
+"labels": [],
+"w": "puke"
+},
+{
+"labels": [
+"obsolete",
+"rare"
+],
+"w": "purging"
+},
+{
+"labels": [],
+"w": "ralph"
+},
+{
+"labels": [],
+"w": "sick"
+},
+{
+"labels": [],
+"w": "spew"
+},
+{
+"labels": [],
+"w": "sprog"
+},
+{
+"labels": [],
+"w": "throwup"
+},
+{
+"labels": [],
+"w": "throw-up"
+},
+{
+"labels": [],
+"w": "upchuck"
+},
+{
+"labels": [],
+"w": "yak"
+},
+{
+"labels": [],
+"w": "liquid laugh"
+},
+{
+"labels": [],
+"w": "multicolour yawn"
+},
+{
+"labels": [],
+"w": "Technicolor yawn"
+},
+{
+"labels": [],
+"w": "vomit"
+},
+{
+"labels": [
+"medical"
+],
+"w": "vomitus"
+}
+],
+"Name a way to say someone died": [
+{
+"labels": [
+"slang"
+],
+"w": "assume room temperature"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "auger in"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "be called home"
+},
+{
+"labels": [
+"biblical",
+"euphemism",
+"dated"
+],
+"w": "be gathered to one's fathers"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "be like the the One"
+},
+{
+"labels": [],
+"w": "be no more"
+},
+{
+"labels": [
+"Christian"
+],
+"w": "be with Jesus"
+},
+{
+"labels": [
+"Judeo-Christian"
+],
+"w": "be with the Lord"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "bite the big one"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "bite the biscuit"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "bite the dust"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "buy the farm"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "buy it"
+},
+{
+"labels": [],
+"w": "cark it"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "cash in"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "cash in one's chips"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "check out"
+},
+{
+"labels": [],
+"w": "close one's eyes for the last time"
+},
+{
+"labels": [
+"medical"
+],
+"w": "code"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "conk out"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "croak"
+},
+{
+"labels": [
+"spiritual"
+],
+"w": "cross over"
+},
+{
+"labels": [
+"spiritual",
+"euphemism"
+],
+"w": "cross the Great Divide"
+},
+{
+"labels": [],
+"w": "cross the rainbow bridge"
+},
+{
+"labels": [
+"Greco-Roman mythology"
+],
+"w": "cross the Styx"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "darken"
+},
+{
+"labels": [],
+"w": "decease"
+},
+{
+"labels": [],
+"w": "decompose"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "dematerialize"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "depart"
+},
+{
+"labels": [
+"spiritual"
+],
+"w": "disincarnate"
+},
+{
+"labels": [],
+"w": "draw one's last breath"
+},
+{
+"labels": [],
+"w": "drop off one's perch"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "drop off the hooks"
+},
+{
+"labels": [],
+"w": "drop off the twig"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "exit"
+},
+{
+"labels": [],
+"w": "expire"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "fall off the twig"
+},
+{
+"labels": [
+"medical"
+],
+"w": "flatline"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "forfare"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "give one's all"
+},
+{
+"labels": [
+"spiritual"
+],
+"w": "give up the ghost"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go for a burton"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go out"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go over to the majority"
+},
+{
+"labels": [
+"Judeo-Christian",
+"euphemism"
+],
+"w": "go the way of all flesh"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go the way of the dinosaurs"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go the way of the dodo"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go the way of the dodo bird"
+},
+{
+"labels": [
+"Christian",
+"euphemism"
+],
+"w": "go to glory"
+},
+{
+"labels": [
+"Christian",
+"euphemism"
+],
+"w": "go to one's reward"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "go west"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "hand in one's checks"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "hand in one's dinner pail"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "hop the twig"
+},
+{
+"labels": [
+"Christian"
+],
+"w": "join the choir invisible"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "keel over"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "kick the bucket"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "kick off"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "knock off"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "liquidate"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "lose the number of one's mess"
+},
+{
+"labels": [],
+"w": "meet one's doom"
+},
+{
+"labels": [],
+"w": "meet one's end"
+},
+{
+"labels": [
+"Judeo-Christian"
+],
+"w": "meet one's maker"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pass"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pass away"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pass in one's checks"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pass in one's marble"
+},
+{
+"labels": [
+"spiritual"
+],
+"w": "pass on"
+},
+{
+"labels": [
+"spiritual"
+],
+"w": "pass over"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pass the river"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pay nature's debt"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pay the debt of nature"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "peg out"
+},
+{
+"labels": [],
+"w": "perish"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pop off"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "pop one's clogs"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "push up daisies"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "shuffle off this mortal coil"
+},
+{
+"labels": [
+"euphemism",
+"archaic"
+],
+"w": "sink"
+},
+{
+"labels": [
+"literary",
+"dated"
+],
+"w": "sleep with one's fathers"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "slip away"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "snuff it"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "succumb"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "take a dirt nap"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "turn up one's toes"
+},
+{
+"labels": [
+"spiritual"
+],
+"w": "yield up the ghost"
+}
+],
+"Name a word for a fool": [
+{
+"labels": [],
+"w": "addle-brain"
+},
+{
+"labels": [],
+"w": "addlehead"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "addle pate"
+},
+{
+"labels": [],
+"w": "airhead"
+},
+{
+"labels": [],
+"w": "baboon"
+},
+{
+"labels": [],
+"w": "beanbrain"
+},
+{
+"labels": [],
+"w": "beetlebrain"
+},
+{
+"labels": [],
+"w": "beetlehead"
+},
+{
+"labels": [
+"UK"
+],
+"w": "berk"
+},
+{
+"labels": [
+"slang"
+],
+"w": "bimbo"
+},
+{
+"labels": [],
+"w": "birdbrain"
+},
+{
+"labels": [
+"informal"
+],
+"w": "blockhead"
+},
+{
+"labels": [],
+"w": "blubberbrain"
+},
+{
+"labels": [
+"slang"
+],
+"w": "bonehead"
+},
+{
+"labels": [],
+"w": "Boeotian"
+},
+{
+"labels": [
+"informal"
+],
+"w": "boob"
+},
+{
+"labels": [],
+"w": "bozo"
+},
+{
+"labels": [],
+"w": "brainlet"
+},
+{
+"labels": [],
+"w": "brickhead"
+},
+{
+"labels": [],
+"w": "bubblehead"
+},
+{
+"labels": [],
+"w": "bubble brain"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "bufflehead"
+},
+{
+"labels": [],
+"w": "buffoon"
+},
+{
+"labels": [
+"chiefly Britain",
+"often with \"right\" and/or \"proper\""
+],
+"w": "Charlie"
+},
+{
+"labels": [
+"US",
+"informal"
+],
+"w": "chowderhead"
+},
+{
+"labels": [
+"informal"
+],
+"w": "chucklehead"
+},
+{
+"labels": [
+"informal"
+],
+"w": "chump"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "cittern-head"
+},
+{
+"labels": [],
+"w": "clod"
+},
+{
+"labels": [
+"dated"
+],
+"w": "clodpate"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "clot"
+},
+{
+"labels": [],
+"w": "clown"
+},
+{
+"labels": [],
+"w": "crackhead"
+},
+{
+"labels": [],
+"w": "cretin"
+},
+{
+"labels": [],
+"w": "cuckoo"
+},
+{
+"labels": [],
+"w": "deadhead"
+},
+{
+"labels": [],
+"w": "dimbo"
+},
+{
+"labels": [],
+"w": "dim bulb"
+},
+{
+"labels": [],
+"w": "dimbus"
+},
+{
+"labels": [],
+"w": "dimwit"
+},
+{
+"labels": [
+"informal"
+],
+"w": "dingbat"
+},
+{
+"labels": [
+"informal"
+],
+"w": "ding dong"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dingleberry"
+},
+{
+"labels": [
+"informal"
+],
+"w": "dingwad"
+},
+{
+"labels": [],
+"w": "dip"
+},
+{
+"labels": [],
+"w": "dipstick"
+},
+{
+"labels": [
+"slang",
+"obsolete"
+],
+"w": "doldrum"
+},
+{
+"labels": [],
+"w": "dolt"
+},
+{
+"labels": [],
+"w": "donut"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "doodle"
+},
+{
+"labels": [],
+"w": "doof"
+},
+{
+"labels": [],
+"w": "doofoid"
+},
+{
+"labels": [],
+"w": "doofus"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dope"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "dork"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "drivel"
+},
+{
+"labels": [
+"Australia",
+"NZ",
+"slang"
+],
+"w": "drongo"
+},
+{
+"labels": [],
+"w": "drool bucket"
+},
+{
+"labels": [],
+"w": "dullard"
+},
+{
+"labels": [],
+"w": "dumb bunny"
+},
+{
+"labels": [],
+"w": "dumbbell"
+},
+{
+"labels": [],
+"w": "dumb cluck"
+},
+{
+"labels": [],
+"w": "dumbhead"
+},
+{
+"labels": [],
+"w": "dumble"
+},
+{
+"labels": [],
+"w": "dumbling"
+},
+{
+"labels": [],
+"w": "dumbnut"
+},
+{
+"labels": [],
+"w": "dumbo"
+},
+{
+"labels": [],
+"w": "dummkopf"
+},
+{
+"labels": [],
+"w": "dummy"
+},
+{
+"labels": [],
+"w": "dunce"
+},
+{
+"labels": [],
+"w": "dunderhead"
+},
+{
+"labels": [],
+"w": "dunderpate"
+},
+{
+"labels": [
+"Irish, Scottish alternative form"
+],
+"w": "eejit"
+},
+{
+"labels": [],
+"w": "fathead"
+},
+{
+"labels": [],
+"w": "featherbrain"
+},
+{
+"labels": [],
+"w": "fenderhead"
+},
+{
+"labels": [],
+"w": "fleabrain"
+},
+{
+"labels": [],
+"w": "fool"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "fopdoodle"
+},
+{
+"labels": [],
+"w": "galoot"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "gimboid"
+},
+{
+"labels": [],
+"w": "gomer"
+},
+{
+"labels": [],
+"w": "gonk"
+},
+{
+"labels": [
+"Southern US"
+],
+"w": "goober"
+},
+{
+"labels": [],
+"w": "goof"
+},
+{
+"labels": [],
+"w": "goofball"
+},
+{
+"labels": [],
+"w": "goofy"
+},
+{
+"labels": [],
+"w": "goon"
+},
+{
+"labels": [
+"slang"
+],
+"w": "goose"
+},
+{
+"labels": [],
+"w": "goosecap"
+},
+{
+"labels": [
+"Britain",
+"dialectal",
+"archaic"
+],
+"w": "gorbuson"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "gudgeon"
+},
+{
+"labels": [
+"informal"
+],
+"w": "halfwit"
+},
+{
+"labels": [
+"Britain",
+"slang",
+"dated"
+],
+"w": "ha'porth"
+},
+{
+"labels": [],
+"w": "hammerhead"
+},
+{
+"labels": [],
+"w": "idiot"
+},
+{
+"labels": [],
+"w": "ignoramus"
+},
+{
+"labels": [],
+"w": "imbecile"
+},
+{
+"labels": [],
+"w": "inbred"
+},
+{
+"labels": [],
+"w": "jackaninny"
+},
+{
+"labels": [],
+"w": "jellybrain"
+},
+{
+"labels": [],
+"w": "jerk"
+},
+{
+"labels": [],
+"w": "juggins"
+},
+{
+"labels": [],
+"w": "jughead"
+},
+{
+"labels": [],
+"w": "knothead"
+},
+{
+"labels": [],
+"w": "knucklehead"
+},
+{
+"labels": [],
+"w": "lackwit"
+},
+{
+"labels": [],
+"w": "lamebrain"
+},
+{
+"labels": [
+"figurative"
+],
+"w": "log"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "loggerhead"
+},
+{
+"labels": [],
+"w": "lummox"
+},
+{
+"labels": [],
+"w": "lunk"
+},
+{
+"labels": [],
+"w": "lunkhead"
+},
+{
+"labels": [
+"slang"
+],
+"w": "maroon"
+},
+{
+"labels": [
+"slang"
+],
+"w": "meatball"
+},
+{
+"labels": [
+"slang"
+],
+"w": "meathead"
+},
+{
+"labels": [
+"informal"
+],
+"w": "mental midget"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "mome"
+},
+{
+"labels": [
+"slang"
+],
+"w": "momo"
+},
+{
+"labels": [],
+"w": "mongoloid"
+},
+{
+"labels": [],
+"w": "mongtard"
+},
+{
+"labels": [],
+"w": "monkey"
+},
+{
+"labels": [
+"slang"
+],
+"w": "moron"
+},
+{
+"labels": [
+"slang"
+],
+"w": "mouth breather"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "muggins"
+},
+{
+"labels": [],
+"w": "mushhead"
+},
+{
+"labels": [],
+"w": "muttonhead"
+},
+{
+"labels": [
+"US"
+],
+"w": "mutt"
+},
+{
+"labels": [
+"US",
+"informal"
+],
+"w": "nimrod"
+},
+{
+"labels": [],
+"w": "nincom"
+},
+{
+"labels": [],
+"w": "nincompoop"
+},
+{
+"labels": [],
+"w": "ninny"
+},
+{
+"labels": [],
+"w": "ninnyhammer"
+},
+{
+"labels": [
+"slang"
+],
+"w": "nit"
+},
+{
+"labels": [],
+"w": "nitwit"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "noddy"
+},
+{
+"labels": [],
+"w": "noodlehead"
+},
+{
+"labels": [],
+"w": "numbskull"
+},
+{
+"labels": [],
+"w": "oaf"
+},
+{
+"labels": [],
+"w": "peabrain"
+},
+{
+"labels": [],
+"w": "peagoose"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "pillock"
+},
+{
+"labels": [
+"rare"
+],
+"w": "pigwidgeon"
+},
+{
+"labels": [],
+"w": "pinhead"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "plank"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "plonker"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "prat"
+},
+{
+"labels": [],
+"w": "put"
+},
+{
+"labels": [],
+"w": "putz"
+},
+{
+"labels": [
+"slang"
+],
+"w": "retard"
+},
+{
+"labels": [
+"slang"
+],
+"w": "sap"
+},
+{
+"labels": [],
+"w": "saphead"
+},
+{
+"labels": [],
+"w": "schmo"
+},
+{
+"labels": [],
+"w": "silly"
+},
+{
+"labels": [
+"slang"
+],
+"w": "simp"
+},
+{
+"labels": [],
+"w": "simpleton"
+},
+{
+"labels": [],
+"w": "smooth brain"
+},
+{
+"labels": [
+"slang"
+],
+"w": "snapperhead"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "sot"
+},
+{
+"labels": [
+"slang"
+],
+"w": "space cadet"
+},
+{
+"labels": [],
+"w": "spanner"
+},
+{
+"labels": [
+"slang"
+],
+"w": "stupe"
+},
+{
+"labels": [],
+"w": "stupid"
+},
+{
+"labels": [],
+"w": "stupid-head"
+},
+{
+"labels": [
+"slang"
+],
+"w": "tard"
+},
+{
+"labels": [],
+"w": "thickhead"
+},
+{
+"labels": [],
+"w": "thickskull"
+},
+{
+"labels": [
+"chiefly Britain",
+"slang"
+],
+"w": "thicko"
+},
+{
+"labels": [],
+"w": "tomfool"
+},
+{
+"labels": [
+"chiefly British"
+],
+"w": "tonto"
+},
+{
+"labels": [
+"slang"
+],
+"w": "toolbox"
+},
+{
+"labels": [],
+"w": "tosspot"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "turkey"
+},
+{
+"labels": [],
+"w": "twit"
+},
+{
+"labels": [],
+"w": "wally"
+},
+{
+"labels": [],
+"w": "wantwit"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "wazzer"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "wazzock"
+},
+{
+"labels": [
+"slang"
+],
+"w": "witless wonder"
+},
+{
+"labels": [
+"informal"
+],
+"w": "yo-yo"
+},
+{
+"labels": [],
+"w": "zany"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "ass"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "assclown"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "asshat"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "asshead"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "asstard"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "asswipe"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "buttbreath"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "dildo"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "dipshit"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "donkey dick"
+},
+{
+"labels": [
+"Britain",
+"vulgar",
+"slang"
+],
+"w": "dumbarse"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "dumbfuck"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "dumbfucker"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "dumbshit"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "farthead"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "fuck-knuckle"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "fucktard"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "fuckwit"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "jackass"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "peckerhead"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "shitbrain"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "shithead"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "shitneck"
+},
+{
+"labels": [
+"vulgar",
+"slang"
+],
+"w": "shitwit"
+},
+{
+"labels": [
+"chiefly Britain",
+"vulgar",
+"slang"
+],
+"w": "twat"
+}
+],
+"Name a word for a friend": [
+{
+"labels": [
+"UK"
+],
+"w": "babber"
+},
+{
+"labels": [
+"UK"
+],
+"w": "billy"
+},
+{
+"labels": [
+"Rastafarian"
+],
+"w": "bredrin"
+},
+{
+"labels": [
+"UK"
+],
+"w": "bruv"
+},
+{
+"labels": [
+"US, Canada"
+],
+"w": "bud"
+},
+{
+"labels": [
+"US, Canada"
+],
+"w": "buddo"
+},
+{
+"labels": [
+"US, Canada"
+],
+"w": "buddy"
+},
+{
+"labels": [
+"UK"
+],
+"w": "butty"
+},
+{
+"labels": [
+"Jewish"
+],
+"w": "chaver"
+},
+{
+"labels": [
+"UK"
+],
+"w": "china"
+},
+{
+"labels": [
+"UK"
+],
+"w": "chuck"
+},
+{
+"labels": [
+"UK"
+],
+"w": "chum"
+},
+{
+"labels": [
+"UK, Australia"
+],
+"w": "cock"
+},
+{
+"labels": [
+"UK"
+],
+"w": "cocker"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "cobber"
+},
+{
+"labels": [],
+"w": "compadre"
+},
+{
+"labels": [],
+"w": "comrade"
+},
+{
+"labels": [],
+"w": "companion"
+},
+{
+"labels": [
+"Australia"
+],
+"w": "cove"
+},
+{
+"labels": [],
+"w": "crony"
+},
+{
+"labels": [],
+"w": "dawg"
+},
+{
+"labels": [],
+"w": "dude"
+},
+{
+"labels": [
+"UK"
+],
+"w": "duck"
+},
+{
+"labels": [],
+"w": "fam"
+},
+{
+"labels": [
+"UK"
+],
+"w": "fettler"
+},
+{
+"labels": [],
+"w": "friend"
+},
+{
+"labels": [
+"UK"
+],
+"w": "geez"
+},
+{
+"labels": [
+"UK"
+],
+"w": "geezer"
+},
+{
+"labels": [],
+"w": "gink"
+},
+{
+"labels": [],
+"w": "good old boy"
+},
+{
+"labels": [],
+"w": "homeskillet"
+},
+{
+"labels": [
+"US"
+],
+"w": "homie"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "kith"
+},
+{
+"labels": [
+"UK"
+],
+"w": "lover"
+},
+{
+"labels": [
+"UK"
+],
+"w": "marrow"
+},
+{
+"labels": [
+"UK, Australia, New Zealand"
+],
+"w": "mate"
+},
+{
+"labels": [
+"UK"
+],
+"w": "matey"
+},
+{
+"labels": [
+"UK"
+],
+"w": "mucker"
+},
+{
+"labels": [
+"UK"
+],
+"w": "old bean"
+},
+{
+"labels": [],
+"w": "pal"
+},
+{
+"labels": [
+"US"
+],
+"w": "pardner"
+},
+{
+"labels": [
+"plural only"
+],
+"w": "peeps"
+},
+{
+"labels": [
+"jocular",
+"rare"
+],
+"w": "punk"
+},
+{
+"labels": [
+"UK"
+],
+"w": "shag"
+},
+{
+"labels": [],
+"w": "sport"
+},
+{
+"labels": [
+"UK"
+],
+"w": "surry"
+},
+{
+"labels": [],
+"w": "tovarish"
+},
+{
+"labels": [
+"Melanesia, Papua New Guinea"
+],
+"w": "wantok"
+}
+],
+"Name a word for chatter": [
+{
+"labels": [],
+"w": "babble"
+},
+{
+"labels": [],
+"w": "bavardage"
+},
+{
+"labels": [],
+"w": "bibble-babble"
+},
+{
+"labels": [],
+"w": "blab"
+},
+{
+"labels": [],
+"w": "blabber"
+},
+{
+"labels": [],
+"w": "blabbing"
+},
+{
+"labels": [],
+"w": "blather"
+},
+{
+"labels": [],
+"w": "blathering"
+},
+{
+"labels": [],
+"w": "chatter"
+},
+{
+"labels": [],
+"w": "chinwag"
+},
+{
+"labels": [],
+"w": "chit-chat"
+},
+{
+"labels": [
+"British dialect"
+],
+"w": "claver"
+},
+{
+"labels": [
+"British dialect"
+],
+"w": "clepe"
+},
+{
+"labels": [],
+"w": "gabble"
+},
+{
+"labels": [],
+"w": "hot air"
+},
+{
+"labels": [
+"British dialect"
+],
+"w": "mardle"
+},
+{
+"labels": [],
+"w": "natter"
+},
+{
+"labels": [],
+"w": "palaver"
+},
+{
+"labels": [],
+"w": "prate"
+},
+{
+"labels": [],
+"w": "prattle"
+},
+{
+"labels": [
+"originally US, nautical slang"
+],
+"w": "scuttlebutt"
+},
+{
+"labels": [],
+"w": "small talk"
+},
+{
+"labels": [],
+"w": "tattle"
+},
+{
+"labels": [],
+"w": "twaddle"
+},
+{
+"labels": [],
+"w": "waffle"
+},
+{
+"labels": [],
+"w": "yackety-yak"
+},
+{
+"labels": [],
+"w": "yap"
+},
+{
+"labels": [],
+"w": "yatter"
+}
+],
+"Name a word for good-looking": [
+{
+"labels": [],
+"w": "alluring"
+},
+{
+"labels": [],
+"w": "appealing"
+},
+{
+"labels": [],
+"w": "appetizing"
+},
+{
+"labels": [],
+"w": "attracting"
+},
+{
+"labels": [],
+"w": "attractive"
+},
+{
+"labels": [],
+"w": "catchy"
+},
+{
+"labels": [],
+"w": "bewitching"
+},
+{
+"labels": [],
+"w": "captivating"
+},
+{
+"labels": [],
+"w": "charming"
+},
+{
+"labels": [],
+"w": "coying"
+},
+{
+"labels": [],
+"w": "desirable"
+},
+{
+"labels": [],
+"w": "enchanting"
+},
+{
+"labels": [],
+"w": "engaging"
+},
+{
+"labels": [],
+"w": "enticing"
+},
+{
+"labels": [
+"rare"
+],
+"w": "enticive"
+},
+{
+"labels": [],
+"w": "exciting"
+},
+{
+"labels": [],
+"w": "fascinating"
+},
+{
+"labels": [],
+"w": "fetching"
+},
+{
+"labels": [],
+"w": "heart-throbbing"
+},
+{
+"labels": [
+"formal",
+"obsolete"
+],
+"w": "illecebrous"
+},
+{
+"labels": [],
+"w": "inviting"
+},
+{
+"labels": [],
+"w": "prepossessing"
+},
+{
+"labels": [],
+"w": "seducing"
+},
+{
+"labels": [],
+"w": "seductive"
+},
+{
+"labels": [],
+"w": "taking"
+},
+{
+"labels": [],
+"w": "tempting"
+},
+{
+"labels": [
+"archaic"
+],
+"w": "witching"
+},
+{
+"labels": [],
+"w": "winning"
+},
+{
+"labels": [],
+"w": "winsome"
+}
+],
+"Name a word for kissing": [
+{
+"labels": [],
+"w": "buss"
+},
+{
+"labels": [],
+"w": "kiss"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "lip clap"
+},
+{
+"labels": [],
+"w": "osculation"
+},
+{
+"labels": [],
+"w": "smooch"
+},
+{
+"labels": [],
+"w": "sugar"
+},
+{
+"labels": [
+"US",
+"idiomatic",
+"slang"
+],
+"w": "Yankee dime"
+}
+],
+"Name a word for nonsense": [
+{
+"labels": [],
+"w": "absurdity"
+},
+{
+"labels": [],
+"w": "all my eye"
+},
+{
+"labels": [],
+"w": "all my eye and Betty Martin"
+},
+{
+"labels": [
+"archaic",
+"slang"
+],
+"w": "apple grease"
+},
+{
+"labels": [
+"US",
+"dated",
+"slang"
+],
+"w": "applesauce"
+},
+{
+"labels": [],
+"w": "bafflegab"
+},
+{
+"labels": [],
+"w": "balderdash"
+},
+{
+"labels": [
+"UK",
+"vulgar"
+],
+"w": "balls"
+},
+{
+"labels": [
+"US",
+"Australia"
+],
+"w": "baloney"
+},
+{
+"labels": [
+"dated"
+],
+"w": "banana oil"
+},
+{
+"labels": [],
+"w": "Bandini"
+},
+{
+"labels": [],
+"w": "baragouin"
+},
+{
+"labels": [],
+"w": "batcrap"
+},
+{
+"labels": [],
+"w": "batshit"
+},
+{
+"labels": [],
+"w": "bilgewater"
+},
+{
+"labels": [],
+"w": "blah"
+},
+{
+"labels": [],
+"w": "blah-blah"
+},
+{
+"labels": [],
+"w": "blah-blah-blah"
+},
+{
+"labels": [],
+"w": "blather"
+},
+{
+"labels": [],
+"w": "blatherskite"
+},
+{
+"labels": [
+"UK"
+],
+"w": "bobbins"
+},
+{
+"labels": [
+"UK",
+"vulgar"
+],
+"w": "bollocks"
+},
+{
+"labels": [],
+"w": "bosh"
+},
+{
+"labels": [],
+"w": "BS"
+},
+{
+"labels": [],
+"w": "bull"
+},
+{
+"labels": [
+"vulgar"
+],
+"w": "bullcrap"
+},
+{
+"labels": [],
+"w": "bulldust"
+},
+{
+"labels": [
+"euphemistic"
+],
+"w": "bull feathers"
+},
+{
+"labels": [
+"vulgar"
+],
+"w": "bullshit"
+},
+{
+"labels": [],
+"w": "bullspeak"
+},
+{
+"labels": [],
+"w": "bunk"
+},
+{
+"labels": [],
+"w": "bunkum"
+},
+{
+"labels": [],
+"w": "bushwah"
+},
+{
+"labels": [
+"Scots"
+],
+"w": "clamjamfrey"
+},
+{
+"labels": [],
+"w": "claptrap"
+},
+{
+"labels": [
+"UK"
+],
+"w": "cobblers"
+},
+{
+"labels": [],
+"w": "codswallop"
+},
+{
+"labels": [
+"vulgar"
+],
+"w": "crap"
+},
+{
+"labels": [
+"vulgar"
+],
+"w": "crock"
+},
+{
+"labels": [
+"vulgar"
+],
+"w": "crock of shit"
+},
+{
+"labels": [],
+"w": "double Dutch"
+},
+{
+"labels": [],
+"w": "double talk"
+},
+{
+"labels": [],
+"w": "doublespeak"
+},
+{
+"labels": [],
+"w": "dribble"
+},
+{
+"labels": [],
+"w": "drivel"
+},
+{
+"labels": [],
+"w": "eyewash"
+},
+{
+"labels": [],
+"w": "fiddle-faddle"
+},
+{
+"labels": [],
+"w": "flapdoodle"
+},
+{
+"labels": [],
+"w": "flim-flam"
+},
+{
+"labels": [
+"MLE"
+],
+"w": "flizz"
+},
+{
+"labels": [],
+"w": "flummery"
+},
+{
+"labels": [],
+"w": "folderol"
+},
+{
+"labels": [],
+"w": "foolishness"
+},
+{
+"labels": [],
+"w": "footle"
+},
+{
+"labels": [],
+"w": "framis"
+},
+{
+"labels": [
+"vulgar",
+"MLE and Jamaica"
+],
+"w": "fuckery"
+},
+{
+"labels": [
+"dated"
+],
+"w": "fudge"
+},
+{
+"labels": [],
+"w": "galimatias"
+},
+{
+"labels": [],
+"w": "Gallophone"
+},
+{
+"labels": [
+"US"
+],
+"w": "garbage"
+},
+{
+"labels": [],
+"w": "garble"
+},
+{
+"labels": [
+"now vulgar",
+"UK",
+"slang"
+],
+"w": "gash"
+},
+{
+"labels": [],
+"w": "gibber"
+},
+{
+"labels": [],
+"w": "gibberish"
+},
+{
+"labels": [],
+"w": "gobbledygook"
+},
+{
+"labels": [],
+"w": "gossip"
+},
+{
+"labels": [],
+"w": "Greek"
+},
+{
+"labels": [],
+"w": "guff"
+},
+{
+"labels": [
+"India"
+],
+"w": "gup"
+},
+{
+"labels": [],
+"w": "hoax"
+},
+{
+"labels": [],
+"w": "hocus-pocus"
+},
+{
+"labels": [],
+"w": "hogwash"
+},
+{
+"labels": [],
+"w": "hokum"
+},
+{
+"labels": [
+"US"
+],
+"w": "hooey"
+},
+{
+"labels": [
+"US",
+"vulgar"
+],
+"w": "horse cock"
+},
+{
+"labels": [],
+"w": "horsefeathers"
+},
+{
+"labels": [
+"Canadian"
+],
+"w": "horse hockey"
+},
+{
+"labels": [
+"US",
+"vulgar"
+],
+"w": "horse piss"
+},
+{
+"labels": [],
+"w": "horse puckey"
+},
+{
+"labels": [],
+"w": "horseradish"
+},
+{
+"labels": [
+"US",
+"vulgar"
+],
+"w": "horseshit"
+},
+{
+"labels": [],
+"w": "humbug"
+},
+{
+"labels": [],
+"w": "Irish bull"
+},
+{
+"labels": [],
+"w": "jabber"
+},
+{
+"labels": [],
+"w": "jabberwocky"
+},
+{
+"labels": [],
+"w": "jargon"
+},
+{
+"labels": [],
+"w": "jibber-jabber"
+},
+{
+"labels": [],
+"w": "jimjam"
+},
+{
+"labels": [],
+"w": "jive"
+},
+{
+"labels": [],
+"w": "junk"
+},
+{
+"labels": [],
+"w": "lallation"
+},
+{
+"labels": [
+"Australian"
+],
+"w": "macaroni"
+},
+{
+"labels": [
+"Ireland",
+"US",
+"UK"
+],
+"w": "malarkey"
+},
+{
+"labels": [],
+"w": "manure"
+},
+{
+"labels": [],
+"w": "meaninglessness"
+},
+{
+"labels": [],
+"w": "moonshine"
+},
+{
+"labels": [],
+"w": "mumbo jumbo"
+},
+{
+"labels": [
+"US"
+],
+"w": "nertz"
+},
+{
+"labels": [],
+"w": "nonsense"
+},
+{
+"labels": [],
+"w": "pie in the sky"
+},
+{
+"labels": [],
+"w": "piffle"
+},
+{
+"labels": [],
+"w": "pigswill"
+},
+{
+"labels": [],
+"w": "poppycock"
+},
+{
+"labels": [],
+"w": "prattle"
+},
+{
+"labels": [],
+"w": "put-on"
+},
+{
+"labels": [
+"chiefly UK"
+],
+"w": "rhubarb"
+},
+{
+"labels": [
+"chiefly UK"
+],
+"w": "rhubarb rhubarb"
+},
+{
+"labels": [],
+"w": "rigmarole"
+},
+{
+"labels": [],
+"w": "rot"
+},
+{
+"labels": [
+"UK"
+],
+"w": "rubbish"
+},
+{
+"labels": [],
+"w": "ruse"
+},
+{
+"labels": [],
+"w": "santorum"
+},
+{
+"labels": [
+"vulgar"
+],
+"w": "shit"
+},
+{
+"labels": [
+"UK",
+"vulgar"
+],
+"w": "shite"
+},
+{
+"labels": [],
+"w": "skimble-skamble"
+},
+{
+"labels": [
+"UK",
+"dialect"
+],
+"w": "squit"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "stuff"
+},
+{
+"labels": [],
+"w": "stuff and nonsense"
+},
+{
+"labels": [
+"UK"
+],
+"w": "tommy-rot"
+},
+{
+"labels": [
+"UK"
+],
+"w": "tosh"
+},
+{
+"labels": [],
+"w": "trittle trattle"
+},
+{
+"labels": [
+"UK"
+],
+"w": "tush"
+},
+{
+"labels": [
+"US"
+],
+"w": "trash"
+},
+{
+"labels": [
+"UK"
+],
+"w": "tripe"
+},
+{
+"labels": [],
+"w": "twaddle"
+},
+{
+"labels": [
+"potentially vulgar",
+"MLE"
+],
+"w": "wass"
+},
+{
+"labels": [
+"obsolete",
+"UK"
+],
+"w": "whiff-whaff"
+},
+{
+"labels": [],
+"w": "word salad"
+}
+],
+"Name a word for rich": [
+{
+"labels": [
+"idiomatic",
+"humorous",
+"Yorkshire"
+],
+"w": "bow-legged wi' brass"
+},
+{
+"labels": [],
+"w": "comfortably off"
+},
+{
+"labels": [],
+"w": "filthy rich"
+},
+{
+"labels": [],
+"w": "loaded"
+},
+{
+"labels": [],
+"w": "fat"
+},
+{
+"labels": [
+"AmE",
+"literary"
+],
+"w": "forehanded"
+},
+{
+"labels": [
+"chiefly British",
+"Ireland",
+"slang"
+],
+"w": "minted"
+},
+{
+"labels": [],
+"w": "moneyed"
+},
+{
+"labels": [],
+"w": "moneybags"
+},
+{
+"labels": [],
+"w": "of means"
+},
+{
+"labels": [
+"dated",
+"UK",
+"slang"
+],
+"w": "oofy"
+},
+{
+"labels": [],
+"w": "rich"
+},
+{
+"labels": [],
+"w": "rich as Croesus"
+},
+{
+"labels": [],
+"w": "rolling"
+},
+{
+"labels": [],
+"w": "rolling in dough"
+},
+{
+"labels": [],
+"w": "rolling in it"
+},
+{
+"labels": [],
+"w": "upper crust"
+},
+{
+"labels": [],
+"w": "wealthy"
+},
+{
+"labels": [],
+"w": "well-endowed"
+},
+{
+"labels": [],
+"w": "well-heeled"
+},
+{
+"labels": [],
+"w": "well off"
+},
+{
+"labels": [],
+"w": "well-to-do"
+}
+],
+"Name a word for the toilet": [
+{
+"labels": [
+"slang"
+],
+"w": "big white telephone"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "bog"
+},
+{
+"labels": [
+"slang"
+],
+"w": "can"
+},
+{
+"labels": [],
+"w": "commode"
+},
+{
+"labels": [
+"coarse slang"
+],
+"w": "crapper"
+},
+{
+"labels": [
+"coarse slang",
+"rare"
+],
+"w": "crapper trapper"
+},
+{
+"labels": [],
+"w": "donniker"
+},
+{
+"labels": [
+"AU&NZ",
+"slang"
+],
+"w": "dunny"
+},
+{
+"labels": [
+"naval jargon"
+],
+"w": "head"
+},
+{
+"labels": [
+"slang",
+"rare"
+],
+"w": "highway to hell"
+},
+{
+"labels": [
+"Irish",
+"slang"
+],
+"w": "jacks"
+},
+{
+"labels": [
+"Irish",
+"slang"
+],
+"w": "jakes"
+},
+{
+"labels": [
+"US",
+"slang"
+],
+"w": "john"
+},
+{
+"labels": [],
+"w": "khazi"
+},
+{
+"labels": [
+"military jargon"
+],
+"w": "latrine"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "lav"
+},
+{
+"labels": [
+"coarse slang"
+],
+"w": "pisser"
+},
+{
+"labels": [
+"slang"
+],
+"w": "pooper"
+},
+{
+"labels": [
+"slang"
+],
+"w": "porcelain god"
+},
+{
+"labels": [
+"slang"
+],
+"w": "porcelain goddess"
+},
+{
+"labels": [
+"slang"
+],
+"w": "porcelain throne"
+},
+{
+"labels": [],
+"w": "pot"
+},
+{
+"labels": [
+"childish"
+],
+"w": "potty"
+},
+{
+"labels": [],
+"w": "privy"
+},
+{
+"labels": [
+"US slang",
+"obsolete"
+],
+"w": "Quincy"
+},
+{
+"labels": [
+"coarse slang"
+],
+"w": "shitcan"
+},
+{
+"labels": [
+"coarse slang"
+],
+"w": "shitpot"
+},
+{
+"labels": [
+"coarse slang"
+],
+"w": "shitter"
+},
+{
+"labels": [],
+"w": "stool"
+},
+{
+"labels": [
+"euphemism"
+],
+"w": "throne"
+},
+{
+"labels": [],
+"w": "toilet"
+},
+{
+"labels": [
+"AU"
+],
+"w": "toot"
+}
+],
+"Name a word for your bottom": [
+{
+"labels": [],
+"w": "'tocks"
+},
+{
+"labels": [
+"British"
+],
+"w": "arse"
+},
+{
+"labels": [
+"British"
+],
+"w": "arse cheeks"
+},
+{
+"labels": [
+"US"
+],
+"w": "ass"
+},
+{
+"labels": [],
+"w": "ass cheeks"
+},
+{
+"labels": [
+"MLE"
+],
+"w": "back"
+},
+{
+"labels": [],
+"w": "backside"
+},
+{
+"labels": [
+"Jamaican slang"
+],
+"w": "batty"
+},
+{
+"labels": [],
+"w": "behind"
+},
+{
+"labels": [
+"humorous"
+],
+"w": "fundament"
+},
+{
+"labels": [
+"euphemism",
+"US Southern"
+],
+"w": "blessed assurance"
+},
+{
+"labels": [
+"US"
+],
+"w": "booty"
+},
+{
+"labels": [
+"childish"
+],
+"w": "botty"
+},
+{
+"labels": [],
+"w": "bottom"
+},
+{
+"labels": [
+"British",
+"Canada"
+],
+"w": "bum"
+},
+{
+"labels": [
+"UK"
+],
+"w": "bum cheeks"
+},
+{
+"labels": [],
+"w": "buns"
+},
+{
+"labels": [
+"US"
+],
+"w": "butt"
+},
+{
+"labels": [],
+"w": "butt cheeks"
+},
+{
+"labels": [],
+"w": "buttocks"
+},
+{
+"labels": [],
+"w": "caboose"
+},
+{
+"labels": [],
+"w": "cheeks"
+},
+{
+"labels": [
+"humorous"
+],
+"w": "derriere"
+},
+{
+"labels": [
+"India",
+"colloquial"
+],
+"w": "dicky"
+},
+{
+"labels": [
+"US",
+"childish"
+],
+"w": "fanny"
+},
+{
+"labels": [],
+"w": "fourth point of contact"
+},
+{
+"labels": [
+"humorous"
+],
+"w": "gluteus maximus"
+},
+{
+"labels": [
+"muscles"
+],
+"w": "glutes"
+},
+{
+"labels": [
+"archaic",
+"British"
+],
+"w": "gooseberry-grinder"
+},
+{
+"labels": [
+"AAVE",
+"later used ironically by Generation Alpha"
+],
+"w": "gyatt"
+},
+{
+"labels": [
+"US",
+"childish"
+],
+"w": "heinie"
+},
+{
+"labels": [
+"US",
+"childish"
+],
+"w": "hiney"
+},
+{
+"labels": [],
+"w": "hinderlin"
+},
+{
+"labels": [
+"British"
+],
+"w": "hurdies"
+},
+{
+"labels": [
+"British"
+],
+"w": "jacksie"
+},
+{
+"labels": [],
+"w": "keester"
+},
+{
+"labels": [],
+"w": "keister"
+},
+{
+"labels": [],
+"w": "moon"
+},
+{
+"labels": [],
+"w": "moneymaker"
+},
+{
+"labels": [],
+"w": "nates"
+},
+{
+"labels": [],
+"w": "nether cheeks"
+},
+{
+"labels": [],
+"w": "patootie"
+},
+{
+"labels": [],
+"w": "peach"
+},
+{
+"labels": [],
+"w": "posterior"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "postern"
+},
+{
+"labels": [],
+"w": "rear"
+},
+{
+"labels": [],
+"w": "rear end"
+},
+{
+"labels": [],
+"w": "rump"
+},
+{
+"labels": [],
+"w": "seat"
+},
+{
+"labels": [],
+"w": "sit upon"
+},
+{
+"labels": [],
+"w": "tail"
+},
+{
+"labels": [],
+"w": "toches"
+},
+{
+"labels": [],
+"w": "tush"
+},
+{
+"labels": [],
+"w": "tushie"
+}
+],
+"Name a word that means excellent": [
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "ace"
+},
+{
+"labels": [],
+"w": "admirable"
+},
+{
+"labels": [],
+"w": "amazing"
+},
+{
+"labels": [],
+"w": "awe-inspiring"
+},
+{
+"labels": [
+"colloquial"
+],
+"w": "awesome"
+},
+{
+"labels": [],
+"w": "badass"
+},
+{
+"labels": [],
+"w": "broyal"
+},
+{
+"labels": [],
+"w": "bang on"
+},
+{
+"labels": [],
+"w": "bang-up"
+},
+{
+"labels": [
+"slang"
+],
+"w": "studly"
+},
+{
+"labels": [],
+"w": "based"
+},
+{
+"labels": [],
+"w": "beatific"
+},
+{
+"labels": [
+"thieves' cant"
+],
+"w": "beneship"
+},
+{
+"labels": [
+"slang"
+],
+"w": "bitching"
+},
+{
+"labels": [],
+"w": "blissful"
+},
+{
+"labels": [
+"slang"
+],
+"w": "bomb"
+},
+{
+"labels": [],
+"w": "brilliant"
+},
+{
+"labels": [],
+"w": "bully"
+},
+{
+"labels": [],
+"w": "celestial"
+},
+{
+"labels": [
+"New Zealand"
+],
+"w": "cher"
+},
+{
+"labels": [],
+"w": "choice"
+},
+{
+"labels": [
+"slang"
+],
+"w": "chronic"
+},
+{
+"labels": [
+"New Zealand"
+],
+"w": "chur"
+},
+{
+"labels": [],
+"w": "cock on"
+},
+{
+"labels": [],
+"w": "commendable"
+},
+{
+"labels": [
+"slang"
+],
+"w": "cool"
+},
+{
+"labels": [],
+"w": "copacetic"
+},
+{
+"labels": [],
+"w": "crackerjack"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "cushty"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dank"
+},
+{
+"labels": [
+"slang"
+],
+"w": "def"
+},
+{
+"labels": [],
+"w": "delightful"
+},
+{
+"labels": [],
+"w": "divine"
+},
+{
+"labels": [
+"slang"
+],
+"w": "dope"
+},
+{
+"labels": [],
+"w": "epic"
+},
+{
+"labels": [],
+"w": "excellent"
+},
+{
+"labels": [],
+"w": "exceptional"
+},
+{
+"labels": [],
+"w": "exemplary"
+},
+{
+"labels": [],
+"w": "exquisite"
+},
+{
+"labels": [],
+"w": "extraordinary"
+},
+{
+"labels": [
+"slang"
+],
+"w": "fab"
+},
+{
+"labels": [],
+"w": "fabulous"
+},
+{
+"labels": [
+"Polari"
+],
+"w": "fantabulosa"
+},
+{
+"labels": [],
+"w": "fantastic"
+},
+{
+"labels": [
+"Ireland",
+"rustic",
+"slang"
+],
+"w": "fierce"
+},
+{
+"labels": [
+"figurative"
+],
+"w": "finger-lickin' good"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "fire"
+},
+{
+"labels": [
+"slang"
+],
+"w": "fireball"
+},
+{
+"labels": [],
+"w": "first-rate"
+},
+{
+"labels": [
+"slang"
+],
+"w": "fly"
+},
+{
+"labels": [],
+"w": "frabjous"
+},
+{
+"labels": [],
+"w": "glorious"
+},
+{
+"labels": [],
+"w": "gnarly"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "goated"
+},
+{
+"labels": [],
+"w": "great"
+},
+{
+"labels": [
+"Australia",
+"New Zealand",
+"slang"
+],
+"w": "grouse"
+},
+{
+"labels": [],
+"w": "heavenlike"
+},
+{
+"labels": [],
+"w": "heavenly"
+},
+{
+"labels": [],
+"w": "immaculate"
+},
+{
+"labels": [],
+"w": "impeccable"
+},
+{
+"labels": [],
+"w": "incredible"
+},
+{
+"labels": [],
+"w": "kick-ass"
+},
+{
+"labels": [
+"slang"
+],
+"w": "kicking"
+},
+{
+"labels": [
+"slang"
+],
+"w": "killer"
+},
+{
+"labels": [
+"Britain dialect"
+],
+"w": "lash"
+},
+{
+"labels": [
+"chiefly [[prandial]]"
+],
+"w": "lautitious"
+},
+{
+"labels": [
+"slang"
+],
+"w": "lit"
+},
+{
+"labels": [],
+"w": "magnificent"
+},
+{
+"labels": [],
+"w": "marvelous"
+},
+{
+"labels": [
+"MLE"
+],
+"w": "nang"
+},
+{
+"labels": [],
+"w": "outstanding"
+},
+{
+"labels": [],
+"w": "out of sight"
+},
+{
+"labels": [
+"slang"
+],
+"w": "phat"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "peak"
+},
+{
+"labels": [
+"MLE"
+],
+"w": "peng"
+},
+{
+"labels": [],
+"w": "phenomenal"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "pog"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "poggers"
+},
+{
+"labels": [
+"figurative",
+"ironic"
+],
+"w": "priceless"
+},
+{
+"labels": [
+"Britain",
+"slang"
+],
+"w": "pukka"
+},
+{
+"labels": [
+"slang"
+],
+"w": "quality"
+},
+{
+"labels": [
+"slang"
+],
+"w": "rad"
+},
+{
+"labels": [
+"slang"
+],
+"w": "radical"
+},
+{
+"labels": [],
+"w": "remarkable"
+},
+{
+"labels": [
+"obsolete"
+],
+"w": "rum"
+},
+{
+"labels": [],
+"w": "sensational"
+},
+{
+"labels": [
+"slang"
+],
+"w": "sick"
+},
+{
+"labels": [],
+"w": "slap-up"
+},
+{
+"labels": [
+"slang"
+],
+"w": "slick"
+},
+{
+"labels": [],
+"w": "spectacular"
+},
+{
+"labels": [],
+"w": "spiffing"
+},
+{
+"labels": [],
+"w": "splendid"
+},
+{
+"labels": [],
+"w": "spot on"
+},
+{
+"labels": [],
+"w": "stellar"
+},
+{
+"labels": [],
+"w": "sterling"
+},
+{
+"labels": [],
+"w": "stunning"
+},
+{
+"labels": [],
+"w": "super"
+},
+{
+"labels": [],
+"w": "superb"
+},
+{
+"labels": [],
+"w": "superior"
+},
+{
+"labels": [
+"slang"
+],
+"w": "sweet"
+},
+{
+"labels": [
+"slang"
+],
+"w": "swell"
+},
+{
+"labels": [],
+"w": "terrific"
+},
+{
+"labels": [
+"slang"
+],
+"w": "tight"
+},
+{
+"labels": [],
+"w": "top"
+},
+{
+"labels": [],
+"w": "top-drawer"
+},
+{
+"labels": [
+"British",
+"dated"
+],
+"w": "top-hole"
+},
+{
+"labels": [],
+"w": "top-notch"
+},
+{
+"labels": [],
+"w": "top-of-the-range"
+},
+{
+"labels": [],
+"w": "top-shelf"
+},
+{
+"labels": [
+"British",
+"dated"
+],
+"w": "topping"
+},
+{
+"labels": [
+"slang"
+],
+"w": "tubular"
+},
+{
+"labels": [
+"Internet slang"
+],
+"w": "tuff"
+},
+{
+"labels": [],
+"w": "well-done"
+},
+{
+"labels": [
+"slang"
+],
+"w": "wicked"
+},
+{
+"labels": [
+"New England",
+"slang"
+],
+"w": "wicked pissah"
+},
+{
+"labels": [],
+"w": "wonderful"
+},
+{
+"labels": [
+"UK",
+"slang"
+],
+"w": "worldie"
+}
+]
+}

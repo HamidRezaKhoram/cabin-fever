@@ -35,7 +35,8 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 
 | # | Feature | Notes | Size |
 |---|---|---|---|
-| 3.1 | **Message in a Bottle: scribble pad** for players waiting on others. | Doodles could float across the TV. | M |
+| 3.9 | **New game menu** (owner: the cartridge shelf is "good but not fun", icons too alike, games hard to find). | Five directions sketched Nov 23 (cottage map, mood shelves, 3-question picker, big tiles, game wheel) — owner to pick. | L |
+| 3.10 | **The Deep End: grow and check the charts** — watch which off-chart answers the room keeps judging and add them; re-run `FETCH_MISSING=1 tools/fetch-deepend.py` for any category a rate-limited run skipped; `tools/fetch-wiktionary.py` refreshes the word categories. | `content-src/deepend.txt` | S |
 | 3.8 | **Send only what changed** in state updates (~2 KB → a few hundred bytes). | Not needed on a LAN; revisit only if 1.3/1.4 show lag. | M |
 
 ## 4. Tests and tooling
@@ -61,6 +62,7 @@ One list of what is not done, not verified, or knowingly limited. Sizes: **S** a
 - **French** (2.4 French voice, 3.7 French content packs): on hold for now. New screens still get their few French UI lines.
 
 ## Done
+- Nov 23 2026: The Deep End (reverse-survey word game: chart depth + shared spots + room vote, Wikidata-backed answers); Cottage Olympics +3 minis (Track the Ball, Angle Match, Split the Rope) and a harder Firefly Count; Loon Call note highway, output-latency-corrected audio, pickup chime, beat haptics, wider windows, Your Call on the song's own grid; hurry music speeds up file-based songs too; the lab plays Storm Watch's leader/crew controls; idle doodles (3.1, already built) now have a unit test.
 
 - **Playtest bug batch** (Nov 15 2026, reported after a cottage night): Android phones couldn't reach a
   website TV (📶 help on the TV; `pages.js` tests it end to end); Message in a Bottle looked like it wiped
