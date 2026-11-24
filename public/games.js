@@ -1599,7 +1599,9 @@
       const W = cv.width, H = cv.height;
       // A lightning strike every ~8 s or so — not in 🕊 Calm or with reduced motion (it promises no flashes).
       const calm = document.body.classList.contains('calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      if (tick % 240 === 0 && !calm && Math.random() < 0.6) stFlashAt = tick;
+      // Each strike flickers twice, so strikes stay ≥ 2 s apart (WCAG 2.3.1: ≤ 3 flashes in any second):
+      // a random one right after the entrance's bolt made 4 in a second (nightly flash pass, Nov 24).
+      if (tick % 240 === 0 && !calm && tick - stFlashAt >= 60 && Math.random() < 0.6) stFlashAt = tick;
       const flash = tick - stFlashAt < 4 ? (tick - stFlashAt) % 2 === 0 : false;
       g.fillStyle = flash ? 'rgba(220,230,255,0.55)' : 'rgba(10,14,28,0.35)';
       g.fillRect(0, 0, W, H);
